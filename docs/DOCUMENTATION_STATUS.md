@@ -1,6 +1,6 @@
 # WRAITH Protocol Documentation Status
 
-**Date:** 2025-11-28
+**Date:** 2025-11-29
 **Status:** Complete
 
 ---
@@ -14,8 +14,8 @@
 | Integration | 3 | 1,773 | Complete |
 | Testing | 3 | 1,856 | Complete |
 | Operations | 3 | 1,609 | Complete |
-| Clients | 25 | 7,796 | Complete |
-| **Total** | **43** | **19,987** | **100%** |
+| Clients | 27 | 8,521 | Complete |
+| **Total** | **45** | **20,712** | **100%** |
 
 ---
 
@@ -72,7 +72,7 @@
 
 ---
 
-## Client Documentation (25 files)
+## Client Documentation (27 files)
 
 ### Overview
 | File | Description |
@@ -135,6 +135,18 @@
 | `features.md` | Backup scheduling, recovery, deduplication |
 | `implementation.md` | Reed-Solomon erasure coding (16+4) |
 
+### WRAITH-Recon (Security Testing - Reconnaissance)
+| File | Description |
+|------|-------------|
+| `architecture.md` | Reference architecture for authorized security testing reconnaissance |
+
+### WRAITH-RedOps (Security Testing - Red Team Operations)
+| File | Description |
+|------|-------------|
+| `architecture.md` | Reference architecture for authorized red team operations |
+
+**Note:** Security testing clients (WRAITH-Recon, WRAITH-RedOps) provide reference architectures only. See [Security Testing Parameters](../ref-docs/WRAITH-Security-Testing-Parameters-v1.0.md) for governance framework.
+
 ---
 
 ## Sprint Planning Documentation
@@ -181,7 +193,8 @@ Located in `to-dos/`:
 - Testing strategies (unit, integration, E2E, fuzzing, property-based)
 - Deployment procedures (systemd, Docker, Kubernetes)
 - Operations (monitoring, logging, troubleshooting)
-- All 8 client applications (architecture, features, implementation)
+- 8 standard client applications (architecture, features, implementation)
+- 2 security testing clients (reference architectures with governance)
 
 ### Best Practices
 - No placeholder sections or TODOs
