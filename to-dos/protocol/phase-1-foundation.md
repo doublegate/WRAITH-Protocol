@@ -604,7 +604,7 @@ impl FrameBuilder {
 
         // Write random padding
         let mut padding = vec![0u8; padding_size];
-        getrandom::getrandom(&mut padding)
+        getrandom::fill(&mut padding)
             .map_err(|_| FrameError::RandomFailure)?;
         buf.extend_from_slice(&padding);
 
