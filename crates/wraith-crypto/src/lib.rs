@@ -28,8 +28,8 @@ pub mod aead;
 pub mod elligator;
 pub mod error;
 pub mod noise;
-pub mod ratchet;
 pub mod random;
+pub mod ratchet;
 
 pub use error::CryptoError;
 

@@ -153,8 +153,7 @@ impl<'a> Frame<'a> {
         let stream_id = u16::from_be_bytes([data[10], data[11]]);
         let sequence = u32::from_be_bytes([data[12], data[13], data[14], data[15]]);
         let offset = u64::from_be_bytes([
-            data[16], data[17], data[18], data[19],
-            data[20], data[21], data[22], data[23],
+            data[16], data[17], data[18], data[19], data[20], data[21], data[22], data[23],
         ]);
         let payload_len = u16::from_be_bytes([data[24], data[25]]);
 

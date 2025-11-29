@@ -24,7 +24,8 @@ impl Representative {
 ///
 /// Not all curve points are encodable (~50%), so this function
 /// loops until an encodable point is found.
-pub fn generate_encodable_keypair() -> Result<(x25519_dalek::StaticSecret, Representative), CryptoError> {
+pub fn generate_encodable_keypair(
+) -> Result<(x25519_dalek::StaticSecret, Representative), CryptoError> {
     // TODO: Implement proper Elligator2 encoding
     // For now, return a placeholder
     let secret = x25519_dalek::StaticSecret::random_from_rng(rand::thread_rng());

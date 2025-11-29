@@ -11,9 +11,9 @@
 #![warn(missing_docs)]
 #![warn(clippy::all)]
 
+pub mod cover;
 pub mod padding;
 pub mod timing;
-pub mod cover;
 
 /// Padding mode for traffic analysis resistance
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

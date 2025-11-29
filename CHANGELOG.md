@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### [2025-11-29] - CI/Rust Fixes and Sprint Planning Enhancement
+
+#### Fixed
+
+**GitHub Actions CI Workflow:**
+- Fixed deprecated `dtolnay/rust-action@master` to `dtolnay/rust-toolchain@stable`
+- All CI jobs now use correct action (check, test, clippy, fmt, docs, msrv)
+
+**Rust Codebase Fixes:**
+- `wraith-crypto/src/aead.rs`: Removed unused `crypto_common::BlockSizeUser` import
+- `wraith-core/src/congestion.rs`: Added `#[allow(dead_code)]` for BbrState fields
+- `wraith-files/src/chunker.rs`: Fixed `div_ceil` implementation for Rust compatibility
+- `xtask/src/main.rs`: Fixed rustdoc crate name warning
+- Multiple crates: Formatting fixes (`cargo fmt`)
+  - wraith-cli, wraith-core (frame, lib, session), wraith-crypto (elligator, lib)
+  - wraith-discovery, wraith-obfuscation (lib, padding, timing)
+
+**Sprint Planning Documentation:**
+- Recreated and enhanced `wraith-recon-sprints.md` (2,185 lines)
+  - 7 comprehensive user stories (RECON-001 through RECON-007)
+  - Complete Rust implementations with wraith-* crate integration
+  - Protocol milestone tracking and governance checkpoints
+  - Sprint summary and risk register
+- Recreated and enhanced `wraith-redops-sprints.md` (1,365 lines)
+  - MITRE ATT&CK coverage matrix (14 tactics, 37+ techniques)
+  - APT29 and APT28 adversary emulation playbooks
+  - PostgreSQL database schema for implant management
+  - gRPC protocol definitions (redops.proto)
+  - 20+ test cases with compliance verification
+
+---
+
 ### [2025-11-29] - Security Testing Client Documentation
 
 #### Added

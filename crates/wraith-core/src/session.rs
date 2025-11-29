@@ -27,8 +27,8 @@ impl Default for SessionConfig {
     fn default() -> Self {
         Self {
             max_streams: 16384,
-            initial_window: 1024 * 1024,      // 1 MiB
-            max_window: 16 * 1024 * 1024,     // 16 MiB
+            initial_window: 1024 * 1024,  // 1 MiB
+            max_window: 16 * 1024 * 1024, // 16 MiB
             idle_timeout: Duration::from_secs(30),
             rekey_interval: Duration::from_secs(120),
             rekey_packet_limit: 1_000_000,

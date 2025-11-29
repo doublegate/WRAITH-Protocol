@@ -1,7 +1,7 @@
 //! Timing obfuscation.
 
-use std::time::Duration;
 use crate::TimingMode;
+use std::time::Duration;
 
 /// Calculate inter-packet delay based on timing mode
 pub fn calculate_delay(mode: TimingMode) -> Duration {

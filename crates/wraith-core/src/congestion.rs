@@ -6,6 +6,7 @@
 use std::time::{Duration, Instant};
 
 /// BBR congestion control state
+#[allow(dead_code)]
 pub struct BbrState {
     /// Estimated bottleneck bandwidth (bytes/sec)
     btl_bw: u64,
@@ -44,7 +45,7 @@ impl BbrState {
         Self {
             btl_bw: 0,
             min_rtt: Duration::from_millis(100), // Initial estimate
-            pacing_gain: 2.89, // Startup gain
+            pacing_gain: 2.89,                   // Startup gain
             cwnd_gain: 2.0,
             bdp: 0,
             phase: BbrPhase::Startup,

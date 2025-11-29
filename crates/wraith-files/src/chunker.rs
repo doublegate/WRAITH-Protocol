@@ -25,7 +25,7 @@ impl FileChunker {
 
     /// Calculate number of chunks for a file
     pub fn chunk_count(&self, file_size: u64) -> u64 {
-        (file_size + self.chunk_size as u64 - 1) / self.chunk_size as u64
+        file_size.div_ceil(self.chunk_size as u64)
     }
 }
 

@@ -84,7 +84,11 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     match cli.command {
-        Commands::Send { file, recipient, mode } => {
+        Commands::Send {
+            file,
+            recipient,
+            mode,
+        } => {
             println!("Sending {} to {} (mode: {})", file, recipient, mode);
             // TODO: Implement send
         }

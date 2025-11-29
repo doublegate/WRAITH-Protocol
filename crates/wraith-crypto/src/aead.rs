@@ -1,8 +1,10 @@
 //! XChaCha20-Poly1305 AEAD encryption.
 
 use crate::CryptoError;
-use chacha20poly1305::{XChaCha20Poly1305, aead::{Aead, KeyInit}};
-use zeroize::Zeroize;
+use chacha20poly1305::{
+    aead::{Aead, KeyInit},
+    XChaCha20Poly1305,
+};
 
 /// AEAD cipher for packet encryption
 pub struct AeadCipher {

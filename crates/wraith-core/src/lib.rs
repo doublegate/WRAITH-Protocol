@@ -29,17 +29,17 @@
 #![warn(clippy::all)]
 #![deny(unsafe_op_in_unsafe_fn)]
 
+pub mod congestion;
 pub mod error;
 pub mod frame;
 pub mod session;
 pub mod stream;
-pub mod congestion;
 
+pub use congestion::BbrState;
 pub use error::Error;
-pub use frame::{Frame, FrameBuilder, FrameType, FrameFlags};
+pub use frame::{Frame, FrameBuilder, FrameFlags, FrameType};
 pub use session::{Session, SessionConfig, SessionState};
 pub use stream::Stream;
-pub use congestion::BbrState;
 
 /// Protocol version (major.minor encoded as u32)
 pub const PROTOCOL_VERSION: u32 = 0x00000001;

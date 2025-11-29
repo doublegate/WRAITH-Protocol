@@ -10,13 +10,11 @@ pub fn select_padding_class(payload_len: usize, mode: PaddingMode) -> usize {
     let header_overhead = 28 + 16; // Frame header + auth tag
 
     match mode {
-        PaddingMode::Performance => {
-            PADDING_CLASSES
-                .iter()
-                .find(|&&size| size >= payload_len + header_overhead)
-                .copied()
-                .unwrap_or(8960)
-        }
+        PaddingMode::Performance => PADDING_CLASSES
+            .iter()
+            .find(|&&size| size >= payload_len + header_overhead)
+            .copied()
+            .unwrap_or(8960),
         PaddingMode::Privacy | PaddingMode::Stealth => {
             // TODO: Implement random/statistical selection
             PADDING_CLASSES

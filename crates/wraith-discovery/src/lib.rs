@@ -12,8 +12,8 @@
 #![warn(clippy::all)]
 
 pub mod dht;
-pub mod relay;
 pub mod nat;
+pub mod relay;
 
 /// Peer endpoint information
 #[derive(Debug, Clone)]

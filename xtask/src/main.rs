@@ -1,6 +1,6 @@
 //! Build automation tasks for WRAITH Protocol
 //!
-//! Run with: cargo xtask <command>
+//! Run with: `cargo xtask <command>`
 
 use clap::{Parser, Subcommand};
 use std::process::Command;
@@ -68,9 +68,7 @@ fn main() -> anyhow::Result<()> {
 }
 
 fn run_command(program: &str, args: &[&str]) -> anyhow::Result<()> {
-    let status = Command::new(program)
-        .args(args)
-        .status()?;
+    let status = Command::new(program).args(args).status()?;
 
     if !status.success() {
         anyhow::bail!("{} {:?} failed", program, args);
