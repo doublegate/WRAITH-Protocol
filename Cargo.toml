@@ -53,7 +53,7 @@ snow = "0.10"
 rand = "0.9"
 rand_core = "0.6"
 zeroize = { version = "1.7", features = ["derive"] }
-getrandom = "0.2"
+getrandom = "0.3"
 
 # Kernel interfaces
 io-uring = "0.7"
