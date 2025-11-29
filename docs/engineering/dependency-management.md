@@ -111,7 +111,7 @@ libbpf-rs = "0.23"  # Safe libbpf wrapper
 **io_uring (Linux-only):**
 ```toml
 [target.'cfg(target_os = "linux")'.dependencies]
-io-uring = "0.6"  # io_uring async I/O
+io-uring = "0.7"  # io_uring async I/O
 ```
 - **Purpose:** High-performance file I/O
 - **License:** MIT OR Apache-2.0
