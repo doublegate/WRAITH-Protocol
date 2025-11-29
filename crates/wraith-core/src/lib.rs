@@ -38,8 +38,10 @@ pub mod stream;
 pub use congestion::BbrState;
 pub use error::Error;
 pub use frame::{Frame, FrameBuilder, FrameFlags, FrameType};
-pub use session::{Session, SessionConfig, SessionState};
-pub use stream::Stream;
+pub use session::{
+    ConnectionId, HandshakePhase, Session, SessionConfig, SessionState, SessionStats,
+};
+pub use stream::{Stream, StreamState};
 
 /// Protocol version (major.minor encoded as u32)
 pub const PROTOCOL_VERSION: u32 = 0x00000001;

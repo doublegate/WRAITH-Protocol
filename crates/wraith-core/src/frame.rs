@@ -334,4 +334,330 @@ mod tests {
             Err(FrameError::TooShort { .. })
         ));
     }
+
+    #[test]
+    fn test_all_frame_types() {
+        let frame_types = vec![
+            FrameType::Data,
+            FrameType::Ack,
+            FrameType::Control,
+            FrameType::Rekey,
+            FrameType::Ping,
+            FrameType::Pong,
+            FrameType::Close,
+            FrameType::Pad,
+            FrameType::StreamOpen,
+            FrameType::StreamClose,
+            FrameType::StreamReset,
+            FrameType::WindowUpdate,
+            FrameType::GoAway,
+            FrameType::PathChallenge,
+            FrameType::PathResponse,
+        ];
+
+        for ft in frame_types {
+            let frame = FrameBuilder::new()
+                .frame_type(ft)
+                .stream_id(1)
+                .sequence(1)
+                .payload(&[0u8; 16])
+                .build(64)
+                .unwrap();
+
+            let parsed = Frame::parse(&frame).unwrap();
+            assert_eq!(parsed.frame_type(), ft);
+        }
+    }
+
+    #[test]
+    fn test_reserved_frame_type() {
+        // Reserved type 0x00
+        let mut frame = FrameBuilder::new()
+            .frame_type(FrameType::Data)
+            .build(64)
+            .unwrap();
+
+        frame[8] = 0x00; // Overwrite with reserved type
+
+        assert!(matches!(
+            Frame::parse(&frame),
+            Err(FrameError::ReservedFrameType)
+        ));
+
+        // Reserved range 0x10-0x1F
+        frame[8] = 0x15;
+        assert!(matches!(
+            Frame::parse(&frame),
+            Err(FrameError::ReservedFrameType)
+        ));
+    }
+
+    #[test]
+    fn test_invalid_frame_type() {
+        let mut frame = FrameBuilder::new()
+            .frame_type(FrameType::Data)
+            .build(64)
+            .unwrap();
+
+        frame[8] = 0xFF; // Invalid type
+
+        assert!(matches!(
+            Frame::parse(&frame),
+            Err(FrameError::InvalidFrameType(0xFF))
+        ));
+    }
+
+    #[test]
+    fn test_frame_flags() {
+        let flags = FrameFlags::new().with_syn().with_fin();
+
+        assert!(flags.is_syn());
+        assert!(flags.is_fin());
+        assert!(!flags.is_compressed());
+
+        let frame = FrameBuilder::new()
+            .frame_type(FrameType::Data)
+            .flags(flags)
+            .build(64)
+            .unwrap();
+
+        let parsed = Frame::parse(&frame).unwrap();
+        assert!(parsed.flags().is_syn());
+        assert!(parsed.flags().is_fin());
+    }
+
+    #[test]
+    fn test_frame_with_max_payload() {
+        let payload = vec![0xAA; 1428]; // Max standard MTU payload
+        let frame = FrameBuilder::new()
+            .frame_type(FrameType::Data)
+            .payload(&payload)
+            .build(FRAME_HEADER_SIZE + 1428)
+            .unwrap();
+
+        let parsed = Frame::parse(&frame).unwrap();
+        assert_eq!(parsed.payload(), &payload[..]);
+    }
+
+    #[test]
+    fn test_frame_payload_overflow() {
+        let mut frame = FrameBuilder::new()
+            .frame_type(FrameType::Data)
+            .payload(b"test")
+            .build(64)
+            .unwrap();
+
+        // Corrupt payload length to exceed actual size
+        frame[24] = 0xFF;
+        frame[25] = 0xFF;
+
+        assert!(matches!(
+            Frame::parse(&frame),
+            Err(FrameError::PayloadOverflow)
+        ));
+    }
+
+    #[test]
+    fn test_frame_zero_payload() {
+        let frame = FrameBuilder::new()
+            .frame_type(FrameType::Pad)
+            .payload(&[])
+            .build(FRAME_HEADER_SIZE + 16)
+            .unwrap();
+
+        let parsed = Frame::parse(&frame).unwrap();
+        assert_eq!(parsed.payload().len(), 0);
+    }
+
+    #[test]
+    fn test_frame_nonce_extraction() {
+        let nonce = [1, 2, 3, 4, 5, 6, 7, 8];
+        let frame = FrameBuilder::new()
+            .frame_type(FrameType::Data)
+            .nonce(nonce)
+            .build(64)
+            .unwrap();
+
+        let parsed = Frame::parse(&frame).unwrap();
+        assert_eq!(parsed.nonce(), &nonce);
+    }
+
+    #[test]
+    fn test_frame_sequence_wrap() {
+        let frame = FrameBuilder::new()
+            .frame_type(FrameType::Data)
+            .sequence(u32::MAX)
+            .build(64)
+            .unwrap();
+
+        let parsed = Frame::parse(&frame).unwrap();
+        assert_eq!(parsed.sequence(), u32::MAX);
+    }
+
+    #[test]
+    fn test_frame_offset_large() {
+        let large_offset = 0x0123_4567_89AB_CDEF_u64;
+        let frame = FrameBuilder::new()
+            .frame_type(FrameType::Data)
+            .offset(large_offset)
+            .build(64)
+            .unwrap();
+
+        let parsed = Frame::parse(&frame).unwrap();
+        assert_eq!(parsed.offset(), large_offset);
+    }
+
+    #[test]
+    fn test_frame_builder_default_type() {
+        let frame = FrameBuilder::new().stream_id(1).build(64).unwrap();
+
+        let parsed = Frame::parse(&frame).unwrap();
+        assert_eq!(parsed.frame_type(), FrameType::Data);
+    }
+
+    #[test]
+    fn test_frame_padding_is_random() {
+        let frame1 = FrameBuilder::new()
+            .frame_type(FrameType::Data)
+            .payload(b"test")
+            .build(128)
+            .unwrap();
+
+        let frame2 = FrameBuilder::new()
+            .frame_type(FrameType::Data)
+            .payload(b"test")
+            .build(128)
+            .unwrap();
+
+        // Padding should be different due to randomization
+        let padding1 = &frame1[FRAME_HEADER_SIZE + 4..];
+        let padding2 = &frame2[FRAME_HEADER_SIZE + 4..];
+        assert_ne!(padding1, padding2);
+    }
+
+    #[test]
+    fn test_frame_minimum_size() {
+        // Minimum frame is just header + 0 payload + 0 padding
+        let frame = FrameBuilder::new()
+            .frame_type(FrameType::Ping)
+            .payload(&[])
+            .build(FRAME_HEADER_SIZE)
+            .unwrap();
+
+        assert_eq!(frame.len(), FRAME_HEADER_SIZE);
+        let parsed = Frame::parse(&frame).unwrap();
+        assert_eq!(parsed.payload().len(), 0);
+    }
+
+    #[test]
+    fn test_frame_stream_id_range() {
+        // Test client-initiated stream (odd)
+        let frame = FrameBuilder::new().stream_id(1).build(64).unwrap();
+        let parsed = Frame::parse(&frame).unwrap();
+        assert_eq!(parsed.stream_id(), 1);
+        assert_eq!(parsed.stream_id() % 2, 1);
+
+        // Test server-initiated stream (even)
+        let frame = FrameBuilder::new().stream_id(2).build(64).unwrap();
+        let parsed = Frame::parse(&frame).unwrap();
+        assert_eq!(parsed.stream_id(), 2);
+        assert_eq!(parsed.stream_id() % 2, 0);
+
+        // Test maximum stream ID
+        let frame = FrameBuilder::new().stream_id(u16::MAX).build(64).unwrap();
+        let parsed = Frame::parse(&frame).unwrap();
+        assert_eq!(parsed.stream_id(), u16::MAX);
+    }
+
+    mod proptests {
+        use super::*;
+        use proptest::prelude::*;
+
+        proptest! {
+            #[test]
+            fn prop_parse_doesnt_panic(data in prop::collection::vec(any::<u8>(), 0..2048)) {
+                let _ = Frame::parse(&data);
+            }
+
+            #[test]
+            fn prop_roundtrip_preserves_data(
+                stream_id in any::<u16>(),
+                sequence in any::<u32>(),
+                offset in any::<u64>(),
+                payload in prop::collection::vec(any::<u8>(), 0..1024),
+                total_size in 128usize..2048
+            ) {
+                let frame_bytes = FrameBuilder::new()
+                    .frame_type(FrameType::Data)
+                    .stream_id(stream_id)
+                    .sequence(sequence)
+                    .offset(offset)
+                    .payload(&payload)
+                    .build(total_size.max(FRAME_HEADER_SIZE + payload.len()))
+                    .unwrap();
+
+                let parsed = Frame::parse(&frame_bytes).unwrap();
+                prop_assert_eq!(parsed.stream_id(), stream_id);
+                prop_assert_eq!(parsed.sequence(), sequence);
+                prop_assert_eq!(parsed.offset(), offset);
+                prop_assert_eq!(parsed.payload(), payload.as_slice());
+            }
+
+            #[test]
+            fn prop_all_valid_frame_types_parseable(
+                type_byte in 0x01u8..=0x0F
+            ) {
+                let mut frame = FrameBuilder::new()
+                    .frame_type(FrameType::Data)
+                    .build(64)
+                    .unwrap();
+
+                frame[8] = type_byte;
+                prop_assert!(Frame::parse(&frame).is_ok());
+            }
+
+            #[test]
+            fn prop_invalid_frame_types_rejected(
+                type_byte in prop::sample::select(vec![0x00u8, 0x20, 0x40, 0x80, 0xFF])
+            ) {
+                let mut frame = FrameBuilder::new()
+                    .frame_type(FrameType::Data)
+                    .build(64)
+                    .unwrap();
+
+                frame[8] = type_byte;
+                prop_assert!(Frame::parse(&frame).is_err());
+            }
+
+            #[test]
+            fn prop_flags_roundtrip(flags in any::<u8>()) {
+                let frame = FrameBuilder::new()
+                    .frame_type(FrameType::Data)
+                    .flags(FrameFlags(flags))
+                    .build(64)
+                    .unwrap();
+
+                let parsed = Frame::parse(&frame).unwrap();
+                prop_assert_eq!(parsed.flags().as_u8(), flags);
+            }
+
+            #[test]
+            fn prop_payload_length_respected(
+                payload_len in 0usize..1024,
+                total_size in 128usize..2048
+            ) {
+                let payload = vec![0x42; payload_len];
+                let size = total_size.max(FRAME_HEADER_SIZE + payload_len);
+
+                let frame = FrameBuilder::new()
+                    .frame_type(FrameType::Data)
+                    .payload(&payload)
+                    .build(size)
+                    .unwrap();
+
+                let parsed = Frame::parse(&frame).unwrap();
+                prop_assert_eq!(parsed.payload().len(), payload_len);
+            }
+        }
+    }
 }
