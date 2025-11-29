@@ -1,0 +1,4 @@
+# Cargo configuration for WRAITH Protocol
+
+[alias]
+xtask = "run -p xtask --"

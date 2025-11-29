@@ -15,11 +15,11 @@ WRAITH Protocol is a decentralized secure file transfer protocol written in Rust
 | Lint | `cargo clippy --workspace -- -D warnings` |
 | Format check | `cargo fmt --all -- --check` |
 | Format fix | `cargo fmt --all` |
-| Main CI checks | `cargo run -p xtask -- ci` |
+| Main CI checks | `cargo xtask ci` |
 | CLI help | `cargo run -p wraith-cli -- --help` |
 | Docs | `cargo doc --workspace --no-deps` |
 
-**IMPORTANT:** The xtask command requires `cargo run -p xtask --` NOT `cargo xtask`. The latter will fail with "no such command".
+**Note:** The `cargo xtask` alias is defined in `.cargo/config.toml`.
 
 ## Build and Validation
 
@@ -55,15 +55,18 @@ The GitHub Actions CI (.github/workflows/ci.yml) runs these jobs:
 5. **docs** - `cargo doc --workspace --no-deps` with `RUSTDOCFLAGS=-Dwarnings`
 6. **msrv** - `cargo check --workspace` with Rust 1.85
 
-To run the main CI checks locally, use: `cargo run -p xtask -- ci`
+To run the main CI checks locally, use: `cargo xtask ci`
 
 **Note:** The `xtask ci` command does **not** fully replicate the CI workflow above. It omits:
 - The initial `cargo check --workspace --all-features` step
-- Running clippy with `--all-features`
+- Running clippy with `--all-features` (it runs `cargo clippy --workspace -- -D warnings` without `--all-features`)
 - Building docs with `RUSTDOCFLAGS=-Dwarnings`
 - The MSRV (minimum supported Rust version) check
 
+However, `xtask ci` **does** run tests with `--all-features` (matching the CI workflow).
+
 For a full CI replication, run these steps manually as described above.
+
 ## Repository Structure
 
 ```
@@ -96,7 +99,7 @@ WRAITH-Protocol/
 - `clippy.toml` - Linter settings (msrv="1.85")
 - `.gitignore` - Excludes /target/, Cargo.lock, coverage files
 
-**Note:** The rustfmt.toml uses edition="2021" for formatting rules while Cargo.toml uses edition="2024" for compilation. This is intentional as rustfmt edition controls formatting style.
+**Note:** The rustfmt.toml uses edition="2021" for formatting rules while Cargo.toml uses edition="2024" for compilation. The rustfmt edition controls formatting style independently from the compiler edition.
 
 ## Making Changes
 
@@ -132,14 +135,14 @@ Before submitting changes, ensure:
 4. **Tests pass:** `cargo test --workspace`
 5. **Documentation builds:** `cargo doc --workspace --no-deps`
 
-Or run most checks at once: `cargo run -p xtask -- ci`
-_(Note: This does **not** run documentation build (`cargo doc --workspace --no-deps`) and may not use `--all-features` for clippy. Run those separately as needed.)_
+Or run most checks at once: `cargo xtask ci`
+_(Note: `xtask ci` does **not** include the documentation build or clippy with `--all-features`. Run `cargo doc --workspace --no-deps` separately if needed.)_
 
 ## Common Issues
 
 ### "no such command: xtask"
-**Cause:** Using `cargo xtask` instead of proper invocation  
-**Solution:** Use `cargo run -p xtask -- <command>`
+**Cause:** The `.cargo/config.toml` alias is missing or not loaded  
+**Solution:** Ensure `.cargo/config.toml` exists with `[alias] xtask = "run -p xtask --"`
 
 ### Clippy warnings treated as errors
 **Cause:** CI uses `-D warnings` flag  
