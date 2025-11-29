@@ -25,7 +25,7 @@ This document describes the dependency management strategy for the WRAITH Protoc
 **Noise Protocol:**
 ```toml
 [dependencies]
-snow = "0.9"  # Noise protocol framework
+snow = "0.10"  # Noise protocol framework
 ```
 - **Purpose:** Noise_XX handshake implementation
 - **License:** Apache-2.0
@@ -302,7 +302,7 @@ tokio = "1.36"  # Equivalent to "^1.36" (>=1.36.0, <2.0.0)
 **Tilde requirements for conservative updates:**
 ```toml
 [dependencies]
-snow = "~0.9.3"  # >=0.9.3, <0.10.0
+snow = "~0.10"  # >=0.10.0, <0.11.0
 ```
 
 **Exact versions for critical dependencies:**
