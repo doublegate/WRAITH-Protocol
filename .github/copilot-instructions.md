@@ -84,10 +84,12 @@ WRAITH-Protocol/
 - **wraith-transport/files/obfuscation/discovery** depend on wraith-core
 
 ### Key Configuration Files
-- `Cargo.toml` - Workspace definition with shared dependencies
-- `rustfmt.toml` - Code formatting rules (max_width=100)
+- `Cargo.toml` - Workspace definition with shared dependencies (edition="2024")
+- `rustfmt.toml` - Code formatting rules (edition="2021", max_width=100)
 - `clippy.toml` - Linter settings (msrv="1.85")
 - `.gitignore` - Excludes /target/, Cargo.lock, coverage files
+
+**Note:** The rustfmt.toml uses edition="2021" for formatting rules while Cargo.toml uses edition="2024" for compilation. This is intentional as rustfmt edition controls formatting style.
 
 ## Making Changes
 
