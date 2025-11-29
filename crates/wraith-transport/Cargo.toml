@@ -12,10 +12,13 @@ authors.workspace = true
 wraith-core = { workspace = true }
 wraith-crypto = { workspace = true }
 tokio = { workspace = true }
-io-uring = { workspace = true }
 socket2 = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
+
+# Linux-only dependencies for kernel bypass (AF_XDP, io_uring)
+[target.'cfg(target_os = "linux")'.dependencies]
+io-uring = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }

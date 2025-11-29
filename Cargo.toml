@@ -56,6 +56,7 @@ zeroize = { version = "1.7", features = ["derive"] }
 getrandom = "0.3"
 
 # Kernel interfaces
+# Note: io-uring is Linux-only - used via target-specific dependencies in wraith-transport
 io-uring = "0.7"
 socket2 = "0.6"
 
