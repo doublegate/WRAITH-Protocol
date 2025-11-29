@@ -4,8 +4,8 @@
 //! careful attention to alignment for DMA efficiency. All multi-byte
 //! fields are big-endian (network byte order).
 
-use crate::error::FrameError;
 use crate::FRAME_HEADER_SIZE;
+use crate::error::FrameError;
 
 /// Frame types as defined in the protocol specification
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

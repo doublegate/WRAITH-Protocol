@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### [2025-11-29] - Rust 2024 Edition Upgrade
+
+#### Changed
+
+**Rust Edition and MSRV:**
+- Upgraded to Rust 2024 edition (from Rust 2021)
+- Updated MSRV from 1.75 to 1.85 (minimum required for edition 2024)
+- Updated workspace Cargo.toml: edition = "2024", rust-version = "1.85"
+- Updated clippy.toml: msrv = "1.85"
+- Updated GitHub Actions CI workflow: MSRV job now uses Rust 1.85
+- All crates inherit edition and rust-version from workspace manifest
+
+**Code Formatting:**
+- Applied cargo fmt across all crates to meet Rust 2024 formatting standards
+- Fixed import ordering in wraith-core/src/frame.rs
+- Fixed import ordering in wraith-crypto/src/aead.rs
+- Fixed function signature formatting in wraith-crypto/src/elligator.rs
+
+**Verification:**
+- All workspace crates build successfully with edition 2024
+- All tests pass (5 test suites: wraith-core, wraith-crypto, wraith-discovery, wraith-files, wraith-obfuscation)
+- Clippy passes with no warnings
+- Formatting verification passes
+
+---
+
 ### [2025-11-29] - CI/Rust Fixes and Sprint Planning Enhancement
 
 #### Fixed
