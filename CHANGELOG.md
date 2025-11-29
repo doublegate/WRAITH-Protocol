@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2025-11-29
+
 ### [2025-11-29] - Dependency Updates and Copilot Integration
 
 #### Changed
@@ -360,17 +362,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Total Lines of Documentation:** 40,000+
 - **Code Examples:** Rust, TypeScript, shell, TOML, YAML, Dockerfile
 - **Diagrams:** Mermaid and ASCII architecture visualizations
-
-## [0.1.0] - Unreleased
-
-Initial development release. See [ROADMAP](to-dos/ROADMAP.md) for planned features.
-
-### Planned Features
-- Complete protocol implementation (7 phases)
-- 8 client applications across 3 priority tiers
-- Cross-platform support (Linux, macOS, Windows)
-- Mobile clients (Android, iOS)
-- Post-quantum cryptography (hybrid mode)
 
 ---
 
