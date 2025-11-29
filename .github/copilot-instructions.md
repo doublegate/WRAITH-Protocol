@@ -15,7 +15,7 @@ WRAITH Protocol is a decentralized secure file transfer protocol written in Rust
 | Lint | `cargo clippy --workspace -- -D warnings` |
 | Format check | `cargo fmt --all -- --check` |
 | Format fix | `cargo fmt --all` |
-| All CI checks | `cargo run -p xtask -- ci` |
+| Main CI checks | `cargo run -p xtask -- ci` |
 | CLI help | `cargo run -p wraith-cli -- --help` |
 | Docs | `cargo doc --workspace --no-deps` |
 
