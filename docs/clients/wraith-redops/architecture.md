@@ -1,190 +1,100 @@
 # WRAITH-RedOps Reference Architecture
 
-**Document Version:** 1.0.0
+**Document Version:** 1.3.0 (Technical Deep Dive)
 **Last Updated:** 2025-11-29
-**Classification:** Reference Architecture (High-Level)
+**Classification:** Reference Architecture
 **Governance:** See [Security Testing Parameters](../../../ref-docs/WRAITH-Security-Testing-Parameters-v1.0.md)
 
 ---
 
-## Executive Summary
+## 1. Executive Summary
 
-WRAITH-RedOps is a red team operations platform designed for authorized adversary emulation exercises. It provides capabilities for simulating advanced threat actor behaviors to evaluate an organization's detection, response, and resilience capabilities.
+WRAITH-RedOps is a comprehensive Adversary Emulation Platform designed for authorized Red Team engagements. It provides a secure, resilient Command and Control (C2) infrastructure that leverages the WRAITH protocol's intrinsic stealth capabilities.
+
+The platform consists of three primary components:
+1.  **Team Server:** A multi-user collaboration hub managing state and tasking.
+2.  **Operator Client:** A cross-platform GUI for campaign management.
+3.  **Spectre Implant:** A modular, memory-resident agent ("Beacon") designed for stealth and evasion.
 
 **Authorized Use Cases Only:**
-- Executive-authorized red team exercises
-- Purple team collaborative assessments
-- Adversary emulation with defined objectives
-- CTF competitions with explicit permissions
-- Security research in isolated environments
+- Executive-authorized red team exercises.
+- Purple team collaborative assessments.
+- Adversary emulation with defined objectives.
 
 ---
 
-## Architecture Overview
+## 2. System Architecture
 
+### 2.1 Component Topology
+
+```mermaid
+graph TD
+    subgraph "Operator Network (Safe Zone)"
+        Client[Operator Client (Tauri)]
+        Dev[DevOps / Builder]
+    end
+
+    subgraph "C2 Infrastructure (Cloud/Redirectors)"
+        TS[Team Server (PostgreSQL + WRAITH)]
+        Red_UDP[UDP Redirector]
+        Red_HTTP[HTTPS Redirector]
+        Red_DNS[DNS Redirector]
+    end
+
+    subgraph "Target Network (Compromised)"
+        Beacon_A[Spectre Implant (Gateway)]
+        Beacon_B[Spectre Implant (SMB Peer)]
+        Beacon_C[Spectre Implant (TCP Peer)]
+    end
+
+    Client <-->|gRPC/TLS| TS
+    Dev -->|Build Artifacts| TS
+    
+    TS <-->|WRAITH Tunnel| Red_UDP
+    TS <-->|HTTPS Tunnel| Red_HTTP
+    
+    Red_UDP <-->|WRAITH/UDP| Beacon_A
+    Red_HTTP <-->|HTTPS| Beacon_A
+    
+    Beacon_A <-->|SMB Pipe| Beacon_B
+    Beacon_B <-->|TCP Socket| Beacon_C
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                       WRAITH-RedOps Architecture                        │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                         │
-│  ┌──────────────────────────────────────────────────────────────────┐  │
-│  │                      Operator Console                             │  │
-│  │   Campaign Mgmt | Session Mgmt | Reporting | Kill Switch          │  │
-│  └──────────────────────────────────────────────────────────────────┘  │
-│                                  │                                      │
-│                    ┌─────────────▼─────────────┐                        │
-│                    │    Governance Layer        │                        │
-│                    │                           │                        │
-│                    │  Scope | Time | Audit     │                        │
-│                    └─────────────┬─────────────┘                        │
-│                                  │                                      │
-│         ┌────────────────────────┼────────────────────────┐             │
-│         │                        │                        │             │
-│         ▼                        ▼                        ▼             │
-│  ┌─────────────┐         ┌─────────────┐         ┌─────────────┐       │
-│  │ Communications│        │ Operations  │         │ Infrastructure│     │
-│  │    Module    │         │   Module    │         │    Module    │       │
-│  │             │         │             │         │             │       │
-│  │ - Channels  │         │ - Tasks     │         │ - Redirectors│       │
-│  │ - Protocols │         │ - Modules   │         │ - Relays     │       │
-│  │ - Fallback  │         │ - Scripts   │         │ - Lifecycle  │       │
-│  └──────┬──────┘         └──────┬──────┘         └──────┬──────┘       │
-│         │                       │                       │               │
-│         └───────────────────────┼───────────────────────┘               │
-│                                 │                                       │
-│                   ┌─────────────▼─────────────┐                         │
-│                   │    WRAITH Protocol Stack   │                         │
-│                   │                           │                         │
-│                   │  wraith-transport         │                         │
-│                   │  wraith-crypto            │                         │
-│                   │  wraith-obfuscation       │                         │
-│                   │  wraith-discovery         │                         │
-│                   └───────────────────────────┘                         │
-│                                                                         │
-└─────────────────────────────────────────────────────────────────────────┘
-```
+
+### 2.2 Component Descriptions
+
+#### A. Operator Console (Client)
+*   **Purpose:** Centralized management interface for red team operators.
+*   **UI:** Tauri (Rust backend) + React (Frontend).
+*   **Capabilities:**
+    *   **Session Management:** Real-time interactive terminal for each beacon.
+    *   **Graph View:** Visualizes the peer-to-peer graph of beacons.
+    *   **Campaign Management:** Organization of engagement activities.
+
+#### B. Team Server (Backend)
+*   **Purpose:** The brain of the operation. Manages state, tasking, and data aggregation.
+*   **Architecture:** Rust (`axum`) with PostgreSQL.
+*   **Listener Bus:** Manages multiple listening ports (UDP, TCP, HTTP) and routes traffic to specific sessions.
+*   **Builder:** Compiles unique implant artifacts per campaign using a patched LLVM toolchain.
+
+#### C. "Spectre" Implant (Agent)
+*   **Purpose:** The deployed agent executing on target systems.
+*   **Design:** `no_std` Rust binary (freestanding). Zero runtime dependencies (no libc/msvcrt).
+*   **Memory Model:** Position Independent Code (PIC). Can be injected as Shellcode (sRDI), DLL, or EXE.
+*   **Stealth Features:**
+    *   **Sleep Mask:** Obfuscates memory during sleep intervals.
+    *   **Stack Spoofing:** Rewrites call stack frames to look legitimate.
+    *   **Indirect Syscalls:** Bypasses user-mode hooks (EDR).
+
+#### D. Governance Layer
+*   **Purpose:** Enforce engagement parameters and maintain accountability.
+*   **Controls:**
+    *   **Scope Enforcement:** Target whitelist/blacklist checks kernel-side in the implant.
+    *   **Time-to-Live (TTL):** Implants self-destruct after a specific date.
+    *   **Audit Logging:** Immutable logs of every command sent.
 
 ---
 
-## Component Descriptions
-
-### 1. Operator Console
-
-**Purpose:** Centralized management interface for red team operators.
-
-**Capability Categories:**
-
-| Category | Description | Function |
-|----------|-------------|----------|
-| Campaign Management | Organize engagement activities | Operational tracking |
-| Session Management | Monitor active operations | Real-time visibility |
-| Task Orchestration | Coordinate activities | Workflow management |
-| Reporting | Generate engagement documentation | Deliverable creation |
-| Kill Switch | Immediate operation termination | Emergency control |
-
-### 2. Governance Layer
-
-**Purpose:** Enforce engagement parameters and maintain accountability.
-
-**Capability Categories:**
-
-| Category | Description | Control |
-|----------|-------------|---------|
-| Scope Enforcement | Target whitelist/blacklist | Prevent scope violations |
-| Time Boundaries | Engagement window limits | Temporal control |
-| Audit Logging | Comprehensive activity recording | Accountability |
-| Data Controls | Handling restrictions | Data protection |
-| Authorization Verification | Credential/permission checks | Access control |
-
-**Configuration Reference:**
-```
-# Conceptual engagement configuration
-[engagement]
-id = "REDTEAM-2025-Q4"
-type = "adversary_emulation"
-emulated_threat = "APT29"
-start = "2025-12-01T00:00:00Z"
-end = "2025-12-31T23:59:59Z"
-
-[scope.authorized]
-networks = ["10.0.0.0/8"]
-domains = ["*.corp.target.com"]
-objectives = ["credential_access", "lateral_movement", "data_staging"]
-
-[scope.excluded]
-networks = ["10.0.99.0/24"]  # Safety systems
-systems = ["DC01", "BACKUP-*"]
-actions = ["destructive", "dos"]
-
-[governance]
-deconfliction_contact = "soc-lead@target.com"
-check_in_interval = "4h"
-kill_switch_enabled = true
-implant_expiry = "2026-01-02T00:00:00Z"
-```
-
-### 3. Communications Module
-
-**Purpose:** Manage operator-to-operation communications channels.
-
-**Capability Categories:**
-
-| Category | Description | Test Objective |
-|----------|-------------|----------------|
-| Channel Establishment | Create communication paths | Network visibility |
-| Protocol Handling | Support multiple protocols | Protocol inspection |
-| Fallback Logic | Alternate channel activation | Resilience testing |
-| Traffic Management | Control communication patterns | Behavioral detection |
-
-**WRAITH Protocol Integration:**
-- Uses `wraith-transport` for channel establishment
-- Uses `wraith-crypto` for communication encryption
-- Uses `wraith-obfuscation` for traffic pattern control
-- Uses `wraith-discovery` for peer coordination
-
-### 4. Operations Module
-
-**Purpose:** Execute authorized testing activities within scope.
-
-**Capability Categories:**
-
-| Category | Description | Test Objective |
-|----------|-------------|----------------|
-| Task Execution | Run authorized operations | Control effectiveness |
-| Module System | Extensible capability framework | Testing flexibility |
-| Result Collection | Gather operation outcomes | Finding documentation |
-| State Management | Track operational state | Continuity |
-
-**Operational Domains (MITRE ATT&CK Aligned):**
-
-| Domain | Description | Detection Focus |
-|--------|-------------|-----------------|
-| Initial Access | Entry point establishment | Perimeter controls |
-| Persistence | Maintain access across restarts | Endpoint monitoring |
-| Privilege Escalation | Elevate access levels | Access controls |
-| Defense Evasion | Test detection coverage | Security tool gaps |
-| Credential Access | Credential hygiene assessment | Authentication security |
-| Discovery | Environment enumeration | Internal visibility |
-| Lateral Movement | Cross-system access | Segmentation |
-| Collection | Data aggregation | DLP effectiveness |
-| Exfiltration | Data transfer (via WRAITH-Recon) | Egress controls |
-
-### 5. Infrastructure Module
-
-**Purpose:** Manage supporting infrastructure for operations.
-
-**Capability Categories:**
-
-| Category | Description | Function |
-|----------|-------------|----------|
-| Redirector Management | Traffic routing infrastructure | Attribution management |
-| Relay Coordination | Multi-hop communication | Path diversity |
-| Lifecycle Management | Infrastructure provisioning/teardown | Operational hygiene |
-| Deconfliction | Blue team coordination (if purple) | Avoid interference |
-
----
-
-## Operational Workflow
+## 3. Operational Workflow
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
@@ -196,22 +106,19 @@ implant_expiry = "2026-01-02T00:00:00Z"
 │  │                                                                  │    │
 │  │  • Authorization acquisition (executive sign-off)                │    │
 │  │  • Scope definition and documentation                            │    │
-│  │  • Rules of Engagement finalization                              │    │
-│  │  • Deconfliction procedures established                          │    │
-│  │  • Infrastructure preparation                                    │    │
-│  │  • Kill switch verification                                      │    │
+│  │  • Infrastructure preparation (Redirectors, C2 Domains)          │    │
+│  │  • Payload Generation (Builder)                                  │    │
 │  └─────────────────────────────────────────────────────────────────┘    │
 │                                  │                                      │
 │                                  ▼                                      │
 │  ┌─────────────────────────────────────────────────────────────────┐    │
 │  │ PHASE 2: Operations                                              │    │
 │  │                                                                  │    │
-│  │  • Threat emulation execution                                    │    │
-│  │  • Objective pursuit within scope                                │    │
-│  │  • Regular check-ins with engagement lead                        │    │
-│  │  • Finding documentation in real-time                            │    │
-│  │  • Scope adherence verification                                  │    │
-│  │  • Abort criteria monitoring                                     │    │
+│  │  • Access: Initial Access vectors (Phishing, Exploit)            │    │
+│  │  • Establish: Beacon check-in, key exchange                      │    │
+│  │  • Persistence: Maintain access across restarts                  │    │
+│  │  • Lateral Movement: SMB/TCP Peer-to-Peer chaining               │    │
+│  │  • Objectives: Data staging, exfiltration (via WRAITH-Recon)     │    │
 │  └─────────────────────────────────────────────────────────────────┘    │
 │                                  │                                      │
 │                                  ▼                                      │
@@ -219,12 +126,8 @@ implant_expiry = "2026-01-02T00:00:00Z"
 │  │ PHASE 3: Post-Engagement                                         │    │
 │  │                                                                  │    │
 │  │  • Operations cessation                                          │    │
-│  │  • Access removal verification                                   │    │
-│  │  • Infrastructure decommissioning                                │    │
-│  │  • Artifact cleanup confirmation                                 │    │
-│  │  • Finding compilation                                           │    │
-│  │  • Report generation                                             │    │
-│  │  • Debrief delivery                                              │    │
+│  │  • Cleanup: Remove artifacts, revoke keys                        │    │
+│  │  • Reporting: Generate Timeline, Finding Report                  │    │
 │  └─────────────────────────────────────────────────────────────────┘    │
 │                                                                          │
 └──────────────────────────────────────────────────────────────────────────┘
@@ -232,190 +135,136 @@ implant_expiry = "2026-01-02T00:00:00Z"
 
 ---
 
-## WRAITH Protocol Integration
+## 4. C2 Protocol Specification
 
-### Transport Layer Usage
+### 4.1 Transport Layer
+*   **Primary:** WRAITH Protocol (UDP/Noise_XX). Provides encryption, authentication, and NAT traversal.
+*   **Fallback:** HTTPS (TLS 1.3), DNS (DoH), SMB (Named Pipes).
 
-| WRAITH Component | RedOps Usage | Test Objective |
-|------------------|--------------|----------------|
-| `wraith-transport` | Communications channels | Network detection |
-| `wraith-crypto` | Encrypted communications | Inspection bypass |
-| `wraith-obfuscation` | Traffic pattern control | Behavioral detection |
-| `wraith-discovery` | Peer/relay location | Network visibility |
+### 4.2 Presentation Layer (C2 Payload)
+Encapsulated *inside* the transport layer.
+*   **Header:** `[Magic:4][SessionID:4][TaskID:4][Opcode:2][Length:4]`
+*   **Payload:** Protobuf-serialized data (Commands or Results).
+*   **Encryption:** Inner layer Chacha20-Poly1305 (Session Key) + Outer layer Transport Encryption.
 
-### Protocol Modes
+### 4.3 Protocol Data Unit (PDU) Definitions
+We use Google Protocol Buffers (proto3) for defining the C2 schema.
 
-Operations can utilize various protocol modes to test different detection capabilities:
+```protobuf
+syntax = "proto3";
 
-- **Standard Mode:** Baseline encrypted transport
-- **Mimicry Mode:** Traffic shaped to resemble legitimate protocols
-- **Jitter Mode:** Randomized timing patterns
-- **Slow Mode:** Extended intervals for long-term operations
-- **Burst Mode:** High-throughput for time-sensitive operations
+message BeaconTask {
+    uint32 task_id = 1;
+    CommandType command = 2;
+    bytes arguments = 3; // Serialized args specific to command
+}
+
+enum CommandType {
+    SLEEP = 0;
+    SHELL = 1;
+    UPLOAD = 2;
+    DOWNLOAD = 3;
+    EXECUTE_BOF = 4;
+    INJECT = 5;
+    EXIT = 99;
+}
+
+message BeaconResponse {
+    uint32 task_id = 1;
+    uint32 status_code = 2; // 0 = Success
+    bytes output = 3;
+    string error_msg = 4;
+}
+```
 
 ---
 
-## Detection Considerations
+## 5. Data Structures & Schema
+
+### 5.1 Team Server Database (PostgreSQL)
+
+```sql
+CREATE TABLE listeners (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(64) UNIQUE NOT NULL,
+    type VARCHAR(16) NOT NULL, -- UDP, HTTP, SMB
+    bind_address INET NOT NULL,
+    config JSONB NOT NULL
+);
+
+CREATE TABLE beacons (
+    id CHAR(16) PRIMARY KEY, -- Random Hex ID
+    internal_ip INET,
+    external_ip INET,
+    hostname VARCHAR(255),
+    user_name VARCHAR(255),
+    process_id INT,
+    arch VARCHAR(8), -- x64, x86
+    linked_beacon_id CHAR(16) REFERENCES beacons(id), -- Parent for P2P
+    last_seen TIMESTAMP WITH TIME ZONE,
+    status VARCHAR(16) -- ALIVE, DEAD, EXITING
+);
+
+CREATE TABLE tasks (
+    id SERIAL PRIMARY KEY,
+    beacon_id CHAR(16) REFERENCES beacons(id),
+    command_type INT NOT NULL,
+    arguments BYTEA,
+    queued_at TIMESTAMP DEFAULT NOW(),
+    sent_at TIMESTAMP,
+    completed_at TIMESTAMP,
+    result_output BYTEA,
+    operator_id INT REFERENCES users(id)
+);
+```
+
+---
+
+## 6. Detection Considerations
 
 To support defensive improvement, WRAITH-RedOps produces detectable artifacts:
 
 ### Network Indicators
-
 | Indicator Type | Description | Detection Approach |
 |----------------|-------------|-------------------|
-| Beaconing | Periodic communications | Interval analysis |
-| Data Patterns | Unusual traffic volumes | Baseline deviation |
-| Protocol Anomalies | Behavioral mismatches | Deep inspection |
-| Destination Analysis | Uncommon endpoints | Reputation systems |
-| Certificate Analysis | TLS certificate properties | Certificate transparency |
+| **Beaconing** | Periodic communications | Interval analysis / Jitter analysis |
+| **Data Patterns** | Unusual traffic volumes | Baseline deviation |
+| **Certificate Analysis** | TLS certificate properties | Certificate transparency |
 
 ### Endpoint Indicators
-
 | Indicator Type | Description | Detection Approach |
 |----------------|-------------|-------------------|
-| Process Ancestry | Unusual process relationships | EDR process tracking |
-| Network Connections | Process network behavior | Connection monitoring |
-| File System Activity | Unusual file operations | File integrity monitoring |
-| Registry/Config Changes | Persistence artifacts | Configuration monitoring |
-| Memory Indicators | In-memory patterns | Memory scanning |
-| Scheduled Tasks | Persistence mechanisms | Task auditing |
-
-### Post-Engagement Detection Development
-
-Findings should inform:
-- SIEM detection rule development
-- EDR behavioral signature creation
-- Network detection rule enhancement
-- Threat hunting hypothesis development
-- Security control tuning
+| **Process Ancestry** | Unusual process relationships | EDR process tracking |
+| **Memory Indicators** | Unbacked RWX pages (if sleep mask fails) | Memory scanning (Moneta) |
+| **Named Pipes** | Abnormal pipe names (e.g., `\pipe\msagent_12`) | Sysmon Event ID 17/18 |
 
 ---
 
-## Audit and Accountability
+## 7. Audit and Accountability
 
-### Logging Requirements
-
+### 7.1 Logging Requirements
 | Log Category | Contents | Integrity |
 |--------------|----------|-----------|
-| Operator Log | All operator actions | Signed, attributed |
-| Communications Log | Channel activity | Cryptographic chain |
-| Operations Log | Task execution details | Append-only, encrypted |
-| Finding Log | Discovered vulnerabilities | Timestamped |
-| Deconfliction Log | Blue team interactions | Complete record |
+| **Operator Log** | All operator actions | Signed, attributed |
+| **Communications Log** | Channel activity | Cryptographic chain |
+| **Operations Log** | Task execution details | Append-only, encrypted |
 
-### Chain of Custody
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                        Accountability Chain                             │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                         │
-│  [Executive Authorization]                                              │
-│         │                                                               │
-│         │  Signed authorization, objectives, scope                      │
-│         ▼                                                               │
-│  [Engagement Lead]                                                      │
-│         │                                                               │
-│         │  Operational oversight, scope compliance                      │
-│         ▼                                                               │
-│  [Red Team Operators]                                                   │
-│         │                                                               │
-│         │  Execute within authorized scope                              │
-│         ▼                                                               │
-│  [WRAITH-RedOps Platform]                                               │
-│         │                                                               │
-│         │  Enforce constraints, log all activity                        │
-│         ▼                                                               │
-│  [Audit Trail]                                                          │
-│         │                                                               │
-│         └──▶ Available for review, incident response, legal            │
-│                                                                         │
-└─────────────────────────────────────────────────────────────────────────┘
-```
+### 7.2 Chain of Custody
+1.  **Executive Authorization:** Signed authorization blob.
+2.  **WRAITH-RedOps Platform:** Enforces constraints, logs all activity.
+3.  **Audit Trail:** Available for review, incident response, legal.
 
 ---
 
-## Report Deliverables
+## 8. Deployment Considerations
 
-Standard engagement outputs:
+### Prerequisites
+*   **Signed Rules of Engagement document.**
+*   **Scope configuration file.**
+*   **Operator credentials.**
+*   **Kill switch endpoint configuration.**
 
-| Deliverable | Description | Audience |
-|-------------|-------------|----------|
-| Executive Summary | Risk-focused high-level findings | Leadership |
-| Technical Report | Detailed attack paths, TTPs used | Security team |
-| Detection Gap Analysis | What was/wasn't detected | SOC/Blue team |
-| TTP Matrix | MITRE ATT&CK mapping | Threat intelligence |
-| Remediation Roadmap | Prioritized improvements | Security team |
-| Audit Log Package | Complete operation record | Compliance/legal |
-
----
-
-## Safety Controls
-
-### Mandatory Safeguards
-
-| Control | Description | Purpose |
-|---------|-------------|---------|
-| Scope Whitelist | Hard-coded target restrictions | Prevent scope violations |
-| Time Expiry | Automatic operation cessation | Temporal boundaries |
-| Kill Switch | Immediate termination capability | Emergency control |
-| Artifact Cleanup | Removal procedures and verification | Clean exit |
-| Deconfliction | Blue team communication channels | Avoid disruption |
-
-### Abort Criteria
-
-Operations must cease immediately upon:
-- Scope boundary violation detected
-- Unintended system impact observed
-- Kill switch activation
-- Emergency contact request
-- Time boundary expiration
-- Authorization revocation
-
----
-
-## Relationship to Other Clients
-
-| Client | Relationship |
-|--------|--------------|
-| WRAITH-Recon | Complements with reconnaissance/exfiltration focus |
-| WRAITH-Transfer | Shares transport primitives |
-| WRAITH-Chat | May use for operator coordination (authorized) |
-
----
-
-## Compliance Alignment
-
-Operations should align with:
-
-- **PTES:** Full penetration testing methodology
-- **NIST SP 800-115:** Technical security testing guidance
-- **MITRE ATT&CK:** Adversary TTP framework
-- **TIBER-EU:** Threat intelligence-based ethical red teaming (if applicable)
-- **CBEST:** UK financial sector testing framework (if applicable)
-
----
-
-## Operator Qualifications
-
-Recommended qualifications for platform operators:
-
-| Category | Examples |
-|----------|----------|
-| Certifications | OSCP, OSCE, OSEP, CRTO, GPEN, GXPN |
-| Experience | Red team operations, penetration testing |
-| Knowledge | Adversary TTPs, detection mechanisms |
-| Ethics | Commitment to authorized testing only |
-
----
-
-## References
-
-- [Security Testing Parameters](../../../ref-docs/WRAITH-Security-Testing-Parameters-v1.0.md)
-- [WRAITH-Recon Architecture](../wraith-recon/architecture.md)
-- [WRAITH Protocol Overview](../../architecture/protocol-overview.md)
-- [Client Overview](../overview.md)
-
----
-
-*This document describes reference architecture only. Implementation requires executive authorization, qualified operators, and strict adherence to the governance framework. All operations must comply with applicable laws and regulations.*
+### Infrastructure Requirements
+*   **Team Server:** Hardened Linux VPS (4 vCPU, 8GB RAM).
+*   **Redirectors:** Ephemeral VPS instances (dumb pipes).
+*   **Domains:** Categorized/Aged domains for HTTP/DNS C2.
