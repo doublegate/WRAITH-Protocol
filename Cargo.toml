@@ -76,7 +76,7 @@ proptest = "1.4"
 criterion = "0.5"
 
 # Error handling
-thiserror = "1.0"
+thiserror = "2.0"
 anyhow = "1.0"
 
 [profile.release]
