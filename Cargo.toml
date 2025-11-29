@@ -24,11 +24,13 @@ exclude = ["crates/wraith-xdp"]
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.75"
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/example/wraith-protocol"
-authors = ["WRAITH Protocol Development Team"]
-keywords = ["file-transfer", "p2p", "encryption", "privacy", "networking"]
+license = "MIT"
+repository = "https://github.com/parobek/WRAITH-Protocol"
+homepage = "https://github.com/parobek/WRAITH-Protocol"
+authors = ["WRAITH Protocol Contributors"]
+keywords = ["file-transfer", "p2p", "encryption", "privacy", "stealth"]
 categories = ["network-programming", "cryptography", "command-line-utilities"]
+description = "Wire-speed Resilient Authenticated Invisible Transfer Handler - Decentralized secure file transfer with traffic analysis resistance"
 
 [workspace.dependencies]
 # Workspace crates
