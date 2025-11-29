@@ -2,9 +2,34 @@
 
 **W**ire-speed **R**esilient **A**uthenticated **I**nvisible **T**ransfer **H**andler
 
+[![CI Status](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/ci.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml)
+[![Release](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml)
+[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
+[![Rust](https://img.shields.io/badge/rust-1.85%2B-orange.svg)](https://www.rust-lang.org/)
+[![Edition](https://img.shields.io/badge/edition-2024-orange.svg)](https://doc.rust-lang.org/edition-guide/rust-2024/index.html)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
 A decentralized secure file transfer protocol optimized for high-throughput, low-latency operation with strong security guarantees and traffic analysis resistance.
 
 ![WRAITH Protocol Banner](images/wraith-protocol_banner-graphic.jpg)
+
+## Current Status
+
+**Version:** 0.1.0 (Initial Release)
+
+WRAITH Protocol is currently in early development with foundational scaffolding complete. The v0.1.0 release establishes the project structure, documentation framework, and initial implementations of core protocol components.
+
+**Implementation Status:**
+- Core workspace structure: 7 crates, 1,662 lines of Rust code
+- Test coverage: 8 passing tests (wraith-core, wraith-crypto)
+- Documentation: 59+ files, 40,000+ lines
+- CI/CD: GitHub Actions workflows for testing, security scanning, and multi-platform releases
+- Security: Dependabot and CodeQL integration, weekly vulnerability scans
+
+**Active Development:**
+- Phase 1: Foundation & Core Types (89 story points)
+- Next milestone: Complete session state machine and stream multiplexing
 
 ## Features
 
@@ -32,7 +57,38 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
 - **Connection Migration**: Seamless IP address changes
 - **No Central Servers**: Fully peer-to-peer operation
 
-## Quick Start
+## Installation
+
+### Pre-Built Binaries (Recommended)
+
+Download pre-built binaries for your platform from the [releases page](https://github.com/doublegate/WRAITH-Protocol/releases):
+
+**Supported Platforms:**
+- Linux x86_64 (glibc and musl)
+- Linux aarch64
+- macOS x86_64 (Intel)
+- macOS aarch64 (Apple Silicon)
+- Windows x86_64
+
+```bash
+# Linux/macOS
+tar xzf wraith-<platform>.tar.gz
+chmod +x wraith
+./wraith --version
+
+# Windows (PowerShell)
+Expand-Archive wraith-x86_64-windows.zip
+.\wraith.exe --version
+```
+
+All release artifacts include SHA256 checksums for verification.
+
+### Build From Source
+
+**Prerequisites:**
+- Rust 1.85+ (Rust 2024 edition)
+- Linux 6.2+ (recommended for AF_XDP and io_uring support)
+- x86_64 or aarch64 architecture
 
 ```bash
 # Clone the repository
@@ -45,18 +101,29 @@ cargo build --release
 # Run tests
 cargo test --workspace
 
-# Send a file
+# The wraith binary will be in target/release/wraith
+./target/release/wraith --version
+```
+
+## Quick Start
+
+**Note:** WRAITH Protocol is currently in early development (v0.1.0). The CLI interface is scaffolded but not yet functional. The following commands represent the planned interface:
+
+```bash
+# Send a file (coming soon)
 wraith send document.pdf alice@peer.key
 
-# Receive files
+# Receive files (coming soon)
 wraith receive --output ./downloads
 
-# Run as daemon
+# Run as daemon (coming soon)
 wraith daemon --bind 0.0.0.0:0
 
-# Generate a keypair
+# Generate a keypair (coming soon)
 wraith keygen --output ~/.wraith/identity.key
 ```
+
+For current development status, see [ROADMAP.md](to-dos/ROADMAP.md) and [Phase 1 Sprint Plan](to-dos/protocol/phase-1-foundation.md).
 
 ![WRAITH Protocol Architecture](images/wraith-protocol_arch-infographic.jpg)
 
@@ -144,10 +211,12 @@ See [Client Documentation](docs/clients/overview.md) and [Client Roadmap](to-dos
 
 ### Prerequisites
 
-- **Rust 1.75+** (2021 edition)
-- **Linux 6.2+** (for AF_XDP and io_uring)
+- **Rust 1.85+** (Rust 2024 edition) - [Install Rust](https://www.rust-lang.org/tools/install)
+- **Linux 6.2+** (recommended for AF_XDP and io_uring support)
 - **x86_64 or aarch64** architecture
-- **clang/LLVM** (for XDP/eBPF compilation)
+- **clang/LLVM** (optional, for XDP/eBPF compilation)
+
+**Note:** While Linux 6.2+ is recommended for optimal performance with kernel bypass features, WRAITH Protocol includes UDP fallback that works on all platforms.
 
 ### Build Commands
 
@@ -167,14 +236,29 @@ cargo clippy --workspace -- -D warnings
 # Format code
 cargo fmt --all
 
-# Run all CI checks
+# Run all CI checks (test + clippy + fmt + doc)
 cargo xtask ci
 
 # Generate API documentation
 cargo doc --workspace --open
 
-# Run benchmarks
+# Run benchmarks (coming soon)
 cargo bench --workspace
+```
+
+### Cargo Aliases
+
+WRAITH provides convenient cargo aliases (see `.cargo/config.toml`):
+
+```bash
+# Run full CI suite
+cargo xtci
+
+# Build and open documentation
+cargo xtdoc
+
+# Build XDP programs (Linux only, requires eBPF toolchain)
+cargo xdbuild
 ```
 
 ### Testing
@@ -238,6 +322,32 @@ cargo tarpaulin --workspace --out Html
 - [WRAITH-Recon Documentation](docs/clients/wraith-recon/)
 - [WRAITH-RedOps Documentation](docs/clients/wraith-redops/)
 
+## Roadmap
+
+WRAITH Protocol development follows a structured 7-phase approach spanning 32-44 weeks:
+
+### Protocol Development (789 Story Points)
+
+| Phase | Focus | Duration | Status |
+|-------|-------|----------|--------|
+| **Phase 1** | Foundation & Core Types | 4-6 weeks | In Progress |
+| **Phase 2** | Cryptographic Layer | 4-6 weeks | Planned |
+| **Phase 3** | Transport & Kernel Bypass | 6-8 weeks | Planned |
+| **Phase 4** | Obfuscation & Stealth | 3-4 weeks | Planned |
+| **Phase 5** | Discovery & NAT Traversal | 5-7 weeks | Planned |
+| **Phase 6** | Integration & Testing | 4-5 weeks | Planned |
+| **Phase 7** | Hardening & Optimization | 6-8 weeks | Planned |
+
+### Client Applications (1,028 Story Points)
+
+10 client applications across 3 priority tiers, including:
+- **Tier 1:** WRAITH-Transfer (P2P file transfer), WRAITH-Chat (E2EE messaging)
+- **Tier 2:** WRAITH-Sync (backup sync), WRAITH-Share (distributed sharing)
+- **Tier 3:** WRAITH-Stream, WRAITH-Mesh, WRAITH-Publish, WRAITH-Vault
+- **Security Testing:** WRAITH-Recon, WRAITH-RedOps (authorized use only)
+
+See [ROADMAP.md](to-dos/ROADMAP.md) and [Client Roadmap](to-dos/ROADMAP-clients.md) for detailed planning.
+
 ## Performance Targets
 
 | Metric | Target | Notes |
@@ -249,27 +359,99 @@ cargo tarpaulin --workspace --out Html
 | Memory per Session | <10 MB | Including buffers |
 | CPU @ 10 Gbps | <50% | 8-core system |
 
+## CI/CD Infrastructure
+
+WRAITH Protocol uses comprehensive automated workflows for quality assurance and releases:
+
+### Continuous Integration
+- **Testing:** Automated test suite on every push and pull request
+- **Code Quality:** Clippy linting and rustfmt formatting checks
+- **Documentation:** Automated doc generation and link validation
+- **MSRV:** Minimum Supported Rust Version (1.85) verification
+
+### Security Scanning
+- **Dependabot:** Automated dependency updates with security prioritization
+- **CodeQL:** Static analysis for security vulnerabilities
+- **cargo-audit:** RustSec advisory database scanning
+- **Weekly Scans:** Automated security checks every Monday
+
+### Release Automation
+- **Multi-Platform Builds:** 6 platform targets (Linux x86_64/aarch64, macOS Intel/ARM, Windows)
+- **Artifact Generation:** Automated binary builds with SHA256 checksums
+- **GitHub Releases:** Automatic release creation from version tags
+- **Changelog Integration:** Automated release notes from CHANGELOG.md
+
+See [CI Workflow](.github/workflows/ci.yml), [CodeQL Workflow](.github/workflows/codeql.yml), and [Release Workflow](.github/workflows/release.yml) for configuration details.
+
 ## Security
 
 WRAITH Protocol is designed with security as a core principle:
 
-- **Cryptography**: XChaCha20-Poly1305, X25519, BLAKE3, Noise_XX
-- **Forward Secrecy**: Double ratchet with DH and symmetric ratchets
-- **Traffic Analysis Resistance**: Elligator2, padding, timing obfuscation
-- **Memory Safety**: Rust with no unsafe code in crypto paths
-- **Constant-Time Operations**: Side-channel resistant implementations
+### Cryptographic Suite
+- **AEAD:** XChaCha20-Poly1305 (256-bit security, 192-bit nonce)
+- **Key Exchange:** X25519 with Elligator2 indistinguishability
+- **Hash Function:** BLAKE3 (tree-parallelizable, faster than BLAKE2/SHA-3)
+- **Handshake:** Noise_XX (mutual authentication, identity hiding)
 
-For security issues, please see [SECURITY.md](SECURITY.md).
+### Security Features
+- **Forward Secrecy:** Double ratchet with DH and symmetric ratchets
+- **Traffic Analysis Resistance:** Elligator2, padding, timing obfuscation, protocol mimicry
+- **Memory Safety:** Rust with no unsafe code in cryptographic paths
+- **Constant-Time Operations:** Side-channel resistant implementations
+- **Automated Security Scanning:** Dependabot, CodeQL, RustSec advisories
+
+### Reporting Vulnerabilities
+
+For security issues, please see [SECURITY.md](SECURITY.md) for our security policy and responsible disclosure process.
+
+## Getting Involved
+
+WRAITH Protocol is in active development and we welcome contributions of all kinds:
+
+### For Developers
+- **Phase 1 Implementation:** Help complete the core protocol foundation (session state machine, stream multiplexing)
+- **Testing:** Write unit tests, integration tests, and property-based tests
+- **Documentation:** Improve API docs, add examples, clarify specifications
+- **Code Review:** Review pull requests and provide feedback
+
+### For Security Researchers
+- **Protocol Review:** Analyze cryptographic design and security properties
+- **Penetration Testing:** Test implementations for vulnerabilities (coordinated disclosure)
+- **Formal Verification:** Assist with formal proofs of security properties
+
+### For Writers
+- **Technical Writing:** Improve documentation clarity and completeness
+- **Tutorials:** Create getting-started guides and usage examples
+- **Translations:** Translate documentation to other languages
+
+### Current Focus Areas
+1. Complete Phase 1 core types (session management, stream multiplexing)
+2. Increase test coverage (current: 8 tests, target: 80%+ coverage)
+3. Implement Noise_XX handshake (Phase 2 preparation)
+4. Documentation improvements and API examples
+
+See [ROADMAP.md](to-dos/ROADMAP.md) for detailed sprint planning and story point estimates.
 
 ## Contributing
 
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for comprehensive guidelines.
+
+### Quick Start for Contributors
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+3. Make your changes with tests
+4. Run CI checks locally (`cargo xtask ci`)
+5. Commit your changes (`git commit -m 'feat: add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
+
+### Contribution Requirements
+- Follow Rust coding standards (rustfmt, clippy)
+- Add tests for new functionality
+- Update documentation (API docs, CHANGELOG.md)
+- Sign commits (optional but encouraged)
+- Follow [Conventional Commits](https://www.conventionalcommits.org/) format
 
 ## License
 
@@ -277,14 +459,37 @@ Licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
 ## Acknowledgments
 
-WRAITH Protocol builds on the work of many excellent projects:
+WRAITH Protocol builds on the work of many excellent projects and technologies:
 
-- [Noise Protocol Framework](https://noiseprotocol.org/) - Handshake patterns
-- [WireGuard](https://www.wireguard.com/) - Inspiration for simplicity
-- [QUIC](https://quicwg.org/) - Connection migration concepts
+### Protocol Inspirations
+- [Noise Protocol Framework](https://noiseprotocol.org/) - Cryptographic handshake patterns
+- [WireGuard](https://www.wireguard.com/) - Design philosophy: simplicity and performance
+- [QUIC](https://quicwg.org/) - Connection migration and modern transport
 - [libp2p](https://libp2p.io/) - DHT and NAT traversal patterns
 - [Signal Protocol](https://signal.org/docs/) - Double ratchet algorithm
+
+### Cryptographic Libraries
+- [RustCrypto](https://github.com/RustCrypto) - ChaCha20-Poly1305, X25519, BLAKE3 implementations
+- [Snow](https://github.com/mcginty/snow) - Noise Protocol Framework for Rust
+- [dalek-cryptography](https://github.com/dalek-cryptography) - Ed25519 and X25519
+
+### Performance Technologies
+- [AF_XDP](https://www.kernel.org/doc/html/latest/networking/af_xdp.html) - Kernel bypass networking
+- [io_uring](https://kernel.dk/io_uring.pdf) - Efficient async I/O
+- [eBPF/XDP](https://ebpf.io/) - In-kernel packet processing
+
+## Links
+
+- **Repository:** [github.com/doublegate/WRAITH-Protocol](https://github.com/doublegate/WRAITH-Protocol)
+- **Documentation:** [docs/](docs/)
+- **Issue Tracker:** [GitHub Issues](https://github.com/doublegate/WRAITH-Protocol/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/doublegate/WRAITH-Protocol/discussions)
+- **Security Policy:** [SECURITY.md](SECURITY.md)
+- **Changelog:** [CHANGELOG.md](CHANGELOG.md)
+- **Roadmap:** [ROADMAP.md](to-dos/ROADMAP.md)
 
 ---
 
 **WRAITH Protocol** - *Secure. Fast. Invisible.*
+
+**Status:** Early Development (v0.1.0) | **License:** MIT | **Language:** Rust 2024

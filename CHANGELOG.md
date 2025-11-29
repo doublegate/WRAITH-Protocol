@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+*No unreleased changes yet. This section will track changes for the next release.*
+
 ## [0.1.0] - 2025-11-29
 
 ### [2025-11-29] - Dependency Updates and Copilot Integration
