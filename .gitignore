@@ -37,6 +37,13 @@ coverage/
 /tmp/
 *.log
 
+# Daily development logs (local only)
+daily_logs/
+
+# Claude Code artifacts
+CLAUDE.local.md
+*.local.md
+
 # Environment and secrets
 .env
 .env.*
