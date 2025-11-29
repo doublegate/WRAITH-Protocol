@@ -301,7 +301,7 @@ zeroize = { version = "1.7", features = ["derive"] }
 aya = "0.12"
 aya-ebpf = "0.1"
 libbpf-sys = "1.3"
-io-uring = "0.6"
+io-uring = "0.7"
 socket2 = "0.5"
 
 # Networking

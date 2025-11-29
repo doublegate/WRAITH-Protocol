@@ -56,7 +56,7 @@ zeroize = { version = "1.7", features = ["derive"] }
 getrandom = "0.2"
 
 # Kernel interfaces
-io-uring = "0.6"
+io-uring = "0.7"
 socket2 = "0.5"
 
 # Serialization
