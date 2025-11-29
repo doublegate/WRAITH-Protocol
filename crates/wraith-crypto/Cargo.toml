@@ -15,6 +15,7 @@ ed25519-dalek = { workspace = true }
 blake3 = { workspace = true }
 snow = { workspace = true }
 rand = { workspace = true }
+rand_core = { workspace = true }
 zeroize = { workspace = true }
 getrandom = { workspace = true }
 thiserror = { workspace = true }

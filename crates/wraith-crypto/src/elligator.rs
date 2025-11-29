@@ -4,6 +4,7 @@
 //! making key exchange indistinguishable from random data.
 
 use crate::CryptoError;
+use rand_core::OsRng;
 
 /// Elligator2 representative (encoded public key)
 pub struct Representative([u8; 32]);
@@ -28,7 +29,7 @@ pub fn generate_encodable_keypair()
 -> Result<(x25519_dalek::StaticSecret, Representative), CryptoError> {
     // TODO: Implement proper Elligator2 encoding
     // For now, return a placeholder
-    let secret = x25519_dalek::StaticSecret::random_from_rng(rand::thread_rng());
+    let secret = x25519_dalek::StaticSecret::random_from_rng(OsRng);
     let public = x25519_dalek::PublicKey::from(&secret);
 
     // Placeholder: just use the public key bytes

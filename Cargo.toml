@@ -51,6 +51,7 @@ ed25519-dalek = { version = "2.1", features = ["rand_core"] }
 blake3 = "1.5"
 snow = "0.9"
 rand = "0.9"
+rand_core = "0.6"
 zeroize = { version = "1.7", features = ["derive"] }
 getrandom = "0.2"
 
