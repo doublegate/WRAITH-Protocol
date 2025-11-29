@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### [2025-11-29] - Dependency Updates and Copilot Integration
+
+#### Changed
+
+**Dependency Updates (Dependabot PRs #9-#12):**
+- Updated `getrandom` from 0.2 to 0.3 (PR #9)
+  - Migrated API: `getrandom::getrandom()` → `getrandom::fill()`
+  - Files modified: `crates/wraith-crypto/src/random.rs`, `crates/wraith-core/src/frame.rs`
+  - Commit: ff9de57 - fix(deps): migrate to getrandom 0.3 API
+- Updated `socket2` from 0.5 to 0.6 (PR #11)
+- Updated `io-uring` dependency (PR #10)
+- Updated `console` dependency (PR #12)
+
+**GitHub Copilot Integration (PRs #16, #17):**
+- Added `.github/copilot-instructions.md` with WRAITH-specific development context
+- Added `.cargo/config.toml` with helpful cargo aliases (xtci, xtdoc, xdbuild)
+- Documented protocol architecture, crate structure, and coding standards
+- Added cryptographic safety guidelines for AI-assisted development
+
+**Documentation Updates:**
+- Updated `ref-docs/protocol_implementation_guide.md` for getrandom 0.3 consistency
+- Updated `to-dos/protocol/phase-1-foundation.md` for getrandom 0.3 consistency
+
+#### Technical Details
+
+**getrandom 0.3 Migration:**
+- **Breaking Change:** `getrandom::getrandom(&mut buf)` → `getrandom::fill(&mut buf).unwrap()`
+- **Error Handling:** Updated from `Result<usize, Error>` to `Result<(), Error>`
+- **Impact:** Improved API simplicity and ergonomics
+- **Test Coverage:** All existing tests continue to pass
+
+**Cargo Aliases (`.cargo/config.toml`):**
+- `xtci`: Run full CI suite (`cargo xtask ci`)
+- `xtdoc`: Build and open documentation (`cargo xtask doc`)
+- `xdbuild`: Build XDP programs (`cargo xtask build-xdp`)
+
+---
+
 ### [2025-11-29] - GitHub Security Scanning Configuration
 
 #### Added
