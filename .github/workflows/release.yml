@@ -338,8 +338,36 @@ jobs:
           echo "Release assets:"
           ls -lh
 
+      - name: Check if release already exists with notes
+        id: check_release
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Check if release exists and has a body
+          if gh release view "$VERSION" &> /dev/null; then
+            echo "✓ Release $VERSION already exists"
+
+            # Get the release body
+            RELEASE_BODY=$(gh release view "$VERSION" --json body --jq '.body')
+
+            # Check if body is non-empty (more than just whitespace)
+            if [ -n "$RELEASE_BODY" ] && [ "$(echo "$RELEASE_BODY" | tr -d '[:space:]')" != "" ]; then
+              echo "✓ Release already has notes ($(echo "$RELEASE_BODY" | wc -c) characters)"
+              echo "use_existing_notes=true" >> $GITHUB_OUTPUT
+              echo "⚠️  SKIPPING automatic note generation to preserve existing content"
+            else
+              echo "⚠️  Release exists but has no body"
+              echo "use_existing_notes=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "✓ Release does not exist yet"
+            echo "use_existing_notes=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Extract changelog for this version
         id: changelog
+        if: steps.check_release.outputs.use_existing_notes != 'true'
         env:
           VERSION: ${{ needs.validate.outputs.version }}
         run: |
@@ -361,7 +389,8 @@ jobs:
             echo "See [CHANGELOG.md](https://github.com/doublegate/WRAITH-Protocol/blob/main/CHANGELOG.md) for details." >> release-notes.md
           fi
 
-      - name: Create GitHub Release
+      - name: Create GitHub Release (with auto-generated notes)
+        if: steps.check_release.outputs.use_existing_notes != 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.validate.outputs.version }}
@@ -374,6 +403,24 @@ jobs:
           fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update GitHub Release (preserve existing notes, upload assets only)
+        if: steps.check_release.outputs.use_existing_notes == 'true'
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "✓ Uploading assets to existing release (preserving notes)"
+
+          # Upload all assets to the existing release
+          for asset in release-assets/*; do
+            if [ -f "$asset" ]; then
+              echo "Uploading: $(basename "$asset")"
+              gh release upload "$VERSION" "$asset" --clobber
+            fi
+          done
+
+          echo "✓ Assets uploaded successfully"
 
       - name: Release summary
         env:
