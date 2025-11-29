@@ -43,3 +43,46 @@ pub fn decode_representative(repr: &Representative) -> x25519_dalek::PublicKey {
     // For now, treat representative as raw public key bytes
     x25519_dalek::PublicKey::from(repr.0)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_generate_encodable_keypair() {
+        // Test that keypair generation succeeds
+        let result = generate_encodable_keypair();
+        assert!(result.is_ok());
+
+        let (secret, representative) = result.unwrap();
+
+        // Verify representative has valid bytes
+        let repr_bytes = representative.as_bytes();
+        assert_eq!(repr_bytes.len(), 32);
+
+        // Verify the representative can be decoded back to a public key
+        let decoded_public = decode_representative(&representative);
+
+        // The decoded public key should match the one derived from the secret
+        let expected_public = x25519_dalek::PublicKey::from(&secret);
+        assert_eq!(decoded_public.as_bytes(), expected_public.as_bytes());
+    }
+
+    #[test]
+    fn test_representative_roundtrip() {
+        // Test Representative from_bytes and as_bytes
+        let original_bytes = [0x42u8; 32];
+        let repr = Representative::from_bytes(original_bytes);
+        assert_eq!(repr.as_bytes(), &original_bytes);
+    }
+
+    #[test]
+    fn test_multiple_keypairs_are_unique() {
+        // Generate multiple keypairs and verify they are different
+        let (_, repr1) = generate_encodable_keypair().unwrap();
+        let (_, repr2) = generate_encodable_keypair().unwrap();
+
+        // Representatives should be different (with overwhelming probability)
+        assert_ne!(repr1.as_bytes(), repr2.as_bytes());
+    }
+}
