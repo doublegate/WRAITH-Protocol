@@ -9,14 +9,14 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
 [![CI Status](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/ci.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml)
 [![Release](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml)
-[![Version](https://img.shields.io/badge/version-0.1.5-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
+[![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
 [![Rust](https://img.shields.io/badge/rust-1.85%2B-orange.svg)](https://www.rust-lang.org/)
 [![Edition](https://img.shields.io/badge/edition-2024-orange.svg)](https://doc.rust-lang.org/edition-guide/rust-2024/index.html)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ## Current Status
 
-**Version:** 0.1.5 (Phases 1-2 Complete + Major Security & Performance Enhancements)
+**Version:** 0.2.0 (Phases 1-2 Complete + Major Security & Performance Enhancements)
 
 WRAITH Protocol has completed Phases 1-2 with a fully functional core protocol and cryptographic layer. The latest release delivers production-ready frame encoding, session management, stream multiplexing, congestion control, and a comprehensive cryptographic suite with forward secrecy and advanced security features.
 
@@ -580,4 +580,4 @@ WRAITH Protocol builds on the work of many excellent projects and technologies:
 
 **WRAITH Protocol** - *Secure. Fast. Invisible.*
 
-**Status:** Phase 1-2 Complete (v0.1.5) | **License:** MIT | **Language:** Rust 2024 | **Tests:** 351 | **Quality:** Zero clippy errors, zero unsafe code
+**Status:** Phase 1-2 Complete (v0.2.0) | **License:** MIT | **Language:** Rust 2024 | **Tests:** 351 | **Quality:** Zero clippy errors, zero unsafe code
