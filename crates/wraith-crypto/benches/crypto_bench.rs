@@ -173,9 +173,7 @@ fn bench_kdf(c: &mut Criterion) {
 // ============================================================================
 
 fn bench_noise_keypair_generation(c: &mut Criterion) {
-    c.bench_function("noise_keypair_generate", |b| {
-        b.iter(|| NoiseKeypair::generate())
-    });
+    c.bench_function("noise_keypair_generate", |b| b.iter(NoiseKeypair::generate));
 }
 
 fn bench_noise_full_handshake(c: &mut Criterion) {

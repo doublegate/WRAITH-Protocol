@@ -4,6 +4,15 @@ use crate::TimingMode;
 use std::time::Duration;
 
 /// Calculate inter-packet delay based on timing mode
+///
+/// Returns a `Duration` representing the delay to insert between packets:
+/// - `LowLatency`: Zero delay for maximum throughput
+/// - `Moderate`: 100μs fixed delay (future: exponential distribution)
+/// - `HighPrivacy`: 5ms fixed delay (future: `HTTPS` timing distribution)
+///
+/// Future implementations will use randomized delays sampled from realistic
+/// traffic distributions to resist timing analysis attacks.
+#[must_use]
 pub fn calculate_delay(mode: TimingMode) -> Duration {
     match mode {
         TimingMode::LowLatency => Duration::ZERO,

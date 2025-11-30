@@ -483,7 +483,7 @@ mod tests {
         match discovery.discover(&socket, target) {
             Ok(mtu) => {
                 println!("Discovered MTU: {}", mtu);
-                assert!(mtu >= 576 && mtu <= 1500);
+                assert!((576..=1500).contains(&mtu));
             }
             Err(e) => {
                 println!("MTU discovery error (expected on some systems): {}", e);

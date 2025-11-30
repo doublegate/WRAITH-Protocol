@@ -6,6 +6,12 @@ use crate::PaddingMode;
 pub const PADDING_CLASSES: &[usize] = &[64, 256, 512, 1024, 1472, 8960];
 
 /// Select padding class for a payload
+///
+/// Selects the smallest padding class that can accommodate the payload plus
+/// frame overhead (28-byte header + 16-byte auth tag). In `Performance` mode,
+/// selection is deterministic. In `Privacy` and `Stealth` modes, future
+/// implementations will use randomized selection for traffic analysis resistance.
+#[must_use]
 pub fn select_padding_class(payload_len: usize, mode: PaddingMode) -> usize {
     let header_overhead = 28 + 16; // Frame header + auth tag
 

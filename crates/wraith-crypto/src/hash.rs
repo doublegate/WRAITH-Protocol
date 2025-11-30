@@ -1,21 +1,21 @@
-//! BLAKE3 cryptographic hashing and key derivation.
+//! `BLAKE3` cryptographic hashing and key derivation.
 //!
 //! Provides:
 //! - Fast cryptographic hashing
 //! - Tree hashing for large files (parallel)
-//! - HKDF-like key derivation functions
-//! - Context-specific KDF
+//! - `HKDF`-like key derivation functions
+//! - Context-specific `KDF`
 
-/// BLAKE3 hash output (32 bytes).
+/// `BLAKE3` hash output (32 bytes).
 pub type HashOutput = [u8; 32];
 
-/// Compute BLAKE3 hash of input data.
+/// Compute `BLAKE3` hash of input data.
 #[must_use]
 pub fn hash(data: &[u8]) -> HashOutput {
     *blake3::hash(data).as_bytes()
 }
 
-/// BLAKE3 tree hasher for large files.
+/// `BLAKE3` tree hasher for large files.
 ///
 /// Supports incremental updates and parallel hashing.
 pub struct TreeHasher {
@@ -62,7 +62,7 @@ impl TreeHasher {
         *self.hasher.finalize().as_bytes()
     }
 
-    /// Finalize into extended output reader (XOF).
+    /// Finalize into extended output reader (`XOF`).
     #[must_use]
     pub fn finalize_xof(&self) -> blake3::OutputReader {
         self.hasher.finalize_xof()
@@ -75,13 +75,13 @@ impl Default for TreeHasher {
     }
 }
 
-/// BLAKE3 Key Derivation Function with context.
+/// `BLAKE3` Key Derivation Function with context.
 pub struct Kdf {
     context: &'static str,
 }
 
 impl Kdf {
-    /// Create a KDF with a specific context string.
+    /// Create a `KDF` with a specific context string.
     ///
     /// # Example
     ///
@@ -114,9 +114,9 @@ impl Kdf {
     }
 }
 
-/// HKDF-Extract: Extract a pseudorandom key from input key material.
+/// `HKDF`-Extract: Extract a pseudorandom key from input key material.
 ///
-/// Corresponds to HKDF-Extract from RFC 5869, but using BLAKE3.
+/// Corresponds to `HKDF`-Extract from `RFC 5869`, but using `BLAKE3`.
 #[must_use]
 pub fn hkdf_extract(salt: &[u8], ikm: &[u8]) -> [u8; 32] {
     if salt.is_empty() {
@@ -131,9 +131,9 @@ pub fn hkdf_extract(salt: &[u8], ikm: &[u8]) -> [u8; 32] {
     }
 }
 
-/// HKDF-Expand: Expand a pseudorandom key into arbitrary-length output.
+/// `HKDF`-Expand: Expand a pseudorandom key into arbitrary-length output.
 ///
-/// Corresponds to HKDF-Expand from RFC 5869, but using BLAKE3.
+/// Corresponds to `HKDF`-Expand from `RFC 5869`, but using `BLAKE3`.
 pub fn hkdf_expand(prk: &[u8; 32], info: &[u8], output: &mut [u8]) {
     let mut hasher = blake3::Hasher::new_keyed(prk);
     hasher.update(info);
@@ -142,7 +142,7 @@ pub fn hkdf_expand(prk: &[u8; 32], info: &[u8], output: &mut [u8]) {
     reader.fill(output);
 }
 
-/// HKDF: Combined extract-then-expand.
+/// `HKDF`: Combined extract-then-expand.
 pub fn hkdf(salt: &[u8], ikm: &[u8], info: &[u8], output: &mut [u8]) {
     let prk = hkdf_extract(salt, ikm);
     hkdf_expand(&prk, info, output);

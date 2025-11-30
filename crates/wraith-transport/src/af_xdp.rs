@@ -633,24 +633,35 @@ mod tests {
 
     #[test]
     fn test_umem_config_validate() {
-        let mut config = UmemConfig::default();
-
         // Invalid frame size (not power of 2)
-        config.frame_size = 2000;
-        assert!(config.validate().is_err());
+        let config1 = UmemConfig {
+            frame_size: 2000,
+            ..Default::default()
+        };
+        assert!(config1.validate().is_err());
 
         // Invalid frame size (too small)
-        config.frame_size = 1024;
-        assert!(config.validate().is_err());
+        let config2 = UmemConfig {
+            frame_size: 1024,
+            ..Default::default()
+        };
+        assert!(config2.validate().is_err());
 
         // Invalid ring size (not power of 2)
-        config.frame_size = 2048;
-        config.fill_ring_size = 2000;
-        assert!(config.validate().is_err());
+        let config3 = UmemConfig {
+            frame_size: 2048,
+            fill_ring_size: 2000,
+            ..Default::default()
+        };
+        assert!(config3.validate().is_err());
 
         // Valid configuration
-        config.fill_ring_size = 2048;
-        assert!(config.validate().is_ok());
+        let config4 = UmemConfig {
+            frame_size: 2048,
+            fill_ring_size: 2048,
+            ..Default::default()
+        };
+        assert!(config4.validate().is_ok());
     }
 
     #[test]

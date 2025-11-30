@@ -1420,7 +1420,7 @@ mod tests {
         assert_eq!(pt, plaintext);
 
         // Pool should have buffers returned
-        assert!(pool.buffers.len() > 0);
+        assert!(!pool.buffers.is_empty());
     }
 
     #[test]

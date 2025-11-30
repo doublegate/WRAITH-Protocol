@@ -656,8 +656,10 @@ mod tests {
 
     #[test]
     fn test_max_streams_limit() {
-        let mut config = SessionConfig::default();
-        config.max_streams = 2;
+        let config = SessionConfig {
+            max_streams: 2,
+            ..Default::default()
+        };
         let mut session = Session::with_config(config);
 
         // Create up to max
@@ -691,8 +693,10 @@ mod tests {
 
     #[test]
     fn test_rekey_needed_time() {
-        let mut config = SessionConfig::default();
-        config.rekey_interval = Duration::from_millis(10);
+        let config = SessionConfig {
+            rekey_interval: Duration::from_millis(10),
+            ..Default::default()
+        };
         let mut session = Session::new_initiator(config);
 
         // Establish session properly
@@ -711,9 +715,11 @@ mod tests {
 
     #[test]
     fn test_rekey_needed_packets() {
-        let mut config = SessionConfig::default();
-        config.rekey_packet_limit = 5;
-        config.rekey_emergency_threshold = 1.0; // Disable emergency threshold
+        let config = SessionConfig {
+            rekey_packet_limit: 5,
+            rekey_emergency_threshold: 1.0, // Disable emergency threshold
+            ..Default::default()
+        };
         let mut session = Session::with_config(config);
 
         // Send packets (record_sent increments packets_sent)
@@ -737,8 +743,10 @@ mod tests {
 
     #[test]
     fn test_idle_detection() {
-        let mut config = SessionConfig::default();
-        config.idle_timeout = Duration::from_millis(10);
+        let config = SessionConfig {
+            idle_timeout: Duration::from_millis(10),
+            ..Default::default()
+        };
         let session = Session::with_config(config);
 
         // Not idle initially
@@ -869,9 +877,11 @@ mod tests {
 
     #[test]
     fn test_rekey_bytes_hard_limit() {
-        let mut config = SessionConfig::default();
-        config.rekey_byte_limit = 1000;
-        config.rekey_emergency_threshold = 1.0; // Disable emergency threshold
+        let config = SessionConfig {
+            rekey_byte_limit: 1000,
+            rekey_emergency_threshold: 1.0, // Disable emergency threshold
+            ..Default::default()
+        };
         let mut session = Session::with_config(config);
 
         // Not needed initially
@@ -889,9 +899,11 @@ mod tests {
 
     #[test]
     fn test_rekey_bytes_emergency_threshold() {
-        let mut config = SessionConfig::default();
-        config.rekey_byte_limit = 1000;
-        config.rekey_emergency_threshold = 0.9; // 90%
+        let config = SessionConfig {
+            rekey_byte_limit: 1000,
+            rekey_emergency_threshold: 0.9, // 90%
+            ..Default::default()
+        };
         let mut session = Session::with_config(config);
 
         // Not needed initially
@@ -909,9 +921,11 @@ mod tests {
 
     #[test]
     fn test_rekey_packets_emergency_threshold() {
-        let mut config = SessionConfig::default();
-        config.rekey_packet_limit = 100;
-        config.rekey_emergency_threshold = 0.9;
+        let config = SessionConfig {
+            rekey_packet_limit: 100,
+            rekey_emergency_threshold: 0.9,
+            ..Default::default()
+        };
         let mut session = Session::with_config(config);
 
         // Send packets approaching emergency threshold
@@ -927,9 +941,11 @@ mod tests {
 
     #[test]
     fn test_rekey_time_emergency_threshold() {
-        let mut config = SessionConfig::default();
-        config.rekey_interval = Duration::from_millis(100);
-        config.rekey_emergency_threshold = 0.9;
+        let config = SessionConfig {
+            rekey_interval: Duration::from_millis(100),
+            rekey_emergency_threshold: 0.9,
+            ..Default::default()
+        };
         let mut session = Session::new_initiator(config);
 
         // Establish session
@@ -948,9 +964,11 @@ mod tests {
 
     #[test]
     fn test_rekey_combined_sent_received_packets() {
-        let mut config = SessionConfig::default();
-        config.rekey_packet_limit = 10;
-        config.rekey_emergency_threshold = 1.0; // Disable emergency
+        let config = SessionConfig {
+            rekey_packet_limit: 10,
+            rekey_emergency_threshold: 1.0, // Disable emergency
+            ..Default::default()
+        };
         let mut session = Session::with_config(config);
 
         // Mix sent and received packets
@@ -969,9 +987,11 @@ mod tests {
 
     #[test]
     fn test_rekey_combined_sent_received_bytes() {
-        let mut config = SessionConfig::default();
-        config.rekey_byte_limit = 500;
-        config.rekey_emergency_threshold = 1.0; // Disable emergency
+        let config = SessionConfig {
+            rekey_byte_limit: 500,
+            rekey_emergency_threshold: 1.0, // Disable emergency
+            ..Default::default()
+        };
         let mut session = Session::with_config(config);
 
         // Mix sent and received bytes
@@ -986,11 +1006,13 @@ mod tests {
 
     #[test]
     fn test_rekey_multiple_thresholds() {
-        let mut config = SessionConfig::default();
-        config.rekey_packet_limit = 1000;
-        config.rekey_byte_limit = 10000;
-        config.rekey_interval = Duration::from_secs(60);
-        config.rekey_emergency_threshold = 0.8; // 80%
+        let config = SessionConfig {
+            rekey_packet_limit: 1000,
+            rekey_byte_limit: 10000,
+            rekey_interval: Duration::from_secs(60),
+            rekey_emergency_threshold: 0.8, // 80%
+            ..Default::default()
+        };
         let mut session = Session::with_config(config);
 
         // Not needed initially
@@ -1005,9 +1027,11 @@ mod tests {
 
     #[test]
     fn test_rekey_after_rekey_resets_timer() {
-        let mut config = SessionConfig::default();
-        config.rekey_interval = Duration::from_millis(50);
-        config.rekey_emergency_threshold = 1.0; // Disable emergency
+        let config = SessionConfig {
+            rekey_interval: Duration::from_millis(50),
+            rekey_emergency_threshold: 1.0, // Disable emergency
+            ..Default::default()
+        };
         let mut session = Session::new_initiator(config);
 
         // Establish session
@@ -1033,11 +1057,13 @@ mod tests {
 
     #[test]
     fn test_rekey_no_false_positives() {
-        let mut config = SessionConfig::default();
-        config.rekey_packet_limit = 1000;
-        config.rekey_byte_limit = 10000;
-        config.rekey_interval = Duration::from_secs(3600);
-        config.rekey_emergency_threshold = 0.9;
+        let config = SessionConfig {
+            rekey_packet_limit: 1000,
+            rekey_byte_limit: 10000,
+            rekey_interval: Duration::from_secs(3600),
+            rekey_emergency_threshold: 0.9,
+            ..Default::default()
+        };
         let mut session = Session::with_config(config);
 
         // Send traffic well below all thresholds

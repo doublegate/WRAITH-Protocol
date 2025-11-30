@@ -725,11 +725,7 @@ mod tests {
         let expected_f64 = (5_000_000.0 * 2.89) as u64; // Startup gain
 
         // Fixed-point may differ slightly due to rounding - allow 1% tolerance
-        let diff = if rate > expected_f64 {
-            rate - expected_f64
-        } else {
-            expected_f64 - rate
-        };
+        let diff = rate.abs_diff(expected_f64);
         let tolerance = expected_f64 / 100;
         assert!(
             diff <= tolerance,
@@ -1004,11 +1000,7 @@ mod tests {
 
         // Verify it's close to floating-point version (within 1% tolerance)
         let rate_f64 = (bandwidth as f64 * 2.89) as u64;
-        let diff = if rate > rate_f64 {
-            rate - rate_f64
-        } else {
-            rate_f64 - rate
-        };
+        let diff = rate.abs_diff(rate_f64);
         let tolerance = rate_f64 / 100; // 1% tolerance
         assert!(
             diff <= tolerance,
@@ -1033,11 +1025,7 @@ mod tests {
 
         // Verify it's close to floating-point version (within 1% tolerance)
         let cwnd_f64 = (bbr.bdp() as f64 * 2.0) as u64;
-        let diff = if cwnd > cwnd_f64 {
-            cwnd - cwnd_f64
-        } else {
-            cwnd_f64 - cwnd
-        };
+        let diff = cwnd.abs_diff(cwnd_f64);
         let tolerance = cwnd_f64 / 100; // 1% tolerance
         assert!(
             diff <= tolerance,
@@ -1072,11 +1060,7 @@ mod tests {
             let rate_f64 = (bandwidth as f64 * f64_gain) as u64;
 
             // Verify within 1% tolerance
-            let diff = if rate_fp > rate_f64 {
-                rate_fp - rate_f64
-            } else {
-                rate_f64 - rate_fp
-            };
+            let diff = rate_fp.abs_diff(rate_f64);
             let tolerance = rate_f64 / 100;
             assert!(
                 diff <= tolerance,
@@ -1101,11 +1085,7 @@ mod tests {
 
         // Verify it's close to floating-point version (1/2.89)
         let rate_f64 = (bbr.btl_bw() as f64 / 2.89) as u64;
-        let diff = if rate > rate_f64 {
-            rate - rate_f64
-        } else {
-            rate_f64 - rate
-        };
+        let diff = rate.abs_diff(rate_f64);
         let tolerance = rate_f64 / 100; // 1% tolerance
         assert!(
             diff <= tolerance,
