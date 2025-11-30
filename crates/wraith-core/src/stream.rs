@@ -113,27 +113,27 @@ impl Stream {
     /// Check if stream can transition to new state
     #[must_use]
     pub fn can_transition(&self, to: StreamState) -> bool {
-        use StreamState::*;
-
         match (self.state, to) {
             // From Idle
-            (Idle, Open) => true,
-            (Idle, Closed) => true,
+            (StreamState::Idle, StreamState::Open | StreamState::Closed) => true,
 
             // From Open
-            (Open, HalfClosedLocal) => true,
-            (Open, HalfClosedRemote) => true,
-            (Open, DataSent) => true,
-            (Open, Closed) => true,
+            (
+                StreamState::Open,
+                StreamState::HalfClosedLocal
+                | StreamState::HalfClosedRemote
+                | StreamState::DataSent
+                | StreamState::Closed,
+            ) => true,
 
             // From HalfClosedLocal
-            (HalfClosedLocal, Closed) => true,
+            (StreamState::HalfClosedLocal, StreamState::Closed) => true,
 
             // From HalfClosedRemote
-            (HalfClosedRemote, Closed) => true,
+            (StreamState::HalfClosedRemote, StreamState::Closed) => true,
 
             // From DataSent
-            (DataSent, Closed) => true,
+            (StreamState::DataSent, StreamState::Closed) => true,
 
             // All other transitions invalid
             _ => false,
@@ -198,7 +198,7 @@ impl Stream {
     /// # Errors
     ///
     /// Returns `SessionError::InvalidState` if the stream is not open for writing
-    /// (must be in Open or HalfClosedRemote state).
+    /// (must be in `Open` or `HalfClosedRemote` state).
     pub fn write(&mut self, data: Vec<u8>) -> Result<(), SessionError> {
         if self.state != StreamState::Open && self.state != StreamState::HalfClosedRemote {
             return Err(SessionError::InvalidState);
@@ -235,13 +235,13 @@ impl Stream {
     /// Get send buffer size
     #[must_use]
     pub fn send_buffer_size(&self) -> usize {
-        self.send_buffer.iter().map(|v| v.len()).sum()
+        self.send_buffer.iter().map(Vec::len).sum()
     }
 
     /// Get receive buffer size
     #[must_use]
     pub fn recv_buffer_size(&self) -> usize {
-        self.recv_buffer.iter().map(|v| v.len()).sum()
+        self.recv_buffer.iter().map(Vec::len).sum()
     }
 
     /// Consume send window (when sending data)
@@ -260,7 +260,7 @@ impl Stream {
         Ok(())
     }
 
-    /// Update send window (when receiving WINDOW_UPDATE)
+    /// Update send window (when receiving `WINDOW_UPDATE`)
     pub fn update_send_window(&mut self, additional: u64) {
         self.send_window = (self.send_window + additional).min(self.max_window);
     }
@@ -281,7 +281,7 @@ impl Stream {
         Ok(())
     }
 
-    /// Update receive window (send WINDOW_UPDATE to peer)
+    /// Update receive window (send `WINDOW_UPDATE` to peer)
     pub fn update_recv_window(&mut self, additional: u64) {
         self.recv_window = (self.recv_window + additional).min(self.max_window);
     }

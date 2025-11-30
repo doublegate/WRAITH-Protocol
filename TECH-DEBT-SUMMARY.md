@@ -242,8 +242,112 @@ HandshakePhase::Message2Complete | HandshakePhase::Complete => HandshakePhase::C
 
 ### Notes
 
-- **curve25519-elligator2:** Still in alpha. Monitor for stable release.
 - All RustCrypto dependencies are current and well-maintained.
+
+---
+
+## Alpha Dependency: curve25519-elligator2
+
+### Overview
+
+| Aspect | Details |
+|--------|---------|
+| **Crate** | `curve25519-elligator2` |
+| **Version** | 0.1.0-alpha.2 |
+| **Status** | Pre-release (alpha) |
+| **Repository** | [github.com/nickelc/curve25519-elligator2](https://github.com/nickelc/curve25519-elligator2) |
+| **Last Updated** | 2024-02-06 |
+| **Used In** | `wraith-crypto/src/elligator.rs` |
+
+### Purpose
+
+Elligator2 provides **traffic analysis resistance** by encoding Curve25519 public keys as uniformly random byte strings. This is critical for WRAITH's stealth capabilities:
+
+- Public keys normally have detectable structure (~50% of bytes follow patterns)
+- Elligator2 maps curve points to uniform random 32-byte representatives
+- Any 32 bytes decode to a valid curve point (forward map)
+- ~50% of curve points can be encoded (reverse map)
+
+### Why Alpha Version?
+
+1. **No stable alternative exists** - This is the only maintained Rust Elligator2 implementation compatible with `curve25519-dalek`
+2. **Mathematically correct** - Implementation is based on well-established Elligator2 specification (Bernstein et al., 2013)
+3. **Low dependency risk** - Small, focused crate with minimal dependencies (`curve25519-dalek`, `subtle`)
+4. **API stability** - Core API (`to_representative`, `from_representative`) is unlikely to change
+
+### Risk Assessment
+
+| Risk | Severity | Mitigation |
+|------|----------|------------|
+| API breaking changes | Low | Elligator2 math is stable; API changes would be minor |
+| Abandonment | Medium | Code is complete; could vendor if needed |
+| Security issues | Low | Uses audited `curve25519-dalek` underneath |
+| Compatibility breaks | Low | Pin version in Cargo.toml |
+
+### Current Usage
+
+```rust
+// Location: crates/wraith-crypto/src/elligator.rs
+
+use curve25519_elligator2::MapToPointVariant;
+use curve25519_elligator2::MontgomeryPoint;
+use curve25519_elligator2::elligator2::Randomized;
+
+// Generate encodable keypair (~50% succeed per attempt)
+let ct_repr: CtOption<[u8; 32]> = Randomized::to_representative(&private_bytes, tweak);
+
+// Decode representative to curve point (always succeeds)
+let point: Option<MontgomeryPoint> =
+    MontgomeryPoint::from_representative::<Randomized>(&repr.0);
+```
+
+### Monitoring Strategy
+
+1. **Dependabot alerts** - Configured to monitor for updates
+2. **Periodic check** - Review crates.io monthly for stable release
+3. **Security scanning** - CodeQL workflow includes dependency analysis
+4. **Pinned version** - Using exact version `0.1.0-alpha.2` to prevent unexpected updates
+
+### Migration Path
+
+When stable version is released:
+
+1. Update `Cargo.toml` to stable version
+2. Run full test suite (13+ Elligator2 tests in `elligator.rs`)
+3. Verify key exchange still works correctly
+4. Update this documentation
+
+### Fallback Options
+
+If crate is abandoned or becomes incompatible:
+
+1. **Vendor the code** - MIT licensed, ~300 lines of core implementation
+2. **Alternative crates** - None currently available for Rust
+3. **Implement directly** - Elligator2 spec is public (RFC 9380 partial coverage)
+
+### Test Coverage
+
+The `elligator.rs` module has comprehensive tests:
+
+- `test_generate_encodable_keypair` - Basic keypair generation
+- `test_elligator_keypair_produces_working_exchange` - Key exchange validation
+- `test_any_bytes_decodable` - Forward map completeness
+- `test_representative_looks_random` - Statistical randomness validation
+- `test_key_exchange_with_representative` - Full exchange flow
+- `test_key_exchange_mixed` - Interoperability with regular X25519
+- `test_deterministic_decoding` - Reproducibility
+
+### Conclusion
+
+The alpha status of `curve25519-elligator2` represents **acceptable technical debt** because:
+
+1. No stable alternatives exist for this critical functionality
+2. The underlying cryptographic implementation is sound
+3. API is stable and unlikely to change significantly
+4. Comprehensive test coverage validates correct behavior
+5. Monitoring and fallback strategies are in place
+
+**Action Required:** None immediate. Continue monitoring for stable release.
 
 ---
 

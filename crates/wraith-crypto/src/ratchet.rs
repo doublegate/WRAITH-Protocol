@@ -36,7 +36,7 @@ use zeroize::{Zeroize, ZeroizeOnDrop};
 const MAX_SKIP: u64 = 1000;
 
 /// Maximum gap allowed when skipping messages.
-/// Prevents DoS by limiting how far ahead we'll pre-compute keys.
+/// Prevents `DoS` by limiting how far ahead we'll pre-compute keys.
 const MAX_SKIP_GAP: u64 = 100;
 
 /// Symmetric key ratchet for deriving per-message keys.
@@ -63,6 +63,7 @@ pub struct SymmetricRatchet {
 
 impl SymmetricRatchet {
     /// Create a new symmetric ratchet from a root/chain key.
+    #[must_use]
     pub fn new(chain_key: &[u8; 32]) -> Self {
         Self {
             chain_key: *chain_key,
@@ -92,6 +93,7 @@ impl SymmetricRatchet {
     }
 
     /// Get the current message counter.
+    #[must_use]
     pub fn counter(&self) -> u64 {
         self.counter
     }
@@ -103,7 +105,7 @@ impl SymmetricRatchet {
     ///
     /// # Errors
     ///
-    /// Returns error if target is too far ahead (DoS protection).
+    /// Returns error if target is too far ahead (`DoS` protection).
     pub fn skip_to(&mut self, target: u64) -> Result<Vec<(u64, MessageKey)>, RatchetError> {
         if target < self.counter {
             return Err(RatchetError::InvalidCounter);
@@ -114,6 +116,7 @@ impl SymmetricRatchet {
             return Err(RatchetError::TooManySkipped);
         }
 
+        #[allow(clippy::cast_possible_truncation)]
         let mut skipped = Vec::with_capacity(gap as usize);
 
         while self.counter < target {
@@ -135,11 +138,13 @@ pub struct MessageKey([u8; 32]);
 
 impl MessageKey {
     /// Get the raw key bytes.
+    #[must_use]
     pub fn as_bytes(&self) -> &[u8; 32] {
         &self.0
     }
 
     /// Convert to an AEAD key for encryption/decryption.
+    #[must_use]
     pub fn to_aead_key(&self) -> AeadKey {
         AeadKey::new(self.0)
     }
@@ -160,7 +165,8 @@ pub struct MessageHeader {
 }
 
 impl MessageHeader {
-    /// Serialize to bytes (32 + 4 + 4 = 40 bytes)
+    /// Serialize to bytes (32 + 4 + 4 = 40 bytes).
+    #[must_use]
     pub fn to_bytes(&self) -> [u8; 40] {
         let mut bytes = [0u8; 40];
         bytes[..32].copy_from_slice(&self.dh_public.to_bytes());
@@ -169,7 +175,11 @@ impl MessageHeader {
         bytes
     }
 
-    /// Deserialize from bytes
+    /// Deserialize from bytes.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RatchetError::InvalidHeader`] if the input is less than 40 bytes.
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, RatchetError> {
         if bytes.len() < 40 {
             return Err(RatchetError::InvalidHeader);
@@ -229,7 +239,7 @@ pub struct DoubleRatchet {
     recv_count: u32,
     /// Previous sending chain length (for header)
     prev_send_count: u32,
-    /// Skipped message keys (dh_public, n) -> key
+    /// Skipped message keys (`dh_public`, `n`) -> key
     #[zeroize(skip)]
     skipped_keys: HashMap<([u8; 32], u32), MessageKey>,
 }
@@ -239,6 +249,11 @@ impl DoubleRatchet {
     ///
     /// The initiator performs the first DH ratchet step using
     /// the responder's public key from the handshake.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the peer's public key is an invalid low-order point.
+    #[must_use]
     pub fn new_initiator<R: RngCore + CryptoRng>(
         rng: &mut R,
         shared_secret: &[u8; 32],
@@ -272,6 +287,7 @@ impl DoubleRatchet {
     ///
     /// The responder uses the DH key from the handshake and waits
     /// for the initiator's first message to complete the DH ratchet.
+    #[must_use]
     pub fn new_responder(shared_secret: &[u8; 32], dh_keypair: PrivateKey) -> Self {
         Self {
             dh_self: dh_keypair,
@@ -287,6 +303,7 @@ impl DoubleRatchet {
     }
 
     /// Get our current DH public key (for including in message headers).
+    #[must_use]
     pub fn public_key(&self) -> PublicKey {
         self.dh_self.public_key()
     }
@@ -295,6 +312,11 @@ impl DoubleRatchet {
     ///
     /// Returns a header (containing our DH public key and message number)
     /// and the ciphertext.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RatchetError::NoSendingChain`] if no sending chain is established.
+    /// Returns [`RatchetError::EncryptionFailed`] if AEAD encryption fails.
     pub fn encrypt<R: RngCore + CryptoRng>(
         &mut self,
         _rng: &mut R,
@@ -334,6 +356,12 @@ impl DoubleRatchet {
     ///
     /// Performs DH ratchet if the sender's DH public key has changed,
     /// then decrypts using the appropriate message key.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RatchetError::NoReceivingChain`] if no receiving chain is established.
+    /// Returns [`RatchetError::DecryptionFailed`] if AEAD decryption fails.
+    /// Returns [`RatchetError::TooManySkipped`] if too many message keys need to be skipped.
     pub fn decrypt<R: RngCore + CryptoRng>(
         &mut self,
         rng: &mut R,
@@ -433,11 +461,11 @@ impl DoubleRatchet {
         }
 
         let skip_count = until.saturating_sub(self.recv_count);
-        if skip_count as u64 > MAX_SKIP_GAP {
+        if u64::from(skip_count) > MAX_SKIP_GAP {
             return Err(RatchetError::TooManySkipped);
         }
 
-        if self.skipped_keys.len() as u64 + skip_count as u64 > MAX_SKIP {
+        if self.skipped_keys.len() as u64 + u64::from(skip_count) > MAX_SKIP {
             return Err(RatchetError::TooManySkipped);
         }
 
@@ -463,6 +491,7 @@ impl DoubleRatchet {
     }
 
     /// Number of skipped keys currently stored.
+    #[must_use]
     pub fn skipped_key_count(&self) -> usize {
         self.skipped_keys.len()
     }
@@ -507,7 +536,7 @@ fn derive_nonce(message_number: u32) -> Nonce {
 pub enum RatchetError {
     /// Message counter is invalid (e.g., trying to go backwards)
     InvalidCounter,
-    /// Too many messages skipped (DoS protection)
+    /// Too many messages skipped (`DoS` protection)
     TooManySkipped,
     /// Invalid message header format
     InvalidHeader,
@@ -566,6 +595,7 @@ pub struct ChainKey([u8; 32]);
 
 impl ChainKey {
     /// Create from raw bytes.
+    #[must_use]
     pub fn from_bytes(bytes: [u8; 32]) -> Self {
         Self(bytes)
     }
@@ -598,6 +628,7 @@ pub struct LegacyMessageKey([u8; 32]);
 
 impl LegacyMessageKey {
     /// Get the raw key bytes.
+    #[must_use]
     pub fn as_bytes(&self) -> &[u8; 32] {
         &self.0
     }

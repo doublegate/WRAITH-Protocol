@@ -190,7 +190,7 @@ impl Clone for NoiseKeypair {
     }
 }
 
-/// Noise_XX handshake session.
+/// `Noise_XX` handshake session.
 ///
 /// Manages the 3-message handshake pattern for mutual authentication.
 pub struct NoiseHandshake {
@@ -431,6 +431,10 @@ impl NoiseTransport {
     /// Encrypt a message.
     ///
     /// The payload is encrypted and authenticated.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`NoiseError::SnowError`] if encryption fails.
     pub fn write_message(&mut self, payload: &[u8]) -> Result<Vec<u8>, NoiseError> {
         let mut message = vec![0u8; payload.len() + 16]; // payload + tag
         let len = self.transport.write_message(payload, &mut message)?;
@@ -441,6 +445,11 @@ impl NoiseTransport {
     /// Decrypt a message.
     ///
     /// Verifies the authentication tag before returning plaintext.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`NoiseError::InvalidMessage`] if the message is too short.
+    /// Returns [`NoiseError::SnowError`] if decryption or authentication fails.
     pub fn read_message(&mut self, message: &[u8]) -> Result<Vec<u8>, NoiseError> {
         if message.len() < 16 {
             return Err(NoiseError::InvalidMessage);

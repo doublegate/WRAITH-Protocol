@@ -9,7 +9,7 @@ use crate::stream::Stream;
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
-/// Connection ID (CID) for session demultiplexing.
+/// Connection ID (`CID`) for session demultiplexing.
 ///
 /// The Connection ID is a 64-bit value derived during the handshake:
 /// - High 32 bits: Random session identifier
@@ -25,16 +25,16 @@ pub struct ConnectionId(u64);
 
 impl ConnectionId {
     /// Reserved (invalid) connection ID
-    pub const INVALID: Self = Self(0x0000000000000000);
+    pub const INVALID: Self = Self(0x0000_0000_0000_0000);
 
     /// Handshake initiation packet
-    pub const HANDSHAKE: Self = Self(0xFFFFFFFFFFFFFFFF);
+    pub const HANDSHAKE: Self = Self(0xFFFF_FFFF_FFFF_FFFF);
 
     /// Version negotiation
-    pub const VERSION_NEGOTIATION: Self = Self(0xFFFFFFFFFFFFFFFE);
+    pub const VERSION_NEGOTIATION: Self = Self(0xFFFF_FFFF_FFFF_FFFE);
 
     /// Stateless reset
-    pub const STATELESS_RESET: Self = Self(0xFFFFFFFFFFFFFFFD);
+    pub const STATELESS_RESET: Self = Self(0xFFFF_FFFF_FFFF_FFFD);
 
     /// Create a new connection ID from raw value
     #[must_use]
@@ -48,14 +48,15 @@ impl ConnectionId {
         self.0.to_be_bytes()
     }
 
-    /// Get the raw u64 value
+    /// Get the raw `u64` value
     #[must_use]
     pub fn as_u64(self) -> u64 {
         self.0
     }
 
-    /// Create a rotating connection ID from initial CID and sequence number
+    /// Create a rotating connection ID from initial `CID` and sequence number
     #[must_use]
+    #[allow(clippy::cast_possible_truncation)]
     pub fn rotate(self, seq_num: u32) -> Self {
         let base = (self.0 >> 32) as u32;
         let rotated = (self.0 as u32) ^ seq_num;
@@ -144,7 +145,7 @@ pub struct Session {
     config: SessionConfig,
     /// Connection ID for this session
     connection_id: ConnectionId,
-    /// Active streams (stream_id -> Stream)
+    /// Active streams (`stream_id` -> `Stream`)
     streams: HashMap<u16, Stream>,
     /// Next stream ID to allocate (client: odd, server: even)
     next_stream_id: u16,
@@ -235,39 +236,40 @@ impl Session {
     /// Check if a state transition is valid
     #[must_use]
     pub fn can_transition(&self, to: SessionState) -> bool {
-        use SessionState::*;
-
         match (self.state, to) {
             // From Closed
-            (Closed, Handshaking(_)) => true,
-            (Closed, Closed) => true, // Allow re-close
+            (SessionState::Closed, SessionState::Handshaking(_) | SessionState::Closed) => true,
 
             // From Handshaking
-            (Handshaking(HandshakePhase::InitSent), Handshaking(HandshakePhase::InitComplete)) => {
-                true
-            }
-            (Handshaking(HandshakePhase::RespSent), Established) => true,
-            (Handshaking(HandshakePhase::InitComplete), Established) => true,
-            (Handshaking(_), Established) => true, // Allow any handshake phase to Established
-            (Handshaking(_), Closed) => true,      // Allow abort during handshake
+            (
+                SessionState::Handshaking(HandshakePhase::InitSent),
+                SessionState::Handshaking(HandshakePhase::InitComplete),
+            ) => true,
+            (
+                SessionState::Handshaking(
+                    HandshakePhase::RespSent | HandshakePhase::InitComplete | _,
+                ),
+                SessionState::Established | SessionState::Closed,
+            ) => true,
 
             // From Established
-            (Established, Rekeying) => true,
-            (Established, Draining) => true,
-            (Established, Migrating) => true,
-            (Established, Closed) => true,
-            (Established, Established) => true, // Allow re-establish
+            (
+                SessionState::Established,
+                SessionState::Rekeying
+                | SessionState::Draining
+                | SessionState::Migrating
+                | SessionState::Closed
+                | SessionState::Established,
+            ) => true,
 
             // From Rekeying
-            (Rekeying, Established) => true,
-            (Rekeying, Closed) => true,
+            (SessionState::Rekeying, SessionState::Established | SessionState::Closed) => true,
 
             // From Draining
-            (Draining, Closed) => true,
+            (SessionState::Draining, SessionState::Closed) => true,
 
             // From Migrating
-            (Migrating, Established) => true,
-            (Migrating, Closed) => true,
+            (SessionState::Migrating, SessionState::Established | SessionState::Closed) => true,
 
             // All other transitions invalid
             _ => false,
@@ -368,7 +370,7 @@ impl Session {
         self.streams.len()
     }
 
-    /// Check if session is idle (no activity for idle_timeout duration)
+    /// Check if session is idle (no activity for `idle_timeout` duration)
     #[must_use]
     pub fn is_idle(&self) -> bool {
         self.last_activity.elapsed() >= self.config.idle_timeout

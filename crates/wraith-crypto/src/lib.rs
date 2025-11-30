@@ -67,6 +67,7 @@ pub struct SessionKeys {
 
 impl SessionKeys {
     /// Derive connection ID from session keys
+    #[must_use]
     pub fn derive_connection_id(&self) -> [u8; 8] {
         let hash = blake3::hash(&self.chain_key);
         let mut cid = [0u8; 8];

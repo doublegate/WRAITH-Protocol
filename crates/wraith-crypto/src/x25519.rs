@@ -27,6 +27,7 @@ impl PrivateKey {
     }
 
     /// Derive the public key from this private key.
+    #[must_use]
     pub fn public_key(&self) -> PublicKey {
         PublicKey(x25519_dalek::PublicKey::from(&self.0))
     }
@@ -34,6 +35,7 @@ impl PrivateKey {
     /// Perform Diffie-Hellman key exchange.
     ///
     /// Returns `None` if the peer's public key is a low-order point (security check).
+    #[must_use]
     pub fn exchange(&self, peer_public: &PublicKey) -> Option<SharedSecret> {
         let shared = self.0.diffie_hellman(&peer_public.0);
 
@@ -50,11 +52,13 @@ impl PrivateKey {
     /// # Security
     ///
     /// The returned bytes contain the raw private key. Handle with care.
+    #[must_use]
     pub fn to_bytes(&self) -> [u8; 32] {
         self.0.to_bytes()
     }
 
     /// Import from bytes.
+    #[must_use]
     pub fn from_bytes(bytes: [u8; 32]) -> Self {
         Self(x25519_dalek::StaticSecret::from(bytes))
     }
@@ -62,16 +66,19 @@ impl PrivateKey {
 
 impl PublicKey {
     /// Export public key as bytes.
+    #[must_use]
     pub fn to_bytes(&self) -> [u8; 32] {
         *self.0.as_bytes()
     }
 
     /// Import public key from bytes.
+    #[must_use]
     pub fn from_bytes(bytes: [u8; 32]) -> Self {
         Self(x25519_dalek::PublicKey::from(bytes))
     }
 
     /// Get bytes as a slice.
+    #[must_use]
     pub fn as_bytes(&self) -> &[u8; 32] {
         self.0.as_bytes()
     }
@@ -84,6 +91,7 @@ impl SharedSecret {
     ///
     /// The shared secret should be used with a KDF (like HKDF-BLAKE3)
     /// before use as an encryption key.
+    #[must_use]
     pub fn as_bytes(&self) -> &[u8; 32] {
         self.0.as_bytes()
     }

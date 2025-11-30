@@ -7,7 +7,7 @@
 //! - Frame encoding and decoding (zero-copy parsing)
 //! - Session state machine
 //! - Stream multiplexing
-//! - BBR congestion control
+//! - `BBR` congestion control
 //! - Error types and handling
 //!
 //! ## Architecture
@@ -44,7 +44,7 @@ pub use session::{
 pub use stream::{Stream, StreamState};
 
 /// Protocol version (major.minor encoded as u32)
-pub const PROTOCOL_VERSION: u32 = 0x00000001;
+pub const PROTOCOL_VERSION: u32 = 0x0000_0001;
 
 /// Fixed frame header size in bytes
 pub const FRAME_HEADER_SIZE: usize = 28;

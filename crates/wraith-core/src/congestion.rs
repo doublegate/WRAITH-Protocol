@@ -1,6 +1,6 @@
-//! BBR-inspired congestion control.
+//! `BBR`-inspired congestion control.
 //!
-//! Implements a BBRv2-inspired congestion control algorithm optimized
+//! Implements a `BBRv2`-inspired congestion control algorithm optimized
 //! for high-throughput, low-latency file transfers.
 
 use std::collections::VecDeque;
@@ -12,16 +12,16 @@ const BW_WINDOW_SIZE: usize = 10;
 /// Maximum number of RTT samples to keep
 const RTT_WINDOW_SIZE: usize = 10;
 
-/// Time to stay in ProbeRtt phase (10ms)
+/// Time to stay in `ProbeRtt` phase (10ms)
 const PROBE_RTT_DURATION: Duration = Duration::from_millis(10);
 
-/// Interval between ProbeRtt phases (10 seconds)
+/// Interval between `ProbeRtt` phases (10 seconds)
 const PROBE_RTT_INTERVAL: Duration = Duration::from_secs(10);
 
-/// Minimum inflight during ProbeRtt (4 packets worth)
-const PROBE_RTT_MIN_INFLIGHT: u64 = 4 * 1500;
+/// Minimum inflight during `ProbeRtt` (4 packets worth)
+const PROBE_RTT_MIN_INFLIGHT: u64 = 4 * 1_500;
 
-/// BBR congestion control state
+/// `BBR` congestion control state
 pub struct BbrState {
     /// Estimated bottleneck bandwidth (bytes/sec)
     btl_bw: u64,
@@ -49,19 +49,19 @@ pub struct BbrState {
     bytes_delivered: u64,
     /// Time of last delivery
     last_delivery_time: Instant,
-    /// Last time we entered ProbeRtt
+    /// Last time we entered `ProbeRtt`
     last_probe_rtt: Instant,
-    /// Time in current ProbeRtt
+    /// Time in current `ProbeRtt`
     probe_rtt_start: Option<Instant>,
-    /// Cycle index for ProbeBw (0-7)
+    /// Cycle index for `ProbeBw` (0-7)
     probe_bw_cycle_idx: usize,
-    /// Rounds without bandwidth growth (for Startup exit)
+    /// Rounds without bandwidth growth (for `Startup` exit)
     rounds_without_growth: u64,
-    /// Prior btl_bw (for growth detection)
+    /// Prior `btl_bw` (for growth detection)
     prior_btl_bw: u64,
 }
 
-/// BBR algorithm phases
+/// `BBR` algorithm phases
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BbrPhase {
     /// Exponential bandwidth probing
@@ -70,12 +70,12 @@ pub enum BbrPhase {
     Drain,
     /// Steady state with periodic probing
     ProbeBw,
-    /// Periodic RTT measurement
+    /// Periodic `RTT` measurement
     ProbeRtt,
 }
 
 impl BbrState {
-    /// Create new BBR state
+    /// Create new `BBR` state
     #[must_use]
     pub fn new() -> Self {
         let now = Instant::now();
@@ -101,7 +101,7 @@ impl BbrState {
         }
     }
 
-    /// Update RTT estimate with new sample
+    /// Update `RTT` estimate with new sample
     pub fn update_rtt(&mut self, rtt_sample: Duration) {
         // Add sample to window
         self.rtt_samples.push_back(rtt_sample);
@@ -116,8 +116,12 @@ impl BbrState {
     }
 
     /// Update bandwidth estimate
+    #[allow(clippy::cast_precision_loss)]
+    #[allow(clippy::cast_possible_truncation)]
+    #[allow(clippy::cast_sign_loss)]
     pub fn update_bandwidth(&mut self, bytes_delivered: u64, interval: Duration) {
         if interval.as_secs_f64() > 0.0 {
+            // Note: precision loss is acceptable for bandwidth estimation
             let bw = (bytes_delivered as f64 / interval.as_secs_f64()) as u64;
 
             // Add sample to window
@@ -126,44 +130,49 @@ impl BbrState {
                 self.bw_samples.pop_front();
             }
 
-            // Update btl_bw to max of window
+            // Update `btl_bw` to max of window
             if let Some(&(max_bw, _)) = self.bw_samples.iter().max_by_key(|(bw, _)| bw) {
                 self.btl_bw = max_bw;
             }
 
-            // Update BDP
+            // Update `BDP`
             self.bdp = (self.btl_bw as f64 * self.min_rtt.as_secs_f64()) as u64;
         }
     }
 
     /// Get current pacing rate (bytes/sec)
     #[must_use]
+    #[allow(clippy::cast_precision_loss)]
+    #[allow(clippy::cast_possible_truncation)]
+    #[allow(clippy::cast_sign_loss)]
     pub fn pacing_rate(&self) -> u64 {
         if self.btl_bw == 0 {
             // Initial rate: 10 Mbps
             return 10_000_000 / 8;
         }
+        // Note: precision loss is acceptable for pacing rate calculation
         (self.btl_bw as f64 * self.pacing_gain) as u64
     }
 
     /// Get current congestion window
     #[must_use]
+    #[allow(clippy::cast_precision_loss)]
+    #[allow(clippy::cast_possible_truncation)]
+    #[allow(clippy::cast_sign_loss)]
     pub fn cwnd(&self) -> u64 {
         if self.bdp == 0 {
             // Initial window: 10 packets
-            return 10 * 1500;
+            return 10 * 1_500;
         }
 
-        match self.phase {
-            BbrPhase::ProbeRtt => {
-                // Minimum inflight during ProbeRtt
-                PROBE_RTT_MIN_INFLIGHT
-            }
-            _ => {
-                let cwnd = (self.bdp as f64 * self.cwnd_gain) as u64;
-                // Minimum of 4 packets
-                cwnd.max(4 * 1500)
-            }
+        if self.phase == BbrPhase::ProbeRtt {
+            // Minimum inflight during `ProbeRtt`
+            PROBE_RTT_MIN_INFLIGHT
+        } else {
+            // Note: precision loss is acceptable for window calculation
+            let cwnd = (self.bdp as f64 * self.cwnd_gain) as u64;
+            // Minimum of 4 packets
+            cwnd.max(4 * 1_500)
         }
     }
 
@@ -209,26 +218,26 @@ impl BbrState {
         self.bytes_in_flight = self.bytes_in_flight.saturating_sub(bytes);
     }
 
-    /// Update BBR state machine
+    /// Update `BBR` state machine
     pub fn update(&mut self) {
         let now = Instant::now();
 
         // Check for state transitions
         match self.phase {
             BbrPhase::Startup => {
-                // Exit Startup if bandwidth plateaus
+                // Exit `Startup` if bandwidth plateaus
                 if self.should_exit_startup() {
                     self.enter_drain();
                 }
             }
             BbrPhase::Drain => {
-                // Exit Drain when inflight <= BDP
+                // Exit `Drain` when inflight <= `BDP`
                 if self.bytes_in_flight <= self.bdp {
                     self.enter_probe_bw();
                 }
             }
             BbrPhase::ProbeBw => {
-                // Check if we should enter ProbeRtt
+                // Check if we should enter `ProbeRtt`
                 if now.duration_since(self.last_probe_rtt) >= PROBE_RTT_INTERVAL {
                     self.enter_probe_rtt();
                 } else {
@@ -237,7 +246,7 @@ impl BbrState {
                 }
             }
             BbrPhase::ProbeRtt => {
-                // Stay in ProbeRtt for at least PROBE_RTT_DURATION
+                // Stay in `ProbeRtt` for at least `PROBE_RTT_DURATION`
                 if let Some(start) = self.probe_rtt_start {
                     if now.duration_since(start) >= PROBE_RTT_DURATION {
                         self.exit_probe_rtt();
@@ -247,12 +256,14 @@ impl BbrState {
         }
     }
 
-    /// Check if we should exit Startup phase
+    /// Check if we should exit `Startup` phase
+    #[allow(clippy::cast_precision_loss)]
     fn should_exit_startup(&mut self) -> bool {
         // Exit if bandwidth hasn't grown for 3 rounds
         const GROWTH_THRESHOLD: f64 = 1.25; // 25% growth
 
         if self.btl_bw > 0 && self.prior_btl_bw > 0 {
+            // Note: precision loss is acceptable for growth detection
             let growth = self.btl_bw as f64 / self.prior_btl_bw as f64;
             if growth < GROWTH_THRESHOLD {
                 self.rounds_without_growth += 1;
@@ -266,15 +277,15 @@ impl BbrState {
         self.rounds_without_growth >= 3
     }
 
-    /// Enter Drain phase
+    /// Enter `Drain` phase
     fn enter_drain(&mut self) {
         self.phase = BbrPhase::Drain;
-        self.pacing_gain = 1.0 / 2.89; // Inverse of Startup gain
+        self.pacing_gain = 1.0 / 2.89; // Inverse of `Startup` gain
         self.cwnd_gain = 2.0;
         self.state_start = Instant::now();
     }
 
-    /// Enter ProbeBw phase
+    /// Enter `ProbeBw` phase
     fn enter_probe_bw(&mut self) {
         self.phase = BbrPhase::ProbeBw;
         self.probe_bw_cycle_idx = 0;
@@ -282,7 +293,7 @@ impl BbrState {
         self.state_start = Instant::now();
     }
 
-    /// Enter ProbeRtt phase
+    /// Enter `ProbeRtt` phase
     fn enter_probe_rtt(&mut self) {
         self.phase = BbrPhase::ProbeRtt;
         self.pacing_gain = 1.0;
@@ -292,14 +303,14 @@ impl BbrState {
         self.state_start = Instant::now();
     }
 
-    /// Exit ProbeRtt phase
+    /// Exit `ProbeRtt` phase
     fn exit_probe_rtt(&mut self) {
         self.probe_rtt_start = None;
-        // Return to ProbeBw
+        // Return to `ProbeBw`
         self.enter_probe_bw();
     }
 
-    /// Advance ProbeBw cycle
+    /// Advance `ProbeBw` cycle
     fn advance_probe_bw_cycle(&mut self) {
         self.round_count += 1;
         if self.round_count % 8 == 0 {
@@ -308,16 +319,16 @@ impl BbrState {
         }
     }
 
-    /// Set pacing/cwnd gains for current ProbeBw cycle
+    /// Set pacing/cwnd gains for current `ProbeBw` cycle
     fn set_probe_bw_gains(&mut self) {
-        // ProbeBw cycle: [1.25, 0.75, 1, 1, 1, 1, 1, 1]
+        // `ProbeBw` cycle: [1.25, 0.75, 1, 1, 1, 1, 1, 1]
         const PROBE_BW_GAINS: [f64; 8] = [1.25, 0.75, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0];
 
         self.pacing_gain = PROBE_BW_GAINS[self.probe_bw_cycle_idx];
         self.cwnd_gain = 2.0;
     }
 
-    /// Get minimum RTT
+    /// Get minimum `RTT`
     #[must_use]
     pub fn min_rtt(&self) -> Duration {
         self.min_rtt
@@ -329,7 +340,7 @@ impl BbrState {
         self.btl_bw
     }
 
-    /// Get BDP
+    /// Get `BDP`
     #[must_use]
     pub fn bdp(&self) -> u64 {
         self.bdp

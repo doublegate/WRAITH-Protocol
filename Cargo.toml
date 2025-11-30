@@ -15,6 +15,7 @@ members = [
     "crates/wraith-files",
     "crates/wraith-cli",
     "xtask",
+    "tests",
 ]
 
 # XDP crate excluded from default - requires special build

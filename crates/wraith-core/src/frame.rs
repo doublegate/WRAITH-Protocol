@@ -137,7 +137,7 @@ impl FrameFlags {
 #[derive(Debug)]
 pub struct Frame<'a> {
     raw: &'a [u8],
-    frame_type: FrameType,
+    kind: FrameType,
     flags: FrameFlags,
     stream_id: u16,
     sequence: u32,
@@ -177,7 +177,7 @@ impl<'a> Frame<'a> {
 
         Ok(Self {
             raw: data,
-            frame_type,
+            kind: frame_type,
             flags,
             stream_id,
             sequence,
@@ -189,7 +189,7 @@ impl<'a> Frame<'a> {
     /// Get the frame type
     #[must_use]
     pub fn frame_type(&self) -> FrameType {
-        self.frame_type
+        self.kind
     }
 
     /// Get the frame flags
@@ -301,7 +301,7 @@ impl FrameBuilder {
     ///
     /// # Errors
     ///
-    /// Returns `FrameError::PayloadOverflow` if total_size is too small for header + payload.
+    /// Returns [`FrameError::PayloadOverflow`] if `total_size` is too small for header + payload.
     ///
     /// # Panics
     ///
@@ -324,7 +324,9 @@ impl FrameBuilder {
         buf.extend_from_slice(&self.stream_id.to_be_bytes());
         buf.extend_from_slice(&self.sequence.to_be_bytes());
         buf.extend_from_slice(&self.offset.to_be_bytes());
-        buf.extend_from_slice(&(payload_len as u16).to_be_bytes());
+        #[allow(clippy::cast_possible_truncation)]
+        let payload_len_u16 = payload_len as u16;
+        buf.extend_from_slice(&payload_len_u16.to_be_bytes());
         buf.extend_from_slice(&[0u8; 2]); // Reserved
 
         // Write payload
