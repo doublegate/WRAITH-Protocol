@@ -15,6 +15,12 @@ pub mod chunker;
 pub mod hasher;
 pub mod transfer;
 
+// Linux-only high-performance file I/O using io_uring
+#[cfg(target_os = "linux")]
+pub mod async_file;
+#[cfg(target_os = "linux")]
+pub mod io_uring;
+
 /// Default chunk size (256 KiB)
 pub const DEFAULT_CHUNK_SIZE: usize = 256 * 1024;
 

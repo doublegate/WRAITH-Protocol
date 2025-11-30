@@ -10,9 +10,16 @@ publish = false
 [dependencies]
 wraith-core = { path = "../crates/wraith-core" }
 wraith-crypto = { path = "../crates/wraith-crypto" }
+wraith-transport = { path = "../crates/wraith-transport" }
 rand_core = { workspace = true }
 rand = "0.8"
+criterion = { workspace = true }
 
 [[test]]
 name = "integration_tests"
 path = "integration_tests.rs"
+
+[[bench]]
+name = "transport_benchmarks"
+path = "../benches/transport_benchmarks.rs"
+harness = false

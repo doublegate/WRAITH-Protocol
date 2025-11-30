@@ -11,9 +11,15 @@
 #![warn(missing_docs)]
 #![warn(clippy::all)]
 
+pub mod mtu;
+pub mod numa;
 pub mod udp;
+pub mod worker;
 
 // AF_XDP and io_uring are Linux-specific
+#[cfg(target_os = "linux")]
+pub mod af_xdp;
+
 #[cfg(target_os = "linux")]
 pub mod io_uring_impl;
 

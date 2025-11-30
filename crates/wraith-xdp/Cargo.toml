@@ -1,0 +1,28 @@
+[package]
+name = "wraith-xdp"
+version = "0.2.0"
+edition = "2024"
+rust-version = "1.85"
+license = "MIT"
+repository = "https://github.com/doublegate/WRAITH-Protocol"
+authors = ["WRAITH Protocol Contributors"]
+description = "XDP/eBPF packet filtering for WRAITH (Linux-only)"
+
+[dependencies]
+thiserror = "2.0"
+tracing = "0.1"
+libc = "0.2"
+num_cpus = "1.16"
+
+# Note: libbpf-sys requires libbpf-dev installed on the system
+# This crate is excluded from default workspace build
+# Install on Ubuntu/Debian: sudo apt-get install libbpf-dev clang llvm
+# Install on Fedora/RHEL: sudo dnf install libbpf-devel clang llvm
+libbpf-sys = { version = "1.4", optional = true }
+bitflags = "2.4"
+
+[features]
+default = []
+libbpf = ["libbpf-sys"]
+
+[dev-dependencies]

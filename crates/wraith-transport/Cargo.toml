@@ -15,6 +15,9 @@ tokio = { workspace = true }
 socket2 = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
+crossbeam-channel = "0.5"
+num_cpus = "1.16"
+libc = "0.2"
 
 # Linux-only dependencies for kernel bypass (AF_XDP, io_uring)
 [target.'cfg(target_os = "linux")'.dependencies]

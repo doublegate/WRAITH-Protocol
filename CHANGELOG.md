@@ -5,6 +5,87 @@ All notable changes to WRAITH Protocol will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+**Phase 3: Transport & Kernel Bypass (2025-11-29):**
+
+- **XDP/eBPF Foundation** (`wraith-xdp/`)
+  - XDP packet filter program for WRAITH traffic (UDP ports 40000-50000)
+  - IPv4 and IPv6 support with protocol detection
+  - Per-CPU statistics (RX packets, bytes, dropped, redirected)
+  - AF_XDP socket redirection via XSKMAP
+  - libbpf-rs bindings with feature-gated support
+  - Graceful fallback stubs for non-Linux platforms
+  - 5 unit tests + comprehensive doctests
+
+- **AF_XDP Socket Management** (`wraith-transport/src/af_xdp.rs`)
+  - UMEM (shared memory) allocation with mlock support
+  - Configurable frame sizes (power of 2, ≥2048 bytes)
+  - Fill and completion ring buffer management
+  - Lock-free producer/consumer ring operations
+  - Reserve/submit pattern for batch packet processing
+  - RX and TX ring management for zero-copy I/O
+  - 7 comprehensive tests for rings, UMEM, and sockets
+
+- **Worker Thread Model** (`wraith-transport/src/worker.rs`)
+  - Thread pool with configurable worker count
+  - CPU core pinning via sched_setaffinity (Linux)
+  - Per-worker statistics tracking (packets, bytes, errors)
+  - Graceful shutdown with task draining
+  - Queue backpressure handling
+  - 10 comprehensive tests
+
+- **NUMA-Aware Allocation** (`wraith-transport/src/numa.rs`)
+  - NUMA topology detection (nodes, CPUs per node)
+  - Node-local memory allocation via mbind
+  - CPU-to-NUMA-node mapping
+  - Cross-platform stubs for non-Linux systems
+
+- **MTU Discovery** (`wraith-transport/src/mtu.rs`)
+  - Path MTU discovery with binary search probing
+  - Per-destination MTU caching with configurable TTL
+  - Support for MTU 576-9000 bytes (including jumbo frames)
+  - Automatic cache expiry and cleanup
+  - Integration with path module
+  - 10 comprehensive tests
+
+- **UDP Transport** (`wraith-transport/src/udp.rs`)
+  - Full UDP socket implementation using socket2
+  - Non-blocking I/O with configurable timeouts
+  - 2MB RX/TX buffers for high throughput
+  - 64KB receive buffer for large packets
+  - Cross-platform support (Linux, macOS, Windows)
+  - 7 comprehensive tests
+
+- **io_uring File I/O** (`wraith-files/src/io_uring.rs`, `async_file.rs`)
+  - High-performance async file I/O engine
+  - Queue depth 128-4096 for batched operations
+  - AsyncFileReader for batched async reads
+  - AsyncFileWriter for batched async writes
+  - Completion tracking and caching
+  - Race condition fix for concurrent completions
+  - 12 comprehensive tests
+
+- **Transport Benchmarks** (`benches/transport_benchmarks.rs`)
+  - UDP throughput benchmarks (512B-1500B packets)
+  - UDP round-trip latency measurements
+  - Worker pool task processing (1-8 workers)
+  - MTU cache lookup performance
+  - Frame encoding overhead
+
+### Changed
+
+- Updated `wraith-transport` dependencies: added crossbeam-channel, num_cpus, libc
+- Updated `wraith-files` module structure with io_uring and async_file submodules
+- Phase 3 sprint documentation marked as 100% complete
+
+### Fixed
+
+- Race condition in AsyncFileReader/Writer `wait_for()` causing lost completions
+  when multiple operations complete simultaneously
+
 ## [0.2.0] - 2025-11-29
 
 ### Added

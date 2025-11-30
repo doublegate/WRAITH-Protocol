@@ -16,6 +16,10 @@ tokio = { workspace = true, features = ["fs"] }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 
+# Linux-only dependencies for high-performance file I/O
+[target.'cfg(target_os = "linux")'.dependencies]
+io-uring = { workspace = true }
+
 [dev-dependencies]
 proptest = { workspace = true }
 tempfile = "3"
