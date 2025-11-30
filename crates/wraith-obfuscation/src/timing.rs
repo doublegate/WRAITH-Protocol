@@ -419,7 +419,6 @@ mod tests {
         let time = shaper.time_until_next();
 
         // Should be close to 10ms (1000ms / 100 pps)
-        assert!(time.as_millis() >= 0);
         assert!(time.as_millis() <= 15);
     }
 
