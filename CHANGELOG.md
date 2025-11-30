@@ -83,6 +83,31 @@ Three complete protocol wrappers for traffic obfuscation:
 - ✅ rustfmt compliant
 - ✅ Comprehensive documentation with examples
 
+### Fixed
+
+**Cross-Platform Compatibility:**
+- **Windows x86_64-pc-windows-msvc Support**: Fixed `RawFd` type handling in `wraith-transport`
+  - Added platform-specific type definitions for Windows compatibility
+  - `RawFd` now conditionally defined as `c_int` on Unix and `isize` on Windows
+  - Enables successful cross-platform builds for Windows targets
+  - Maintains zero-cost abstraction on all platforms
+
+**CI/CD Build Improvements:**
+- **MSRV Build Fix**: Enabled `getrandom` feature for `rand_core` dependency
+  - Resolves "getrandom" function not found error in Rust 1.85 MSRV builds
+  - Ensures CI MSRV verification workflow passes consistently
+  - Maintains compatibility with minimum supported Rust version (1.85)
+  - No impact on runtime performance or security
+
+### Changed
+
+**Documentation:**
+- Updated README.md with complete Phase 4 status (both Part I and Part II)
+- Progress metrics: 499/789 story points (63% overall completion)
+- Test count updated: 607 passing tests (up from 487)
+- Code volume: ~21,000+ lines of Rust across all crates
+- Added comprehensive obfuscation layer documentation
+
 ---
 
 **Phase 4 Part I - Optimization & Hardening - COMPLETE ✅ (2025-11-30):**
