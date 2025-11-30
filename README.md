@@ -16,25 +16,25 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
 
 ## Current Status
 
-**Version:** 0.4.0 (Phase 4 Part I Complete - Optimization & Hardening)
+**Version:** 0.4.0 (Phase 4 Complete - Optimization, Hardening & Obfuscation)
 
-WRAITH Protocol has completed Phases 1-4, delivering a fully functional core protocol, cryptographic layer, high-performance transport implementation, and comprehensive optimization and hardening. The latest release includes AF_XDP kernel bypass with zero-copy I/O, BBR pacing enforcement, io_uring async file I/O, and extensive frame validation hardening.
+WRAITH Protocol has completed Phases 1-4, delivering a fully functional core protocol, cryptographic layer, high-performance transport implementation, optimization and hardening, and comprehensive traffic obfuscation. The latest release includes AF_XDP kernel bypass with zero-copy I/O, BBR pacing enforcement, io_uring async file I/O, frame validation hardening, and complete traffic obfuscation with TLS/WebSocket/DoH mimicry.
 
-**Phases 1-4 Complete ✅ (423/789 story points, 54% overall progress)**
+**Phases 1-4 Complete ✅ (499/789 story points, 63% overall progress)**
 
 **Implementation Status:**
-- Core workspace: 8 crates (7 active + 1 XDP), ~18,000+ lines of Rust code
-- Test coverage: **487 passing tests** (197 wraith-core + 123 wraith-crypto + 24 vectors + 12 files + 15 integration + 47 wraith-obfuscation + 54 wraith-transport + 15 doctests)
+- Core workspace: 8 crates (7 active + 1 XDP), ~21,000+ lines of Rust code
+- Test coverage: **607 passing tests** (197 wraith-core + 123 wraith-crypto + 24 vectors + 12 files + 15 integration + 167 wraith-obfuscation + 54 wraith-transport + 15 doctests)
   - wraith-core: 197 tests (frame parsing with validation hardening, session management, stream multiplexing, BBR congestion control with pacing, path MTU, connection migration)
   - wraith-crypto: 123 tests (Ed25519 signatures, X25519, Elligator2, XChaCha20-Poly1305 AEAD with key commitment, BLAKE3, Noise_XX, Double Ratchet, replay protection, constant-time ops)
   - wraith-transport: 54 tests (AF_XDP zero-copy sockets with batch processing, worker pools, UDP, MTU discovery, NUMA allocation)
-  - wraith-obfuscation: 47 tests (cover traffic, padding, timing)
+  - wraith-obfuscation: 167 tests (130 unit + 37 doctests: padding engine, timing obfuscation, cover traffic, TLS mimicry, WebSocket framing, DoH tunneling)
   - wraith-files: 12 tests (io_uring async file I/O with registered buffers, chunking, hashing)
   - Integration vectors: 24 tests (cryptographic correctness, full pipeline)
   - Integration tests: 15 tests (session crypto, frame encryption, ratcheting)
-- Benchmarks: 24 criterion benchmarks (frame, transport, MTU, worker pool)
+- Benchmarks: 28 criterion benchmarks (frame, transport, MTU, worker pool, obfuscation)
 - Performance: 172M frames/sec parsing (~232 GiB/s theoretical throughput)
-- Documentation: 59+ files, 40,000+ lines, complete frame type specifications
+- Documentation: 63+ files, 45,000+ lines, complete frame type specifications
 - CI/CD: GitHub Actions workflows for testing, security scanning, multi-platform releases
 - Security: Dependabot and CodeQL integration, weekly vulnerability scans
 - Code quality: Zero clippy errors, zero unsafe code
@@ -43,10 +43,11 @@ WRAITH Protocol has completed Phases 1-4, delivering a fully functional core pro
 - ✅ **Phase 1:** Frame encoding/decoding with SIMD acceleration, session state machine, stream multiplexing, BBR congestion control
 - ✅ **Phase 2:** Ed25519 signatures, X25519 + Elligator2, XChaCha20-Poly1305 AEAD with key commitment, BLAKE3, Noise_XX handshake, Double Ratchet, replay protection
 - ✅ **Phase 3:** AF_XDP zero-copy networking, io_uring async I/O, UDP transport, worker thread pools, NUMA allocation, MTU discovery
-- ✅ **Phase 4:** AF_XDP batch processing (rx_batch/tx_batch), BBR pacing enforcement, io_uring registered buffers, frame validation hardening (reserved stream IDs, offset bounds, payload limits)
+- ✅ **Phase 4 Part I:** AF_XDP batch processing (rx_batch/tx_batch), BBR pacing enforcement, io_uring registered buffers, frame validation hardening (reserved stream IDs, offset bounds, payload limits)
+- ✅ **Phase 4 Part II:** Complete traffic obfuscation layer - PaddingEngine (5 modes), TimingObfuscator (5 distributions), TLS 1.3 mimicry, WebSocket framing, DNS-over-HTTPS tunneling, adaptive threat-level profiles
 - ✅ **Advanced Features:** Path MTU Discovery, Connection Migration, Cover Traffic Generation, Buffer Pools, XDP packet filtering, 15 documented frame types
-- ✅ Comprehensive test suite (487 tests)
-- ✅ Performance benchmarks
+- ✅ Comprehensive test suite (607 tests)
+- ✅ Performance benchmarks (28 criterion benchmarks)
 - ✅ Security documentation (SECURITY.md, TECH-DEBT.md)
 
 **Next: Phase 5 - Discovery & NAT Traversal (123 story points, 5-7 weeks)**
