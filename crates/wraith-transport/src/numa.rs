@@ -144,6 +144,13 @@ pub unsafe fn allocate_on_node(size: usize, node: usize) -> Option<*mut u8> {
 }
 
 /// Allocate memory on a specific NUMA node (non-Linux)
+///
+/// # Safety
+///
+/// The caller is responsible for:
+/// - Freeing the memory with `deallocate_on_node()`
+/// - Not dereferencing the pointer after deallocation
+/// - Ensuring the memory is properly initialized before use
 #[cfg(not(target_os = "linux"))]
 pub unsafe fn allocate_on_node(size: usize, _node: usize) -> Option<*mut u8> {
     use std::alloc::{Layout, alloc};
@@ -173,6 +180,13 @@ pub unsafe fn deallocate_on_node(ptr: *mut u8, size: usize) {
 }
 
 /// Deallocate memory allocated with `allocate_on_node()` (non-Linux)
+///
+/// # Safety
+///
+/// The caller must ensure:
+/// - The pointer was allocated with `allocate_on_node()`
+/// - The size matches the original allocation
+/// - The pointer has not been deallocated before
 #[cfg(not(target_os = "linux"))]
 pub unsafe fn deallocate_on_node(ptr: *mut u8, size: usize) {
     use std::alloc::{Layout, dealloc};
@@ -208,7 +222,8 @@ impl NumaAllocator {
     #[cfg(target_os = "linux")]
     fn current_numa_node() -> Option<usize> {
         // SAFETY: sched_getcpu is a standard Linux syscall that returns the current CPU ID
-        // or -1 on error. No memory safety issues.
+        // or -1 on error. Takes no arguments, has no side effects, and cannot cause memory
+        // unsafety. Return value is checked for validity (>= 0) before use.
         let cpu = unsafe { libc::sched_getcpu() };
         if cpu >= 0 {
             get_numa_node_for_cpu(cpu as usize)

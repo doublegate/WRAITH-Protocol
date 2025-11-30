@@ -300,8 +300,21 @@ impl Drop for Umem {
     }
 }
 
-// SAFETY: UMEM is safe to send between threads
+// SAFETY: `Umem` is Send because:
+// - The UMEM memory region is allocated once via mmap and never reallocated
+// - The buffer pointer is read-only after construction
+// - Drop properly deallocates with munmap using the original size
+// - Ring buffers use atomic operations for producer/consumer indices
+// - No thread-local state or !Send types are contained
 unsafe impl Send for Umem {}
+
+// SAFETY: `Umem` is Sync because:
+// - All mutable access to ring buffers is synchronized through atomic operations
+// - The RingBuffer type uses AtomicU32 for producer/consumer indices with proper ordering
+// - Memory barriers in Acquire/Release ordering ensure visibility across threads
+// - get_frame() provides immutable references (safe for concurrent reads)
+// - get_frame_mut() requires &mut self (enforced by Rust borrow checker)
+// - No interior mutability without synchronization
 unsafe impl Sync for Umem {}
 
 /// AF_XDP socket configuration
@@ -774,8 +787,21 @@ impl Drop for AfXdpSocket {
     }
 }
 
-// SAFETY: AF_XDP socket is safe to send between threads
+// SAFETY: `AfXdpSocket` is Send because:
+// - File descriptor (fd) is a raw integer that can be safely transferred between threads
+// - Arc<Umem> is Send (Umem is already proven Send above)
+// - RingBuffer uses atomic operations for thread-safe access
+// - No thread-local state or !Send types are contained
+// - Socket operations (sendto, close) are thread-safe system calls
 unsafe impl Send for AfXdpSocket {}
+
+// SAFETY: `AfXdpSocket` is Sync because:
+// - Socket file descriptor operations are synchronized by the kernel
+// - Arc<Umem> is Sync (Umem is already proven Sync above)
+// - RingBuffer synchronization uses atomic operations with proper memory ordering
+// - Methods requiring mutation take &mut self (enforced by Rust borrow checker)
+// - get_packet_data_mut_unsafe is explicitly unsafe, requiring caller guarantees
+// - Concurrent socket operations on the same FD are handled safely by the kernel
 unsafe impl Sync for AfXdpSocket {}
 
 #[cfg(test)]

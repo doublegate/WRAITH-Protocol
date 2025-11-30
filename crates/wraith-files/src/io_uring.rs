@@ -247,6 +247,8 @@ mod tests {
         let fd = file.as_raw_fd();
 
         let mut buf = vec![0u8; 1024];
+        // SAFETY: buf is valid for the duration of the async operation. The engine stores
+        // the request ID and waits for completion before accessing the buffer.
         unsafe {
             engine.read(fd, 0, buf.as_mut_ptr(), buf.len(), 1).unwrap();
         }
@@ -272,6 +274,8 @@ mod tests {
         let fd = file.as_raw_fd();
 
         let data = b"Write test data";
+        // SAFETY: data slice is valid for the duration of the async operation. The engine
+        // waits for completion before the data goes out of scope.
         unsafe {
             engine.write(fd, 0, data.as_ptr(), data.len(), 1).unwrap();
         }
@@ -299,6 +303,8 @@ mod tests {
         // Submit multiple reads
         let mut buffers = vec![vec![0u8; 64]; 4];
         for (i, buf) in buffers.iter_mut().enumerate() {
+            // SAFETY: Each buffer remains valid until completion. Buffers are stored in a Vec
+            // that outlives the async operations, and we wait for all completions before returning.
             unsafe {
                 engine
                     .read(fd, 0, buf.as_mut_ptr(), buf.len(), i as u64)

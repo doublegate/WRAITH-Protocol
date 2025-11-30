@@ -337,7 +337,20 @@ mod libbpf_impl {
         }
     }
 
+    // SAFETY: `XdpProgram` is Send because:
+    // - BPF object and program pointers are opaque handles managed by libbpf
+    // - File descriptors are raw integers that can be safely transferred between threads
+    // - libbpf internally handles synchronization for concurrent access to BPF objects
+    // - Drop implementation properly cleans up resources using bpf_object__close
+    // - No thread-local state or !Send types are contained
     unsafe impl Send for XdpProgram {}
+
+    // SAFETY: `XdpProgram` is Sync because:
+    // - BPF file descriptors are kernel-managed resources with atomic refcounting
+    // - libbpf map operations (bpf_map_lookup_elem, etc.) are thread-safe
+    // - All methods take &self and operate on kernel resources that are synchronized by the kernel
+    // - No interior mutability without synchronization
+    // - Concurrent BPF map access is safely handled by the kernel's BPF subsystem
     unsafe impl Sync for XdpProgram {}
 }
 
