@@ -32,6 +32,7 @@ use chacha20poly1305::{
     aead::{Aead, AeadInPlace, KeyInit},
 };
 use rand_core::{CryptoRng, RngCore};
+use subtle::ConstantTimeEq;
 use zeroize::ZeroizeOnDrop;
 
 /// Authentication tag size (16 bytes / 128 bits).
@@ -191,6 +192,11 @@ impl AeadKey {
     /// that decrypt validly under multiple keys.
     ///
     /// The commitment is computed as: `BLAKE3(key || "wraith-key-commitment")[0..16]`
+    ///
+    /// # Security
+    ///
+    /// The key commitment is computed using BLAKE3, which is a cryptographic hash
+    /// function with constant-time properties when used with fixed-length inputs.
     #[must_use]
     pub fn commitment(&self) -> [u8; 16] {
         let mut hasher = blake3::Hasher::new();
@@ -200,6 +206,16 @@ impl AeadKey {
         let mut commitment = [0u8; 16];
         commitment.copy_from_slice(&hash.as_bytes()[..16]);
         commitment
+    }
+
+    /// Verify key commitment in constant time.
+    ///
+    /// Returns `true` if the provided commitment matches this key's commitment.
+    /// Uses constant-time comparison to prevent timing attacks.
+    #[must_use]
+    pub fn verify_commitment(&self, commitment: &[u8; 16]) -> bool {
+        let expected = self.commitment();
+        expected.ct_eq(commitment).into()
     }
 
     /// Encrypt plaintext with associated data.
@@ -376,25 +392,32 @@ impl AeadCipher {
 /// Replay protection using sliding window.
 ///
 /// Tracks seen packet sequence numbers to prevent replay attacks.
-/// Uses a 64-bit window for efficient out-of-order packet handling.
+/// Uses a 256-bit window for efficient out-of-order packet handling.
+///
+/// # Security
+///
+/// A larger window (256 vs 64 packets) provides better tolerance for:
+/// - High packet loss scenarios (>10% loss)
+/// - Severe packet reordering (network path changes)
+/// - Bursty traffic patterns (VPN reconnects, mobile handoffs)
 #[derive(Clone)]
 pub struct ReplayProtection {
     /// Maximum sequence number seen
     max_seq: u64,
-    /// Sliding window bitmap (64 bits = 64 packets)
-    window: u64,
+    /// Sliding window bitmap (256 bits = 256 packets, stored as 4 × 64-bit words)
+    window: [u64; 4],
 }
 
 impl ReplayProtection {
-    /// Size of the replay protection window
-    pub const WINDOW_SIZE: u64 = 64;
+    /// Size of the replay protection window (256 packets)
+    pub const WINDOW_SIZE: u64 = 256;
 
     /// Create a new replay protection window
     #[must_use]
     pub fn new() -> Self {
         Self {
             max_seq: 0,
-            window: 0,
+            window: [0; 4],
         }
     }
 
@@ -427,11 +450,13 @@ impl ReplayProtection {
 
             if shift >= Self::WINDOW_SIZE {
                 // Shift is >= window size, reset window completely
-                self.window = 1;
+                self.window = [0; 4];
+                self.window[0] = 1; // Mark bit 0 as seen
             } else {
-                // Shift window (safe because shift < 64)
-                self.window <<= shift;
-                self.window |= 1; // Mark current max_seq as seen
+                // Shift window left by shift bits
+                self.shift_window_left(shift);
+                // Mark bit 0 as seen (current max_seq position)
+                self.window[0] |= 1;
             }
 
             self.max_seq = seq;
@@ -441,13 +466,22 @@ impl ReplayProtection {
         // Packet is within window (seq <= max_seq)
         let bit_position = self.max_seq - seq;
 
-        // Check if already seen
-        if self.window & (1 << bit_position) != 0 {
+        // Determine which 64-bit word and which bit within it
+        let word_index = (bit_position / 64) as usize;
+        let bit_index = bit_position % 64;
+
+        // Check if already seen (constant-time comparison for side-channel resistance)
+        let bit_mask = 1u64 << bit_index;
+        let is_seen = self.window[word_index] & bit_mask;
+
+        // Use constant-time comparison to prevent timing attacks
+        // that could leak information about the replay window state
+        if is_seen.ct_ne(&0u64).into() {
             return false; // Replay detected
         }
 
         // Mark as seen
-        self.window |= 1 << bit_position;
+        self.window[word_index] |= bit_mask;
         true
     }
 
@@ -460,7 +494,45 @@ impl ReplayProtection {
     /// Reset the replay protection window
     pub fn reset(&mut self) {
         self.max_seq = 0;
-        self.window = 0;
+        self.window = [0; 4];
+    }
+
+    /// Shift the window left by `shift` bits (internal helper).
+    ///
+    /// Implements multi-word left shift for the 256-bit window.
+    fn shift_window_left(&mut self, shift: u64) {
+        if shift == 0 {
+            return;
+        }
+
+        if shift >= Self::WINDOW_SIZE {
+            // Complete shift-out
+            self.window = [0; 4];
+            return;
+        }
+
+        let word_shift = (shift / 64) as usize;
+        let bit_shift = (shift % 64) as u32;
+
+        if bit_shift == 0 {
+            // Word-aligned shift
+            for i in (word_shift..4).rev() {
+                self.window[i] = self.window[i - word_shift];
+            }
+            for i in 0..word_shift {
+                self.window[i] = 0;
+            }
+        } else {
+            // Bit-level shift across word boundaries
+            for i in (word_shift + 1..4).rev() {
+                self.window[i] = (self.window[i - word_shift] << bit_shift)
+                    | (self.window[i - word_shift - 1] >> (64 - bit_shift));
+            }
+            self.window[word_shift] = self.window[0] << bit_shift;
+            for i in 0..word_shift {
+                self.window[i] = 0;
+            }
+        }
     }
 }
 
@@ -474,6 +546,12 @@ impl Default for ReplayProtection {
 ///
 /// Maintains a pool of pre-allocated buffers that can be reused
 /// for encryption/decryption operations to reduce memory allocations.
+///
+/// # Security Note
+///
+/// The pool is bounded to prevent unbounded memory growth. Buffers
+/// exceeding the `max_buffers` limit are dropped instead of being
+/// retained in the pool.
 pub struct BufferPool {
     buffers: Vec<Vec<u8>>,
     default_capacity: usize,
@@ -1028,21 +1106,21 @@ mod tests {
     fn test_replay_protection_old_packet_rejection() {
         let mut rp = ReplayProtection::new();
 
-        // Accept packet 100
-        assert!(rp.check_and_update(100));
-        assert_eq!(rp.max_seq(), 100);
+        // Accept packet 300
+        assert!(rp.check_and_update(300));
+        assert_eq!(rp.max_seq(), 300);
 
-        // Packet 35 is beyond the 64-packet window (100 - 64 = 36)
-        // 35 + 64 = 99, which is < 100, so it should be rejected
-        assert!(!rp.check_and_update(35));
+        // Packet 43 is beyond the 256-packet window (300 - 256 = 44)
+        // 43 + 256 = 299, which is < 300, so it should be rejected
+        assert!(!rp.check_and_update(43));
 
-        // Packet 36 is exactly at the window boundary (edge case)
-        // 36 + 64 = 100, which is <= 100, so it should be rejected
-        assert!(!rp.check_and_update(36));
+        // Packet 44 is exactly at the window boundary (edge case)
+        // 44 + 256 = 300, which is <= 300, so it should be rejected
+        assert!(!rp.check_and_update(44));
 
-        // Packet 37 is within the window
-        // 37 + 64 = 101, which is > 100, so it should be accepted
-        assert!(rp.check_and_update(37));
+        // Packet 45 is within the window
+        // 45 + 256 = 301, which is > 300, so it should be accepted
+        assert!(rp.check_and_update(45));
 
         // Packet 1 is way too old
         assert!(!rp.check_and_update(1));
@@ -1057,17 +1135,17 @@ mod tests {
             assert!(rp.check_and_update(i));
         }
 
-        // Jump to packet 70 (shift window by 65, more than window size)
-        assert!(rp.check_and_update(70));
-        assert_eq!(rp.max_seq(), 70);
+        // Jump to packet 300 (shift window by 295, more than window size)
+        assert!(rp.check_and_update(300));
+        assert_eq!(rp.max_seq(), 300);
 
-        // Packet 6 is exactly at the window boundary (edge case)
-        // 6 + 64 = 70, which is <= 70, so it should be rejected
-        assert!(!rp.check_and_update(6));
+        // Packet 44 is exactly at the window boundary (edge case)
+        // 44 + 256 = 300, which is <= 300, so it should be rejected
+        assert!(!rp.check_and_update(44));
 
-        // Packet 7 is within the window
-        // 7 + 64 = 71, which is > 70, so it should be accepted
-        assert!(rp.check_and_update(7));
+        // Packet 45 is within the window
+        // 45 + 256 = 301, which is > 300, so it should be accepted
+        assert!(rp.check_and_update(45));
 
         // Packet 5 is too old
         assert!(!rp.check_and_update(5));
@@ -1085,16 +1163,16 @@ mod tests {
         assert_eq!(rp.max_seq(), 1000);
 
         // Packets beyond the window should be rejected
-        // 935 + 64 = 999, which is < 1000, so rejected
-        assert!(!rp.check_and_update(935));
+        // 743 + 256 = 999, which is < 1000, so rejected
+        assert!(!rp.check_and_update(743));
 
-        // Packet 936 is exactly at the window boundary (edge case)
-        // 936 + 64 = 1000, which is <= 1000, so rejected
-        assert!(!rp.check_and_update(936));
+        // Packet 744 is exactly at the window boundary (edge case)
+        // 744 + 256 = 1000, which is <= 1000, so rejected
+        assert!(!rp.check_and_update(744));
 
-        // Packet 937 is within the window
-        // 937 + 64 = 1001, which is > 1000, so accepted
-        assert!(rp.check_and_update(937));
+        // Packet 745 is within the window
+        // 745 + 256 = 1001, which is > 1000, so accepted
+        assert!(rp.check_and_update(745));
 
         // Packet 10 is way too old
         assert!(!rp.check_and_update(10));
@@ -1194,13 +1272,14 @@ mod tests {
         let alice = SessionCrypto::new(send_key, recv_key, &chain_key);
         let mut bob = SessionCrypto::new(recv_key, send_key, &chain_key);
 
-        // Alice sends packet with counter 100
-        let ct100 = alice.encrypt_with_counter(100, b"msg100", b"").unwrap();
-        assert!(bob.decrypt_with_counter(100, &ct100, b"").is_ok());
+        // Alice sends packet with counter 300
+        let ct300 = alice.encrypt_with_counter(300, b"msg300", b"").unwrap();
+        assert!(bob.decrypt_with_counter(300, &ct300, b"").is_ok());
 
-        // Alice sends old packet with counter 35 (beyond 64-packet window)
-        let ct35 = alice.encrypt_with_counter(35, b"msg35", b"").unwrap();
-        let result = bob.decrypt_with_counter(35, &ct35, b"");
+        // Alice sends old packet with counter 43 (beyond 256-packet window)
+        // 43 + 256 = 299, which is < 300, so it should be rejected
+        let ct43 = alice.encrypt_with_counter(43, b"msg43", b"").unwrap();
+        let result = bob.decrypt_with_counter(43, &ct43, b"");
         assert!(matches!(result, Err(CryptoError::ReplayDetected)));
     }
 

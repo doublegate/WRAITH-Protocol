@@ -9,7 +9,7 @@ repository.workspace = true
 authors.workspace = true
 
 [features]
-default = []
+default = ["simd"]
 simd = []
 
 [dependencies]

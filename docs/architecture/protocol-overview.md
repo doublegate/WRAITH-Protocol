@@ -232,6 +232,128 @@ graph TB
 
 ---
 
+## Session State Machine
+
+### State Diagram
+
+```mermaid
+stateDiagram-v2
+    [*] --> Closed
+    Closed --> Handshaking: Initiate/Accept Connection
+    Handshaking --> Established: Handshake Complete
+    Handshaking --> Closed: Handshake Failure
+
+    Established --> Rekeying: Rekey Timer/Limit Reached
+    Established --> Draining: Graceful Close Initiated
+    Established --> Migrating: Path Migration Started
+    Established --> Closed: Connection Reset/Error
+
+    Rekeying --> Established: Rekey Complete
+    Rekeying --> Closed: Rekey Failure
+
+    Draining --> Closed: Drain Complete
+
+    Migrating --> Established: Migration Complete
+    Migrating --> Closed: Migration Failure
+```
+
+### State Descriptions
+
+#### 1. Closed
+- **Description:** No active connection. Initial and terminal state.
+- **Entry:** Initial state or after connection termination.
+- **Exit:** Transition to `Handshaking` on connection attempt.
+- **Operations:** None. Packet processing disabled.
+
+#### 2. Handshaking
+- **Description:** Noise_XX handshake in progress (3-message pattern).
+- **Sub-states:**
+  - `InitSent`: Initiator sent message 1 (ephemeral key)
+  - `InitComplete`: Responder received message 1
+  - `ResponseComplete`: Responder sent message 2 (ephemeral + static)
+  - `ConfirmComplete`: Initiator sent message 3 (static)
+- **Entry:** From `Closed` on connection initiation.
+- **Exit:** To `Established` on handshake success, `Closed` on failure.
+- **Security:** Elligator2-encoded ephemeral keys, identity hiding until message 3.
+
+#### 3. Established
+- **Description:** Authenticated, encrypted session active. Normal operation.
+- **Entry:** From `Handshaking` after successful key agreement.
+- **Exit:** To `Rekeying` (forward secrecy), `Draining` (graceful close), `Migrating` (path change), or `Closed` (error).
+- **Operations:**
+  - Stream multiplexing (up to 65,535 streams)
+  - Data transfer with AEAD encryption
+  - Flow control and congestion control
+  - Automatic rekey trigger monitoring
+
+#### 4. Rekeying
+- **Description:** Forward secrecy key rotation in progress.
+- **Triggers:**
+  - Timer: Every 2 minutes (default)
+  - Packet count: 1 million packets
+  - Byte count: Configurable limit
+- **Entry:** From `Established` when rekey conditions met.
+- **Exit:** To `Established` after key ratchet, `Closed` on failure.
+- **Operations:**
+  - New DH exchange (symmetric ratchet)
+  - Derive new AEAD keys from chain key
+  - Reset nonce counters
+  - Maintain stream state (no interruption)
+
+#### 5. Draining
+- **Description:** Graceful connection shutdown. Flushing pending data.
+- **Entry:** From `Established` on explicit close request.
+- **Exit:** To `Closed` after all pending data sent and acknowledged.
+- **Operations:**
+  - Complete in-flight transmissions
+  - Send `CLOSE` frame with reason code
+  - Wait for acknowledgment (timeout 30s)
+  - Close all streams
+
+#### 6. Migrating
+- **Description:** Connection path migration (IP address or port change).
+- **Triggers:**
+  - Network interface change
+  - NAT rebinding
+  - Explicit migration request
+- **Entry:** From `Established` on path change detection.
+- **Exit:** To `Established` after path validation, `Closed` on failure.
+- **Operations:**
+  - Send `PATH_CHALLENGE` on new path
+  - Validate with `PATH_RESPONSE`
+  - Update routing tables
+  - Connection ID remains unchanged (session persistence)
+
+### State Transition Rules
+
+| From State | To State | Trigger | Validation |
+|------------|----------|---------|------------|
+| Closed | Handshaking | Connection attempt | None |
+| Handshaking | Established | Handshake complete | Noise_XX validation |
+| Handshaking | Closed | Timeout/failure | — |
+| Established | Rekeying | Timer/limit | Rekey conditions met |
+| Established | Draining | Close request | — |
+| Established | Migrating | Path change | — |
+| Established | Closed | Error/reset | — |
+| Rekeying | Established | Rekey complete | New keys derived |
+| Rekeying | Closed | Rekey failure | — |
+| Draining | Closed | Drain complete | All data flushed |
+| Migrating | Established | Migration success | Path validated |
+| Migrating | Closed | Migration failure | — |
+
+### Timeouts and Limits
+
+| Parameter | Default | Purpose |
+|-----------|---------|---------|
+| Handshake timeout | 30s | Prevent hung handshakes |
+| Idle timeout | 60s | Detect dead connections |
+| Rekey interval | 120s | Forward secrecy |
+| Rekey packet limit | 1,000,000 | Nonce exhaustion prevention |
+| Draining timeout | 30s | Graceful close deadline |
+| Migration timeout | 10s | Path validation deadline |
+
+---
+
 ## Data Flow
 
 ### Typical File Transfer Sequence
@@ -246,7 +368,7 @@ sequenceDiagram
     B->>DHT: Query for peers
     DHT-->>B: Encrypted peer info
 
-    Note over A,B: Handshake Phase
+    Note over A,B: Handshake Phase (Noise_XX)
     A->>B: Phase 1 (Elligator2-encoded ephemeral key)
     B->>A: Phase 2 (Ephemeral + encrypted static key)
     A->>B: Phase 3 (Encrypted static key)

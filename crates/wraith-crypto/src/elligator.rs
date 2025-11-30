@@ -180,30 +180,43 @@ pub fn decode_representative(repr: &Representative) -> PublicKey {
 
 /// Try to encode a public key as a representative.
 ///
-/// Returns `None` if the public key is not Elligator2-encodable (~50% chance).
-/// This requires knowledge of the private key to determine encodability.
+/// # Limitation
 ///
-/// Note: This function cannot determine encodability from just the public key.
-/// Use `generate_encodable_keypair` to get a guaranteed-encodable keypair.
+/// **This function always returns `None`** because computing the inverse Elligator2
+/// map from just a public key (without the private key) requires solving a
+/// quadratic equation in the field, which is computationally expensive and has
+/// only a 50% success rate.
 ///
-/// For a standalone public key, we'd need the original private key to check
-/// if the point is in the image of the forward map. Instead, this function
-/// attempts to find a representative by trying both possible preimages.
+/// # Recommended Usage
+///
+/// **Always use `generate_encodable_keypair()` instead**, which:
+/// - Generates keypairs that are guaranteed to be encodable
+/// - Provides the representative directly during key generation
+/// - Is more efficient than attempting inverse mapping
+///
+/// # Mathematical Background
+///
+/// The inverse Elligator2 map requires solving for `r` where `map(r) = u` (the public key).
+/// This involves:
+/// 1. Computing a quadratic equation in GF(2^255 - 19)
+/// 2. Finding square roots in the field (if they exist)
+/// 3. Only ~50% of curve points have valid preimages
+///
+/// Without the private key, this is computationally intensive and unreliable.
+///
+/// # Returns
+///
+/// Always returns `None`. Use `generate_encodable_keypair()` for forward encoding.
 #[must_use]
 pub fn encode_public_key(public: &PublicKey) -> Option<Representative> {
-    // The inverse Elligator2 map is not straightforward from just a public key
-    // We need to solve for r where map(r) = u
-    // This is computationally intensive and may not always succeed
+    // The inverse Elligator2 map from public key alone is not implemented.
+    // Rationale:
+    // 1. Requires solving quadratic in GF(2^255 - 19) - computationally expensive
+    // 2. Only 50% of points are encodable - success not guaranteed
+    // 3. Forward encoding (generate_encodable_keypair) is the standard approach
     //
-    // For production use, always use generate_encodable_keypair() instead.
-
-    // Try a few representative candidates to see if they map to this point
-    // This is a probabilistic approach - not guaranteed to find the representative
-    // even if one exists.
-
-    // For now, return None - users should use generate_encodable_keypair
-    // A full inverse implementation would require the private key or
-    // solving a quadratic in the field
+    // Users should generate encodable keypairs upfront rather than attempting
+    // inverse mapping after key generation.
     let _ = public;
     None
 }
