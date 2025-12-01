@@ -39,6 +39,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - NAT traversal with STUN/ICE (Sprint 5.4)
   - Unified discovery manager (Sprint 5.5)
 
+**Phase 5 Sprint 5.3: NAT Traversal - STUN/ICE (2025-11-30):**
+- Implemented STUN client for NAT type detection (RFC 5389)
+  - `StunClient` with async STUN binding request/response
+  - NAT type detection (Full Cone, Restricted Cone, Port-Restricted Cone, Symmetric)
+  - Public IP and port mapping discovery
+  - Multiple STUN server support for reliability
+  - Transaction ID tracking for request/response correlation
+  - Timeout handling and retry logic
+  - 9 comprehensive tests
+- Added ICE candidate gathering
+  - `IceCandidate` types (Host, ServerReflexive, Relayed)
+  - Candidate priority calculation
+  - Foundation and component ID generation
+  - `IceAgent` for candidate collection and management
+  - Integration with STUN client for reflexive candidates
+  - 6 comprehensive tests
+- Implemented UDP hole punching
+  - Simultaneous open technique for NAT traversal
+  - Hole punch attempt tracking and coordination
+  - Success/failure callback support
+  - Integration with ICE candidate gathering
+  - 4 comprehensive tests
+- **Test Results:** 19 new unit tests, all passing
+- **Quality Gates:** All passing (fmt, clippy, test)
+- **Progress:** Phase 5 Sprint 5.3 Complete (89/123 SP, 72% of Phase 5)
+
+**Phase 5 Sprint 5.2: DHT Core - Kademlia (2025-11-30):**
+- Implemented Kademlia DHT with privacy enhancements
+  - `NodeId` based on BLAKE3 hash (256-bit cryptographic identifiers)
+  - XOR-distance metric for routing
+  - `KBucket` routing table with k=20 bucket size
+  - Peer information tracking (NodeId, address, last seen)
+  - K-closest nodes selection algorithm
+  - Bucket splitting and eviction policies
+  - 12 comprehensive tests
+- Added DHT RPC operations
+  - `DhtMessage` protocol with 4 RPC types:
+    - PING: Liveness check
+    - FIND_NODE: Locate k-closest nodes to target ID
+    - STORE: Store key-value pairs
+    - FIND_VALUE: Retrieve stored values
+  - Request/response correlation with transaction IDs
+  - Comprehensive serialization/deserialization
+  - 8 comprehensive tests
+- Implemented `DhtNode` for DHT operations
+  - Peer discovery via FIND_NODE queries
+  - Value storage and retrieval
+  - Routing table maintenance
+  - Bootstrap node integration
+  - Periodic refresh and cleanup
+  - 14 comprehensive tests
+- **Test Results:** 34 new unit tests, all passing (total: 74 transport tests)
+- **Quality Gates:** All passing (fmt, clippy, test)
+- **Progress:** Phase 5 Sprint 5.2 Complete (55/123 SP, 45% of Phase 5)
+
 **Phase 5 Sprint 5.4: Relay Infrastructure (2025-11-30):**
 - Implemented DERP-style relay infrastructure for NAT traversal
   - `RelayMessage` protocol with 9 message types (Register, SendPacket, RecvPacket, etc.)
