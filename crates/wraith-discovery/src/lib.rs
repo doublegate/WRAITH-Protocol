@@ -7,6 +7,29 @@
 //! - DERP-style relay network for NAT traversal
 //! - NAT type detection and hole punching
 //! - Endpoint discovery
+//!
+//! ## Kademlia DHT
+//!
+//! The DHT module implements a privacy-enhanced Kademlia DHT with:
+//! - 256-bit node identifiers (BLAKE3 hash of public keys)
+//! - XOR distance metric
+//! - K-bucket routing (k=20)
+//! - Encrypted messages (XChaCha20-Poly1305)
+//! - Iterative lookup with alpha parallelism
+//!
+//! ## Example
+//!
+//! ```rust,no_run
+//! use wraith_discovery::dht::{DhtNode, NodeId};
+//! use std::time::Duration;
+//!
+//! let id = NodeId::random();
+//! let addr = "127.0.0.1:8000".parse().unwrap();
+//! let mut node = DhtNode::new(id, addr);
+//!
+//! // Store a value
+//! node.store([42u8; 32], vec![1, 2, 3], Duration::from_secs(3600));
+//! ```
 
 #![warn(missing_docs)]
 #![warn(clippy::all)]
