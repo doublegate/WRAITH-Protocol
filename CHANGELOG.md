@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+**Phase 5 Sprint 5.1: Transport Trait Abstraction (2025-11-30):**
+- Implemented `Transport` trait for multi-backend transport abstraction
+  - Async send/receive operations with proper error handling
+  - Transport statistics tracking (bytes, packets, errors)
+  - Graceful shutdown support with `close()` and `is_closed()`
+- Added `AsyncUdpTransport` - Tokio-based async UDP implementation
+  - Implements `Transport` trait with full statistics
+  - Optimized 2MB socket buffers for high-throughput
+  - Comprehensive test coverage (6 tests, all passing)
+- Added `QuicTransport` placeholder for future QUIC support
+  - Proper error messages indicating not-yet-implemented status
+  - Placeholder tests for future implementation
+- Implemented `TransportFactory` pattern
+  - Configuration-based transport creation
+  - Support for UDP (implemented) and QUIC (placeholder)
+  - Helper methods: `create_udp()`, `create_quic()`
+  - Transport availability checking
+- Dependencies: Added `async-trait = "0.1"` for async trait support
+- **Test Results:** 8 new tests, all passing (74 total transport tests)
+- **Quality Gates:** All passing (fmt, clippy, test)
+- **Progress:** Phase 5 Sprint 5.1 Complete (21/123 SP, 17% of Phase 5)
+
 ---
 
 ## [0.4.8] - 2025-11-30

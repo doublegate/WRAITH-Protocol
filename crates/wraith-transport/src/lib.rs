@@ -3,18 +3,31 @@
 //! Network transport layer for the WRAITH protocol.
 //!
 //! This crate provides:
-//! - AF_XDP socket management for zero-copy packet I/O
-//! - io_uring integration for async file operations
+//! - Transport trait abstraction for multiple backends
+//! - Async UDP transport using Tokio
+//! - QUIC transport (placeholder for future implementation)
+//! - Transport factory for configuration-based creation
+//! - AF_XDP socket management for zero-copy packet I/O (Linux-only)
+//! - io_uring integration for async file operations (Linux-only)
 //! - UDP socket fallback for non-Linux systems
 //! - Per-core worker event loops
 
 #![warn(missing_docs)]
 #![warn(clippy::all)]
 
+// Transport trait and implementations
+pub mod factory;
+pub mod quic;
+pub mod transport;
+pub mod udp_async;
+
+// Legacy sync UDP transport
+pub mod udp;
+
+// Kernel bypass and async I/O
 pub mod io_uring;
 pub mod mtu;
 pub mod numa;
-pub mod udp;
 pub mod worker;
 
 // AF_XDP is Linux-specific
