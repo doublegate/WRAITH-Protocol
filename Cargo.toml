@@ -22,7 +22,7 @@ members = [
 exclude = ["crates/wraith-xdp"]
 
 [workspace.package]
-version = "0.5.0"
+version = "0.5.5"
 edition = "2024"
 rust-version = "1.85"
 license = "MIT"

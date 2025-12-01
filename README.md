@@ -9,14 +9,14 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
 [![CI Status](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/ci.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml)
 [![Release](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml)
-[![Version](https://img.shields.io/badge/version-0.5.0-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
+[![Version](https://img.shields.io/badge/version-0.5.5-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
 [![Rust](https://img.shields.io/badge/rust-1.85%2B-orange.svg)](https://www.rust-lang.org/)
 [![Edition](https://img.shields.io/badge/edition-2024-orange.svg)](https://doc.rust-lang.org/edition-guide/rust-2024/index.html)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ## Current Status
 
-**Version:** 0.5.0 (Phase 5 Complete - Discovery & NAT Traversal) | **Phase 6 Ready ✅**
+**Version:** 0.5.5 (Security Hardening Release) | **Phase 6 Ready ✅**
 
 WRAITH Protocol has completed Phases 1-5, delivering a fully functional core protocol, cryptographic layer, high-performance transport implementation, optimization and hardening, comprehensive traffic obfuscation, and complete peer discovery with NAT traversal. The latest release includes AF_XDP kernel bypass with zero-copy I/O, BBR pacing enforcement, io_uring async file I/O, frame validation hardening, complete traffic obfuscation with TLS/WebSocket/DoH mimicry, privacy-enhanced Kademlia DHT, STUN/ICE NAT traversal, and DERP-style relay infrastructure.
 
@@ -692,4 +692,4 @@ WRAITH Protocol builds on the work of many excellent projects and technologies:
 
 **WRAITH Protocol** - *Secure. Fast. Invisible.*
 
-**Status:** Phase 5 Complete (v0.5.0), Phase 6 Ready ✅ | **License:** MIT | **Language:** Rust 2024 | **Tests:** 869 | **Quality:** Grade A (92/100), 14% debt ratio, 100% unsafe docs, 69% protocol complete (546/789 SP)
+**Status:** Phase 5 Complete (v0.5.5), Phase 6 Ready ✅ | **License:** MIT | **Language:** Rust 2024 | **Tests:** 869 | **Quality:** Grade A (92/100), 14% debt ratio, 100% unsafe docs, 69% protocol complete (546/789 SP)
