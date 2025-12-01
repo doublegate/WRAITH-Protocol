@@ -35,10 +35,15 @@
 #![warn(clippy::all)]
 
 pub mod dht;
+pub mod manager;
 pub mod nat;
 pub mod relay;
 
 // Re-export commonly used types
+pub use manager::{
+    ConnectionType, DiscoveryConfig, DiscoveryError, DiscoveryManager, DiscoveryState,
+    PeerConnection, RelayInfo,
+};
 pub use nat::{
     Candidate, CandidateType, HolePuncher, IceGatherer, NatDetector, NatError, NatType, PunchError,
     StunClient, StunError,

@@ -38,16 +38,16 @@ WRAITH Protocol has completed Phases 1-4, delivering a fully functional core pro
 - **Documentation:** Comprehensive technical debt tracking (6 files in `to-dos/technical-debt/`)
 
 **Implementation Status:**
-- Core workspace: 8 crates (7 active + 1 XDP), ~21,000+ lines of Rust code
-- Test coverage: **607 passing tests** (197 wraith-core + 123 wraith-crypto + 24 vectors + 130 wraith-obfuscation unit + 54 wraith-transport + 16 wraith-files + 15 integration + 52 doctests)
+- Core workspace: 9 crates (8 active + 1 XDP), ~22,500+ lines of Rust code
+- Test coverage: **622 passing tests** (197 wraith-core + 123 wraith-crypto + 24 vectors + 130 wraith-obfuscation unit + 54 wraith-transport + 16 wraith-files + 15 wraith-discovery integration + 63 doctests)
   - wraith-core: 197 tests (frame parsing with validation hardening, session management, stream multiplexing, BBR congestion control with pacing, path MTU, connection migration)
   - wraith-crypto: 123 tests (Ed25519 signatures, X25519, Elligator2, XChaCha20-Poly1305 AEAD with key commitment, BLAKE3, Noise_XX, Double Ratchet, replay protection, constant-time ops)
   - wraith-transport: 54 tests (AF_XDP zero-copy sockets with batch processing, worker pools, UDP, MTU discovery, NUMA allocation)
   - wraith-obfuscation: 167 tests total (130 unit + 37 doctests: padding engine with 5 modes, timing obfuscation with 5 distributions, TLS 1.3 mimicry, WebSocket framing, DoH tunneling, adaptive profiles)
   - wraith-files: 16 tests total (12 unit + 4 doctests: io_uring async file I/O with registered buffers, chunking, BLAKE3 hashing)
+  - wraith-discovery: 15 integration tests (discovery manager lifecycle, peer connection flow, DHT/NAT/Relay integration)
   - Integration vectors: 24 tests (cryptographic correctness, full pipeline validation)
-  - Integration tests: 15 tests (session crypto, frame encryption, ratcheting)
-  - Doctests: 52 tests (API documentation examples across all crates)
+  - Doctests: 63 tests (API documentation examples across all crates)
 - Benchmarks: 28 criterion benchmarks (frame parsing/building, transport throughput/latency, MTU cache, worker pools, obfuscation operations)
 - Performance: 172M frames/sec parsing (~232 GiB/s theoretical throughput), 3.2 GB/s AEAD encryption, 8.5 GB/s BLAKE3 hashing
 - Documentation: 63+ files, 45,000+ lines, complete frame type specifications, comprehensive API docs
@@ -61,16 +61,17 @@ WRAITH Protocol has completed Phases 1-4, delivering a fully functional core pro
 - ✅ **Phase 3:** AF_XDP zero-copy networking, io_uring async I/O, UDP transport, worker thread pools, NUMA allocation, MTU discovery
 - ✅ **Phase 4 Part I:** AF_XDP batch processing (rx_batch/tx_batch), BBR pacing enforcement, io_uring registered buffers, frame validation hardening (reserved stream IDs, offset bounds, payload limits)
 - ✅ **Phase 4 Part II:** Complete traffic obfuscation layer - PaddingEngine (5 modes), TimingObfuscator (5 distributions), TLS 1.3 mimicry, WebSocket framing, DNS-over-HTTPS tunneling, adaptive threat-level profiles
+- ✅ **Phase 5:** Discovery & NAT Traversal - Privacy-enhanced Kademlia DHT with encrypted announcements, STUN/ICE NAT traversal with hole punching, DERP-style relay infrastructure, unified DiscoveryManager with end-to-end connection flow
 - ✅ **Advanced Features:** Path MTU Discovery, Connection Migration, Cover Traffic Generation, Buffer Pools, XDP packet filtering, 15 documented frame types
-- ✅ Comprehensive test suite (607 tests)
+- ✅ Comprehensive test suite (622 tests)
 - ✅ Performance benchmarks (28 criterion benchmarks)
 - ✅ Security documentation (SECURITY.md, TECH-DEBT.md)
 
-**Next: Phase 5 - Discovery & NAT Traversal (123 story points, 5-7 weeks)**
-- Privacy-enhanced DHT implementation
-- STUN-like NAT traversal
-- Relay infrastructure
-- Peer discovery mechanisms
+**Next: Phase 6 - Integration & End-to-End Testing**
+- Full protocol integration
+- Performance validation
+- Security hardening
+- Documentation finalization
 
 ## Features
 

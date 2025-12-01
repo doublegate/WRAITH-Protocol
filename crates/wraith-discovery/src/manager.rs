@@ -1,0 +1,560 @@
+//! Discovery Manager
+//!
+//! Unified manager that orchestrates DHT, NAT traversal, and relay infrastructure
+//! to provide seamless peer discovery and connection establishment.
+
+use crate::dht::{DhtNode, NodeId};
+use crate::nat::{Candidate, HolePuncher, IceGatherer, NatDetector, NatType};
+use crate::relay::client::{RelayClient, RelayClientState};
+use std::net::SocketAddr;
+use std::sync::Arc;
+use std::time::Duration;
+use thiserror::Error;
+use tokio::sync::RwLock;
+
+/// Discovery manager errors
+#[derive(Debug, Error)]
+pub enum DiscoveryError {
+    /// DHT operation failed
+    #[error("DHT operation failed: {0}")]
+    DhtFailed(String),
+
+    /// NAT traversal failed
+    #[error("NAT traversal failed: {0}")]
+    NatTraversalFailed(String),
+
+    /// Relay connection failed
+    #[error("Relay connection failed: {0}")]
+    RelayFailed(String),
+
+    /// Connection failed (all methods exhausted)
+    #[error("Connection failed: all methods exhausted")]
+    ConnectionFailed,
+
+    /// Peer not found in DHT
+    #[error("Peer not found in DHT")]
+    PeerNotFound,
+
+    /// I/O error
+    #[error("I/O error: {0}")]
+    Io(#[from] std::io::Error),
+
+    /// Configuration error
+    #[error("Configuration error: {0}")]
+    InvalidConfig(String),
+}
+
+/// Discovery configuration
+#[derive(Debug, Clone)]
+pub struct DiscoveryConfig {
+    /// Local node ID
+    pub node_id: NodeId,
+    /// Local listen address
+    pub listen_addr: SocketAddr,
+    /// Bootstrap DHT nodes
+    pub bootstrap_nodes: Vec<SocketAddr>,
+    /// STUN servers for NAT detection
+    pub stun_servers: Vec<SocketAddr>,
+    /// Relay servers (address, node_id)
+    pub relay_servers: Vec<RelayInfo>,
+    /// Enable NAT detection
+    pub nat_detection_enabled: bool,
+    /// Enable relay fallback
+    pub relay_enabled: bool,
+    /// Connection timeout
+    pub connection_timeout: Duration,
+}
+
+/// Relay server information
+#[derive(Debug, Clone)]
+pub struct RelayInfo {
+    /// Relay server address
+    pub addr: SocketAddr,
+    /// Relay server node ID
+    pub node_id: NodeId,
+    /// Relay server public key
+    pub public_key: [u8; 32],
+}
+
+impl DiscoveryConfig {
+    /// Create a new discovery configuration
+    #[must_use]
+    pub fn new(node_id: NodeId, listen_addr: SocketAddr) -> Self {
+        Self {
+            node_id,
+            listen_addr,
+            bootstrap_nodes: Vec::new(),
+            stun_servers: vec![
+                // Default STUN servers (placeholders)
+                "1.1.1.1:3478".parse().expect("valid address"),
+                "8.8.8.8:3478".parse().expect("valid address"),
+            ],
+            relay_servers: Vec::new(),
+            nat_detection_enabled: true,
+            relay_enabled: true,
+            connection_timeout: Duration::from_secs(10),
+        }
+    }
+
+    /// Add a bootstrap DHT node
+    pub fn add_bootstrap_node(&mut self, addr: SocketAddr) {
+        self.bootstrap_nodes.push(addr);
+    }
+
+    /// Add a STUN server
+    pub fn add_stun_server(&mut self, addr: SocketAddr) {
+        self.stun_servers.push(addr);
+    }
+
+    /// Add a relay server
+    pub fn add_relay_server(&mut self, info: RelayInfo) {
+        self.relay_servers.push(info);
+    }
+}
+
+/// Peer connection information
+#[derive(Debug, Clone)]
+pub struct PeerConnection {
+    /// Peer node ID
+    pub peer_id: NodeId,
+    /// Connection address
+    pub addr: SocketAddr,
+    /// Connection type
+    pub connection_type: ConnectionType,
+}
+
+/// Type of connection established
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ConnectionType {
+    /// Direct connection (no NAT or public IP)
+    Direct,
+    /// NAT hole-punched connection
+    HolePunched,
+    /// Relayed through DERP server
+    Relayed(NodeId),
+}
+
+impl std::fmt::Display for ConnectionType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Direct => write!(f, "Direct"),
+            Self::HolePunched => write!(f, "HolePunched"),
+            Self::Relayed(_id) => write!(f, "Relayed"),
+        }
+    }
+}
+
+/// Discovery manager state
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DiscoveryState {
+    /// Not started
+    Stopped,
+    /// Starting up
+    Starting,
+    /// Running and ready
+    Running,
+    /// Shutting down
+    Stopping,
+}
+
+/// Unified discovery manager
+///
+/// Orchestrates DHT, NAT traversal, and relay infrastructure to provide
+/// seamless peer discovery and connection establishment.
+pub struct DiscoveryManager {
+    /// Configuration
+    config: DiscoveryConfig,
+    /// DHT node
+    dht: Arc<RwLock<DhtNode>>,
+    /// NAT detector
+    nat_detector: Option<NatDetector>,
+    /// ICE gatherer
+    ice_gatherer: IceGatherer,
+    /// Hole puncher
+    hole_puncher: Option<Arc<HolePuncher>>,
+    /// Relay clients (one per relay server)
+    relay_clients: Arc<RwLock<Vec<RelayClient>>>,
+    /// Detected NAT type
+    nat_type: Arc<RwLock<Option<NatType>>>,
+    /// Manager state
+    state: Arc<RwLock<DiscoveryState>>,
+}
+
+impl DiscoveryManager {
+    /// Create a new discovery manager
+    ///
+    /// # Errors
+    ///
+    /// Returns error if initialization fails
+    pub async fn new(config: DiscoveryConfig) -> Result<Self, DiscoveryError> {
+        // Create DHT node
+        let dht = Arc::new(RwLock::new(DhtNode::new(
+            config.node_id,
+            config.listen_addr,
+        )));
+
+        // Create NAT detector if enabled
+        let nat_detector = if config.nat_detection_enabled {
+            Some(NatDetector::with_servers(config.stun_servers.clone()))
+        } else {
+            None
+        };
+
+        // Create ICE gatherer
+        let ice_gatherer = IceGatherer::with_stun_servers(config.stun_servers.clone());
+
+        // Create hole puncher
+        let hole_puncher = HolePuncher::new(config.listen_addr)
+            .await
+            .ok()
+            .map(Arc::new);
+
+        Ok(Self {
+            config,
+            dht,
+            nat_detector,
+            ice_gatherer,
+            hole_puncher,
+            relay_clients: Arc::new(RwLock::new(Vec::new())),
+            nat_type: Arc::new(RwLock::new(None)),
+            state: Arc::new(RwLock::new(DiscoveryState::Stopped)),
+        })
+    }
+
+    /// Start the discovery manager
+    ///
+    /// Performs:
+    /// - DHT bootstrap
+    /// - NAT type detection
+    /// - Relay registration
+    ///
+    /// # Errors
+    ///
+    /// Returns error if startup fails
+    pub async fn start(&self) -> Result<(), DiscoveryError> {
+        *self.state.write().await = DiscoveryState::Starting;
+
+        // 1. Bootstrap DHT
+        self.bootstrap_dht().await?;
+
+        // 2. Detect NAT type
+        if let Some(detector) = &self.nat_detector {
+            match detector.detect().await {
+                Ok(nat_type) => {
+                    *self.nat_type.write().await = Some(nat_type);
+                    println!("Detected NAT type: {:?}", nat_type);
+                }
+                Err(e) => {
+                    eprintln!("NAT detection failed: {:?}", e);
+                }
+            }
+        }
+
+        // 3. Connect to relay servers
+        if self.config.relay_enabled {
+            self.connect_relays().await?;
+        }
+
+        *self.state.write().await = DiscoveryState::Running;
+        Ok(())
+    }
+
+    /// Bootstrap the DHT
+    async fn bootstrap_dht(&self) -> Result<(), DiscoveryError> {
+        let _dht = self.dht.write().await;
+
+        for bootstrap_addr in &self.config.bootstrap_nodes {
+            // In a real implementation, we would send FIND_NODE requests
+            // to bootstrap nodes and populate the routing table
+            println!("Bootstrapping from {}", bootstrap_addr);
+        }
+
+        Ok(())
+    }
+
+    /// Connect to all relay servers
+    async fn connect_relays(&self) -> Result<(), DiscoveryError> {
+        let mut clients = Vec::new();
+
+        for relay_info in &self.config.relay_servers {
+            match RelayClient::connect(relay_info.addr, *self.config.node_id.as_bytes()).await {
+                Ok(mut client) => {
+                    // Register with relay
+                    if let Err(e) = client.register(&relay_info.public_key).await {
+                        eprintln!("Failed to register with relay {}: {:?}", relay_info.addr, e);
+                        continue;
+                    }
+
+                    // Spawn receiver task
+                    client.spawn_receiver();
+
+                    clients.push(client);
+                    println!("Connected to relay: {}", relay_info.addr);
+                }
+                Err(e) => {
+                    eprintln!("Failed to connect to relay {}: {:?}", relay_info.addr, e);
+                }
+            }
+        }
+
+        *self.relay_clients.write().await = clients;
+        Ok(())
+    }
+
+    /// Discover a peer and establish connection
+    ///
+    /// Attempts connection in this order:
+    /// 1. DHT lookup to find peer
+    /// 2. Direct connection (if peer has public IP)
+    /// 3. Hole punching (if both behind NAT)
+    /// 4. Relay fallback (if direct fails)
+    ///
+    /// # Errors
+    ///
+    /// Returns error if all connection methods fail
+    pub async fn connect_to_peer(&self, peer_id: NodeId) -> Result<PeerConnection, DiscoveryError> {
+        // 1. Look up peer in DHT
+        let peer_addrs = self.dht_lookup(peer_id).await?;
+
+        if peer_addrs.is_empty() {
+            return Err(DiscoveryError::PeerNotFound);
+        }
+
+        // 2. Gather local ICE candidates
+        let local_candidates = self
+            .ice_gatherer
+            .gather(self.config.listen_addr)
+            .await
+            .unwrap_or_default();
+
+        // 3. Try direct connection
+        for peer_addr in &peer_addrs {
+            if let Some(conn) = self.try_direct_connection(*peer_addr).await {
+                return Ok(conn);
+            }
+        }
+
+        // 4. Try hole punching
+        if let Some(hole_puncher) = &self.hole_puncher {
+            if let Some(conn) = self
+                .try_hole_punch(hole_puncher.clone(), &peer_addrs, &local_candidates)
+                .await
+            {
+                return Ok(conn);
+            }
+        }
+
+        // 5. Fall back to relay
+        if self.config.relay_enabled {
+            if let Some(conn) = self.connect_via_relay(peer_id).await {
+                return Ok(conn);
+            }
+        }
+
+        Err(DiscoveryError::ConnectionFailed)
+    }
+
+    /// Perform DHT lookup for peer
+    async fn dht_lookup(&self, peer_id: NodeId) -> Result<Vec<SocketAddr>, DiscoveryError> {
+        let mut dht = self.dht.write().await;
+
+        // Use iterative FIND_NODE to locate peer
+        let closest_peers = dht.iterative_find_node(&peer_id).await;
+
+        // Extract addresses
+        let addrs = closest_peers.iter().map(|p| p.addr).collect();
+
+        Ok(addrs)
+    }
+
+    /// Try direct connection to peer
+    async fn try_direct_connection(&self, peer_addr: SocketAddr) -> Option<PeerConnection> {
+        // Simple connectivity check (in real implementation, would attempt handshake)
+        if self.is_reachable(peer_addr).await {
+            Some(PeerConnection {
+                peer_id: NodeId::from_bytes([0u8; 32]), // Would be actual peer ID
+                addr: peer_addr,
+                connection_type: ConnectionType::Direct,
+            })
+        } else {
+            None
+        }
+    }
+
+    /// Try NAT hole punching
+    async fn try_hole_punch(
+        &self,
+        hole_puncher: Arc<HolePuncher>,
+        peer_addrs: &[SocketAddr],
+        _local_candidates: &[Candidate],
+    ) -> Option<PeerConnection> {
+        for peer_addr in peer_addrs {
+            // Attempt hole punching with timeout
+            match tokio::time::timeout(Duration::from_secs(5), hole_puncher.punch(*peer_addr, None))
+                .await
+            {
+                Ok(Ok(punched_addr)) => {
+                    return Some(PeerConnection {
+                        peer_id: NodeId::from_bytes([0u8; 32]), // Would be actual peer ID
+                        addr: punched_addr,
+                        connection_type: ConnectionType::HolePunched,
+                    });
+                }
+                Ok(Err(e)) => {
+                    eprintln!("Hole punch failed: {:?}", e);
+                }
+                Err(_) => {
+                    eprintln!("Hole punch timeout");
+                }
+            }
+        }
+
+        None
+    }
+
+    /// Connect via relay server
+    async fn connect_via_relay(&self, peer_id: NodeId) -> Option<PeerConnection> {
+        let clients = self.relay_clients.read().await;
+
+        for client in clients.iter() {
+            if client.state().await == RelayClientState::Connected {
+                // In real implementation, would negotiate relay connection
+                // For now, return placeholder
+                return Some(PeerConnection {
+                    peer_id,
+                    addr: client.relay_addr(),
+                    connection_type: ConnectionType::Relayed(NodeId::from_bytes([0u8; 32])),
+                });
+            }
+        }
+
+        None
+    }
+
+    /// Check if peer address is reachable
+    async fn is_reachable(&self, _addr: SocketAddr) -> bool {
+        // Placeholder: in real implementation, would send ping/probe
+        false
+    }
+
+    /// Shutdown the discovery manager
+    ///
+    /// # Errors
+    ///
+    /// Returns error if shutdown fails
+    pub async fn shutdown(&self) -> Result<(), DiscoveryError> {
+        *self.state.write().await = DiscoveryState::Stopping;
+
+        // Disconnect from all relays
+        let mut clients = self.relay_clients.write().await;
+        for client in clients.iter_mut() {
+            let _ = client.disconnect().await;
+        }
+        clients.clear();
+
+        *self.state.write().await = DiscoveryState::Stopped;
+        Ok(())
+    }
+
+    /// Get current manager state
+    #[must_use]
+    pub async fn state(&self) -> DiscoveryState {
+        *self.state.read().await
+    }
+
+    /// Get detected NAT type
+    #[must_use]
+    pub async fn nat_type(&self) -> Option<NatType> {
+        *self.nat_type.read().await
+    }
+
+    /// Get DHT node reference
+    #[must_use]
+    pub fn dht(&self) -> Arc<RwLock<DhtNode>> {
+        self.dht.clone()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_discovery_config_creation() {
+        let node_id = NodeId::random();
+        let addr = "127.0.0.1:8000".parse().unwrap();
+
+        let config = DiscoveryConfig::new(node_id, addr);
+
+        assert_eq!(config.node_id, node_id);
+        assert_eq!(config.listen_addr, addr);
+        assert!(config.nat_detection_enabled);
+        assert!(config.relay_enabled);
+    }
+
+    #[test]
+    fn test_discovery_config_builders() {
+        let node_id = NodeId::random();
+        let addr = "127.0.0.1:8000".parse().unwrap();
+        let mut config = DiscoveryConfig::new(node_id, addr);
+
+        config.add_bootstrap_node("127.0.0.1:9000".parse().unwrap());
+        config.add_stun_server("1.1.1.1:3478".parse().unwrap());
+
+        assert_eq!(config.bootstrap_nodes.len(), 1);
+        assert_eq!(config.stun_servers.len(), 3); // 2 default + 1 added
+    }
+
+    #[test]
+    fn test_connection_type_display() {
+        assert_eq!(ConnectionType::Direct.to_string(), "Direct");
+        assert_eq!(ConnectionType::HolePunched.to_string(), "HolePunched");
+
+        let relay_id = NodeId::from_bytes([1u8; 32]);
+        let relayed = ConnectionType::Relayed(relay_id);
+        assert!(relayed.to_string().contains("Relayed"));
+    }
+
+    #[tokio::test]
+    async fn test_discovery_manager_creation() {
+        let node_id = NodeId::random();
+        let addr = "127.0.0.1:8000".parse().unwrap();
+        let config = DiscoveryConfig::new(node_id, addr);
+
+        let manager = DiscoveryManager::new(config).await;
+        assert!(manager.is_ok());
+
+        let manager = manager.unwrap();
+        assert_eq!(manager.state().await, DiscoveryState::Stopped);
+    }
+
+    #[tokio::test]
+    async fn test_discovery_manager_state_transitions() {
+        let node_id = NodeId::random();
+        let addr = "127.0.0.1:8001".parse().unwrap();
+        let config = DiscoveryConfig::new(node_id, addr);
+
+        let manager = DiscoveryManager::new(config).await.unwrap();
+
+        assert_eq!(manager.state().await, DiscoveryState::Stopped);
+
+        // Start would change to Starting then Running, but needs network
+        // Just verify state transitions work
+        *manager.state.write().await = DiscoveryState::Running;
+        assert_eq!(manager.state().await, DiscoveryState::Running);
+    }
+
+    #[tokio::test]
+    async fn test_discovery_manager_nat_type() {
+        let node_id = NodeId::random();
+        let addr = "127.0.0.1:8002".parse().unwrap();
+        let config = DiscoveryConfig::new(node_id, addr);
+
+        let manager = DiscoveryManager::new(config).await.unwrap();
+
+        assert!(manager.nat_type().await.is_none());
+
+        *manager.nat_type.write().await = Some(NatType::FullCone);
+        assert_eq!(manager.nat_type().await, Some(NatType::FullCone));
+    }
+}

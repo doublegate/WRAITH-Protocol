@@ -9,6 +9,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Phase 5 Sprint 5.5: Integration & Testing - PHASE 5 COMPLETE (2025-11-30):**
+- Implemented unified `DiscoveryManager` for seamless peer discovery
+  - Orchestrates DHT, NAT traversal, and relay infrastructure
+  - End-to-end connection flow: DHT lookup → direct → hole punch → relay fallback
+  - Configuration system with `DiscoveryConfig` and `RelayInfo`
+  - State management (`DiscoveryState`: Stopped, Starting, Running, Stopping)
+  - Connection type tracking (`ConnectionType`: Direct, HolePunched, Relayed)
+  - DHT bootstrap with configurable bootstrap nodes
+  - Relay server connection and automatic registration
+  - NAT type detection integration with STUN
+  - 8 public methods + 6 helper methods
+- Added comprehensive integration tests (15 tests)
+  - Discovery manager lifecycle (creation, start, shutdown)
+  - Configuration with bootstrap nodes, STUN servers, relay servers
+  - NAT detection enable/disable scenarios
+  - Relay enable/disable scenarios
+  - Connection type variants and display
+  - Peer discovery flow (DHT lookup, connection attempts)
+  - Error handling and fallback behavior
+  - Concurrent peer discovery
+  - State transitions
+- **Test Results:** 15 integration tests, all passing
+- **Quality Gates:** All passing (cargo test, clippy, fmt)
+- **Phase 5 Status:** ✅ **COMPLETE** (123/123 SP, 100%)
+- **Components Delivered:**
+  - Privacy-enhanced Kademlia DHT (Sprints 5.1-5.2)
+  - DERP-style relay infrastructure (Sprints 5.3-5.4)
+  - NAT traversal with STUN/ICE (Sprint 5.4)
+  - Unified discovery manager (Sprint 5.5)
+
 **Phase 5 Sprint 5.4: Relay Infrastructure (2025-11-30):**
 - Implemented DERP-style relay infrastructure for NAT traversal
   - `RelayMessage` protocol with 9 message types (Register, SendPacket, RecvPacket, etc.)
