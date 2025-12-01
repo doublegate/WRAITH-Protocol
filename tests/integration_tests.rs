@@ -606,7 +606,7 @@ fn test_x25519_to_session_keys() {
 
 use std::path::PathBuf;
 use tempfile::TempDir;
-use wraith_core::transfer::{Direction, TransferSession, TransferState};
+use wraith_core::transfer::{TransferSession, TransferState};
 use wraith_files::DEFAULT_CHUNK_SIZE;
 use wraith_files::chunker::{FileChunker, FileReassembler};
 use wraith_files::tree_hash::compute_tree_hash;
