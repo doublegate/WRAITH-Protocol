@@ -743,14 +743,14 @@ fn test_file_transfer_end_to_end() {
         test_data.len() as u64,
         DEFAULT_CHUNK_SIZE,
     );
-    assert_eq!(sender_session.direction, wraith_core::transfer::Direction::Send);
+    assert_eq!(
+        sender_session.direction,
+        wraith_core::transfer::Direction::Send
+    );
 
     // 3. Receiver: Create reassembler and session
-    let mut receiver_reassembler = FileReassembler::new(
-        &dest_file,
-        test_data.len() as u64,
-        DEFAULT_CHUNK_SIZE,
-    ).unwrap();
+    let mut receiver_reassembler =
+        FileReassembler::new(&dest_file, test_data.len() as u64, DEFAULT_CHUNK_SIZE).unwrap();
 
     let mut receiver_session = TransferSession::new_receive(
         transfer_id,
@@ -766,7 +766,9 @@ fn test_file_transfer_end_to_end() {
         assert!(tree_hash.verify_chunk(chunk_index as usize, &chunk));
 
         // Receiver writes chunk
-        receiver_reassembler.write_chunk(chunk_index, &chunk).unwrap();
+        receiver_reassembler
+            .write_chunk(chunk_index, &chunk)
+            .unwrap();
 
         // Update receiver session
         receiver_session.mark_chunk_transferred(chunk_index, chunk.len());
@@ -807,11 +809,8 @@ fn test_file_transfer_with_resume() {
     assert_eq!(total_chunks, 8); // 2MB / 256KB
 
     // 1. Initial transfer: download first 50% (4 chunks)
-    let mut reassembler = FileReassembler::new(
-        &dest_file,
-        test_data.len() as u64,
-        DEFAULT_CHUNK_SIZE,
-    ).unwrap();
+    let mut reassembler =
+        FileReassembler::new(&dest_file, test_data.len() as u64, DEFAULT_CHUNK_SIZE).unwrap();
 
     for i in 0..4 {
         let chunk = chunker.read_chunk().unwrap().unwrap();
@@ -902,8 +901,8 @@ fn test_multi_peer_parallel_download() {
 /// Test NAT traversal components (unit-level integration)
 #[test]
 fn test_nat_traversal() {
-    use wraith_discovery::nat::{NatType, Candidate, CandidateType};
     use std::net::SocketAddr;
+    use wraith_discovery::nat::{Candidate, CandidateType, NatType};
 
     // 1. Simulate NAT type detection
     let nat_type = NatType::PortRestrictedCone;
@@ -945,8 +944,8 @@ fn test_nat_traversal() {
 /// Test relay fallback mechanism (component integration)
 #[test]
 fn test_relay_fallback() {
-    use wraith_discovery::{ConnectionType, RelayInfo};
     use std::net::SocketAddr;
+    use wraith_discovery::{ConnectionType, RelayInfo};
 
     // 1. Attempt direct connection (simulated failure)
     let direct_connection = ConnectionType::Direct;
@@ -977,7 +976,7 @@ fn test_relay_fallback() {
 /// Test obfuscation levels (component integration)
 #[test]
 fn test_obfuscation_levels() {
-    use wraith_obfuscation::{PaddingMode, PaddingEngine, TimingMode, TimingObfuscator};
+    use wraith_obfuscation::{PaddingEngine, PaddingMode, TimingMode, TimingObfuscator};
 
     // Test all 5 padding modes
     let modes = vec![
@@ -1072,9 +1071,9 @@ fn test_obfuscation_levels() {
 /// Test encryption end-to-end with Noise_XX handshake (component integration)
 #[test]
 fn test_encryption_end_to_end() {
-    use wraith_crypto::noise::{NoiseKeypair, NoiseHandshake};
-    use wraith_crypto::ratchet::SymmetricRatchet;
     use wraith_core::{Frame, FrameBuilder, FrameType};
+    use wraith_crypto::noise::{NoiseHandshake, NoiseKeypair};
+    use wraith_crypto::ratchet::SymmetricRatchet;
 
     // 1. Both parties generate static keypairs
     let alice_keypair = NoiseKeypair::generate().unwrap();
@@ -1154,7 +1153,12 @@ fn test_encryption_end_to_end() {
         .unwrap();
 
     // Old key cannot decrypt new ciphertext
-    assert!(alice_key.to_aead_key().decrypt(&nonce2, &alice_ct2, b"").is_err());
+    assert!(
+        alice_key
+            .to_aead_key()
+            .decrypt(&nonce2, &alice_ct2, b"")
+            .is_err()
+    );
 
     // New key can decrypt
     let bob_pt2 = bob_key2

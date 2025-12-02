@@ -5,6 +5,26 @@ All notable changes to WRAITH Protocol will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2025-12-01
+
+### Added
+- **7 Integration Tests (19 SP)**: Component integration testing
+  - End-to-end file transfer (5MB), resume with missing chunks
+  - Multi-peer coordination (3 peers, 20 chunks), NAT traversal components
+  - Relay fallback, obfuscation modes, Noise_XX + ratcheting
+- **Security Audit Template (DOC-004, 4 SP)**: Comprehensive review checklist
+  - 10 sections: crypto, memory, side-channels, network, dependencies, etc.
+  - Penetration testing scope, fuzzing/sanitizer commands
+
+### Changed
+- **BLAKE3 SIMD (PERF-001, 8 SP)**: rayon + neon features
+  - 2-4x faster parallel hashing, ARM64 optimization
+
+### Documentation
+- Refactoring analysis (18 priorities, complexity metrics)
+
+**Story Points: 31 SP**
+
 ## [0.7.0] - 2025-12-01
 
 ### Added
