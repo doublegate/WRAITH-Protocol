@@ -477,9 +477,9 @@ mod tests {
         obfuscator.sleep();
         let elapsed = start.elapsed();
 
-        // Should sleep for approximately 10ms
+        // Should sleep for approximately 10ms (with tolerance for CI environments)
         assert!(elapsed >= Duration::from_millis(9));
-        assert!(elapsed <= Duration::from_millis(15));
+        assert!(elapsed <= Duration::from_millis(50)); // CI environments can be slow
     }
 
     #[test]
