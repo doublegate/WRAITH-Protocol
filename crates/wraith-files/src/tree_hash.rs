@@ -15,8 +15,6 @@
 //!
 //! - `default`: Rayon multi-threading + automatic SIMD detection (recommended)
 //! - `rayon`: Multi-threaded hashing across cores
-//! - `simd-neon`: Explicit ARM NEON SIMD (auto-enabled on aarch64)
-//! - `pure`: Pure Rust implementation without SIMD (for compatibility)
 //!
 //! ## SIMD Support
 //!
@@ -39,21 +37,12 @@
 //! wraith-files = { version = "*", features = ["rayon"] }
 //! ```
 //!
-//! **Pure Rust (no SIMD):**
-//! ```toml
-//! wraith-files = { version = "*", features = ["pure"] }
-//! ```
-//!
 //! ## Performance
 //!
-//! With SIMD acceleration enabled:
+//! With SIMD acceleration (automatic):
 //! - **File hashing**: >3 GiB/s (in-memory), >1.5 GiB/s (from disk)
 //! - **Chunk verification**: <1 μs per 256 KiB chunk
 //! - **Incremental hashing**: >2 GiB/s (streaming)
-//!
-//! Without SIMD (software-only):
-//! - **File hashing**: ~800 MiB/s
-//! - **Chunk verification**: ~3 μs per chunk
 //!
 //! SIMD provides a 2-4x speedup on most platforms, with AVX-512 reaching
 //! up to 8x on supported hardware.

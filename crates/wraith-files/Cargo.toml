@@ -9,22 +9,10 @@ repository.workspace = true
 authors.workspace = true
 
 [features]
-# SIMD acceleration features for BLAKE3 hashing
-# Enable the appropriate feature for your target platform for maximum performance
-
-# Default: Rayon multi-threading + SIMD (auto-detected by blake3)
-default = ["rayon"]
-
-# Multi-threading with rayon (recommended for all platforms)
+# BLAKE3 multi-threading with rayon (recommended for all platforms)
 # BLAKE3 automatically uses SIMD (AVX2, AVX-512, NEON) based on target CPU
+default = ["rayon"]
 rayon = ["blake3/rayon"]
-
-# ARM NEON SIMD (auto-enabled on aarch64, 2-4x speedup on ARM)
-# Note: NEON is automatically enabled on aarch64; this feature is for explicit control
-simd-neon = ["blake3/neon"]
-
-# Pure Rust implementation (no SIMD, for compatibility)
-pure = ["blake3/pure"]
 
 [dependencies]
 wraith-core = { workspace = true }
