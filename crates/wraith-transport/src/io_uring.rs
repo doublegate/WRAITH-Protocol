@@ -544,6 +544,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(target_os = "linux")]
     fn test_register_buffers() {
         let mut ctx = IoUringContext::new(64).unwrap();
 

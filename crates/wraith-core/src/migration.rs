@@ -344,8 +344,8 @@ mod tests {
 
         // RTT should be at least the delay
         assert!(validated.rtt >= delay);
-        // RTT should be reasonable (less than 200ms for local test)
-        assert!(validated.rtt < Duration::from_millis(200));
+        // RTT should be reasonable (less than 1s for CI environments which can be slow)
+        assert!(validated.rtt < Duration::from_secs(1));
     }
 
     #[test]
