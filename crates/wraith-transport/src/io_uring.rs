@@ -568,10 +568,9 @@ mod tests {
 
     #[test]
     fn test_completion_result_types() {
-        let mut ctx = IoUringContext::new(64).unwrap();
-
         #[cfg(target_os = "linux")]
         {
+            let mut ctx = IoUringContext::new(64).unwrap();
             ctx.submit_read(1, 0, 1024).unwrap();
             ctx.submit_write(2, 0, &[0u8; 2048]).unwrap();
             ctx.submit_fsync(3).unwrap();
@@ -586,6 +585,12 @@ mod tests {
                     OpType::Fsync => assert_eq!(completion.result, 0),
                 }
             }
+        }
+
+        // On non-Linux, just verify the stub context works
+        #[cfg(not(target_os = "linux"))]
+        {
+            let _ctx = IoUringContext::new(64).unwrap();
         }
     }
 }
