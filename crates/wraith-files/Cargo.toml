@@ -11,7 +11,7 @@ authors.workspace = true
 [dependencies]
 wraith-core = { workspace = true }
 wraith-crypto = { workspace = true }
-blake3 = { workspace = true }
+blake3 = { workspace = true, features = ["rayon", "neon"] }
 tokio = { workspace = true, features = ["fs"] }
 thiserror = { workspace = true }
 tracing = { workspace = true }
