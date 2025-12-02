@@ -235,7 +235,7 @@ cargo test --workspace
 
 ## Quick Start
 
-**Note:** WRAITH Protocol is currently in early development (v0.1.0). The CLI interface is scaffolded but not yet functional. The following commands represent the planned interface:
+**Note:** WRAITH Protocol is currently at v0.7.0 (Phase 7 - Hardening & Optimization). The CLI interface is functional with core file transfer capabilities. The following commands are available:
 
 ```bash
 # Send a file (coming soon)
