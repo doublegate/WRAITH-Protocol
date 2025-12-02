@@ -28,10 +28,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BLAKE3 SIMD (PERF-001, 8 SP)**: rayon + neon features
   - 2-4x faster parallel hashing, ARM64 optimization
 
+### Refactored
+- **AEAD Module Split (REFACTOR-001, 8 SP)**: Improved code organization
+  - Split 1,529 LOC `aead.rs` into 4 focused modules (1,251 LOC total)
+  - `aead/cipher.rs` (488 LOC) - Nonce, Tag, AeadKey, AeadCipher
+  - `aead/replay.rs` (264 LOC) - ReplayProtection sliding window
+  - `aead/session.rs` (457 LOC) - SessionCrypto, BufferPool
+  - `aead/mod.rs` (42 LOC) - Re-exports for backward compatibility
+  - All 23 AEAD tests preserved and passing
+
 ### Documentation
 - Refactoring analysis (18 priorities, complexity metrics)
 
-**Story Points: 44 SP**
+**Story Points: 52 SP**
 
 ## [0.7.0] - 2025-12-01
 
