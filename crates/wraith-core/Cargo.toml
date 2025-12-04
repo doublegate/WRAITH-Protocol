@@ -14,10 +14,15 @@ simd = []
 
 [dependencies]
 wraith-crypto = { workspace = true }
+wraith-files = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 zeroize = { workspace = true }
 getrandom = { workspace = true }
+tokio = { workspace = true }
+rand_core = { workspace = true }
+rand = { workspace = true }
+rand_distr = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }

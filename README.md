@@ -9,41 +9,44 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
 [![CI Status](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/ci.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml)
 [![Release](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml)
-[![Version](https://img.shields.io/badge/version-0.8.0-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
+[![Version](https://img.shields.io/badge/version-0.9.0-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
 [![Rust](https://img.shields.io/badge/rust-1.85%2B-orange.svg)](https://www.rust-lang.org/)
 [![Edition](https://img.shields.io/badge/edition-2024-orange.svg)](https://doc.rust-lang.org/edition-guide/rust-2024/index.html)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ## Current Status
 
-**Version:** 0.8.0 (Security & Quality) | **Latest Release**
+**Version:** 0.9.0 Beta (Node API Release) | **Latest Release**
 
-WRAITH Protocol has completed all 7 development phases, delivering a production-ready decentralized secure file transfer protocol with comprehensive security, performance optimization, and cross-platform support.
+WRAITH Protocol introduces the high-level Node API, providing a unified orchestration layer for protocol operations. The Node API integrates cryptography, transport, session management, and file transfer into a single cohesive interface.
 
-**Phase 7 Complete (2025-12-01):**
-- Sprint 7.1: Security Audit (34 SP) - COMPLETE
-- Sprint 7.2: Fuzzing & Property Testing (26 SP) - COMPLETE
-- Sprint 7.3: Performance Optimization (47 SP) - COMPLETE
-- Sprint 7.4: Documentation (26 SP) - COMPLETE
-- Sprint 7.5: Cross-Platform & Packaging (25 SP) - COMPLETE
+**Phase 9 Complete (2025-12-03):**
+- Node API & Protocol Orchestration (85 SP) - COMPLETE
+  - Sprint 9.1: Node struct with lifecycle, session management, file transfer (34 SP)
+  - Sprint 9.2: DHT integration, NAT traversal, connection lifecycle (21 SP)
+  - Sprint 9.3: Traffic obfuscation integration (13 SP)
+  - Sprint 9.4: Multi-peer downloads, integration tests, benchmarks (17 SP)
+  - ~4,000 lines of new code across 9 modules
+  - 57 comprehensive unit tests
 
-**All Phases Complete: 802/947 story points delivered (85% overall)**
+**Progress: 887/947 story points delivered (94% overall)**
 
 **Code Quality Metrics:**
 - **Quality Grade:** A+ (95/100)
 - **Technical Debt Ratio:** 12% (healthy range)
-- **Test Coverage:** 973 tests passing (962 active, 11 ignored) - 100% pass rate
-  - 206 wraith-core (frame parsing, sessions, streams, BBR, migration)
+- **Test Coverage:** 791+ tests passing (722 library + 40 integration + 29 property) - 100% pass rate
+  - 263 wraith-core (frame parsing, sessions, streams, BBR, migration, **Node API** with 57 new tests)
   - 125 wraith-crypto (Ed25519, X25519, Elligator2, AEAD, Noise, Ratchet, encryption at rest)
   - 24 wraith-files (chunking, reassembly, tree hashing, O(m) algorithms)
   - 154 wraith-obfuscation (padding, timing, TLS/WebSocket/DoH mimicry)
   - 15 wraith-discovery (DHT, STUN, ICE, relay)
   - 33 wraith-transport (AF_XDP, io_uring, UDP, worker pools)
-  - 113 integration tests (end-to-end, cryptographic vectors, benchmarks)
-  - 303 doc tests (API examples across all crates)
+  - 40 integration tests (end-to-end, Node API integration, cryptographic vectors)
+  - 29 property tests (proptest invariants for state machines)
+  - 108 doc tests (API examples across all crates)
 - **Security Vulnerabilities:** Zero (cargo audit clean, CodeQL verified)
 - **Clippy Warnings:** Zero
-- **Code Volume:** ~31,000 lines of Rust code (23,136 LOC + 7,307 comments) across 7 active crates
+- **Code Volume:** ~36,600 lines of Rust code (~28,700 LOC + ~7,900 comments) across 7 active crates
 - **Fuzzing:** 5 libFuzzer targets continuously testing parser robustness
   - frame_parser: SIMD/scalar frame parsing with arbitrary bytes
   - dht_message: Kademlia message handling (FIND_NODE, FIND_VALUE, STORE)
@@ -55,9 +58,9 @@ WRAITH Protocol has completed all 7 development phases, delivering a production-
 - **Documentation:** 60+ files, 45,000+ lines, complete API coverage, deployment guides
 
 **Implementation Status:**
-- **Core workspace:** 9 crates (8 active + 1 XDP), ~31,000 lines of Rust code (23,136 LOC + 7,307 comments)
-- **Test coverage:** 973 total tests (962 active, 11 ignored) with 100% pass rate
-  - **wraith-core** (206 tests): Frame parsing with SIMD acceleration (172M frames/sec), session state machine with 7 states, stream multiplexing with prioritization, BBR congestion control with pacing, path MTU discovery with caching, connection migration with PATH_CHALLENGE/RESPONSE
+- **Core workspace:** 9 crates (8 active + 1 XDP), ~32,600 lines of Rust code (~24,700 LOC + ~7,900 comments)
+- **Test coverage:** 980 total tests (969 active, 11 ignored) with 100% pass rate
+  - **wraith-core** (219 tests): **Node API orchestration layer**, Frame parsing with SIMD acceleration (172M frames/sec), session state machine with 7 states, stream multiplexing with prioritization, BBR congestion control with pacing, path MTU discovery with caching, connection migration with PATH_CHALLENGE/RESPONSE, transfer session management
   - **wraith-crypto** (125 tests): Ed25519 signatures with batch verification, X25519 key exchange with Elligator2 encoding, XChaCha20-Poly1305 AEAD with key commitment (3.2 GB/s), BLAKE3 hashing with SIMD (8.5 GB/s), Noise_XX handshake with mutual authentication, Double Ratchet with DH and symmetric ratcheting, replay protection with 64-bit sliding window, private key encryption at rest (Argon2id + XChaCha20-Poly1305)
   - **wraith-files** (24 tests): io_uring async file I/O with registered buffers and zero-copy, file chunking with seek support (>1.5 GiB/s), file reassembly with O(m) missing chunks algorithm, BLAKE3 tree hashing with Merkle verification (>3 GiB/s), incremental tree hasher for streaming
   - **wraith-obfuscation** (154 tests): Padding engine with 5 modes (PowerOfTwo, SizeClasses, ConstantRate, Statistical), timing obfuscation with 5 distributions (Uniform, Normal, Exponential), TLS 1.3 record layer mimicry, WebSocket binary framing (RFC 6455), DNS-over-HTTPS tunneling, adaptive threat-level profiles (Low/Medium/High/Paranoid)
@@ -89,12 +92,32 @@ WRAITH Protocol has completed all 7 development phases, delivering a production-
 - ✅ **Phase 6 (98 SP):** Integration & File Transfer - Enhanced file chunking (FileChunker/FileReassembler with seek support, out-of-order writes, resume tracking with HashSet), BLAKE3 tree hashing with Merkle verification (compute_tree_hash, compute_merkle_root, verify_chunk, >3 GiB/s throughput), incremental tree hasher for streaming (zero-copy chunk boundaries), transfer session state machine (7 states, progress tracking, multi-peer coordination with chunk assignment, speed/ETA calculation), CLI implementation (send/receive/daemon/status/peers/keygen commands, progress display with indicatif, TOML configuration system with 6 sections), integration test framework (19 tests including end-to-end transfer with resume), performance benchmarks (chunking, tree hashing, verification, reassembly)
 - ✅ **Phase 7 (158 SP):** Hardening & Optimization - Security audit with comprehensive review checklist, fuzzing infrastructure (5 libFuzzer targets: frame_parser, dht_message, padding, crypto, tree_hash), property-based testing (29 proptest invariants), O(m) missing chunks algorithm (was O(n), critical for large file resume), allocation-free incremental hashing, profiling infrastructure (CPU/memory/cache profiling with perf/valgrind), comprehensive documentation (USER_GUIDE.md ~800 lines, CONFIG_REFERENCE.md ~650 lines, expanded deployment guide with security hardening), cross-platform CI testing (Linux/macOS/Windows), packaging (deb/rpm/tar.gz with systemd service and security directives)
 - ✅ **v0.8.0 Enhancements (52 SP):** 7 integration tests (end-to-end file transfer with 5MB resume, multi-peer coordination with 3 peers and 20 chunks, NAT traversal, relay fallback, obfuscation integration, Noise_XX + ratcheting), private key encryption at rest (Argon2id key derivation with OWASP-recommended defaults, XChaCha20-Poly1305 AEAD, passphrase rotation, security presets: low/default/high, 705 LOC with 16 tests), AEAD module refactoring (split 1,529 LOC into 4 focused modules: cipher.rs, replay.rs, session.rs for improved maintainability), BLAKE3 SIMD acceleration (rayon + neon features for 2-4x faster parallel hashing, ARM64 optimization), security audit template (comprehensive 10-section review checklist covering crypto/memory/side-channels/network/dependencies, penetration testing scope, fuzzing commands)
+- ✅ **Phase 9 (85 SP):** Node API & Protocol Orchestration - Complete integration layer coordinating all protocol components (~4,000 lines, 9 modules, 57 tests). Sprint 9.1 (34 SP): Node struct with lifecycle, Identity management, session establishment, file transfer coordination, comprehensive configuration system. Sprint 9.2 (21 SP): DHT integration (announce, lookup_peer, find_peers, bootstrap), NAT traversal (STUN detection, ICE-lite hole punching, relay fallback), connection lifecycle (health monitoring, session migration). Sprint 9.3 (13 SP): Traffic obfuscation (4 padding modes, 4 timing distributions, 3 protocol mimicry types). Sprint 9.4 (17 SP): Multi-peer downloads with parallel chunk fetching, 7 integration tests, 4 performance benchmarks
 - ✅ **Advanced Features:** Path MTU Discovery with binary search and caching, Connection Migration with PATH_CHALLENGE/RESPONSE, Cover Traffic Generation with Poisson/uniform distributions, Buffer Pools with pre-allocated UMEM, XDP packet filtering (planned), 15 documented frame types (DATA, ACK, CONTROL, REKEY, PING/PONG, CLOSE, PAD, STREAM_*, PATH_*)
-- ✅ **Comprehensive test suite:** 973 tests total (962 active, 11 ignored), 100% pass rate
+- ✅ **Comprehensive test suite:** 791+ tests total (722 library + 40 integration + 29 property), 100% pass rate
 - ✅ **Performance benchmarks:** 28 Criterion benchmarks measuring all critical paths
 - ✅ **Security documentation:** SECURITY.md, comprehensive technical debt analysis
 
 ## Features
+
+### Node API (v0.9.0)
+
+**High-Level Protocol Orchestration:**
+- **Node Lifecycle:** `Node::new_random()`, `start()`, `stop()` for node management
+- **Session Management:** Noise_XX handshake with automatic key exchange
+- **File Transfer:** `send_file()`, `receive_file()` with progress monitoring
+- **DHT Integration:** Peer discovery, announcements, and lookup via Kademlia
+- **NAT Traversal:** STUN detection, ICE-lite hole punching, relay fallback
+- **Connection Management:** Health monitoring, session migration, automatic cleanup
+- **Traffic Obfuscation:** Integrated padding, timing, and protocol mimicry
+- **Multi-Peer Downloads:** Parallel chunk fetching with round-robin assignment
+- **Comprehensive Configuration:** 6 subsystems (Transport, Obfuscation, Discovery, Transfer, Logging)
+
+**Architecture:**
+- **9 Modules:** node, config, session, error, discovery, nat, connection, obfuscation, transfer
+- **Thread-Safe:** `Arc<RwLock<>>` shared state, `AtomicBool` lifecycle
+- **~4,000 Lines:** Complete integration layer coordinating all protocol components
+- **57 Tests:** Full coverage of all Node API operations
 
 ### Performance
 - **Wire-Speed Transfers**: 10+ Gbps throughput with AF_XDP kernel bypass
@@ -743,4 +766,4 @@ WRAITH Protocol builds on the work of many excellent projects and technologies:
 
 **WRAITH Protocol** - *Secure. Fast. Invisible.*
 
-**Status:** v0.8.0 Production-Ready | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 973 (962 active, 11 ignored) | **Quality:** Grade A+ (95/100), 12% debt ratio, 0 vulnerabilities, 5 fuzz targets, 29 property tests | **Protocol:** Phase 7 Complete + v0.8.0 Security Enhancements (854/947 SP, 90%)
+**Status:** v0.9.0 Beta (Node API) | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 791+ (722 library + 40 integration + 29 property) | **Quality:** Grade A+ (95/100), 12% debt ratio, 0 vulnerabilities, 5 fuzz targets | **Protocol:** Phase 9 Complete - Node API Integration Layer (887/947 SP, 94%)

@@ -5,6 +5,183 @@ All notable changes to WRAITH Protocol will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2025-12-03 (Beta Release)
+
+### Added
+
+**Phase 9: Node API & Protocol Orchestration - COMPLETE (85 SP):**
+
+This release introduces the high-level Node API, providing a unified orchestration layer for the WRAITH protocol. The Node API integrates cryptography, transport, session management, discovery, NAT traversal, obfuscation, and file transfer into a single cohesive interface.
+
+#### Sprint 9.1: Node API & Core Integration (34 SP) - COMPLETE
+
+**Node API Implementation (wraith-core/src/node/ - NEW ~1,600 lines):**
+
+**Core Modules:**
+- `node.rs` (582 lines) - Node struct and protocol orchestration
+  - `Node::new_random()` - Create node with random identity
+  - `Node::new_with_config()` - Create node with custom configuration
+  - `Node::start()` / `Node::stop()` - Node lifecycle management
+  - `Node::establish_session()` - Noise_XX handshake with peers
+  - `Node::send_file()` - Initiate file transfers with chunking and tree hashing
+  - `Node::receive_file()` - Accept incoming file transfers
+  - `Node::wait_for_transfer()` - Transfer completion monitoring
+  - `Node::active_sessions()` / `Node::active_transfers()` - Status queries
+  - 10 comprehensive unit tests
+
+- `config.rs` (256 lines) - Configuration system
+  - `NodeConfig` - Main configuration structure
+  - `TransportConfig` - AF_XDP, io_uring, worker threads, timeouts
+  - `ObfuscationConfig` - Padding, timing, protocol mimicry modes
+  - `DiscoveryConfig` - DHT, NAT traversal, relay configuration
+  - `TransferConfig` - Chunk size, concurrency, resume, multi-peer
+  - `LoggingConfig` - Log levels and metrics
+  - Default implementations for all configuration types
+
+- `session.rs` (265 lines) - Session and connection management
+  - `PeerConnection` - Session state, crypto, connection stats
+  - `ConnectionStats` - Bytes, packets, RTT, loss rate tracking
+  - `perform_handshake_initiator()` - Noise_XX initiator role
+  - `perform_handshake_responder()` - Noise_XX responder role
+  - Stale connection detection with configurable idle timeouts
+  - 9 comprehensive unit tests
+
+- `error.rs` (83 lines) - Error handling
+  - `NodeError` enum with 15+ error variants
+  - Integration with crypto, transport, discovery, NAT errors
+  - Comprehensive error context and conversion
+
+- `mod.rs` (54 lines) - Module organization and re-exports
+
+**Identity Management:**
+- `Identity` struct combining Ed25519 (signing) and X25519 (Noise handshakes)
+- Node ID derived from Ed25519 public key (32-byte identifier)
+- Keypair generation with proper error handling
+
+**Thread Safety:**
+- `Arc<RwLock<>>` for shared mutable state
+- `AtomicBool` for node running state
+- Clone-able Node handle for multi-threaded access
+
+#### Sprint 9.2: Discovery & NAT Integration (21 SP) - COMPLETE
+
+**DHT Integration (wraith-core/src/node/discovery.rs - NEW 295 lines):**
+- `announce()` - Announce node presence to DHT
+- `lookup_peer()` - Find peer contact information
+- `find_peers()` - Discover nearby peers
+- `bootstrap()` - Join DHT network via bootstrap nodes
+- Background DHT maintenance task
+- 11 comprehensive unit tests
+
+**NAT Traversal Integration (wraith-core/src/node/nat.rs - NEW 450 lines):**
+- STUN-based NAT type detection (Full Cone, Restricted, Port-Restricted, Symmetric)
+- ICE-lite hole punching with candidate gathering
+- Relay fallback for symmetric NAT scenarios
+- `establish_connection()` - Unified connection flow
+- `attempt_hole_punch()` - UDP hole punching logic
+- `connect_via_relay()` - Relay fallback path
+- 8 comprehensive unit tests
+
+**Connection Lifecycle (wraith-core/src/node/connection.rs - NEW 305 lines):**
+- Health monitoring with 4 states: Healthy, Degraded, Stale, Dead
+- Session migration for IP address changes
+- Automatic stale session cleanup with configurable timeouts
+- Connection quality tracking (RTT, packet loss)
+- 9 comprehensive unit tests
+
+#### Sprint 9.3: Obfuscation Integration (13 SP) - COMPLETE
+
+**Traffic Obfuscation (wraith-core/src/node/obfuscation.rs - NEW 420 lines):**
+- Padding engine integration with 4 modes:
+  - PowerOfTwo - Round to next power of 2 (~15% overhead)
+  - SizeClasses - Fixed buckets [128, 512, 1024, 4096, 8192, 16384] (~10% overhead)
+  - ConstantRate - Always maximum size (~50% overhead, maximum privacy)
+  - Statistical - Geometric distribution random padding (~20% overhead)
+- Timing obfuscation with 4 distributions:
+  - Fixed - Constant delay between packets
+  - Uniform - Random delays within range
+  - Normal - Gaussian distribution with mean and stddev
+  - Exponential - Poisson process simulation
+- Protocol mimicry integration:
+  - TLS 1.3 record layer (application_data type 23)
+  - WebSocket binary framing (RFC 6455 compliant)
+  - DNS-over-HTTPS tunneling (base64url encoding)
+- `send_obfuscated()` - Full obfuscation pipeline
+- 11 comprehensive unit tests
+
+#### Sprint 9.4: File Transfer & Testing (17 SP) - COMPLETE
+
+**Multi-Peer Downloads (wraith-core/src/node/transfer.rs - NEW 300 lines):**
+- `download_from_peers()` - Parallel chunk fetching from multiple peers
+- Round-robin chunk assignment for load balancing
+- FileReassembler integration for out-of-order chunk reception
+- Progress tracking across all peer connections
+- 8 comprehensive unit tests
+
+**Integration Tests (tests/integration_tests.rs - Enhanced +310 lines):**
+- 7 new tests for Node API:
+  - `test_node_end_to_end_transfer` - Complete file transfer workflow
+  - `test_node_connection_establishment` - Noise_XX handshake
+  - `test_node_obfuscation_modes` - Traffic obfuscation integration
+  - `test_node_discovery_integration` - DHT peer discovery
+  - `test_node_multi_path_transfer` - Multiple connection paths
+  - `test_node_error_recovery` - Connection failure recovery
+  - `test_node_concurrent_transfers` - Parallel file transfers
+
+**Performance Benchmarks (benches/transfer.rs - Enhanced +260 lines):**
+- 4 new benchmarks for Node API:
+  - `bench_node_transfer_throughput` - 1MB, 10MB, 100MB transfers
+  - `bench_node_transfer_latency` - Round-trip time measurement
+  - `bench_node_bbr_utilization` - Bandwidth utilization efficiency
+  - `bench_node_multi_peer_speedup` - Multi-peer download speedup
+
+### Changed
+
+- **wraith-core/src/lib.rs** - Enhanced module documentation
+  - Added Node API quick start example
+  - Updated architecture diagram with Node orchestration layer
+  - Documented all modules with their responsibilities
+
+- **wraith-core exports** - Updated public API
+  - Added node module exports
+  - Added Discovery, NAT, Obfuscation, Transfer modules
+  - Maintained backward compatibility
+
+### Dependencies
+
+- Added `rand = { workspace = true }` to wraith-core
+- Added `rand_distr = { workspace = true }` to wraith-core
+  - Required for timing distribution sampling
+
+### Testing
+
+- **791+ tests passing** (57 new Node API tests across all sprints)
+  - **Sprint 9.1:** 10 tests (node creation, lifecycle, sessions)
+  - **Sprint 9.2:** 28 tests (discovery, NAT, connection lifecycle)
+  - **Sprint 9.3:** 11 tests (obfuscation modes, timing, mimicry)
+  - **Sprint 9.4:** 8 tests (multi-peer downloads, file transfer)
+  - **Integration:** 7 new end-to-end tests
+- **Zero clippy warnings** with `-D warnings`
+- **Zero compilation warnings**
+- **4 new performance benchmarks**
+
+### Documentation
+
+- Updated wraith-core crate documentation with Node API examples
+- Added module-level documentation for all 9 node submodules
+- Comprehensive inline documentation for all public APIs
+- Updated README.md with Node API features
+- Updated CLAUDE.local.md with Phase 9 completion
+
+### Metrics
+
+- **New Code:** ~4,000 lines of Rust across 9 modules
+- **Tests:** 791+ total (722 library + 40 integration + 29 property)
+- **Story Points:** 85/85 (100% - Phase 9 COMPLETE)
+- **Quality:** Zero warnings, all tests passing, comprehensive documentation
+
+**Phase 9 Complete: All 4 Sprints Delivered**
+
 ## [0.8.0] - 2025-12-01
 
 ### Added

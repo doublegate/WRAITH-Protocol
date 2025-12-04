@@ -15,7 +15,6 @@ default = ["rayon"]
 rayon = ["blake3/rayon"]
 
 [dependencies]
-wraith-core = { workspace = true }
 wraith-crypto = { workspace = true }
 # BLAKE3 with conditional SIMD features
 blake3 = { workspace = true }

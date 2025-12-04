@@ -19,6 +19,7 @@ rand = "0.8"
 criterion = { workspace = true }
 proptest = { workspace = true }
 tempfile = "3"
+tokio = { workspace = true }
 
 [[test]]
 name = "integration_tests"
