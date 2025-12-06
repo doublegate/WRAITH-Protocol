@@ -87,15 +87,12 @@ impl Node {
 
     /// Health check all active sessions
     async fn health_check_all_sessions(&self) -> Result<(), NodeError> {
-        let sessions: Vec<_> = {
-            self.inner
-                .sessions
-                .read()
-                .await
-                .iter()
-                .map(|(id, s)| (*id, s.clone()))
-                .collect()
-        };
+        let sessions: Vec<_> = self
+            .inner
+            .sessions
+            .iter()
+            .map(|entry| (*entry.key(), entry.value().clone()))
+            .collect();
 
         tracing::trace!("Health checking {} sessions", sessions.len());
 
@@ -111,7 +108,7 @@ impl Node {
                     Err(e) => {
                         // Connection is dead, remove it
                         tracing::info!("Removing dead session for peer {:?}: {}", peer_id, e);
-                        self.inner.sessions.write().await.remove(&peer_id);
+                        self.inner.sessions.remove(&peer_id);
                     }
                 }
             }
@@ -173,9 +170,7 @@ impl Node {
             new_addr
         );
 
-        let mut sessions = self.inner.sessions.write().await;
-
-        if let Some(_session) = sessions.get_mut(peer_id) {
+        if self.inner.sessions.contains_key(peer_id) {
             // TODO: Integrate with wraith-core::migration
             // For now, just update the address
             //
@@ -187,7 +182,6 @@ impl Node {
             // Update stored address
             // Note: In Arc, we can't mutate directly, so we'd need to
             // implement migration in PeerConnection or replace the Arc
-            drop(sessions);
 
             // Verify new path with ping
             let result = self.get_or_establish_session(peer_id).await?;
@@ -205,9 +199,7 @@ impl Node {
     ///
     /// Returns health status and metrics for a specific peer.
     pub async fn get_connection_health(&self, peer_id: &PeerId) -> Option<HealthMetrics> {
-        let sessions = self.inner.sessions.read().await;
-
-        if let Some(session) = sessions.get(peer_id) {
+        if let Some(session) = self.inner.sessions.get(peer_id) {
             let idle_time = session.last_activity.elapsed();
             let idle_timeout = self.inner.config.transport.idle_timeout;
 
@@ -238,11 +230,10 @@ impl Node {
     ///
     /// Returns health metrics for all active sessions.
     pub async fn get_all_connection_health(&self) -> Vec<(PeerId, HealthMetrics)> {
-        let sessions = self.inner.sessions.read().await;
-
         let mut metrics = Vec::new();
 
-        for (peer_id, session) in sessions.iter() {
+        for entry in self.inner.sessions.iter() {
+            let (peer_id, session) = entry.pair();
             let idle_time = session.last_activity.elapsed();
             let idle_timeout = self.inner.config.transport.idle_timeout;
 
@@ -277,20 +268,21 @@ impl Node {
     ///
     /// Returns the number of sessions closed.
     pub async fn cleanup_stale_sessions(&self) -> usize {
-        let mut sessions = self.inner.sessions.write().await;
         let idle_timeout = self.inner.config.transport.idle_timeout;
 
-        let stale_peers: Vec<PeerId> = sessions
+        let stale_peers: Vec<PeerId> = self
+            .inner
+            .sessions
             .iter()
-            .filter(|(_, session)| session.is_stale(idle_timeout))
-            .map(|(peer_id, _)| *peer_id)
+            .filter(|entry| entry.value().is_stale(idle_timeout))
+            .map(|entry| *entry.key())
             .collect();
 
         let count = stale_peers.len();
 
         for peer_id in stale_peers {
             tracing::debug!("Cleaning up stale session for peer {:?}", peer_id);
-            sessions.remove(&peer_id);
+            self.inner.sessions.remove(&peer_id);
         }
 
         if count > 0 {

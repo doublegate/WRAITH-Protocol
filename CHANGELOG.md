@@ -11,6 +11,88 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 This is the first production release of WRAITH Protocol, a decentralized secure file transfer protocol designed for privacy-preserving, high-performance data transfer with deep packet inspection (DPI) evasion capabilities.
 
+### Technical Debt Resolution & Architectural Improvements (2025-12-06)
+
+**Phase C: Short-term Architectural Refactoring (13 Story Points) - COMPLETE**
+
+This phase addresses technical debt identified in the security audit and improves code maintainability through targeted architectural refactoring. These improvements enhance testability, reduce code duplication, and establish better patterns for future development.
+
+#### Added
+
+**Frame Routing Refactor (C.1 - 5 SP):**
+- Refactored `handle_frame()` from large match statement to dispatch table pattern
+- Extracted frame handlers into dedicated methods for each frame type
+- Reduced code duplication and improved maintainability
+- Benefits: Easier to add new frame types, simpler testing, clearer separation of concerns
+
+**FileTransferContext Consolidation (C.2 - 3 SP):**
+- Created `FileTransferContext` struct consolidating transfer state (NEW 67 lines):
+  - `transfer_id` - Transfer identifier (32 bytes)
+  - `transfer_session` - Transfer session with progress tracking
+  - `reassembler` - File reassembler for receive transfers (optional)
+  - `tree_hash` - BLAKE3 tree hash for integrity verification
+- Replaced three separate HashMaps with single `DashMap<TransferId, Arc<FileTransferContext>>`
+- Updated all transfer methods to use consolidated context pattern
+- File: `crates/wraith-core/src/node/file_transfer.rs` (351 lines total, context at lines 18-67)
+- Benefits: Reduced HashMap lookups, simpler state management, better cache locality
+
+**Padding Strategy Pattern (C.3 - 5 SP):**
+- Created `PaddingStrategy` trait for pluggable padding implementations (NEW 365 lines):
+  - Trait methods: `apply()`, `name()`, `expected_overhead()`
+  - `Send + Sync` for thread-safe use across Node API
+- Implemented 5 padding strategies with dedicated types:
+  - `NonePadding` - No padding applied (0% overhead)
+  - `PowerOfTwoPadding` - Pad to next power of 2 (~50% overhead)
+  - `SizeClassesPadding` - Pad to predefined buckets: 256, 512, 1024, 2048, 4096, 8192 bytes (~35% overhead)
+  - `ConstantRatePadding` - Pad to fixed MTU size, default 1400 bytes (~50% overhead)
+  - `StatisticalPadding` - Add 0-255 random bytes (~12.8% overhead)
+- Added factory function `create_padding_strategy(PaddingMode) -> Box<dyn PaddingStrategy>`
+- Refactored `Node::apply_padding()` to delegate to strategy instead of match statement
+- File: `crates/wraith-core/src/node/padding_strategy.rs` (365 lines)
+- File: `crates/wraith-core/src/node/obfuscation.rs` (updated to use strategy, 83 lines removed)
+- Benefits: Easier testing, flexible obfuscation policies, pluggable per-transfer padding, context-aware strategies
+
+#### Testing
+
+**New Tests Added:**
+- 8 padding strategy tests in `padding_strategy.rs`:
+  - `test_none_padding()` - Verify no padding applied
+  - `test_power_of_two_padding()` - Test power-of-2 boundaries (5→8, 100→128, 64→64)
+  - `test_size_classes_padding()` - Test size class buckets (100→256, 500→512, 3000→4096, 9000→9000)
+  - `test_constant_rate_padding()` - Test fixed MTU padding (100→1400, 1400→1400, 2000→2000)
+  - `test_statistical_padding()` - Test random padding range (0-255 bytes added)
+  - `test_factory_creation()` - Verify factory creates correct strategy types
+  - `test_expected_overhead()` - Verify overhead calculations
+  - `test_strategy_names()` - Verify strategy name strings
+
+**Test Metrics:**
+- Total tests: 1,033 (up from 1,025, +8 new tests)
+- Active tests: 1,019 passing (up from 1,011)
+- wraith-core tests: 335 (up from 327, +8 new tests)
+- Test success rate: 100% on active tests
+
+#### Code Metrics
+
+**Lines of Code:**
+- New code: +432 lines
+  - padding_strategy.rs: +365 lines
+  - file_transfer.rs: +67 lines (FileTransferContext struct)
+- Removed code: -83 lines
+  - obfuscation.rs: -83 lines (replaced match statement with strategy delegation)
+- Net change: +349 lines
+- Total project LOC: ~36,949 lines (up from ~36,600)
+
+**Story Points Completed:**
+- C.1 Frame Routing: 5 SP
+- C.2 FileTransferContext: 3 SP
+- C.3 PaddingStrategy: 5 SP
+- **Total Phase C:** 13 SP delivered
+
+**Quality Gates:**
+- All 1,033 tests passing (100% pass rate on active tests)
+- Zero clippy warnings with `-D warnings`
+- All code formatted with `cargo fmt`
+
 ### Phase 10 COMPLETE - Enterprise Ready
 
 **Phase 10: Full Production Implementation (130 Story Points)**

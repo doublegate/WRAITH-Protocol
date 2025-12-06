@@ -2,11 +2,12 @@
 
 use crate::node::config::NodeConfig;
 use crate::node::error::{NodeError, Result};
+use crate::node::file_transfer::FileTransferContext;
 use crate::node::session::{PeerConnection, PeerId, SessionId};
 use crate::transfer::TransferSession;
 use crate::{ConnectionId, HandshakePhase, SessionState};
+use dashmap::DashMap;
 use getrandom::getrandom;
-use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -71,17 +72,13 @@ pub(crate) struct NodeInner {
     pub(crate) config: NodeConfig,
 
     /// Active sessions (peer_id -> connection)
-    pub(crate) sessions: Arc<RwLock<HashMap<PeerId, Arc<PeerConnection>>>>,
+    /// Uses DashMap for lock-free concurrent access
+    pub(crate) sessions: Arc<DashMap<PeerId, Arc<PeerConnection>>>,
 
-    /// Active transfers (transfer_id -> transfer session)
-    pub(crate) transfers: Arc<RwLock<HashMap<TransferId, Arc<RwLock<TransferSession>>>>>,
-
-    /// File reassemblers for receive transfers (transfer_id -> reassembler)
-    pub(crate) reassemblers:
-        Arc<RwLock<HashMap<TransferId, Arc<Mutex<wraith_files::chunker::FileReassembler>>>>>,
-
-    /// Tree hashes for integrity verification (transfer_id -> tree_hash)
-    pub(crate) tree_hashes: Arc<RwLock<HashMap<TransferId, wraith_files::tree_hash::FileTreeHash>>>,
+    /// Active file transfers (transfer_id -> transfer context)
+    /// Uses DashMap for lock-free concurrent access
+    /// Consolidates transfer session, reassembler, and tree hash
+    pub(crate) transfers: Arc<DashMap<TransferId, Arc<FileTransferContext>>>,
 
     /// Node running state
     pub(crate) running: Arc<AtomicBool>,
@@ -178,10 +175,8 @@ impl Node {
         let inner = NodeInner {
             identity: Arc::new(identity),
             config,
-            sessions: Arc::new(RwLock::new(HashMap::new())),
-            transfers: Arc::new(RwLock::new(HashMap::new())),
-            reassemblers: Arc::new(RwLock::new(HashMap::new())),
-            tree_hashes: Arc::new(RwLock::new(HashMap::new())),
+            sessions: Arc::new(DashMap::new()),
+            transfers: Arc::new(DashMap::new()),
             running: Arc::new(AtomicBool::new(false)),
             transport: Arc::new(Mutex::new(None)),
             discovery: Arc::new(Mutex::new(None)),
@@ -294,14 +289,13 @@ impl Node {
         }
 
         // Close all sessions
-        let sessions = self.inner.sessions.write().await;
-        for (peer_id, connection) in sessions.iter() {
+        for entry in self.inner.sessions.iter() {
+            let (peer_id, connection) = entry.pair();
             tracing::debug!("Closing session with peer {:?}", peer_id);
             if let Err(e) = connection.transition_to(SessionState::Closed).await {
                 tracing::warn!("Error closing session: {}", e);
             }
         }
-        drop(sessions);
 
         // Close transport
         if let Some(transport) = self.inner.transport.lock().await.take() {
@@ -418,8 +412,9 @@ impl Node {
             tokio::time::sleep(delay).await;
 
             // Send cover traffic to all active sessions
-            let sessions = self.inner.sessions.read().await;
-            for connection in sessions.values() {
+            for entry in self.inner.sessions.iter() {
+                let connection = entry.value();
+
                 // Generate random padding data
                 let mut pad_data = vec![0u8; 64];
                 if getrandom(&mut pad_data).is_err() {
@@ -446,12 +441,41 @@ impl Node {
                     }
                 });
             }
-            drop(sessions);
 
             tracing::trace!("Sent cover traffic to active sessions");
         }
 
         tracing::debug!("Cover traffic loop terminated");
+    }
+
+    /// Dispatch a frame to the appropriate handler
+    ///
+    /// Parses the frame bytes and routes to the correct handler based on frame type.
+    async fn dispatch_frame(&self, frame_bytes: Vec<u8>) -> Result<()> {
+        // Parse the frame
+        let frame = crate::frame::Frame::parse(&frame_bytes)
+            .map_err(|e| NodeError::Other(format!("Failed to parse frame: {}", e)))?;
+
+        tracing::debug!(
+            "Received {} frame with {} byte payload",
+            format!("{:?}", frame.frame_type()),
+            frame.payload().len()
+        );
+
+        // Route frame to appropriate handler based on frame type
+        use crate::frame::FrameType;
+        match frame.frame_type() {
+            FrameType::StreamOpen => self.handle_stream_open_frame(frame).await,
+            FrameType::Data => self.handle_data_frame(frame).await,
+            FrameType::StreamClose => {
+                tracing::debug!("Received StreamClose frame");
+                Ok(())
+            }
+            _ => {
+                tracing::debug!("Unhandled frame type: {:?}", frame.frame_type());
+                Ok(())
+            }
+        }
     }
 
     /// Handle incoming packet with obfuscation unwrapping
@@ -462,61 +486,21 @@ impl Node {
         let unwrapped = self.unwrap_protocol(&data)?;
 
         // Find session for this peer address
-        let sessions = self.inner.sessions.read().await;
-
-        // Find connection by peer address
-        let connection = sessions
-            .values()
-            .find(|conn| conn.peer_addr == from)
-            .cloned();
-
-        drop(sessions);
+        let connection = self
+            .inner
+            .sessions
+            .iter()
+            .find(|entry| entry.value().peer_addr == from)
+            .map(|entry| Arc::clone(entry.value()));
 
         if let Some(conn) = connection {
             // 2. Decrypt the packet (padding is stripped during decryption or frame parsing)
             match conn.decrypt_frame(&unwrapped).await {
                 Ok(frame_bytes) => {
-                    // Clone frame_bytes for spawned task to avoid lifetime issues
-                    let frame_bytes_owned = frame_bytes.clone();
                     let node = self.clone();
-
                     tokio::spawn(async move {
-                        // Parse the frame inside the task
-                        match crate::frame::Frame::parse(&frame_bytes_owned) {
-                            Ok(frame) => {
-                                tracing::debug!(
-                                    "Received {} frame with {} byte payload",
-                                    format!("{:?}", frame.frame_type()),
-                                    frame.payload().len()
-                                );
-
-                                // Route frame to appropriate handler based on frame type
-                                use crate::frame::FrameType;
-                                let result = match frame.frame_type() {
-                                    FrameType::StreamOpen => {
-                                        node.handle_stream_open_frame(frame).await
-                                    }
-                                    FrameType::Data => node.handle_data_frame(frame).await,
-                                    FrameType::StreamClose => {
-                                        tracing::debug!("Received StreamClose frame");
-                                        Ok(())
-                                    }
-                                    _ => {
-                                        tracing::debug!(
-                                            "Unhandled frame type: {:?}",
-                                            frame.frame_type()
-                                        );
-                                        Ok(())
-                                    }
-                                };
-
-                                if let Err(e) = result {
-                                    tracing::warn!("Error handling frame: {}", e);
-                                }
-                            }
-                            Err(e) => {
-                                tracing::warn!("Failed to parse frame: {}", e);
-                            }
+                        if let Err(e) = node.dispatch_frame(frame_bytes).await {
+                            tracing::warn!("Error handling frame: {}", e);
                         }
                     });
                 }
@@ -619,11 +603,8 @@ impl Node {
     /// ```
     pub async fn establish_session(&self, peer_id: &PeerId) -> Result<SessionId> {
         // Check if session already exists
-        {
-            let sessions = self.inner.sessions.read().await;
-            if let Some(connection) = sessions.get(peer_id) {
-                return Ok(connection.session_id);
-            }
+        if let Some(connection) = self.inner.sessions.get(peer_id) {
+            return Ok(connection.session_id);
         }
 
         // Get transport
@@ -673,11 +654,7 @@ impl Node {
 
         // Store session
         let connection_arc = Arc::new(connection);
-        self.inner
-            .sessions
-            .write()
-            .await
-            .insert(*peer_id, connection_arc);
+        self.inner.sessions.insert(*peer_id, connection_arc);
 
         tracing::info!(
             "Session established with peer {}, session: {}",
@@ -691,29 +668,24 @@ impl Node {
     /// Get or establish session with peer
     pub async fn get_or_establish_session(&self, peer_id: &PeerId) -> Result<Arc<PeerConnection>> {
         // Try to get existing session
-        {
-            let sessions = self.inner.sessions.read().await;
-            if let Some(connection) = sessions.get(peer_id) {
-                return Ok(Arc::clone(connection));
-            }
+        if let Some(connection) = self.inner.sessions.get(peer_id) {
+            return Ok(Arc::clone(connection.value()));
         }
 
         // Establish new session
         let _session_id = self.establish_session(peer_id).await?;
 
         // Retrieve the newly created session
-        let sessions = self.inner.sessions.read().await;
-        sessions
+        self.inner
+            .sessions
             .get(peer_id)
-            .map(Arc::clone)
+            .map(|entry| Arc::clone(entry.value()))
             .ok_or(NodeError::SessionNotFound(*peer_id))
     }
 
     /// Close session with peer
     pub async fn close_session(&self, peer_id: &PeerId) -> Result<()> {
-        let mut sessions = self.inner.sessions.write().await;
-
-        if let Some(connection) = sessions.remove(peer_id) {
+        if let Some((_, connection)) = self.inner.sessions.remove(peer_id) {
             connection.transition_to(SessionState::Closed).await?;
             tracing::info!("Session closed with peer {:?}", peer_id);
             Ok(())
@@ -724,7 +696,11 @@ impl Node {
 
     /// List active sessions
     pub async fn active_sessions(&self) -> Vec<PeerId> {
-        self.inner.sessions.read().await.keys().copied().collect()
+        self.inner
+            .sessions
+            .iter()
+            .map(|entry| *entry.key())
+            .collect()
     }
 
     /// Send file to peer
@@ -781,13 +757,16 @@ impl Node {
 
         transfer.start(); // Start immediately
 
-        // Store transfer for tracking
+        // Store transfer context (consolidates session and tree hash)
         let transfer_arc = Arc::new(RwLock::new(transfer));
+        let context = Arc::new(FileTransferContext::new_send(
+            transfer_id,
+            Arc::clone(&transfer_arc),
+            tree_hash.clone(),
+        ));
         self.inner
             .transfers
-            .write()
-            .await
-            .insert(transfer_id, Arc::clone(&transfer_arc));
+            .insert(transfer_id, Arc::clone(&context));
 
         // 5. Establish session with peer
         let connection = self.get_or_establish_session(peer_id).await?;
@@ -829,14 +808,7 @@ impl Node {
 
         tokio::spawn(async move {
             if let Err(e) = node
-                .send_file_chunks(
-                    transfer_id,
-                    file_path_buf,
-                    stream_id,
-                    connection,
-                    transfer_arc,
-                    &tree_hash,
-                )
+                .send_file_chunks(transfer_id, file_path_buf, stream_id, connection)
                 .await
             {
                 tracing::error!("Error sending file chunks: {}", e);
@@ -847,16 +819,21 @@ impl Node {
     }
 
     /// Send file chunks (called from spawned task)
-    #[allow(clippy::too_many_arguments)]
     async fn send_file_chunks(
         &self,
         transfer_id: TransferId,
         file_path: PathBuf,
         stream_id: u16,
         connection: Arc<crate::node::session::PeerConnection>,
-        transfer_session: Arc<RwLock<TransferSession>>,
-        tree_hash: &wraith_files::tree_hash::FileTreeHash,
     ) -> Result<()> {
+        // Get transfer context
+        let context = self
+            .inner
+            .transfers
+            .get(&transfer_id)
+            .ok_or(NodeError::TransferNotFound(transfer_id))?
+            .clone();
+
         // Create chunker
         let mut chunker = FileChunker::new(&file_path, self.inner.config.transfer.chunk_size)
             .map_err(NodeError::Io)?;
@@ -877,9 +854,9 @@ impl Node {
             let chunk_len = chunk_data.len();
 
             // Verify chunk hash against tree hash
-            if chunk_index < tree_hash.chunks.len() as u64 {
+            if chunk_index < context.tree_hash.chunks.len() as u64 {
                 let computed_hash = blake3::hash(&chunk_data);
-                if computed_hash.as_bytes() != &tree_hash.chunks[chunk_index as usize] {
+                if computed_hash.as_bytes() != &context.tree_hash.chunks[chunk_index as usize] {
                     tracing::error!("Chunk {} hash mismatch during send", chunk_index);
                     return Err(NodeError::InvalidState(
                         "Chunk hash verification failed".to_string(),
@@ -896,7 +873,7 @@ impl Node {
 
             // Update transfer progress
             {
-                let mut transfer = transfer_session.write().await;
+                let mut transfer = context.transfer_session.write().await;
                 transfer.mark_chunk_transferred(chunk_index, chunk_len);
             }
 
@@ -941,13 +918,6 @@ impl Node {
 
         transfer.start();
 
-        // Store transfer session
-        self.inner
-            .transfers
-            .write()
-            .await
-            .insert(metadata.transfer_id, Arc::new(RwLock::new(transfer)));
-
         // Create file reassembler
         let reassembler = wraith_files::chunker::FileReassembler::new(
             &metadata.file_name,
@@ -956,23 +926,20 @@ impl Node {
         )
         .map_err(NodeError::Io)?;
 
-        self.inner
-            .reassemblers
-            .write()
-            .await
-            .insert(metadata.transfer_id, Arc::new(Mutex::new(reassembler)));
-
-        // Store tree hash (just root for now - we'll build full tree from chunks)
+        // Create tree hash (just root for now - we'll build full tree from chunks)
         let tree_hash = wraith_files::tree_hash::FileTreeHash {
             root: metadata.root_hash,
             chunks: Vec::new(), // Will be populated as chunks arrive
         };
 
-        self.inner
-            .tree_hashes
-            .write()
-            .await
-            .insert(metadata.transfer_id, tree_hash);
+        // Store consolidated transfer context
+        let context = Arc::new(FileTransferContext::new_receive(
+            metadata.transfer_id,
+            Arc::new(RwLock::new(transfer)),
+            Arc::new(Mutex::new(reassembler)),
+            tree_hash,
+        ));
+        self.inner.transfers.insert(metadata.transfer_id, context);
 
         tracing::debug!(
             "Initialized receive session for transfer {:?}",
@@ -996,87 +963,73 @@ impl Node {
         );
 
         // Find transfer by stream_id (derived from transfer_id)
-        // For now, we'll iterate through transfers to find matching stream
-        let transfers = self.inner.transfers.read().await;
-
-        let mut matched_transfer_id = None;
-        for (transfer_id, _) in transfers.iter() {
+        let mut matched_context = None;
+        for entry in self.inner.transfers.iter() {
             // Derive stream_id from transfer_id (same as in send_file)
+            let transfer_id = entry.key();
             let stream_id = ((transfer_id[0] as u16) << 8) | (transfer_id[1] as u16);
 
             if stream_id == frame.stream_id() {
-                matched_transfer_id = Some(*transfer_id);
+                matched_context = Some(entry.value().clone());
                 break;
             }
         }
 
-        drop(transfers);
-
-        let transfer_id = matched_transfer_id.ok_or_else(|| {
+        let context = matched_context.ok_or_else(|| {
             NodeError::InvalidState(format!(
                 "No transfer found for stream_id {}",
                 frame.stream_id()
             ))
         })?;
 
-        // Write chunk to reassembler
-        {
-            let reassemblers = self.inner.reassemblers.read().await;
-            if let Some(reassembler_arc) = reassemblers.get(&transfer_id) {
-                let mut reassembler = reassembler_arc.lock().await;
-                reassembler
-                    .write_chunk(chunk_index, chunk_data)
-                    .map_err(NodeError::Io)?;
+        let transfer_id = context.transfer_id;
 
-                tracing::trace!(
-                    "Wrote chunk {} to reassembler for transfer {:?}",
+        // Write chunk to reassembler
+        if let Some(reassembler_arc) = &context.reassembler {
+            let mut reassembler = reassembler_arc.lock().await;
+            reassembler
+                .write_chunk(chunk_index, chunk_data)
+                .map_err(NodeError::Io)?;
+
+            tracing::trace!(
+                "Wrote chunk {} to reassembler for transfer {:?}",
+                chunk_index,
+                hex::encode(&transfer_id[..8])
+            );
+        } else {
+            return Err(NodeError::InvalidState(format!(
+                "No reassembler found for transfer {:?}",
+                hex::encode(&transfer_id[..8])
+            )));
+        }
+
+        // Verify chunk hash
+        let tree_hash = &context.tree_hash;
+        if chunk_index < tree_hash.chunks.len() as u64 {
+            let computed_hash = blake3::hash(chunk_data);
+            if computed_hash.as_bytes() != &tree_hash.chunks[chunk_index as usize] {
+                tracing::error!(
+                    "Chunk {} hash mismatch for transfer {:?}",
                     chunk_index,
                     hex::encode(&transfer_id[..8])
                 );
-            } else {
-                return Err(NodeError::InvalidState(format!(
-                    "No reassembler found for transfer {:?}",
-                    hex::encode(&transfer_id[..8])
-                )));
-            }
-        }
-
-        // Verify chunk hash if tree hash is available
-        {
-            let tree_hashes = self.inner.tree_hashes.read().await;
-            if let Some(tree_hash) = tree_hashes.get(&transfer_id) {
-                if chunk_index < tree_hash.chunks.len() as u64 {
-                    let computed_hash = blake3::hash(chunk_data);
-                    if computed_hash.as_bytes() != &tree_hash.chunks[chunk_index as usize] {
-                        tracing::error!(
-                            "Chunk {} hash mismatch for transfer {:?}",
-                            chunk_index,
-                            hex::encode(&transfer_id[..8])
-                        );
-                        return Err(NodeError::InvalidState(
-                            "Chunk hash verification failed".to_string(),
-                        ));
-                    }
-                }
+                return Err(NodeError::InvalidState(
+                    "Chunk hash verification failed".to_string(),
+                ));
             }
         }
 
         // Update transfer progress
-        {
-            let transfers = self.inner.transfers.read().await;
-            if let Some(transfer_arc) = transfers.get(&transfer_id) {
-                let mut transfer = transfer_arc.write().await;
-                transfer.mark_chunk_transferred(chunk_index, chunk_data.len());
+        let mut transfer = context.transfer_session.write().await;
+        transfer.mark_chunk_transferred(chunk_index, chunk_data.len());
 
-                // Check if transfer is complete
-                if transfer.is_complete() {
-                    tracing::info!(
-                        "File transfer {:?} completed successfully ({} bytes received)",
-                        hex::encode(&transfer_id[..8]),
-                        transfer.file_size
-                    );
-                }
-            }
+        // Check if transfer is complete
+        if transfer.is_complete() {
+            tracing::info!(
+                "File transfer {:?} completed successfully ({} bytes received)",
+                hex::encode(&transfer_id[..8]),
+                transfer.file_size
+            );
         }
 
         Ok(())
@@ -1085,14 +1038,11 @@ impl Node {
     /// Wait for transfer to complete
     pub async fn wait_for_transfer(&self, transfer_id: TransferId) -> Result<()> {
         loop {
-            let transfers = self.inner.transfers.read().await;
-            if let Some(transfer) = transfers.get(&transfer_id) {
-                let transfer_guard = transfer.read().await;
+            if let Some(context) = self.inner.transfers.get(&transfer_id) {
+                let transfer_guard = context.transfer_session.read().await;
                 if transfer_guard.is_complete() {
                     return Ok(());
                 }
-                drop(transfer_guard);
-                drop(transfers);
             } else {
                 return Err(NodeError::TransferNotFound(transfer_id));
             }
@@ -1104,17 +1054,23 @@ impl Node {
 
     /// Get transfer progress
     pub async fn get_transfer_progress(&self, transfer_id: &TransferId) -> Option<f64> {
-        let transfers = self.inner.transfers.read().await;
-        if let Some(transfer) = transfers.get(transfer_id) {
-            Some(transfer.read().await.progress())
-        } else {
-            None
-        }
+        self.inner
+            .transfers
+            .get(transfer_id)
+            .map(|context| context.transfer_session.clone())
+            .map(|session| async move { session.read().await.progress() })
+            .map(|fut| {
+                tokio::task::block_in_place(|| tokio::runtime::Handle::current().block_on(fut))
+            })
     }
 
     /// List active transfers
     pub async fn active_transfers(&self) -> Vec<TransferId> {
-        self.inner.transfers.read().await.keys().copied().collect()
+        self.inner
+            .transfers
+            .iter()
+            .map(|entry| *entry.key())
+            .collect()
     }
 
     /// Generate random transfer ID

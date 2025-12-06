@@ -3,7 +3,7 @@
 //! Integrates padding, timing obfuscation, and protocol mimicry to make
 //! WRAITH traffic indistinguishable from normal network activity.
 
-use crate::node::config::{MimicryMode, PaddingMode, TimingMode};
+use crate::node::config::{MimicryMode, TimingMode};
 use crate::node::session::PeerConnection;
 use crate::node::{Node, NodeError};
 use std::time::Duration;
@@ -57,98 +57,13 @@ impl Node {
         Ok(())
     }
 
-    /// Apply padding to packet
+    /// Apply padding to packet using configured strategy
     fn apply_padding(&self, data: &mut Vec<u8>) -> Result<(), NodeError> {
-        match self.inner.config.obfuscation.padding_mode {
-            PaddingMode::None => Ok(()),
-
-            PaddingMode::PowerOfTwo => {
-                // Pad to next power of 2
-                let current_size = data.len();
-                let target_size = current_size.next_power_of_two();
-                let padding_needed = target_size - current_size;
-
-                if padding_needed > 0 {
-                    data.resize(target_size, 0);
-                    tracing::trace!(
-                        "Applied power-of-2 padding: {} -> {} bytes",
-                        current_size,
-                        target_size
-                    );
-                }
-
-                Ok(())
-            }
-
-            PaddingMode::SizeClasses => {
-                // Pad to predefined size classes
-                // Classes: 256, 512, 1024, 2048, 4096, 8192 bytes
-                const SIZE_CLASSES: &[usize] = &[256, 512, 1024, 2048, 4096, 8192];
-
-                let current_size = data.len();
-                let target_size = SIZE_CLASSES
-                    .iter()
-                    .find(|&&size| size >= current_size)
-                    .copied()
-                    .unwrap_or(*SIZE_CLASSES.last().unwrap());
-
-                let padding_needed = target_size - current_size;
-
-                if padding_needed > 0 {
-                    data.resize(target_size, 0);
-                    tracing::trace!(
-                        "Applied size-class padding: {} -> {} bytes",
-                        current_size,
-                        target_size
-                    );
-                }
-
-                Ok(())
-            }
-
-            PaddingMode::ConstantRate => {
-                // Pad to fixed MTU size (1400 bytes)
-                const TARGET_SIZE: usize = 1400;
-
-                let current_size = data.len();
-
-                if current_size < TARGET_SIZE {
-                    data.resize(TARGET_SIZE, 0);
-                    tracing::trace!(
-                        "Applied constant-rate padding: {} -> {} bytes",
-                        current_size,
-                        TARGET_SIZE
-                    );
-                }
-
-                Ok(())
-            }
-
-            PaddingMode::Statistical => {
-                // Add random padding following a distribution
-                use rand::Rng;
-
-                let current_size = data.len();
-                let mut rng = rand::thread_rng();
-
-                // Add 0-255 random bytes
-                let padding_bytes: usize = rng.gen_range(0..256);
-                data.resize(current_size + padding_bytes, 0);
-
-                // Fill with random data
-                for byte in data.iter_mut().skip(current_size).take(padding_bytes) {
-                    *byte = rng.r#gen();
-                }
-
-                tracing::trace!(
-                    "Applied statistical padding: {} -> {} bytes",
-                    current_size,
-                    data.len()
-                );
-
-                Ok(())
-            }
-        }
+        // Delegate to the padding strategy
+        let strategy = crate::node::padding_strategy::create_padding_strategy(
+            self.inner.config.obfuscation.padding_mode,
+        );
+        strategy.apply(data)
     }
 
     /// Get timing delay for next packet

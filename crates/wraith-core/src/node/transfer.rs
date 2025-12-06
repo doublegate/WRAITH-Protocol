@@ -92,14 +92,22 @@ impl Node {
             transfer_session.add_peer(*peer_id);
         }
 
-        let transfer = Arc::new(tokio::sync::RwLock::new(transfer_session));
+        // Create tree hash for verification
+        let tree_hash = wraith_files::tree_hash::FileTreeHash {
+            root: *file_hash,
+            chunks: Vec::new(), // Will be populated as chunks are verified
+        };
 
-        // Store transfer
-        self.inner
-            .transfers
-            .write()
-            .await
-            .insert(transfer_id, transfer.clone());
+        // Store transfer context
+        let context = Arc::new(
+            crate::node::file_transfer::FileTransferContext::new_receive(
+                transfer_id,
+                Arc::new(tokio::sync::RwLock::new(transfer_session)),
+                reassembler.clone(),
+                tree_hash,
+            ),
+        );
+        self.inner.transfers.insert(transfer_id, context.clone());
 
         // 4. Assign chunks to peers
         let chunk_assignments = self.assign_chunks(&metadata, &peers);
@@ -117,11 +125,10 @@ impl Node {
             .into_iter()
             .map(|(peer_id, chunks)| {
                 let node = self.clone();
-                let reassembler = reassembler.clone();
-                let transfer_clone = transfer.clone();
+                let context_clone = context.clone();
 
                 tokio::spawn(async move {
-                    node.download_chunks_from_peer(peer_id, chunks, reassembler, transfer_clone)
+                    node.download_chunks_from_peer(peer_id, chunks, context_clone)
                         .await
                 })
             })
@@ -227,8 +234,7 @@ impl Node {
         &self,
         peer_id: PeerId,
         chunks: Vec<usize>,
-        reassembler: Arc<Mutex<FileReassembler>>,
-        transfer: Arc<tokio::sync::RwLock<TransferSession>>,
+        context: Arc<crate::node::file_transfer::FileTransferContext>,
     ) -> Result<(), NodeError> {
         tracing::debug!(
             "Downloading {} chunks from peer {:?}",
@@ -252,14 +258,17 @@ impl Node {
             let chunk_data = vec![0u8; 256 * 1024];
 
             // Write to reassembler
-            reassembler
-                .lock()
-                .await
-                .write_chunk(chunk_idx as u64, &chunk_data)
-                .map_err(NodeError::Io)?;
+            if let Some(reassembler) = &context.reassembler {
+                reassembler
+                    .lock()
+                    .await
+                    .write_chunk(chunk_idx as u64, &chunk_data)
+                    .map_err(NodeError::Io)?;
+            }
 
             // Update progress
-            transfer
+            context
+                .transfer_session
                 .write()
                 .await
                 .mark_chunk_transferred(chunk_idx as u64, chunk_data.len());

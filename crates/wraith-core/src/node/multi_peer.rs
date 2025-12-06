@@ -55,11 +55,18 @@ pub struct PeerPerformance {
 
     /// Maximum concurrent chunks for this peer
     pub max_concurrent: usize,
+
+    /// Cached performance score (to avoid recomputation)
+    cached_score: f64,
+
+    /// When the cached score was last updated
+    score_updated_at: Instant,
 }
 
 impl PeerPerformance {
     /// Create new peer performance tracker
     pub fn new(peer_id: [u8; 32], address: SocketAddr) -> Self {
+        let now = Instant::now();
         Self {
             peer_id,
             address,
@@ -67,9 +74,11 @@ impl PeerPerformance {
             throughput_bps: 1_000_000, // Initial estimate: 1 MB/s
             chunks_succeeded: 0,
             chunks_failed: 0,
-            last_active: Instant::now(),
+            last_active: now,
             in_flight: 0,
             max_concurrent: 4,
+            cached_score: 0.5, // Initial moderate score
+            score_updated_at: now,
         }
     }
 
@@ -105,15 +114,26 @@ impl PeerPerformance {
     }
 
     /// Calculate overall performance score
+    ///
+    /// Returns cached score that is updated when metrics change
     pub fn performance_score(&self) -> f64 {
+        self.cached_score
+    }
+
+    /// Update cached performance score
+    ///
+    /// Called internally whenever metrics change
+    fn update_cached_score(&mut self) {
         // Weighted combination of reliability, speed, and latency
         let reliability_weight = 0.4;
         let speed_weight = 0.4;
         let latency_weight = 0.2;
 
-        reliability_weight * self.reliability_score()
+        self.cached_score = reliability_weight * self.reliability_score()
             + speed_weight * self.speed_score()
-            + latency_weight * self.latency_score()
+            + latency_weight * self.latency_score();
+
+        self.score_updated_at = Instant::now();
     }
 
     /// Check if peer has capacity for more chunks
@@ -126,6 +146,9 @@ impl PeerPerformance {
         // Exponential moving average
         let alpha = 0.125; // Standard TCP alpha
         self.rtt_us = ((1.0 - alpha) * self.rtt_us as f64 + alpha * rtt_us as f64) as u64;
+
+        // Update cached performance score
+        self.update_cached_score();
     }
 
     /// Update throughput measurement
@@ -136,6 +159,9 @@ impl PeerPerformance {
         let alpha = 0.25;
         self.throughput_bps =
             ((1.0 - alpha) * self.throughput_bps as f64 + alpha * bps as f64) as u64;
+
+        // Update cached performance score
+        self.update_cached_score();
     }
 
     /// Record successful chunk
@@ -145,6 +171,9 @@ impl PeerPerformance {
         if self.in_flight > 0 {
             self.in_flight -= 1;
         }
+
+        // Update cached performance score
+        self.update_cached_score();
     }
 
     /// Record failed chunk
@@ -159,6 +188,9 @@ impl PeerPerformance {
         if self.failure_rate() > 0.2 && self.max_concurrent > 1 {
             self.max_concurrent -= 1;
         }
+
+        // Update cached performance score
+        self.update_cached_score();
     }
 
     /// Record chunk assignment
@@ -241,21 +273,22 @@ impl MultiPeerCoordinator {
         &self,
         peers: &HashMap<[u8; 32], PeerPerformance>,
     ) -> Option<[u8; 32]> {
-        let available_peers: Vec<_> = peers
-            .iter()
-            .filter(|(_, p)| p.has_capacity())
-            .map(|(id, _)| *id)
-            .collect();
-
-        if available_peers.is_empty() {
+        // Count available peers without allocating a Vec
+        let available_count = peers.values().filter(|p| p.has_capacity()).count();
+        if available_count == 0 {
             return None;
         }
 
         let mut counter = self.round_robin_counter.write().await;
-        let index = *counter % available_peers.len();
+        let index = *counter % available_count;
         *counter = counter.wrapping_add(1);
 
-        Some(available_peers[index])
+        // Use nth() to select the peer at the calculated index
+        peers
+            .iter()
+            .filter(|(_, p)| p.has_capacity())
+            .nth(index)
+            .map(|(id, _)| *id)
     }
 
     /// Fastest-first assignment (highest throughput)
@@ -388,6 +421,9 @@ mod tests {
         // High throughput, low RTT
         peer.throughput_bps = 50 * 1024 * 1024; // 50 MB/s
         peer.rtt_us = 10_000; // 10ms
+
+        // Update cached score after directly modifying metrics (for testing)
+        peer.update_cached_score();
 
         assert!(peer.speed_score() > 0.4);
         assert!(peer.latency_score() > 0.9);

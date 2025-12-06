@@ -8,8 +8,63 @@
 use crate::FRAME_HEADER_SIZE;
 use crate::frame::{FrameBuilder, FrameType};
 use crate::node::error::{NodeError, Result};
+use crate::transfer::session::TransferSession;
 use std::path::Path;
+use std::sync::Arc;
+use tokio::sync::{Mutex, RwLock};
+use wraith_files::chunker::FileReassembler;
 use wraith_files::tree_hash::FileTreeHash;
+
+/// File transfer context consolidating all per-transfer state
+///
+/// This struct combines the transfer session, file reassembler (for receives),
+/// and tree hash into a single context object, reducing HashMap lookups and
+/// simplifying transfer state management.
+#[derive(Clone)]
+pub struct FileTransferContext {
+    /// Transfer ID (32 bytes)
+    pub transfer_id: [u8; 32],
+
+    /// Transfer session (send/receive state, progress, peers)
+    pub transfer_session: Arc<RwLock<TransferSession>>,
+
+    /// File reassembler for receive transfers (None for send transfers)
+    pub reassembler: Option<Arc<Mutex<FileReassembler>>>,
+
+    /// Tree hash for integrity verification
+    pub tree_hash: FileTreeHash,
+}
+
+impl FileTransferContext {
+    /// Create context for send transfer
+    pub fn new_send(
+        transfer_id: [u8; 32],
+        transfer_session: Arc<RwLock<TransferSession>>,
+        tree_hash: FileTreeHash,
+    ) -> Self {
+        Self {
+            transfer_id,
+            transfer_session,
+            reassembler: None,
+            tree_hash,
+        }
+    }
+
+    /// Create context for receive transfer
+    pub fn new_receive(
+        transfer_id: [u8; 32],
+        transfer_session: Arc<RwLock<TransferSession>>,
+        reassembler: Arc<Mutex<FileReassembler>>,
+        tree_hash: FileTreeHash,
+    ) -> Self {
+        Self {
+            transfer_id,
+            transfer_session,
+            reassembler: Some(reassembler),
+            tree_hash,
+        }
+    }
+}
 
 /// File transfer metadata sent in StreamOpen frame
 ///

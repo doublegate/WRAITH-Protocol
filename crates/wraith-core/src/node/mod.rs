@@ -54,6 +54,7 @@ pub mod nat;
 #[allow(clippy::module_inception)]
 pub mod node;
 pub mod obfuscation;
+pub mod padding_strategy;
 pub mod rate_limiter;
 pub mod resume;
 pub mod session;
@@ -66,12 +67,16 @@ pub use config::NodeConfig;
 pub use connection::{HealthMetrics, HealthStatus};
 pub use discovery::{NatType, NodeCapabilities, PeerAnnouncement, PeerInfo};
 pub use error::NodeError;
-pub use file_transfer::FileMetadata;
+pub use file_transfer::{FileMetadata, FileTransferContext};
 pub use health::{HealthAction, HealthConfig, HealthMonitor};
 pub use multi_peer::{ChunkAssignmentStrategy, MultiPeerCoordinator, PeerPerformance};
 pub use nat::{CandidateType, IceCandidate};
 pub use node::Node;
 pub use obfuscation::{ObfuscationStats, Protocol};
+pub use padding_strategy::{
+    ConstantRatePadding, NonePadding, PaddingStrategy, PowerOfTwoPadding, SizeClassesPadding,
+    StatisticalPadding, create_padding_strategy,
+};
 pub use rate_limiter::{RateLimitConfig, RateLimitMetrics, RateLimiter};
 pub use resume::{ResumeManager, ResumeState};
 pub use session::PeerConnection;
