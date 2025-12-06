@@ -959,18 +959,25 @@ impl ChunkAssigner {
 - CircuitBreaker pattern (fail-fast when peer unreachable)
 - Automatic retry with exponential backoff
 - Session recovery after transient failures
+- Handshake packet channeling (fix race condition)
 
 **Tasks:**
 - [ ] Implement CircuitBreaker pattern
 - [ ] Add automatic retry with exponential backoff
 - [ ] Integrate circuit breakers into session establishment
 - [ ] Add error logging and metrics
+- [ ] Fix handshake race condition: channel incoming handshake packets to pending
+      handshake code instead of racing with packet_receive_loop for recv_from()
+      (see benches/transfer.rs docstring for bench_transfer_latency_excluded)
+- [ ] Re-enable transfer latency benchmarks after handshake fix
 - [ ] Write 4 tests (circuit breaker states, retry, backoff)
 
 **Acceptance Criteria:**
 - [ ] Circuit breaker prevents cascading failures
 - [ ] Automatic retry succeeds after transient failures
 - [ ] Exponential backoff prevents thundering herd
+- [ ] Handshake packets routed correctly (no race condition)
+- [ ] Transfer latency benchmarks pass reliably
 - [ ] All tests passing
 
 ---

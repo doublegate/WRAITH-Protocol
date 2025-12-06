@@ -6,10 +6,38 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use tokio::sync::RwLock;
+use tokio::sync::{RwLock, oneshot};
 use wraith_crypto::aead::SessionCrypto;
 use wraith_crypto::noise::{NoiseHandshake, NoiseKeypair};
 use wraith_transport::transport::Transport;
+
+/// Handshake packet with sender address (for channel-based handshake)
+///
+/// # Handshake Packet Channeling
+///
+/// To prevent race conditions between `packet_receive_loop` and handshake functions,
+/// handshake packets (msg2, msg3) are channeled to waiting handshake code instead of
+/// both code paths competing for `recv_from()` on the same UDP socket.
+///
+/// When a node initiates a handshake, it registers a oneshot channel in
+/// `pending_handshakes` before sending msg1. When the `packet_receive_loop` receives
+/// msg2, it checks `pending_handshakes` and forwards the packet via the channel instead
+/// of trying to decrypt it as a normal packet.
+///
+/// This solves the race condition where:
+/// 1. Initiator sends msg1 and calls `transport.recv_from()` to wait for msg2
+/// 2. `packet_receive_loop` also calls `transport.recv_from()` in parallel
+/// 3. Whichever wins the race receives msg2, causing the other to timeout
+///
+/// With channeling, only the packet loop receives packets, and it forwards handshake
+/// packets to the appropriate waiting handshake code.
+#[derive(Debug, Clone)]
+pub struct HandshakePacket {
+    /// Packet data (already unwrapped from protocol mimicry)
+    pub data: Vec<u8>,
+    /// Sender address
+    pub from: SocketAddr,
+}
 
 /// Peer identifier (Ed25519 public key)
 pub type PeerId = [u8; 32];
@@ -214,15 +242,27 @@ pub struct ConnectionStats {
 /// * `local_keypair` - Local X25519 keypair for handshake
 /// * `peer_addr` - Remote peer address
 /// * `transport` - Transport layer for sending/receiving handshake messages
+/// * `msg2_rx` - Optional channel to receive msg2. When provided, msg2 is received via the
+///   channel instead of calling `transport.recv_from()` directly. This prevents race conditions
+///   with `packet_receive_loop` where both code paths compete for the same socket. If `None`,
+///   falls back to direct `recv_from()` (for tests or standalone usage).
 ///
 /// # Returns
 ///
-/// Returns session crypto and session ID on success.
+/// Returns session crypto, session ID, and peer's X25519 public key on success.
+///
+/// # Race Condition Prevention
+///
+/// Without channeling, both `packet_receive_loop` and this function call `recv_from()` on the
+/// same socket, causing a race where whichever wins receives msg2 and the other times out.
+/// With channeling, only `packet_receive_loop` receives packets and forwards handshake packets
+/// to the appropriate channel.
 pub async fn perform_handshake_initiator<T: Transport + Send + Sync>(
     local_keypair: &NoiseKeypair,
     peer_addr: SocketAddr,
     transport: &T,
-) -> Result<(SessionCrypto, SessionId)> {
+    msg2_rx: Option<oneshot::Receiver<HandshakePacket>>,
+) -> Result<(SessionCrypto, SessionId, PeerId)> {
     tracing::debug!(
         "Starting Noise_XX handshake as initiator with {}",
         peer_addr
@@ -254,23 +294,52 @@ pub async fn perform_handshake_initiator<T: Transport + Send + Sync>(
         .map_err(|e| NodeError::Transport(format!("Failed to send msg1: {}", e)))?;
 
     // 2. Receive message 2 (<- e, ee, s, es)
-    let mut buf = vec![0u8; 4096];
-    let (size, from) = tokio::time::timeout(Duration::from_secs(5), transport.recv_from(&mut buf))
-        .await
-        .map_err(|_| NodeError::Handshake("Handshake timeout waiting for msg2".to_string()))?
-        .map_err(|e| NodeError::Transport(format!("Failed to receive msg2: {}", e)))?;
+    // Use channel if provided (prevents racing with packet_receive_loop)
+    // Otherwise fall back to direct recv_from (for tests and standalone usage)
+    let (msg2_data, from) = if let Some(rx) = msg2_rx {
+        // Receive via channel (registered in pending_handshakes)
+        let packet = tokio::time::timeout(Duration::from_secs(5), rx)
+            .await
+            .map_err(|_| NodeError::Handshake("Handshake timeout waiting for msg2".to_string()))?
+            .map_err(|_| NodeError::Handshake("Handshake channel closed".to_string()))?;
+        (packet.data, packet.from)
+    } else {
+        // Direct recv_from (fallback for tests)
+        let mut buf = vec![0u8; 4096];
+        let (size, from) =
+            tokio::time::timeout(Duration::from_secs(5), transport.recv_from(&mut buf))
+                .await
+                .map_err(|_| {
+                    NodeError::Handshake("Handshake timeout waiting for msg2".to_string())
+                })?
+                .map_err(|e| NodeError::Transport(format!("Failed to receive msg2: {}", e)))?;
+        (buf[..size].to_vec(), from)
+    };
 
-    if from != peer_addr {
+    // Validate sender address - handle 0.0.0.0 (INADDR_ANY) case
+    // When peer binds to 0.0.0.0:port, packets appear from their actual IP
+    let addr_matches = if peer_addr.ip().is_unspecified() {
+        // Only check port when peer is bound to INADDR_ANY
+        from.port() == peer_addr.port()
+    } else {
+        from == peer_addr
+    };
+
+    if !addr_matches {
         return Err(NodeError::Handshake(format!(
             "Received msg2 from unexpected address: {} (expected {})",
             from, peer_addr
         )));
     }
 
-    tracing::trace!("Received handshake msg2 ({} bytes) from {}", size, from);
+    tracing::trace!(
+        "Received handshake msg2 ({} bytes) from {}",
+        msg2_data.len(),
+        from
+    );
 
     let _payload2 = noise
-        .read_message(&buf[..size])
+        .read_message(&msg2_data)
         .map_err(|e| NodeError::Handshake(format!("Failed to process msg2: {}", e)))?;
 
     // 3. Send message 3 (-> s, se)
@@ -296,6 +365,11 @@ pub async fn perform_handshake_initiator<T: Transport + Send + Sync>(
         ));
     }
 
+    // Get peer's public key BEFORE consuming noise with into_session_keys()
+    let peer_id = noise.get_remote_static().ok_or_else(|| {
+        NodeError::Handshake("Failed to get remote static key after handshake".to_string())
+    })?;
+
     let keys = noise
         .into_session_keys()
         .map_err(|e| NodeError::Handshake(format!("Failed to extract keys: {}", e)))?;
@@ -311,11 +385,12 @@ pub async fn perform_handshake_initiator<T: Transport + Send + Sync>(
     session_id[8..].copy_from_slice(&keys.chain_key[..24]);
 
     tracing::info!(
-        "Noise_XX handshake complete as initiator, session: {:?}",
-        hex::encode(&session_id[..8])
+        "Noise_XX handshake complete as initiator, session: {:?}, peer: {}",
+        hex::encode(&session_id[..8]),
+        hex::encode(&peer_id[..8])
     );
 
-    Ok((crypto, session_id))
+    Ok((crypto, session_id, peer_id))
 }
 
 /// Perform Noise_XX handshake as responder
@@ -328,16 +403,18 @@ pub async fn perform_handshake_initiator<T: Transport + Send + Sync>(
 /// * `msg1` - First handshake message from initiator
 /// * `peer_addr` - Remote peer address
 /// * `transport` - Transport layer for sending/receiving handshake messages
+/// * `msg3_rx` - Optional channel to receive msg3 (prevents recv_from racing with packet loop)
 ///
 /// # Returns
 ///
-/// Returns session crypto and session ID on success.
+/// Returns session crypto, session ID, and peer's public key on success.
 pub async fn perform_handshake_responder<T: Transport + Send + Sync>(
     local_keypair: &NoiseKeypair,
     msg1: &[u8],
     peer_addr: SocketAddr,
     transport: &T,
-) -> Result<(SessionCrypto, SessionId)> {
+    msg3_rx: Option<oneshot::Receiver<HandshakePacket>>,
+) -> Result<(SessionCrypto, SessionId, PeerId)> {
     tracing::debug!(
         "Starting Noise_XX handshake as responder with {}",
         peer_addr
@@ -380,23 +457,52 @@ pub async fn perform_handshake_responder<T: Transport + Send + Sync>(
         .map_err(|e| NodeError::Transport(format!("Failed to send msg2: {}", e)))?;
 
     // 3. Receive message 3 (<- s, se)
-    let mut buf = vec![0u8; 4096];
-    let (size, from) = tokio::time::timeout(Duration::from_secs(5), transport.recv_from(&mut buf))
-        .await
-        .map_err(|_| NodeError::Handshake("Handshake timeout waiting for msg3".to_string()))?
-        .map_err(|e| NodeError::Transport(format!("Failed to receive msg3: {}", e)))?;
+    // Use channel if provided (prevents racing with packet_receive_loop)
+    // Otherwise fall back to direct recv_from (for tests and standalone usage)
+    let (msg3_data, from) = if let Some(rx) = msg3_rx {
+        // Receive via channel (registered in pending_handshakes)
+        let packet = tokio::time::timeout(Duration::from_secs(5), rx)
+            .await
+            .map_err(|_| NodeError::Handshake("Handshake timeout waiting for msg3".to_string()))?
+            .map_err(|_| NodeError::Handshake("Handshake channel closed".to_string()))?;
+        (packet.data, packet.from)
+    } else {
+        // Direct recv_from (fallback for tests)
+        let mut buf = vec![0u8; 4096];
+        let (size, from) =
+            tokio::time::timeout(Duration::from_secs(5), transport.recv_from(&mut buf))
+                .await
+                .map_err(|_| {
+                    NodeError::Handshake("Handshake timeout waiting for msg3".to_string())
+                })?
+                .map_err(|e| NodeError::Transport(format!("Failed to receive msg3: {}", e)))?;
+        (buf[..size].to_vec(), from)
+    };
 
-    if from != peer_addr {
+    // Validate sender address - handle 0.0.0.0 (INADDR_ANY) case
+    // When peer binds to 0.0.0.0:port, packets appear from their actual IP
+    let addr_matches = if peer_addr.ip().is_unspecified() {
+        // Only check port when peer is bound to INADDR_ANY
+        from.port() == peer_addr.port()
+    } else {
+        from == peer_addr
+    };
+
+    if !addr_matches {
         return Err(NodeError::Handshake(format!(
             "Received msg3 from unexpected address: {} (expected {})",
             from, peer_addr
         )));
     }
 
-    tracing::trace!("Received handshake msg3 ({} bytes) from {}", size, from);
+    tracing::trace!(
+        "Received handshake msg3 ({} bytes) from {}",
+        msg3_data.len(),
+        from
+    );
 
     let _payload3 = noise
-        .read_message(&buf[..size])
+        .read_message(&msg3_data)
         .map_err(|e| NodeError::Handshake(format!("Failed to process msg3: {}", e)))?;
 
     // Extract session keys after handshake completes
@@ -405,6 +511,11 @@ pub async fn perform_handshake_responder<T: Transport + Send + Sync>(
             "Handshake not complete after msg3".to_string(),
         ));
     }
+
+    // Get peer's public key BEFORE consuming noise with into_session_keys()
+    let peer_id = noise.get_remote_static().ok_or_else(|| {
+        NodeError::Handshake("Failed to get remote static key after handshake".to_string())
+    })?;
 
     let keys = noise
         .into_session_keys()
@@ -421,11 +532,12 @@ pub async fn perform_handshake_responder<T: Transport + Send + Sync>(
     session_id[8..].copy_from_slice(&keys.chain_key[..24]);
 
     tracing::info!(
-        "Noise_XX handshake complete as responder, session: {:?}",
-        hex::encode(&session_id[..8])
+        "Noise_XX handshake complete as responder, session: {:?}, peer: {}",
+        hex::encode(&session_id[..8]),
+        hex::encode(&peer_id[..8])
     );
 
-    Ok((crypto, session_id))
+    Ok((crypto, session_id, peer_id))
 }
 
 #[cfg(test)]

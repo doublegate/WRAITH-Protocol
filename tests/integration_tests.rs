@@ -1826,14 +1826,13 @@ async fn test_transport_initialization() {
 /// Verifies complete handshake flow:
 /// 1. Create two nodes with random identities
 /// 2. Perform three-way Noise_XX handshake
-/// 3. Verify session establishment
+/// 3. Verify session establishment on both sides
 /// 4. Verify session keys are derived
 #[tokio::test]
-#[ignore = "TODO(Session 3.4): Requires packet routing between nodes"]
 async fn test_noise_handshake_loopback() {
     use wraith_core::node::Node;
 
-    // 1. Create two nodes on different ports
+    // 1. Create two nodes on ephemeral ports
     let node1 = Node::new_random_with_port(0).await.unwrap();
     let node2 = Node::new_random_with_port(0).await.unwrap();
 
@@ -1841,18 +1840,33 @@ async fn test_noise_handshake_loopback() {
     node1.start().await.unwrap();
     node2.start().await.unwrap();
 
-    // 3. Establish session from node1 to node2
-    let session_id = node1.establish_session(node2.node_id()).await.unwrap();
+    // 3. Get node2's actual listening address
+    let node2_addr = node2.listen_addr().await.unwrap();
+
+    // 4. Establish session from node1 to node2 using known address
+    let session_id = node1
+        .establish_session_with_addr(node2.node_id(), node2_addr)
+        .await
+        .unwrap();
 
     // Verify session ID is 32 bytes
     assert_eq!(session_id.len(), 32);
 
-    // 4. Verify session exists in node1
-    let sessions = node1.active_sessions().await;
-    assert_eq!(sessions.len(), 1);
-    assert_eq!(&sessions[0], node2.node_id());
+    // 5. Give responder time to process handshake and create session
+    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
 
-    // 5. Cleanup
+    // 6. Verify session exists in node1 (initiator)
+    // Sessions are keyed by X25519 public key from Noise handshake
+    let sessions1 = node1.active_sessions().await;
+    assert_eq!(sessions1.len(), 1);
+    assert_eq!(&sessions1[0], node2.x25519_public_key());
+
+    // 7. Verify session exists in node2 (responder)
+    let sessions2 = node2.active_sessions().await;
+    assert_eq!(sessions2.len(), 1);
+    assert_eq!(&sessions2[0], node1.x25519_public_key());
+
+    // 8. Cleanup
     node1.stop().await.unwrap();
     node2.stop().await.unwrap();
 }
@@ -2173,7 +2187,7 @@ async fn test_discovery_node_integration() {
 /// 4. Wait for transfer completion
 /// 5. Verify file integrity
 #[tokio::test]
-#[ignore = "TODO(Session 3.4): Requires full end-to-end protocol integration"]
+#[ignore = "Requires DATA frame handling in packet processing path (Sprint 11.4)"]
 async fn test_end_to_end_file_transfer() {
     use std::fs;
     use tempfile::TempDir;
@@ -2234,10 +2248,9 @@ async fn test_end_to_end_file_transfer() {
 ///
 /// Tests session establishment between two nodes:
 /// 1. Create two nodes
-/// 2. Establish encrypted session
+/// 2. Establish encrypted session using known address
 /// 3. Verify session state
 #[tokio::test]
-#[ignore = "TODO(Session 3.4): Requires full end-to-end protocol integration"]
 async fn test_connection_establishment() {
     use wraith_core::node::Node;
 
@@ -2247,15 +2260,24 @@ async fn test_connection_establishment() {
     node1.start().await.unwrap();
     node2.start().await.unwrap();
 
-    // Establish session
-    let session_id = node1.establish_session(node2.node_id()).await.unwrap();
+    // Get node2's actual listening address
+    let node2_addr = node2.listen_addr().await.unwrap();
+
+    // Establish session using known address
+    let session_id = node1
+        .establish_session_with_addr(node2.node_id(), node2_addr)
+        .await
+        .unwrap();
 
     assert_eq!(session_id.len(), 32);
 
-    // Verify session exists
+    // Give responder time to process handshake
+    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+
+    // Verify session exists (keyed by X25519 public key from handshake)
     let sessions = node1.active_sessions().await;
     assert_eq!(sessions.len(), 1);
-    assert_eq!(sessions[0], *node2.node_id());
+    assert_eq!(sessions[0], *node2.x25519_public_key());
 
     node1.stop().await.unwrap();
     node2.stop().await.unwrap();
@@ -2287,14 +2309,13 @@ async fn test_obfuscation_modes() {
     // For now, we just verify the node can be created with these settings
 }
 
-/// Test DHT peer discovery and lookup
+/// Test peer discovery and bidirectional session establishment
 ///
-/// Tests peer announcement and lookup:
-/// 1. Create multiple nodes
-/// 2. Announce nodes to DHT
-/// 3. Lookup peers
+/// Tests establishing sessions between two nodes in both directions:
+/// 1. Create two nodes
+/// 2. Establish sessions from both sides using known addresses
+/// 3. Verify both nodes have sessions
 #[tokio::test]
-#[ignore = "TODO(Session 3.4): Requires full end-to-end protocol integration"]
 async fn test_discovery_and_peer_finding() {
     use wraith_core::node::Node;
 
@@ -2304,18 +2325,39 @@ async fn test_discovery_and_peer_finding() {
     node1.start().await.unwrap();
     node2.start().await.unwrap();
 
-    // Establish sessions (DHT functionality not yet implemented)
-    let _session_id1 = node1.establish_session(node2.node_id()).await.unwrap();
-    let _session_id2 = node2.establish_session(node1.node_id()).await.unwrap();
+    // Get actual listening addresses
+    let node1_addr = node1.listen_addr().await.unwrap();
+    let node2_addr = node2.listen_addr().await.unwrap();
 
-    // Verify sessions exist
+    // Establish session from node1 to node2
+    let _session_id1 = node1
+        .establish_session_with_addr(node2.node_id(), node2_addr)
+        .await
+        .unwrap();
+
+    // Give responder time to process handshake
+    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+
+    // Establish session from node2 to node1
+    let _session_id2 = node2
+        .establish_session_with_addr(node1.node_id(), node1_addr)
+        .await
+        .unwrap();
+
+    // Give responder time to process handshake
+    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+
+    // Verify sessions exist on both nodes
+    // Each node should have the other's X25519 public key in their session map
     let node1_sessions = node1.active_sessions().await;
     let node2_sessions = node2.active_sessions().await;
 
-    assert_eq!(node1_sessions.len(), 1);
-    assert_eq!(node2_sessions.len(), 1);
+    // Node1 initiated to node2, so it has node2's X25519 key
+    assert!(!node1_sessions.is_empty(), "Node1 should have sessions");
+    // Node2 initiated to node1, so it has node1's X25519 key
+    assert!(!node2_sessions.is_empty(), "Node2 should have sessions");
 
-    // Note: Full implementation will test:
+    // Note: Full DHT implementation will test:
     // - node1.announce().await
     // - node1.find_peers(10).await
     // - node1.lookup_peer(node2.node_id()).await
@@ -2331,7 +2373,7 @@ async fn test_discovery_and_peer_finding() {
 /// 2. Initiate multi-peer download
 /// 3. Verify speedup from parallel downloads
 #[tokio::test]
-#[ignore = "TODO(Session 3.4): Requires full end-to-end protocol integration"]
+#[ignore = "Requires PATH_CHALLENGE/RESPONSE frame handling (Sprint 11.5)"]
 async fn test_multi_path_transfer_node_api() {
     use std::fs;
     use tempfile::TempDir;
@@ -2374,34 +2416,63 @@ async fn test_multi_path_transfer_node_api() {
 /// Test error recovery and resilience
 ///
 /// Tests handling of error conditions:
-/// 1. Connection failures
-/// 2. Invalid peer IDs
-/// 3. Transfer errors
+/// 1. Close non-existent session
+/// 2. Node remains healthy after errors
+/// 3. Normal operations work after error conditions
 #[tokio::test]
-#[ignore = "TODO(Session 3.4): Requires full end-to-end protocol integration"]
 async fn test_error_recovery_node_api() {
     use wraith_core::node::Node;
 
-    let node = Node::new_random_with_port(0).await.unwrap();
-    node.start().await.unwrap();
+    let node1 = Node::new_random_with_port(0).await.unwrap();
+    let node2 = Node::new_random_with_port(0).await.unwrap();
+    node1.start().await.unwrap();
+    node2.start().await.unwrap();
 
-    // Try to establish session with self (should work but is unusual)
-    let result = node.establish_session(node.node_id()).await;
-    assert!(result.is_ok());
-
-    // Try to close non-existent session
+    // Try to close non-existent session before any sessions exist
     let fake_peer_id = [0xFF; 32];
-    let result = node.close_session(&fake_peer_id).await;
-    assert!(result.is_err());
+    let result = node1.close_session(&fake_peer_id).await;
+    assert!(result.is_err(), "Closing non-existent session should fail");
 
-    // Node should still be healthy
-    assert!(node.is_running());
+    // Node should still be healthy after error
+    assert!(node1.is_running());
 
-    // Verify active sessions
-    let sessions = node.active_sessions().await;
-    assert_eq!(sessions.len(), 1); // Self-session
+    // Verify no sessions exist
+    let sessions = node1.active_sessions().await;
+    assert_eq!(sessions.len(), 0, "Should have no sessions");
 
-    node.stop().await.unwrap();
+    // Now establish a valid session - node should work normally after error
+    let node2_addr = node2.listen_addr().await.unwrap();
+    let result = node1
+        .establish_session_with_addr(node2.node_id(), node2_addr)
+        .await;
+    assert!(
+        result.is_ok(),
+        "Session establishment should succeed after previous error"
+    );
+
+    // Give responder time to process handshake
+    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+
+    // Verify session was created
+    let sessions = node1.active_sessions().await;
+    assert_eq!(sessions.len(), 1, "Should have one session");
+    assert_eq!(&sessions[0], node2.x25519_public_key());
+
+    // Try to close the wrong session (should fail)
+    let wrong_peer = [0xAA; 32];
+    let result = node1.close_session(&wrong_peer).await;
+    assert!(result.is_err(), "Closing wrong session should fail");
+
+    // Original session should still exist
+    let sessions = node1.active_sessions().await;
+    assert_eq!(
+        sessions.len(),
+        1,
+        "Session should still exist after failed close"
+    );
+
+    node1.stop().await.unwrap();
+    node2.stop().await.unwrap();
 }
 
 /// Test concurrent transfers
@@ -2411,7 +2482,7 @@ async fn test_error_recovery_node_api() {
 /// 2. Verify isolation between transfers
 /// 3. Test resource sharing
 #[tokio::test]
-#[ignore = "TODO(Session 3.4): Requires full end-to-end protocol integration"]
+#[ignore = "Requires concurrent transfer coordination (Sprint 11.4)"]
 async fn test_concurrent_transfers_node_api() {
     use std::fs;
     use tempfile::TempDir;

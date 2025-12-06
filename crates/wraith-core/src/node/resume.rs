@@ -275,6 +275,7 @@ impl ResumeManager {
             .as_secs();
 
         let mut removed = 0;
+        let mut to_remove = Vec::new();
         let mut entries = fs::read_dir(&self.state_dir).await?;
 
         while let Some(entry) = entries.next_entry().await? {
@@ -286,10 +287,19 @@ impl ResumeManager {
                         let age = now.saturating_sub(state.last_active);
                         if age > self.max_age {
                             fs::remove_file(&path).await?;
+                            to_remove.push(state.transfer_id);
                             removed += 1;
                         }
                     }
                 }
+            }
+        }
+
+        // Remove from in-memory cache
+        if !to_remove.is_empty() {
+            let mut states = self.states.write().await;
+            for transfer_id in to_remove {
+                states.remove(&transfer_id);
             }
         }
 

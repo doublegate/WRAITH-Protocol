@@ -37,6 +37,10 @@ struct Cli {
     #[arg(short, long)]
     verbose: bool,
 
+    /// Enable debug output (implies --verbose)
+    #[arg(short, long)]
+    debug: bool,
+
     /// Configuration file path
     #[arg(short, long, default_value = "~/.config/wraith/config.toml")]
     config: String,
@@ -56,6 +60,21 @@ enum Commands {
         /// Recipient peer ID or address
         #[arg(required = true)]
         recipient: String,
+
+        /// Obfuscation mode
+        #[arg(long, default_value = "privacy")]
+        mode: String,
+    },
+
+    /// Send multiple files in batch
+    Batch {
+        /// Files to send (space-separated)
+        #[arg(required = true)]
+        files: Vec<String>,
+
+        /// Recipient peer ID or address
+        #[arg(short, long, required = true)]
+        to: String,
 
         /// Obfuscation mode
         #[arg(long, default_value = "privacy")]
@@ -85,10 +104,39 @@ enum Commands {
     },
 
     /// Show connection status
-    Status,
+    Status {
+        /// Show transfer status for specific transfer ID
+        #[arg(long)]
+        transfer: Option<String>,
+
+        /// Show detailed statistics
+        #[arg(long)]
+        detailed: bool,
+    },
 
     /// List connected peers
-    Peers,
+    Peers {
+        /// Query DHT for specific peer ID
+        #[arg(long)]
+        dht_query: Option<String>,
+    },
+
+    /// Show node health information
+    Health,
+
+    /// Show metrics and statistics
+    Metrics {
+        /// Show metrics in JSON format
+        #[arg(long)]
+        json: bool,
+
+        /// Watch metrics continuously (refresh every N seconds)
+        #[arg(short, long)]
+        watch: Option<u64>,
+    },
+
+    /// Show node information
+    Info,
 
     /// Generate a new identity keypair
     Keygen {
@@ -103,9 +151,15 @@ async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
     // Initialize logging
-    tracing_subscriber::fmt()
-        .with_env_filter(if cli.verbose { "debug" } else { "info" })
-        .init();
+    let log_level = if cli.debug {
+        "trace"
+    } else if cli.verbose {
+        "debug"
+    } else {
+        "info"
+    };
+
+    tracing_subscriber::fmt().with_env_filter(log_level).init();
 
     // Load configuration
     let config_path = PathBuf::from(&cli.config);
@@ -128,17 +182,29 @@ async fn main() -> anyhow::Result<()> {
         } => {
             send_file(PathBuf::from(file), recipient, mode, &config).await?;
         }
+        Commands::Batch { files, to, mode } => {
+            send_batch(files, to, mode, &config).await?;
+        }
         Commands::Receive { output, bind } => {
             receive_files(PathBuf::from(output), bind, &config).await?;
         }
         Commands::Daemon { bind, relay } => {
             run_daemon(bind, relay, &config).await?;
         }
-        Commands::Status => {
-            show_status(&config).await?;
+        Commands::Status { transfer, detailed } => {
+            show_status(transfer, detailed, &config).await?;
         }
-        Commands::Peers => {
-            list_peers(&config).await?;
+        Commands::Peers { dht_query } => {
+            list_peers(dht_query, &config).await?;
+        }
+        Commands::Health => {
+            show_health(&config).await?;
+        }
+        Commands::Metrics { json, watch } => {
+            show_metrics(json, watch, &config).await?;
+        }
+        Commands::Info => {
+            show_info(&config).await?;
         }
         Commands::Keygen { output } => {
             generate_keypair(output, &config).await?;
@@ -441,11 +507,103 @@ async fn run_daemon(bind: String, relay: bool, config: &Config) -> anyhow::Resul
     Ok(())
 }
 
+/// Send batch of files
+async fn send_batch(
+    files: Vec<String>,
+    recipient: String,
+    mode: String,
+    _config: &Config,
+) -> anyhow::Result<()> {
+    tracing::info!(
+        "Batch sending {} files to {} (mode: {})",
+        files.len(),
+        recipient,
+        mode
+    );
+
+    println!("Batch Transfer");
+    println!("Files: {}", files.len());
+    println!("Recipient: {}", recipient);
+    println!("Obfuscation: {}", mode);
+    println!();
+
+    // Validate and sanitize all file paths
+    let mut total_size = 0u64;
+    let mut sanitized_files = Vec::new();
+
+    for file_path_str in &files {
+        let file_path = PathBuf::from(file_path_str);
+        let sanitized = sanitize_path(&file_path)?;
+
+        if !sanitized.exists() {
+            anyhow::bail!("File not found: {:?}", file_path);
+        }
+
+        let metadata = std::fs::metadata(&sanitized)?;
+        if !metadata.is_file() {
+            anyhow::bail!("Not a file: {:?}", file_path);
+        }
+
+        total_size += metadata.len();
+        sanitized_files.push((sanitized, metadata.len()));
+    }
+
+    println!("Total size: {}", format_bytes(total_size));
+    println!();
+
+    // Transfer each file
+    for (idx, (file_path, file_size)) in sanitized_files.iter().enumerate() {
+        let filename = file_path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("unknown");
+
+        println!("[{}/{}] {}", idx + 1, sanitized_files.len(), filename);
+        println!("  Size: {}", format_bytes(*file_size));
+
+        let progress = TransferProgress::new(*file_size, filename);
+
+        // Placeholder: Full implementation requires protocol integration
+        tracing::warn!("Batch transfer implementation requires Phase 7 protocol integration");
+
+        progress.finish_with_message(format!(
+            "File {}/{} queued (implementation pending)",
+            idx + 1,
+            sanitized_files.len()
+        ));
+    }
+
+    println!();
+    println!(
+        "Batch transfer structured ({} files, implementation pending)",
+        files.len()
+    );
+
+    Ok(())
+}
+
 /// Show node status
-async fn show_status(config: &Config) -> anyhow::Result<()> {
+async fn show_status(
+    transfer: Option<String>,
+    detailed: bool,
+    config: &Config,
+) -> anyhow::Result<()> {
     println!("WRAITH Protocol Status");
     println!("Version: {}", env!("CARGO_PKG_VERSION"));
     println!();
+
+    if let Some(transfer_id) = transfer {
+        // Show specific transfer status
+        println!("Transfer: {}", transfer_id);
+        println!("Status: Active (placeholder)");
+        println!("Progress: 45% (placeholder)");
+        println!("Speed: 8.5 Gbps (placeholder)");
+        println!("ETA: 2m 15s (placeholder)");
+        println!();
+
+        tracing::warn!("Transfer status requires Phase 7 protocol integration");
+        return Ok(());
+    }
 
     println!("Configuration:");
     println!("  Listen: {}", config.network.listen_addr);
@@ -470,6 +628,19 @@ async fn show_status(config: &Config) -> anyhow::Result<()> {
     println!("  Relay servers: {}", config.discovery.relay_servers.len());
     println!();
 
+    if detailed {
+        println!("Detailed Statistics:");
+        println!("  Active sessions: 0 (placeholder)");
+        println!("  Active transfers: 0 (placeholder)");
+        println!("  Bytes sent: 0 (placeholder)");
+        println!("  Bytes received: 0 (placeholder)");
+        println!("  Packets sent: 0 (placeholder)");
+        println!("  Packets received: 0 (placeholder)");
+        println!("  Average RTT: N/A (placeholder)");
+        println!("  Packet loss: 0.0% (placeholder)");
+        println!();
+    }
+
     // Placeholder: Show runtime status when protocol is integrated
     tracing::warn!("Runtime status display requires Phase 7 protocol integration");
 
@@ -477,9 +648,20 @@ async fn show_status(config: &Config) -> anyhow::Result<()> {
 }
 
 /// List connected peers
-async fn list_peers(config: &Config) -> anyhow::Result<()> {
+async fn list_peers(dht_query: Option<String>, config: &Config) -> anyhow::Result<()> {
     println!("Connected Peers:");
     println!();
+
+    if let Some(peer_id) = dht_query {
+        // Query DHT for specific peer
+        println!("Querying DHT for peer: {}", peer_id);
+        println!();
+
+        tracing::warn!("DHT query requires Phase 7 protocol integration");
+
+        println!("DHT query result: Not found (implementation pending)");
+        return Ok(());
+    }
 
     // Placeholder: Full implementation requires protocol integration
     tracing::warn!("Peer listing requires Phase 7 protocol integration");
@@ -492,6 +674,239 @@ async fn list_peers(config: &Config) -> anyhow::Result<()> {
         config.discovery.bootstrap_nodes.len()
     );
     println!("  Relay servers: {}", config.discovery.relay_servers.len());
+
+    Ok(())
+}
+
+/// Show node health
+async fn show_health(config: &Config) -> anyhow::Result<()> {
+    println!("WRAITH Node Health Check");
+    println!("Version: {}", env!("CARGO_PKG_VERSION"));
+    println!();
+
+    // System health checks
+    println!("System:");
+    println!("  Status: healthy (placeholder)");
+    println!("  Uptime: N/A (placeholder)");
+    println!(
+        "  Memory: {} / {} (placeholder)",
+        format_bytes(0),
+        format_bytes(0)
+    );
+    println!("  CPU: 0% (placeholder)");
+    println!();
+
+    // Network health
+    println!("Network:");
+    println!(
+        "  XDP: {} ({})",
+        config.network.enable_xdp,
+        if config.network.enable_xdp {
+            "configured"
+        } else {
+            "disabled"
+        }
+    );
+    println!("  Listen: {}", config.network.listen_addr);
+    println!("  Connectivity: unknown (placeholder)");
+    println!();
+
+    // Protocol health
+    println!("Protocol:");
+    println!("  Active sessions: 0 (placeholder)");
+    println!("  Active transfers: 0 (placeholder)");
+    println!("  Avg throughput: 0 Gbps (placeholder)");
+    println!("  Avg latency: N/A (placeholder)");
+    println!();
+
+    // Discovery health
+    println!("Discovery:");
+    println!("  DHT nodes: 0 (placeholder)");
+    println!(
+        "  Bootstrap: {}/{} connected (placeholder)",
+        0,
+        config.discovery.bootstrap_nodes.len()
+    );
+    println!(
+        "  Relay: {}/{} connected (placeholder)",
+        0,
+        config.discovery.relay_servers.len()
+    );
+    println!();
+
+    println!("Overall Health: HEALTHY (placeholder)");
+    println!();
+
+    tracing::warn!("Health check requires Phase 7 protocol integration");
+
+    Ok(())
+}
+
+/// Show metrics
+async fn show_metrics(json: bool, watch: Option<u64>, config: &Config) -> anyhow::Result<()> {
+    if json {
+        // JSON output
+        println!(
+            r#"{{
+  "version": "{}",
+  "uptime_seconds": 0,
+  "network": {{
+    "xdp_enabled": {},
+    "bytes_sent": 0,
+    "bytes_received": 0,
+    "packets_sent": 0,
+    "packets_received": 0,
+    "packet_loss_rate": 0.0
+  }},
+  "sessions": {{
+    "active": 0,
+    "total": 0,
+    "avg_rtt_us": 0
+  }},
+  "transfers": {{
+    "active": 0,
+    "completed": 0,
+    "failed": 0,
+    "avg_throughput_bps": 0
+  }},
+  "discovery": {{
+    "dht_nodes": 0,
+    "bootstrap_connected": 0,
+    "relay_connected": 0
+  }}
+}}"#,
+            env!("CARGO_PKG_VERSION"),
+            config.network.enable_xdp
+        );
+
+        tracing::warn!("Metrics collection requires Phase 7 protocol integration");
+        return Ok(());
+    }
+
+    // Text output
+    if let Some(interval) = watch {
+        println!(
+            "Watching metrics (refresh every {}s, Ctrl+C to stop)",
+            interval
+        );
+        println!();
+
+        loop {
+            // Clear screen
+            print!("\x1B[2J\x1B[1;1H");
+
+            display_metrics(config);
+
+            tokio::time::sleep(std::time::Duration::from_secs(interval)).await;
+        }
+    } else {
+        display_metrics(config);
+    }
+
+    Ok(())
+}
+
+/// Display metrics (helper function)
+fn display_metrics(config: &Config) {
+    println!("WRAITH Metrics");
+    println!("Version: {}", env!("CARGO_PKG_VERSION"));
+    println!();
+
+    println!("Network:");
+    println!("  XDP: {}", config.network.enable_xdp);
+    println!("  Throughput: 0 Gbps ↓ / 0 Gbps ↑ (placeholder)");
+    println!("  Packets: 0 pps ↓ / 0 pps ↑ (placeholder)");
+    println!("  Loss rate: 0.00% (placeholder)");
+    println!();
+
+    println!("Sessions:");
+    println!("  Active: 0 (placeholder)");
+    println!("  Total: 0 (placeholder)");
+    println!("  Avg RTT: N/A (placeholder)");
+    println!();
+
+    println!("Transfers:");
+    println!("  Active: 0 (placeholder)");
+    println!("  Completed: 0 (placeholder)");
+    println!("  Failed: 0 (placeholder)");
+    println!("  Avg Speed: 0 Gbps (placeholder)");
+    println!();
+
+    println!("Discovery:");
+    println!("  DHT nodes: 0 (placeholder)");
+    println!(
+        "  Bootstrap: 0/{} (placeholder)",
+        config.discovery.bootstrap_nodes.len()
+    );
+    println!(
+        "  Relay: 0/{} (placeholder)",
+        config.discovery.relay_servers.len()
+    );
+    println!();
+
+    tracing::warn!("Metrics collection requires Phase 7 protocol integration");
+}
+
+/// Show node information
+async fn show_info(config: &Config) -> anyhow::Result<()> {
+    println!("WRAITH Node Information");
+    println!();
+
+    println!("Version: {}", env!("CARGO_PKG_VERSION"));
+    println!(
+        "Build: {} ({})",
+        env!("CARGO_PKG_NAME"),
+        env!("CARGO_PKG_VERSION")
+    );
+    println!();
+
+    println!("Node:");
+    println!("  ID: <not-generated> (placeholder)");
+    println!("  Listen: {}", config.network.listen_addr);
+    println!("  Uptime: N/A (placeholder)");
+    println!();
+
+    println!("Features:");
+    println!(
+        "  XDP: {} ({})",
+        config.network.enable_xdp,
+        if config.network.enable_xdp {
+            "enabled"
+        } else {
+            "disabled"
+        }
+    );
+    println!(
+        "  io_uring: {} ({})",
+        cfg!(target_os = "linux"),
+        if cfg!(target_os = "linux") {
+            "available"
+        } else {
+            "unavailable"
+        }
+    );
+    println!("  Obfuscation: {}", config.obfuscation.default_level);
+    println!("  TLS Mimicry: {}", config.obfuscation.tls_mimicry);
+    println!();
+
+    println!("Configuration:");
+    println!(
+        "  Chunk size: {}",
+        format_bytes(config.transfer.chunk_size as u64)
+    );
+    println!("  Max concurrent: {}", config.transfer.max_concurrent);
+    println!("  Resume: {}", config.transfer.enable_resume);
+    println!();
+
+    println!("Discovery:");
+    println!(
+        "  Bootstrap nodes: {}",
+        config.discovery.bootstrap_nodes.len()
+    );
+    println!("  Relay servers: {}", config.discovery.relay_servers.len());
+    println!();
+
+    tracing::warn!("Full node info requires Phase 7 protocol integration");
 
     Ok(())
 }

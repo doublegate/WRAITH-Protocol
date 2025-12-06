@@ -296,7 +296,12 @@ impl FileReassembler {
     /// Get progress (0.0 to 1.0)
     #[must_use]
     pub fn progress(&self) -> f64 {
-        self.received_chunks.len() as f64 / self.total_chunks as f64
+        if self.total_chunks == 0 {
+            // 0-byte file is always 100% complete
+            1.0
+        } else {
+            self.received_chunks.len() as f64 / self.total_chunks as f64
+        }
     }
 
     /// Check if transfer is complete

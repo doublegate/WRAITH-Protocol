@@ -7,8 +7,9 @@
 
 use std::net::IpAddr;
 use std::time::Duration;
+use wraith_core::node::health::HealthStatus;
 use wraith_core::node::{
-    CircuitBreaker, CircuitBreakerConfig, CircuitState, HealthConfig, HealthMonitor, HealthStatus,
+    CircuitBreaker, CircuitBreakerConfig, CircuitState, HealthConfig, HealthMonitor,
     RateLimitConfig, RateLimiter,
 };
 
@@ -187,7 +188,7 @@ async fn test_combined_protection_mechanisms() {
     let circuit = CircuitBreaker::new(circuit_config);
 
     let peer_id = [3u8; 32];
-    let ip: IpAddr = "10.0.0.1".parse().unwrap();
+    let _ip: IpAddr = "10.0.0.1".parse().unwrap();
 
     // Add sessions up to limit
     for i in 0..4 {

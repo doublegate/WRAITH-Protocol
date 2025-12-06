@@ -2,9 +2,12 @@
 
 ## Supported Versions
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 0.x.x   | :white_check_mark: |
+| Version | Supported          | Security Audit |
+| ------- | ------------------ | -------------- |
+| 1.1.x   | :white_check_mark: | [v1.1.0 Audit](docs/security/SECURITY_AUDIT_v1.1.0.md) |
+| 1.0.x   | :white_check_mark: | Pending |
+| 0.9.x   | :x: End of Life    | N/A |
+| < 0.9   | :x: End of Life    | N/A |
 
 ## Reporting a Vulnerability
 
@@ -68,3 +71,21 @@ WRAITH Protocol is designed with security as a core principle:
 - **Memory Safety:** Rust implementation with no unsafe code in crypto paths
 
 For detailed security architecture, see [docs/architecture/security-model.md](docs/architecture/security-model.md).
+
+## Security Audits
+
+WRAITH Protocol undergoes regular security audits:
+
+- **v1.1.0 Audit (2025-12-06):** [Full Report](docs/security/SECURITY_AUDIT_v1.1.0.md)
+  - ✅ Zero dependency vulnerabilities (286 dependencies scanned)
+  - ✅ Zero code quality warnings (clippy -D warnings)
+  - ✅ 1,157 tests passing (100% pass rate)
+  - ✅ Comprehensive cryptographic validation
+  - ✅ Multi-layer rate limiting and DoS protection
+  - ✅ No information leakage in error messages
+  - **Security Posture: EXCELLENT**
+
+### Audit Schedule
+- **Frequency:** Quarterly security audits
+- **Next Audit:** March 2026
+- **Scope:** Full codebase review + dependency audit + penetration testing

@@ -9,16 +9,28 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
 [![CI Status](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/ci.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml)
 [![Release](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml)
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
+[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
+[![Security](https://img.shields.io/badge/security-audited-green.svg)](docs/security/SECURITY_AUDIT_v1.1.0.md)
 [![Rust](https://img.shields.io/badge/rust-1.85%2B-orange.svg)](https://www.rust-lang.org/)
 [![Edition](https://img.shields.io/badge/edition-2024-orange.svg)](https://doc.rust-lang.org/edition-guide/rust-2024/index.html)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ## Current Status
 
-**Version:** 1.0.0 Production Release | **Phase 10 Sessions 2-8 COMPLETE**
+**Version:** 1.1.0 Security Validated Production Release | **Sprint 11.6 COMPLETE**
 
-WRAITH Protocol has completed full production implementation with comprehensive documentation, security validation, and advanced features. The protocol is enterprise-ready with DoS protection, health monitoring, circuit breakers, resume robustness, multi-peer optimization, complete user guides, and security audit.
+WRAITH Protocol has completed comprehensive security validation and quality assurance for production deployments. The protocol is enterprise-ready with comprehensive security audit, multi-layer DoS protection, health monitoring, circuit breakers, resume robustness, multi-peer optimization, and complete documentation.
+
+**Sprint 11.6: Security Validation & Release (18 SP) - COMPLETE (2025-12-06):**
+- ✅ **Security Audit:** Zero vulnerabilities, excellent security posture ([Full Report](docs/security/SECURITY_AUDIT_v1.1.0.md))
+  - 286 dependencies scanned (cargo audit clean)
+  - Comprehensive cryptographic validation (Noise_XX, AEAD, key derivation, ratcheting)
+  - Multi-layer rate limiting (node, STUN, relay levels)
+  - Input sanitization and error handling review
+  - All sensitive keys zeroized on drop
+- ✅ **Test Stability:** Fixed flaky timing-sensitive test
+- ✅ **Documentation:** Updated SECURITY.md, README.md, CHANGELOG.md
+- ✅ **Release Preparation:** Version 1.1.0, comprehensive release notes
 
 **Phase 10 COMPLETE (2025-12-05) - 130 Story Points Delivered:**
 
@@ -54,7 +66,7 @@ WRAITH Protocol has completed full production implementation with comprehensive 
 **Code Quality Metrics:**
 - **Quality Grade:** A+ (95/100)
 - **Technical Debt Ratio:** 12% (healthy range)
-- **Test Coverage:** 1,120 tests total (1,096 passing, 24 ignored) - 100% pass rate on active tests
+- **Test Coverage:** 1,177 tests total (1,157 passing, 20 ignored) - 100% pass rate on active tests
   - 263 wraith-core (frame parsing, sessions, streams, BBR, migration, **Node API** with 57 new tests)
   - 125 wraith-crypto (Ed25519, X25519, Elligator2, AEAD, Noise, Ratchet, encryption at rest)
   - 24 wraith-files (chunking, reassembly, tree hashing, O(m) algorithms)
@@ -64,7 +76,7 @@ WRAITH Protocol has completed full production implementation with comprehensive 
   - 40 integration tests (end-to-end, Node API integration, cryptographic vectors)
   - 29 property tests (proptest invariants for state machines)
   - 108 doc tests (API examples across all crates)
-- **Security Vulnerabilities:** Zero (cargo audit clean, CodeQL verified)
+- **Security Vulnerabilities:** Zero (cargo audit clean, CodeQL verified, [v1.1.0 audit](docs/security/SECURITY_AUDIT_v1.1.0.md))
 - **Clippy Warnings:** Zero
 - **Code Volume:** ~36,949 lines of Rust code (~29,049 LOC + ~7,900 comments) across 7 active crates
 - **Fuzzing:** 5 libFuzzer targets continuously testing parser robustness

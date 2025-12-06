@@ -7,6 +7,16 @@ use wraith_files::DEFAULT_CHUNK_SIZE;
 use wraith_files::chunker::{FileChunker, FileReassembler};
 use wraith_files::tree_hash::{compute_tree_hash, compute_tree_hash_from_data};
 
+/// Create a NodeConfig optimized for benchmarking (NAT detection disabled)
+fn benchmark_node_config(port: u16) -> wraith_core::node::NodeConfig {
+    let mut config = wraith_core::node::NodeConfig::default();
+    config.listen_addr = format!("0.0.0.0:{}", port).parse().unwrap();
+    // Disable NAT traversal and relay to speed up startup
+    config.discovery.enable_nat_traversal = false;
+    config.discovery.enable_relay = false;
+    config
+}
+
 /// Benchmark file chunking performance
 fn bench_file_chunking(c: &mut Criterion) {
     let mut group = c.benchmark_group("file_chunking");
@@ -179,9 +189,13 @@ fn bench_transfer_throughput(c: &mut Criterion) {
                     temp_file.flush().unwrap();
                     let path = temp_file.path().to_path_buf();
 
-                    // Create sender and receiver
-                    let sender = Node::new_random().await.unwrap();
-                    let receiver = Node::new_random().await.unwrap();
+                    // Create sender and receiver with benchmark config (NAT detection disabled)
+                    let sender = Node::new_with_config(benchmark_node_config(0))
+                        .await
+                        .unwrap();
+                    let receiver = Node::new_with_config(benchmark_node_config(0))
+                        .await
+                        .unwrap();
 
                     sender.start().await.unwrap();
                     receiver.start().await.unwrap();
@@ -205,26 +219,42 @@ fn bench_transfer_throughput(c: &mut Criterion) {
 
 /// Benchmark transfer latency and RTT
 ///
-/// Measures:
-/// - Session establishment latency
-/// - Handshake completion time
-/// - Small file transfer latency
+/// Metrics measured:
+/// - Session establishment latency (Noise_XX handshake round-trip)
+/// - Small file transfer initiation latency
 fn bench_transfer_latency(c: &mut Criterion) {
     let rt = tokio::runtime::Runtime::new().unwrap();
+    let mut group = c.benchmark_group("transfer_latency");
 
-    c.bench_function("session_establishment_latency", |b| {
+    // Session establishment latency
+    group.bench_function("session_establishment", |b| {
         b.iter(|| {
             rt.block_on(async {
                 use wraith_core::node::Node;
 
-                let node1 = Node::new_random().await.unwrap();
-                let node2 = Node::new_random().await.unwrap();
+                // Create two nodes with benchmark config (NAT detection disabled)
+                let node1 = Node::new_with_config(benchmark_node_config(0))
+                    .await
+                    .unwrap();
+                let node2 = Node::new_with_config(benchmark_node_config(0))
+                    .await
+                    .unwrap();
 
                 node1.start().await.unwrap();
                 node2.start().await.unwrap();
 
+                // Small delay to ensure packet receive loops are ready
+                tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+
+                // Get node2's listening address
+                let node2_addr = node2.listen_addr().await.unwrap();
+
+                // Measure handshake latency
                 let start = std::time::Instant::now();
-                let _session_id = node1.establish_session(node2.node_id()).await.unwrap();
+                let _session_id = node1
+                    .establish_session_with_addr(node2.node_id(), node2_addr)
+                    .await
+                    .unwrap();
                 let latency = start.elapsed();
 
                 node1.stop().await.unwrap();
@@ -235,25 +265,44 @@ fn bench_transfer_latency(c: &mut Criterion) {
         });
     });
 
-    c.bench_function("small_file_transfer_latency", |b| {
+    // Small file transfer initiation latency
+    group.bench_function("file_transfer_initiation", |b| {
         b.iter(|| {
             rt.block_on(async {
                 use tempfile::NamedTempFile;
                 use wraith_core::node::Node;
 
-                // 4 KB file for latency measurement
+                // Create small test file (1 KB)
                 let mut temp_file = NamedTempFile::new().unwrap();
-                let data = vec![0xBB; 4096];
+                let data = vec![0xAA; 1024];
                 temp_file.write_all(&data).unwrap();
                 temp_file.flush().unwrap();
                 let path = temp_file.path().to_path_buf();
 
-                let sender = Node::new_random().await.unwrap();
-                let receiver = Node::new_random().await.unwrap();
+                // Create nodes with benchmark config
+                let sender = Node::new_with_config(benchmark_node_config(0))
+                    .await
+                    .unwrap();
+                let receiver = Node::new_with_config(benchmark_node_config(0))
+                    .await
+                    .unwrap();
 
                 sender.start().await.unwrap();
                 receiver.start().await.unwrap();
 
+                // Small delay to ensure packet receive loops are ready
+                tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+
+                // Get receiver address
+                let receiver_addr = receiver.listen_addr().await.unwrap();
+
+                // Establish session first
+                let _session_id = sender
+                    .establish_session_with_addr(receiver.node_id(), receiver_addr)
+                    .await
+                    .unwrap();
+
+                // Measure file transfer initiation latency
                 let start = std::time::Instant::now();
                 let _transfer_id = sender.send_file(&path, receiver.node_id()).await.unwrap();
                 let latency = start.elapsed();
@@ -265,6 +314,8 @@ fn bench_transfer_latency(c: &mut Criterion) {
             })
         });
     });
+
+    group.finish();
 }
 
 /// Benchmark BBR bandwidth utilization
@@ -365,23 +416,36 @@ fn bench_multi_peer_speedup(c: &mut Criterion) {
                         let data = vec![0xCC; 4 * 1024 * 1024];
                         temp_file.write_all(&data).unwrap();
                         temp_file.flush().unwrap();
-                        let path = temp_file.path().to_path_buf();
+                        let _path = temp_file.path().to_path_buf();
 
-                        // Create sender
-                        let sender = Node::new_random().await.unwrap();
+                        // Create sender with benchmark config (NAT detection disabled)
+                        let sender = Node::new_with_config(benchmark_node_config(0))
+                            .await
+                            .unwrap();
                         sender.start().await.unwrap();
 
-                        // Create receivers
+                        // Create receivers with benchmark config
                         let mut receivers = Vec::new();
+                        let mut receiver_addrs = Vec::new();
                         for _ in 0..num_peers {
-                            let receiver = Node::new_random().await.unwrap();
+                            let receiver = Node::new_with_config(benchmark_node_config(0))
+                                .await
+                                .unwrap();
                             receiver.start().await.unwrap();
+                            let addr = receiver.listen_addr().await.unwrap();
+                            receiver_addrs.push((receiver.node_id().clone(), addr));
                             receivers.push(receiver);
                         }
 
-                        // Establish sessions
-                        for receiver in &receivers {
-                            sender.establish_session(receiver.node_id()).await.unwrap();
+                        // Small delay to ensure packet receive loops are ready
+                        tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+
+                        // Establish sessions using known addresses
+                        for (node_id, addr) in &receiver_addrs {
+                            sender
+                                .establish_session_with_addr(node_id, *addr)
+                                .await
+                                .unwrap();
                         }
 
                         // Verify session count

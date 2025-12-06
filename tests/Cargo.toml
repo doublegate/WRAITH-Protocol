@@ -29,6 +29,18 @@ path = "integration_tests.rs"
 name = "property_tests"
 path = "property_tests.rs"
 
+[[test]]
+name = "integration_advanced"
+path = "integration_advanced.rs"
+
+[[test]]
+name = "integration_hardening"
+path = "integration_hardening.rs"
+
+[[test]]
+name = "integration_edge_cases"
+path = "integration_edge_cases.rs"
+
 [[bench]]
 name = "transport_benchmarks"
 path = "../benches/transport_benchmarks.rs"

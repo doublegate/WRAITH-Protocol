@@ -4,7 +4,7 @@ use crate::node::config::NodeConfig;
 use crate::node::error::{NodeError, Result};
 use crate::node::file_transfer::FileTransferContext;
 use crate::node::routing::{RoutingTable, extract_connection_id};
-use crate::node::session::{PeerConnection, PeerId, SessionId};
+use crate::node::session::{HandshakePacket, PeerConnection, PeerId, SessionId};
 use crate::transfer::TransferSession;
 use crate::{ConnectionId, HandshakePhase, SessionState};
 use dashmap::DashMap;
@@ -14,7 +14,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
-use tokio::sync::{Mutex, RwLock};
+use tokio::sync::{Mutex, RwLock, oneshot};
 use wraith_crypto::noise::NoiseKeypair;
 use wraith_crypto::signatures::SigningKey as Ed25519SigningKey;
 use wraith_discovery::{DiscoveryConfig as DiscoveryConfigInternal, DiscoveryManager};
@@ -84,6 +84,13 @@ pub(crate) struct NodeInner {
     /// Uses DashMap for lock-free concurrent access
     /// Consolidates transfer session, reassembler, and tree hash
     pub(crate) transfers: Arc<DashMap<TransferId, Arc<FileTransferContext>>>,
+
+    /// Pending handshakes (peer_addr -> channel to send handshake packets)
+    /// Resolves race condition between packet_receive_loop and perform_handshake_*
+    /// When a handshake is initiated, a channel is registered here.
+    /// Incoming handshake packets are forwarded via this channel instead of being
+    /// processed by packet_receive_loop, preventing recv_from() racing.
+    pub(crate) pending_handshakes: Arc<DashMap<SocketAddr, oneshot::Sender<HandshakePacket>>>,
 
     /// Node running state
     pub(crate) running: Arc<AtomicBool>,
@@ -183,6 +190,7 @@ impl Node {
             sessions: Arc::new(DashMap::new()),
             routing: Arc::new(RoutingTable::new()),
             transfers: Arc::new(DashMap::new()),
+            pending_handshakes: Arc::new(DashMap::new()),
             running: Arc::new(AtomicBool::new(false)),
             transport: Arc::new(Mutex::new(None)),
             discovery: Arc::new(Mutex::new(None)),
@@ -193,14 +201,47 @@ impl Node {
         })
     }
 
-    /// Get node's public key (node ID)
+    /// Get node's public key (node ID - Ed25519)
+    ///
+    /// Returns the Ed25519 public key used as the node's identifier.
+    /// For session lookups, use [`x25519_public_key`] instead since
+    /// sessions are stored using X25519 keys from the Noise handshake.
     pub fn node_id(&self) -> &[u8; 32] {
         self.inner.identity.public_key()
+    }
+
+    /// Get node's X25519 public key (used in Noise handshakes)
+    ///
+    /// Sessions are stored using this key, not the Ed25519 node_id.
+    /// Use this method when comparing session peer IDs.
+    pub fn x25519_public_key(&self) -> &[u8; 32] {
+        self.inner.identity.x25519_keypair().public_key()
     }
 
     /// Get node's identity
     pub fn identity(&self) -> &Arc<Identity> {
         &self.inner.identity
+    }
+
+    /// Get node's actual listening address
+    ///
+    /// Returns the address the node is listening on. This is particularly useful
+    /// when binding to port 0 (automatic port selection) to discover the actual
+    /// port assigned by the operating system.
+    ///
+    /// # Errors
+    ///
+    /// Returns error if the transport is not initialized (node not started).
+    pub async fn listen_addr(&self) -> Result<SocketAddr> {
+        let transport = self.inner.transport.lock().await;
+        match transport.as_ref() {
+            Some(t) => t
+                .local_addr()
+                .map_err(|e| NodeError::Transport(format!("Failed to get local address: {}", e))),
+            None => Err(NodeError::InvalidState(
+                "Transport not initialized".to_string(),
+            )),
+        }
     }
 
     /// Start the node
@@ -239,8 +280,13 @@ impl Node {
 
         // 2. Initialize Discovery Manager
         let node_id_bytes = wraith_discovery::dht::NodeId::from_bytes(*self.node_id());
-        let discovery_config =
+        let mut discovery_config =
             DiscoveryConfigInternal::new(node_id_bytes, self.inner.config.listen_addr);
+
+        // Disable NAT detection if not configured (speeds up startup for local testing)
+        discovery_config.nat_detection_enabled = self.inner.config.discovery.enable_nat_traversal;
+        discovery_config.relay_enabled = self.inner.config.discovery.enable_relay;
+
         // TODO: Add bootstrap nodes from config
 
         let discovery = DiscoveryManager::new(discovery_config).await.map_err(|e| {
@@ -498,59 +544,121 @@ impl Node {
     ///
     /// Uses Connection ID from packet header for O(1) session lookup.
     /// Unwraps protocol mimicry, decrypts, and routes packets to appropriate handlers.
+    ///
+    /// Handshake packets are forwarded to pending handshake channels to prevent
+    /// recv_from() racing between packet_receive_loop and perform_handshake_*.
     async fn handle_incoming_packet(&self, data: Vec<u8>, from: SocketAddr) -> Result<()> {
-        // 1. Unwrap protocol mimicry (TLS/WebSocket/DoH)
+        // 1. Unwrap protocol mimicry (TLS/WebSocket/DoH) first
         let unwrapped = self.unwrap_protocol(&data)?;
 
-        // 2. Extract Connection ID from packet header (first 8 bytes)
-        let connection_id = match extract_connection_id(&unwrapped) {
-            Some(cid) => cid,
+        // 2. Check if this is a handshake packet for a pending handshake
+        // This prevents race condition where both packet_receive_loop and
+        // perform_handshake_* compete for recv_from() on the same socket
+        //
+        // Handle 0.0.0.0 (INADDR_ANY) matching: When a node binds to 0.0.0.0:port,
+        // packets over loopback arrive from 127.0.0.1:port. We match by port when
+        // the registered address is INADDR_ANY.
+        let matching_addr = self
+            .inner
+            .pending_handshakes
+            .iter()
+            .find(|entry| {
+                let registered = entry.key();
+                if registered.ip().is_unspecified() {
+                    // Registered with 0.0.0.0 - match by port only
+                    from.port() == registered.port()
+                } else {
+                    // Exact address match
+                    from == *registered
+                }
+            })
+            .map(|entry| *entry.key());
+
+        if let Some(addr) = matching_addr {
+            if let Some((_addr, tx)) = self.inner.pending_handshakes.remove(&addr) {
+                tracing::debug!(
+                    "Forwarding handshake packet ({} bytes unwrapped) from {} to waiting handshake (registered as {})",
+                    unwrapped.len(),
+                    from,
+                    addr
+                );
+
+                let packet = HandshakePacket {
+                    data: unwrapped.clone(), // Send unwrapped data to handshake code
+                    from,
+                };
+
+                // Send to waiting handshake (ignore errors if receiver dropped)
+                let _ = tx.send(packet);
+                return Ok(());
+            }
+        }
+
+        // 3. Extract Connection ID from packet header (first 8 bytes)
+        // If extraction fails, this might be a handshake initiation packet
+        match extract_connection_id(&unwrapped) {
+            Some(connection_id) => {
+                // 4. Route packet using Connection ID (O(1) lookup)
+                let connection = self.inner.routing.lookup(connection_id);
+
+                if let Some(conn) = connection {
+                    // Update last activity timestamp
+                    conn.touch();
+
+                    // 5. Decrypt the packet (skip Connection ID header)
+                    let encrypted_payload = &unwrapped[8..];
+                    match conn.decrypt_frame(encrypted_payload).await {
+                        Ok(frame_bytes) => {
+                            let node = self.clone();
+                            tokio::spawn(async move {
+                                if let Err(e) = node.dispatch_frame(frame_bytes).await {
+                                    tracing::warn!("Error handling frame: {}", e);
+                                }
+                            });
+                        }
+                        Err(e) => {
+                            tracing::warn!(
+                                "Failed to decrypt packet from {} (cid={:016x}): {}",
+                                from,
+                                connection_id,
+                                e
+                            );
+                        }
+                    }
+                } else {
+                    // No route for this Connection ID - could be handshake initiation
+                    // Noise_XX msg1 is sent raw (without Connection ID header), so the
+                    // "connection_id" extracted above is actually the first 8 bytes of
+                    // the Noise handshake message.
+                    tracing::debug!(
+                        "No route for Connection ID {:016x} from {} ({} bytes) - attempting handshake",
+                        connection_id,
+                        from,
+                        unwrapped.len()
+                    );
+
+                    // Attempt to handle as handshake initiation
+                    // Pass the full unwrapped packet as Noise msg1
+                    if let Err(e) = self.handle_handshake_initiation(&unwrapped, from).await {
+                        tracing::warn!("Handshake initiation failed from {}: {}", from, e);
+                    }
+                }
+            }
             None => {
-                tracing::trace!(
-                    "Packet too short for Connection ID ({} bytes) from {}",
+                // No connection ID found - likely a handshake initiation packet (msg1)
+                // Noise_XX msg1 is sent raw without Connection ID header
+                tracing::debug!(
+                    "No Connection ID in packet ({} bytes) from {} - attempting handshake initiation",
                     unwrapped.len(),
                     from
                 );
-                return Ok(());
-            }
-        };
 
-        // 3. Route packet using Connection ID (O(1) lookup)
-        let connection = self.inner.routing.lookup(connection_id);
-
-        if let Some(conn) = connection {
-            // Update last activity timestamp
-            conn.touch();
-
-            // 4. Decrypt the packet (skip Connection ID header)
-            let encrypted_payload = &unwrapped[8..];
-            match conn.decrypt_frame(encrypted_payload).await {
-                Ok(frame_bytes) => {
-                    let node = self.clone();
-                    tokio::spawn(async move {
-                        if let Err(e) = node.dispatch_frame(frame_bytes).await {
-                            tracing::warn!("Error handling frame: {}", e);
-                        }
-                    });
-                }
-                Err(e) => {
-                    tracing::warn!(
-                        "Failed to decrypt packet from {} (cid={:016x}): {}",
-                        from,
-                        connection_id,
-                        e
-                    );
+                // Attempt to handle as handshake initiation
+                // Pass the full unwrapped packet as Noise msg1
+                if let Err(e) = self.handle_handshake_initiation(&unwrapped, from).await {
+                    tracing::warn!("Handshake initiation failed from {}: {}", from, e);
                 }
             }
-        } else {
-            // No route for this Connection ID - could be handshake initiation
-            tracing::trace!(
-                "No route for Connection ID {:016x} from {} ({} bytes)",
-                connection_id,
-                from,
-                data.len()
-            );
-            // TODO: Handle handshake initiation
         }
 
         Ok(())
@@ -623,6 +731,109 @@ impl Node {
         self.inner.running.load(Ordering::SeqCst)
     }
 
+    /// Handle incoming handshake initiation (responder side)
+    ///
+    /// When a packet arrives with an unknown Connection ID, it could be a
+    /// Noise_XX handshake initiation. This method processes msg1, completes
+    /// the handshake, and creates a new session for the peer.
+    ///
+    /// # Arguments
+    ///
+    /// * `msg1` - The first handshake message from the initiator
+    /// * `peer_addr` - The address the handshake came from
+    ///
+    /// # Errors
+    ///
+    /// Returns error if the handshake fails or session creation fails.
+    async fn handle_handshake_initiation(
+        &self,
+        msg1: &[u8],
+        peer_addr: SocketAddr,
+    ) -> Result<SessionId> {
+        // Get transport
+        let transport = {
+            let guard = self.inner.transport.lock().await;
+            guard
+                .as_ref()
+                .ok_or_else(|| NodeError::InvalidState("Transport not initialized".to_string()))?
+                .clone()
+        };
+
+        tracing::info!(
+            "Handling handshake initiation from {} ({} bytes)",
+            peer_addr,
+            msg1.len()
+        );
+
+        // Create channel for receiving msg3 (prevents recv_from racing with packet_receive_loop)
+        let (msg3_tx, msg3_rx) = oneshot::channel();
+
+        // Register pending handshake
+        self.inner.pending_handshakes.insert(peer_addr, msg3_tx);
+
+        // Perform Noise_XX handshake as responder
+        let handshake_result = crate::node::session::perform_handshake_responder(
+            self.inner.identity.x25519_keypair(),
+            msg1,
+            peer_addr,
+            transport.as_ref(),
+            Some(msg3_rx),
+        )
+        .await;
+
+        // Clean up pending handshake entry
+        self.inner.pending_handshakes.remove(&peer_addr);
+
+        // Propagate any handshake error
+        let (crypto, session_id, peer_id) = handshake_result?;
+
+        // Derive connection ID from session ID
+        let mut connection_id_bytes = [0u8; 8];
+        connection_id_bytes.copy_from_slice(&session_id[..8]);
+        let connection_id = ConnectionId::from_bytes(connection_id_bytes);
+
+        // Create connection
+        let connection = PeerConnection::new(session_id, peer_id, peer_addr, connection_id, crypto);
+
+        // Transition through handshake states to established
+        // Note: By the time perform_handshake_responder returns, the full handshake
+        // is complete, so we transition RespSent -> Established
+        connection
+            .transition_to(SessionState::Handshaking(HandshakePhase::RespSent))
+            .await?;
+        connection.transition_to(SessionState::Established).await?;
+
+        // Store session (check if one already exists from initiator side)
+        if self.inner.sessions.contains_key(&peer_id) {
+            tracing::warn!(
+                "Session already exists for peer {} - race condition?",
+                hex::encode(&peer_id[..8])
+            );
+            // Return existing session ID
+            if let Some(existing) = self.inner.sessions.get(&peer_id) {
+                return Ok(existing.session_id);
+            }
+        }
+
+        let connection_arc = Arc::new(connection);
+        self.inner
+            .sessions
+            .insert(peer_id, Arc::clone(&connection_arc));
+
+        // Add route to routing table for Connection ID-based packet routing
+        let cid_u64 = u64::from_be_bytes(connection_id_bytes);
+        self.inner.routing.add_route(cid_u64, connection_arc);
+
+        tracing::info!(
+            "Session established as responder with peer {}, session: {}, route: {:016x}",
+            hex::encode(&peer_id[..8]),
+            hex::encode(&session_id[..8]),
+            cid_u64
+        );
+
+        Ok(session_id)
+    }
+
     /// Establish session with peer
     ///
     /// Performs Noise_XX handshake and creates encrypted session.
@@ -646,6 +857,41 @@ impl Node {
             return Ok(connection.session_id);
         }
 
+        // TODO: Lookup peer address via DHT
+        // For now, use a placeholder address
+        let peer_addr: SocketAddr = "127.0.0.1:8421".parse().unwrap();
+
+        self.establish_session_with_addr(peer_id, peer_addr).await
+    }
+
+    /// Establish session with peer at known address
+    ///
+    /// Similar to [`establish_session`], but allows specifying the peer's address
+    /// directly instead of relying on DHT lookup. This is useful for testing,
+    /// loopback scenarios, or when the peer's address is known in advance.
+    ///
+    /// # Arguments
+    ///
+    /// * `_expected_peer_id` - Expected peer's public key (currently unused, reserved for future validation)
+    /// * `peer_addr` - The peer's network address (IP:port)
+    ///
+    /// # Note
+    ///
+    /// Sessions are stored using the peer's X25519 public key from the Noise handshake,
+    /// not the passed-in Ed25519 key. Use [`x25519_public_key`] to get a node's X25519
+    /// identity for session lookups.
+    ///
+    /// # Errors
+    ///
+    /// Returns error if:
+    /// - Transport not initialized
+    /// - Handshake fails
+    /// - Invalid state transitions
+    pub async fn establish_session_with_addr(
+        &self,
+        _expected_peer_id: &PeerId,
+        peer_addr: SocketAddr,
+    ) -> Result<SessionId> {
         // Get transport
         let transport = {
             let guard = self.inner.transport.lock().await;
@@ -655,32 +901,42 @@ impl Node {
                 .clone()
         };
 
-        // TODO: Lookup peer address via DHT
-        // For now, use a placeholder address
-        let peer_addr: SocketAddr = "127.0.0.1:8421".parse().unwrap();
+        tracing::info!("Establishing session with peer at {}", peer_addr);
 
-        tracing::info!(
-            "Establishing session with peer {} at {}",
-            hex::encode(peer_id),
-            peer_addr
-        );
+        // Create channel for receiving msg2 (prevents recv_from racing with packet_receive_loop)
+        let (msg2_tx, msg2_rx) = oneshot::channel();
+
+        // Register pending handshake
+        self.inner.pending_handshakes.insert(peer_addr, msg2_tx);
 
         // Perform Noise_XX handshake as initiator
-        let (crypto, session_id) = crate::node::session::perform_handshake_initiator(
+        // The peer_id returned is the X25519 public key proven in the handshake
+        let handshake_result = crate::node::session::perform_handshake_initiator(
             self.inner.identity.x25519_keypair(),
             peer_addr,
             transport.as_ref(),
+            Some(msg2_rx),
         )
-        .await?;
+        .await;
+
+        // Clean up pending handshake entry
+        self.inner.pending_handshakes.remove(&peer_addr);
+
+        // Propagate any handshake error
+        let (crypto, session_id, peer_id) = handshake_result?;
+
+        // Check if session already exists with this peer
+        if let Some(connection) = self.inner.sessions.get(&peer_id) {
+            return Ok(connection.session_id);
+        }
 
         // Derive connection ID from session ID
         let mut connection_id_bytes = [0u8; 8];
         connection_id_bytes.copy_from_slice(&session_id[..8]);
         let connection_id = ConnectionId::from_bytes(connection_id_bytes);
 
-        // Create connection
-        let connection =
-            PeerConnection::new(session_id, *peer_id, peer_addr, connection_id, crypto);
+        // Create connection using X25519 peer_id from handshake
+        let connection = PeerConnection::new(session_id, peer_id, peer_addr, connection_id, crypto);
 
         // Transition through handshake states to established
         connection
@@ -691,19 +947,19 @@ impl Node {
             .await?;
         connection.transition_to(SessionState::Established).await?;
 
-        // Store session
+        // Store session using X25519 peer_id from handshake
         let connection_arc = Arc::new(connection);
         self.inner
             .sessions
-            .insert(*peer_id, Arc::clone(&connection_arc));
+            .insert(peer_id, Arc::clone(&connection_arc));
 
         // Add route to routing table for Connection ID-based packet routing
         let cid_u64 = u64::from_be_bytes(connection_id_bytes);
         self.inner.routing.add_route(cid_u64, connection_arc);
 
         tracing::info!(
-            "Session established with peer {}, session: {}, route: {:016x}",
-            hex::encode(peer_id),
+            "Session established with peer {} (X25519), session: {}, route: {:016x}",
+            hex::encode(&peer_id[..8]),
             hex::encode(&session_id[..8]),
             cid_u64
         );
