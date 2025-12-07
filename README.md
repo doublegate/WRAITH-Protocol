@@ -220,6 +220,7 @@ WRAITH-Protocol/
 - [Dependency Management](docs/engineering/dependency-management.md)
 - [Python Tooling Guide](docs/engineering/python-tooling.md)
 - [Protocol Development History](docs/archive/README_Protocol-DEV.md) - Detailed phase-by-phase development timeline
+- [Client Applications Development History](docs/archive/README_Clients-DEV.md) - Client ecosystem development planning and progress
 
 ### Integration
 - [Embedding Guide](docs/integration/embedding-guide.md)

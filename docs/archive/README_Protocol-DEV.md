@@ -595,7 +595,9 @@ See [../../to-dos/ROADMAP.md](../../to-dos/ROADMAP.md) for detailed future plann
 ## Links
 
 - **Current Production README:** [../../README.md](../../README.md)
+- **Client Applications Development History:** [README_Clients-DEV.md](README_Clients-DEV.md)
 - **Project Roadmap:** [../../to-dos/ROADMAP.md](../../to-dos/ROADMAP.md)
+- **Client Roadmap:** [../../to-dos/ROADMAP-clients.md](../../to-dos/ROADMAP-clients.md)
 - **Changelog:** [../../CHANGELOG.md](../../CHANGELOG.md)
 - **Technical Debt Analysis:** [../technical/technical-debt-analysis.md](../technical/technical-debt-analysis.md)
 - **Security Audit:** [../SECURITY_AUDIT.md](../SECURITY_AUDIT.md)
