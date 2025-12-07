@@ -1,5 +1,5 @@
-# Sample workflow for building and deploying a Jekyll site to GitHub Pages
-name: Jekyll (GitHub Pages)
+# Workflow for building and deploying mdBook documentation to GitHub Pages
+name: mdBook (GH Pages)
 
 on:
   # Runs on pushes targeting the default branch
@@ -28,15 +28,19 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-      - name: Build with Jekyll
-        uses: actions/jekyll-build-pages@v1
+
+      - name: Setup mdBook
+        uses: peaceiris/actions-mdbook@v2
         with:
-          source: ./
-          destination: ./_site
+          mdbook-version: 'latest'
+
+      - name: Build documentation
+        run: mdbook build
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./book
 
   # Deployment job
   deploy:

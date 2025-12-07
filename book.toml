@@ -1,0 +1,24 @@
+[book]
+title = "WRAITH Protocol Documentation"
+description = "Wire-speed Resilient Authenticated Invisible Transfer Handler - A decentralized secure file transfer protocol"
+authors = ["WRAITH Protocol Contributors"]
+language = "en"
+multilingual = false
+src = "."
+
+[build]
+build-dir = "book"
+
+[output.html]
+default-theme = "rust"
+preferred-dark-theme = "navy"
+git-repository-url = "https://github.com/doublegate/WRAITH-Protocol"
+git-repository-icon = "fa-github"
+edit-url-template = "https://github.com/doublegate/WRAITH-Protocol/edit/main/{path}"
+
+[output.html.search]
+enable = true
+
+[output.html.fold]
+enable = true
+level = 1

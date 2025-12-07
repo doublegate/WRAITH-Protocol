@@ -28,6 +28,7 @@ coverage/
 
 # Documentation build
 /doc/
+/book/
 
 # eBPF/XDP artifacts
 *.bpf.o
