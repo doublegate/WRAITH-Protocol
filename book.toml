@@ -3,7 +3,6 @@ title = "WRAITH Protocol Documentation"
 description = "Wire-speed Resilient Authenticated Invisible Transfer Handler - A decentralized secure file transfer protocol"
 authors = ["WRAITH Protocol Contributors"]
 language = "en"
-multilingual = false
 src = "."
 
 [build]
