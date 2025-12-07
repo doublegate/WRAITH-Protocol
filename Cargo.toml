@@ -73,6 +73,7 @@ hex = "0.4"
 
 # Concurrent collections
 dashmap = "6"
+crossbeam-queue = "0.3"
 
 # CLI
 clap = { version = "4.4", features = ["derive"] }

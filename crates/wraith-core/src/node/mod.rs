@@ -42,6 +42,7 @@
 //! }
 //! ```
 
+pub mod buffer_pool;
 pub mod circuit_breaker;
 pub mod config;
 pub mod connection;
@@ -61,6 +62,7 @@ pub mod routing;
 pub mod session;
 pub mod transfer;
 
+pub use buffer_pool::BufferPool;
 pub use circuit_breaker::{
     CircuitBreaker, CircuitBreakerConfig, CircuitMetrics, CircuitState, RetryConfig,
 };
