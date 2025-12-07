@@ -153,7 +153,10 @@ impl std::fmt::Debug for Identity {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Identity")
             .field("node_id", &hex::encode(&self.node_id[..8]))
-            .field("x25519_public", &hex::encode(&self.x25519.public_key()[..8]))
+            .field(
+                "x25519_public",
+                &hex::encode(&self.x25519.public_key()[..8]),
+            )
             .finish()
     }
 }

@@ -1,10 +1,14 @@
 //! File chunking with seek support and reassembly.
+//!
+//! This module provides file chunking and reassembly with optional buffer pool
+//! integration for reduced allocation overhead during high-throughput transfers.
 
 use crate::DEFAULT_CHUNK_SIZE;
 use std::collections::HashSet;
 use std::fs::{File, OpenOptions};
 use std::io::{self, Read, Seek, SeekFrom, Write};
 use std::path::Path;
+use wraith_transport::BufferPool;
 
 /// Chunk metadata
 #[derive(Debug, Clone)]
@@ -20,11 +24,16 @@ pub struct ChunkInfo {
 }
 
 /// File chunker with I/O support
+///
+/// Supports optional buffer pool integration for reduced allocation overhead
+/// during high-throughput file transfers.
 pub struct FileChunker {
     file: File,
     chunk_size: usize,
     total_size: u64,
     current_offset: u64,
+    /// Optional buffer pool for chunk allocation
+    buffer_pool: Option<BufferPool>,
 }
 
 impl FileChunker {
@@ -42,6 +51,48 @@ impl FileChunker {
             chunk_size,
             total_size,
             current_offset: 0,
+            buffer_pool: None,
+        })
+    }
+
+    /// Create a chunker with a buffer pool for reduced allocation overhead
+    ///
+    /// When a buffer pool is provided, chunk buffers are acquired from the pool
+    /// instead of being allocated fresh for each read operation.
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - Path to the file to chunk
+    /// * `chunk_size` - Size of each chunk in bytes
+    /// * `buffer_pool` - Buffer pool for chunk allocation
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the file cannot be opened or metadata cannot be read.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use wraith_files::chunker::FileChunker;
+    /// use wraith_transport::BufferPool;
+    ///
+    /// let pool = BufferPool::new(262144, 64); // 256KB chunks, 64 buffers
+    /// let chunker = FileChunker::with_buffer_pool("file.dat", 262144, pool).unwrap();
+    /// ```
+    pub fn with_buffer_pool<P: AsRef<Path>>(
+        path: P,
+        chunk_size: usize,
+        buffer_pool: BufferPool,
+    ) -> io::Result<Self> {
+        let file = File::open(path)?;
+        let total_size = file.metadata()?.len();
+
+        Ok(Self {
+            file,
+            chunk_size,
+            total_size,
+            current_offset: 0,
+            buffer_pool: Some(buffer_pool),
         })
     }
 
@@ -52,6 +103,18 @@ impl FileChunker {
     /// Returns an error if the file cannot be opened or metadata cannot be read.
     pub fn with_default_size<P: AsRef<Path>>(path: P) -> io::Result<Self> {
         Self::new(path, DEFAULT_CHUNK_SIZE)
+    }
+
+    /// Set a buffer pool for chunk allocation
+    ///
+    /// When set, subsequent `read_chunk` calls will use buffers from the pool.
+    pub fn set_buffer_pool(&mut self, pool: BufferPool) {
+        self.buffer_pool = Some(pool);
+    }
+
+    /// Get a reference to the buffer pool if configured
+    pub fn buffer_pool(&self) -> Option<&BufferPool> {
+        self.buffer_pool.as_ref()
     }
 
     /// Get total number of chunks
@@ -74,9 +137,17 @@ impl FileChunker {
 
     /// Read next chunk sequentially
     ///
+    /// If a buffer pool is configured, acquires a buffer from the pool.
+    /// Otherwise, allocates a new buffer.
+    ///
     /// # Errors
     ///
     /// Returns an error if reading from the file fails.
+    ///
+    /// # Buffer Pool Usage
+    ///
+    /// When using a buffer pool, the caller should release the returned buffer
+    /// back to the pool after processing to enable buffer reuse.
     pub fn read_chunk(&mut self) -> io::Result<Option<Vec<u8>>> {
         if self.current_offset >= self.total_size {
             return Ok(None);
@@ -85,12 +156,39 @@ impl FileChunker {
         let remaining = self.total_size - self.current_offset;
         let chunk_len = remaining.min(self.chunk_size as u64) as usize;
 
-        let mut buffer = vec![0u8; chunk_len];
+        // Acquire buffer from pool or allocate new one
+        let mut buffer = if let Some(ref pool) = self.buffer_pool {
+            let mut buf = pool.acquire();
+            // Resize buffer to actual chunk length if needed (for last chunk)
+            buf.truncate(chunk_len);
+            if buf.len() < chunk_len {
+                buf.resize(chunk_len, 0);
+            }
+            buf
+        } else {
+            vec![0u8; chunk_len]
+        };
+
         self.file.read_exact(&mut buffer)?;
 
         self.current_offset += chunk_len as u64;
 
         Ok(Some(buffer))
+    }
+
+    /// Release a chunk buffer back to the pool
+    ///
+    /// If a buffer pool is configured, returns the buffer to the pool for reuse.
+    /// Otherwise, the buffer is dropped.
+    ///
+    /// # Arguments
+    ///
+    /// * `buffer` - The buffer to release
+    pub fn release_chunk(&self, buffer: Vec<u8>) {
+        if let Some(ref pool) = self.buffer_pool {
+            pool.release(buffer);
+        }
+        // Otherwise, buffer is dropped
     }
 
     /// Seek to specific chunk
@@ -488,5 +586,158 @@ mod tests {
 
         // Should fail - no chunks written
         assert!(reassembler.finalize().is_err());
+    }
+
+    // Buffer pool integration tests
+
+    #[test]
+    fn test_chunker_with_buffer_pool() {
+        use wraith_transport::BufferPool;
+
+        // Create test file
+        let mut temp_file = NamedTempFile::new().unwrap();
+        let data = vec![0xDD; DEFAULT_CHUNK_SIZE * 2]; // 2 chunks
+        temp_file.write_all(&data).unwrap();
+        temp_file.flush().unwrap();
+
+        // Create buffer pool
+        let pool = BufferPool::new(DEFAULT_CHUNK_SIZE, 4);
+        assert_eq!(pool.available(), 4);
+
+        // Create chunker with pool
+        let mut chunker =
+            FileChunker::with_buffer_pool(temp_file.path(), DEFAULT_CHUNK_SIZE, pool).unwrap();
+        assert!(chunker.buffer_pool().is_some());
+        assert_eq!(chunker.num_chunks(), 2);
+
+        // Read chunks using pool
+        let chunk1 = chunker.read_chunk().unwrap().unwrap();
+        assert_eq!(chunk1.len(), DEFAULT_CHUNK_SIZE);
+        assert!(chunk1.iter().all(|&b| b == 0xDD));
+
+        let chunk2 = chunker.read_chunk().unwrap().unwrap();
+        assert_eq!(chunk2.len(), DEFAULT_CHUNK_SIZE);
+        assert!(chunk2.iter().all(|&b| b == 0xDD));
+
+        // No more chunks
+        assert!(chunker.read_chunk().unwrap().is_none());
+
+        // Release chunks back to pool
+        chunker.release_chunk(chunk1);
+        chunker.release_chunk(chunk2);
+
+        // Verify pool has buffers back
+        assert_eq!(chunker.buffer_pool().unwrap().available(), 4);
+    }
+
+    #[test]
+    fn test_chunker_set_buffer_pool() {
+        use wraith_transport::BufferPool;
+
+        // Create test file
+        let mut temp_file = NamedTempFile::new().unwrap();
+        let data = vec![0xEE; DEFAULT_CHUNK_SIZE];
+        temp_file.write_all(&data).unwrap();
+        temp_file.flush().unwrap();
+
+        // Create chunker without pool
+        let mut chunker = FileChunker::new(temp_file.path(), DEFAULT_CHUNK_SIZE).unwrap();
+        assert!(chunker.buffer_pool().is_none());
+
+        // Set buffer pool
+        let pool = BufferPool::new(DEFAULT_CHUNK_SIZE, 2);
+        chunker.set_buffer_pool(pool);
+        assert!(chunker.buffer_pool().is_some());
+
+        // Read chunk using pool
+        let chunk = chunker.read_chunk().unwrap().unwrap();
+        assert_eq!(chunk.len(), DEFAULT_CHUNK_SIZE);
+        assert!(chunk.iter().all(|&b| b == 0xEE));
+
+        // Pool should have 1 buffer remaining (one was acquired)
+        assert_eq!(chunker.buffer_pool().unwrap().available(), 1);
+
+        // Release chunk
+        chunker.release_chunk(chunk);
+        assert_eq!(chunker.buffer_pool().unwrap().available(), 2);
+    }
+
+    #[test]
+    fn test_chunker_buffer_pool_last_chunk() {
+        use wraith_transport::BufferPool;
+
+        // Create test file with size not divisible by chunk size
+        let mut temp_file = NamedTempFile::new().unwrap();
+        let data = vec![0xFF; DEFAULT_CHUNK_SIZE + 1000]; // 1 full chunk + 1000 bytes
+        temp_file.write_all(&data).unwrap();
+        temp_file.flush().unwrap();
+
+        // Create buffer pool with larger buffers
+        let pool = BufferPool::new(DEFAULT_CHUNK_SIZE, 2);
+
+        // Create chunker with pool
+        let mut chunker =
+            FileChunker::with_buffer_pool(temp_file.path(), DEFAULT_CHUNK_SIZE, pool).unwrap();
+        assert_eq!(chunker.num_chunks(), 2);
+
+        // First chunk should be full size
+        let chunk1 = chunker.read_chunk().unwrap().unwrap();
+        assert_eq!(chunk1.len(), DEFAULT_CHUNK_SIZE);
+
+        // Last chunk should be smaller
+        let chunk2 = chunker.read_chunk().unwrap().unwrap();
+        assert_eq!(chunk2.len(), 1000);
+
+        // Both chunks should contain correct data
+        assert!(chunk1.iter().all(|&b| b == 0xFF));
+        assert!(chunk2.iter().all(|&b| b == 0xFF));
+    }
+
+    #[test]
+    fn test_chunker_release_without_pool() {
+        // Create test file
+        let mut temp_file = NamedTempFile::new().unwrap();
+        let data = vec![0xAB; DEFAULT_CHUNK_SIZE];
+        temp_file.write_all(&data).unwrap();
+        temp_file.flush().unwrap();
+
+        // Create chunker without pool
+        let mut chunker = FileChunker::new(temp_file.path(), DEFAULT_CHUNK_SIZE).unwrap();
+        assert!(chunker.buffer_pool().is_none());
+
+        // Read chunk (allocated, not from pool)
+        let chunk = chunker.read_chunk().unwrap().unwrap();
+
+        // Release should work without panic (buffer is just dropped)
+        chunker.release_chunk(chunk);
+    }
+
+    #[test]
+    fn test_chunker_buffer_pool_roundtrip() {
+        use wraith_transport::BufferPool;
+
+        // Create test file
+        let mut temp_file = NamedTempFile::new().unwrap();
+        let data = vec![0x42; DEFAULT_CHUNK_SIZE * 4]; // 4 chunks
+        temp_file.write_all(&data).unwrap();
+        temp_file.flush().unwrap();
+
+        // Create buffer pool with only 2 buffers (less than chunk count)
+        let pool = BufferPool::new(DEFAULT_CHUNK_SIZE, 2);
+
+        // Create chunker with pool
+        let mut chunker =
+            FileChunker::with_buffer_pool(temp_file.path(), DEFAULT_CHUNK_SIZE, pool).unwrap();
+
+        // Read and verify all chunks, recycling buffers
+        let mut all_data = Vec::new();
+        while let Some(chunk) = chunker.read_chunk().unwrap() {
+            all_data.extend_from_slice(&chunk);
+            // Release buffer immediately for reuse
+            chunker.release_chunk(chunk);
+        }
+
+        // Verify total data matches
+        assert_eq!(all_data, data);
     }
 }

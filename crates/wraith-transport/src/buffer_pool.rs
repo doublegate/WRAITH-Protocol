@@ -22,7 +22,7 @@
 //! # Example
 //!
 //! ```
-//! use wraith_core::node::buffer_pool::BufferPool;
+//! use wraith_transport::BufferPool;
 //!
 //! // Create a pool with 1024-byte buffers, 128 buffers pre-allocated
 //! let pool = BufferPool::new(1024, 128);
@@ -92,7 +92,7 @@ impl BufferPool {
     /// # Example
     ///
     /// ```
-    /// use wraith_core::node::buffer_pool::BufferPool;
+    /// use wraith_transport::BufferPool;
     ///
     /// // Create a pool suitable for UDP packets (MTU 1500 - IP/UDP headers)
     /// let pool = BufferPool::new(1472, 256);
@@ -125,7 +125,7 @@ impl BufferPool {
     /// # Example
     ///
     /// ```
-    /// use wraith_core::node::buffer_pool::BufferPool;
+    /// use wraith_transport::BufferPool;
     ///
     /// let pool = BufferPool::new(1024, 10);
     /// let buffer = pool.acquire();
@@ -161,7 +161,7 @@ impl BufferPool {
     /// # Example
     ///
     /// ```
-    /// use wraith_core::node::buffer_pool::BufferPool;
+    /// use wraith_transport::BufferPool;
     ///
     /// let pool = BufferPool::new(1024, 10);
     /// let mut buffer = pool.acquire();
@@ -201,7 +201,7 @@ impl BufferPool {
     /// # Example
     ///
     /// ```
-    /// use wraith_core::node::buffer_pool::BufferPool;
+    /// use wraith_transport::BufferPool;
     ///
     /// let pool = BufferPool::new(1024, 10);
     /// assert_eq!(pool.available(), 10);
@@ -223,7 +223,7 @@ impl BufferPool {
     /// # Example
     ///
     /// ```
-    /// use wraith_core::node::buffer_pool::BufferPool;
+    /// use wraith_transport::BufferPool;
     ///
     /// let pool = BufferPool::new(1024, 10);
     /// assert_eq!(pool.buffer_size(), 1024);
@@ -240,7 +240,7 @@ impl BufferPool {
     /// # Example
     ///
     /// ```
-    /// use wraith_core::node::buffer_pool::BufferPool;
+    /// use wraith_transport::BufferPool;
     ///
     /// let pool = BufferPool::new(1024, 10);
     /// assert_eq!(pool.capacity(), 10);
@@ -259,7 +259,7 @@ impl Clone for BufferPool {
     /// # Example
     ///
     /// ```
-    /// use wraith_core::node::buffer_pool::BufferPool;
+    /// use wraith_transport::BufferPool;
     ///
     /// let pool1 = BufferPool::new(1024, 10);
     /// let pool2 = pool1.clone();

@@ -52,7 +52,10 @@
 //! }
 //! ```
 
-pub mod buffer_pool;
+// Re-export BufferPool from wraith-transport for backward compatibility
+// The buffer pool is now defined in wraith-transport where it's primarily used
+pub use wraith_transport::BufferPool;
+
 pub mod circuit_breaker;
 pub mod config;
 pub mod connection;
@@ -76,7 +79,7 @@ pub mod session_manager;
 pub mod transfer;
 pub mod transfer_manager;
 
-pub use buffer_pool::BufferPool;
+// BufferPool is re-exported from wraith_transport at the top of this module
 pub use circuit_breaker::{
     CircuitBreaker, CircuitBreakerConfig, CircuitMetrics, CircuitState, RetryConfig,
 };

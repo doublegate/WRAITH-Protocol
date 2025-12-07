@@ -1,0 +1,136 @@
+# cargo-deny configuration for WRAITH Protocol
+# https://embarkstudios.github.io/cargo-deny/
+#
+# This file is used by cargo-deny to check for:
+# - License compliance
+# - Security vulnerabilities
+# - Source verification
+# - Duplicate crate detection
+#
+# Run with: cargo deny check
+
+[graph]
+# Analyze dependencies for all targets
+targets = [
+    "x86_64-unknown-linux-gnu",
+    "aarch64-unknown-linux-gnu",
+    "x86_64-apple-darwin",
+    "aarch64-apple-darwin",
+    "x86_64-pc-windows-msvc",
+]
+# Include all features when analyzing
+all-features = true
+
+# ============================================================================
+# ADVISORIES - Security vulnerability checking
+# ============================================================================
+[advisories]
+# The database of security advisories to check against
+db-path = "~/.cargo/advisory-db"
+# URL to fetch the advisory database from
+db-urls = ["https://github.com/rustsec/advisory-db"]
+version = 2
+
+# Ignore specific advisories (e.g., if a fix isn't available yet)
+ignore = [
+    # Add RUSTSEC advisory IDs here if needed to temporarily ignore
+    # Example: "RUSTSEC-2023-0001"
+]
+
+# ============================================================================
+# LICENSES - License compliance checking
+# ============================================================================
+[licenses]
+version = 2
+# Default confidence threshold for license detection
+confidence-threshold = 0.8
+
+# List of explicitly allowed licenses
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "CC0-1.0",
+    "MPL-2.0",
+    "Unicode-3.0",
+    "Unicode-DFS-2016",
+    "BSL-1.0",
+]
+
+# Exceptions for specific crates with unusual licensing
+exceptions = [
+    # ring uses ISC + MIT + OpenSSL
+    { name = "ring", allow = ["ISC", "MIT", "OpenSSL"] },
+]
+
+# Private crates (internal, not published)
+private = { ignore = true }
+
+# ============================================================================
+# BANS - Dependency bans and duplicate detection
+# ============================================================================
+[bans]
+# Lint level for when multiple versions of the same crate are detected
+multiple-versions = "warn"
+# Lint level for when a crate has a wildcard dependency
+wildcards = "allow"  # Allow workspace dependencies
+# How to handle workspace crates
+workspace-default-features = "allow"
+# Lint level for packages from registries other than crates.io
+external-default-features = "allow"
+# Highlight all dependency paths
+highlight = "all"
+
+# Skip duplicate detection for these crate versions
+# These are known acceptable duplicates from transitive dependencies
+skip = [
+    # rand ecosystem duplicates (proptest uses rand 0.9, crypto uses rand 0.8)
+    { name = "rand", version = "0.8", reason = "RustCrypto ecosystem still uses rand 0.8" },
+    { name = "rand", version = "0.9", reason = "proptest uses rand 0.9" },
+    { name = "rand_core", version = "0.6", reason = "RustCrypto ecosystem uses rand_core 0.6" },
+    { name = "rand_core", version = "0.9", reason = "proptest uses rand_core 0.9" },
+    { name = "rand_chacha", version = "0.3", reason = "Paired with rand 0.8" },
+    { name = "rand_chacha", version = "0.9", reason = "Paired with rand 0.9" },
+    { name = "getrandom", version = "0.2", reason = "RustCrypto uses getrandom 0.2" },
+    { name = "getrandom", version = "0.3", reason = "proptest/tempfile use getrandom 0.3" },
+    # hashbrown duplicates (different major versions in dependency tree)
+    { name = "hashbrown", version = "0.14", reason = "dashmap uses hashbrown 0.14" },
+    { name = "hashbrown", version = "0.16", reason = "toml uses hashbrown 0.16" },
+]
+
+# Allowed duplicate crates - skip entire dependency trees
+skip-tree = [
+    # windows-sys has many versions due to ecosystem fragmentation
+    { name = "windows-sys", reason = "Windows ecosystem version fragmentation" },
+    { name = "windows-targets", reason = "Windows ecosystem version fragmentation" },
+]
+
+# ============================================================================
+# SOURCES - Crate source verification
+# ============================================================================
+[sources]
+# Lint level for crates from unknown registries
+unknown-registry = "deny"
+# Lint level for crates fetched from git
+unknown-git = "warn"
+# Only allow crates from crates.io by default
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+
+# Allow specific git sources if needed for development
+allow-git = [
+    # Example: "https://github.com/example/crate"
+]
+
+# Local path dependencies (only for development)
+# These are automatically allowed for workspace members
+
+# ============================================================================
+# OUTPUT - Configuration for cargo-deny output
+# ============================================================================
+[output]
+# Feature graph depth for diagnostics
+feature-depth = 1

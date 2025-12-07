@@ -53,7 +53,10 @@ impl TransferManager {
     ///
     /// * `transfers` - Shared transfer map
     /// * `chunk_size` - Default chunk size for file transfers
-    pub fn new(transfers: Arc<DashMap<TransferId, Arc<FileTransferContext>>>, chunk_size: usize) -> Self {
+    pub fn new(
+        transfers: Arc<DashMap<TransferId, Arc<FileTransferContext>>>,
+        chunk_size: usize,
+    ) -> Self {
         Self {
             transfers,
             chunk_size,
@@ -171,8 +174,8 @@ impl TransferManager {
         transfer.start();
 
         // Create file reassembler
-        let reassembler = FileReassembler::new(file_name, file_size, chunk_size)
-            .map_err(NodeError::Io)?;
+        let reassembler =
+            FileReassembler::new(file_name, file_size, chunk_size).map_err(NodeError::Io)?;
 
         // Create tree hash (just root for now - we'll build full tree from chunks)
         let tree_hash = FileTreeHash {
@@ -230,8 +233,7 @@ impl TransferManager {
             .clone();
 
         // Create chunker
-        let mut chunker = FileChunker::new(&file_path, self.chunk_size)
-            .map_err(NodeError::Io)?;
+        let mut chunker = FileChunker::new(&file_path, self.chunk_size).map_err(NodeError::Io)?;
 
         let total_chunks = chunker.num_chunks();
 
@@ -259,11 +261,8 @@ impl TransferManager {
             }
 
             // Build chunk frame
-            let chunk_frame = crate::node::file_transfer::build_chunk_frame(
-                stream_id,
-                chunk_index,
-                &chunk_data,
-            )?;
+            let chunk_frame =
+                crate::node::file_transfer::build_chunk_frame(stream_id, chunk_index, &chunk_data)?;
 
             // Send encrypted frame
             send_frame_fn(Arc::clone(&connection), chunk_frame).await?;

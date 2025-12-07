@@ -25,10 +25,14 @@ pub mod udp_async;
 pub mod udp;
 
 // Kernel bypass and async I/O
+pub mod buffer_pool;
 pub mod io_uring;
 pub mod mtu;
 pub mod numa;
 pub mod worker;
+
+// Re-export BufferPool at crate root for convenience
+pub use buffer_pool::BufferPool;
 
 // AF_XDP is Linux-specific
 #[cfg(target_os = "linux")]

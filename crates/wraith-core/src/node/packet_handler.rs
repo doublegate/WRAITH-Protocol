@@ -12,12 +12,12 @@
 //! ```
 
 use crate::frame::{Frame, FrameBuilder, FrameType};
+use crate::node::Node;
 use crate::node::config::CoverTrafficDistribution;
 use crate::node::error::{NodeError, Result};
 use crate::node::file_transfer::FileTransferContext;
-use crate::node::session::{HandshakePacket, PeerConnection};
 use crate::node::routing::extract_connection_id;
-use crate::node::Node;
+use crate::node::session::{HandshakePacket, PeerConnection};
 use crate::transfer::TransferSession;
 use crate::{ConnectionId, HandshakePhase, SessionState};
 use getrandom::getrandom;
@@ -268,8 +268,7 @@ impl Node {
         let connection_id = ConnectionId::from_bytes(connection_id_bytes);
 
         // Create connection
-        let connection =
-            PeerConnection::new(session_id, peer_id, peer_addr, connection_id, crypto);
+        let connection = PeerConnection::new(session_id, peer_id, peer_addr, connection_id, crypto);
 
         // Transition through handshake states
         connection
@@ -418,9 +417,8 @@ impl Node {
             .ok_or(NodeError::TransferNotFound(transfer_id))?
             .clone();
 
-        let mut chunker =
-            FileChunker::new(&file_path, self.inner.config.transfer.chunk_size)
-                .map_err(NodeError::Io)?;
+        let mut chunker = FileChunker::new(&file_path, self.inner.config.transfer.chunk_size)
+            .map_err(NodeError::Io)?;
 
         let total_chunks = chunker.num_chunks();
 

@@ -9,6 +9,7 @@
 //!
 //! Target: >95% CPU utilization, scales to 16+ cores
 
+use crate::buffer_pool::BufferPool;
 use crossbeam_channel::{Receiver, RecvTimeoutError, Sender, bounded};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
@@ -27,6 +28,11 @@ pub struct WorkerConfig {
     pub pin_to_cpu: bool,
     /// Enable NUMA-aware allocation (Linux only)
     pub numa_aware: bool,
+    /// Optional buffer pool for packet buffer recycling
+    ///
+    /// When provided, packet buffers are returned to the pool after processing
+    /// instead of being dropped, reducing allocation overhead significantly.
+    pub buffer_pool: Option<BufferPool>,
 }
 
 impl Default for WorkerConfig {
@@ -36,6 +42,32 @@ impl Default for WorkerConfig {
             queue_capacity: 10000,
             pin_to_cpu: cfg!(target_os = "linux"),
             numa_aware: cfg!(target_os = "linux"),
+            buffer_pool: None,
+        }
+    }
+}
+
+impl WorkerConfig {
+    /// Create a new WorkerConfig with a buffer pool
+    ///
+    /// # Arguments
+    ///
+    /// * `buffer_size` - Size of each buffer in bytes (typically MTU size)
+    /// * `pool_size` - Number of buffers to pre-allocate
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use wraith_transport::worker::WorkerConfig;
+    ///
+    /// // Create config with buffer pool for 1500-byte MTU packets
+    /// let config = WorkerConfig::with_buffer_pool(1500, 1024);
+    /// assert!(config.buffer_pool.is_some());
+    /// ```
+    pub fn with_buffer_pool(buffer_size: usize, pool_size: usize) -> Self {
+        Self {
+            buffer_pool: Some(BufferPool::new(buffer_size, pool_size)),
+            ..Default::default()
         }
     }
 }
@@ -70,6 +102,8 @@ pub struct WorkerPool {
     task_tx: Sender<Task>,
     shutdown: Arc<AtomicBool>,
     stats: Arc<PoolStats>,
+    /// Optional buffer pool for packet buffer recycling
+    buffer_pool: Option<BufferPool>,
 }
 
 /// Worker thread statistics
@@ -174,8 +208,14 @@ impl WorkerPool {
         };
 
         info!(
-            "Creating worker pool with {} workers (queue capacity: {})",
-            num_workers, config.queue_capacity
+            "Creating worker pool with {} workers (queue capacity: {}, buffer_pool: {})",
+            num_workers,
+            config.queue_capacity,
+            if config.buffer_pool.is_some() {
+                "enabled"
+            } else {
+                "disabled"
+            }
         );
 
         let (task_tx, task_rx) = bounded(config.queue_capacity * num_workers);
@@ -195,6 +235,7 @@ impl WorkerPool {
                 stats,
                 config.pin_to_cpu,
                 config.numa_aware,
+                config.buffer_pool.clone(),
             );
             workers.push(worker);
         }
@@ -209,7 +250,70 @@ impl WorkerPool {
             task_tx,
             shutdown,
             stats: pool_stats,
+            buffer_pool: config.buffer_pool,
         }
+    }
+
+    /// Acquire a buffer from the pool
+    ///
+    /// If a buffer pool is configured, acquires a buffer from the pool.
+    /// Otherwise, allocates a new buffer with the specified size.
+    ///
+    /// # Arguments
+    ///
+    /// * `size` - Size of the buffer to acquire (used when no pool is configured)
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use wraith_transport::worker::{WorkerPool, WorkerConfig};
+    ///
+    /// let config = WorkerConfig::with_buffer_pool(1500, 128);
+    /// let pool = WorkerPool::new(config);
+    ///
+    /// let buffer = pool.acquire_buffer(1500);
+    /// assert_eq!(buffer.len(), 1500);
+    /// ```
+    pub fn acquire_buffer(&self, size: usize) -> Vec<u8> {
+        match &self.buffer_pool {
+            Some(pool) => pool.acquire(),
+            None => vec![0u8; size],
+        }
+    }
+
+    /// Release a buffer back to the pool
+    ///
+    /// If a buffer pool is configured, returns the buffer to the pool for reuse.
+    /// Otherwise, the buffer is dropped.
+    ///
+    /// # Arguments
+    ///
+    /// * `buffer` - The buffer to release
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use wraith_transport::worker::{WorkerPool, WorkerConfig};
+    ///
+    /// let config = WorkerConfig::with_buffer_pool(1500, 128);
+    /// let pool = WorkerPool::new(config);
+    ///
+    /// let buffer = pool.acquire_buffer(1500);
+    /// // ... use buffer ...
+    /// pool.release_buffer(buffer);
+    /// ```
+    pub fn release_buffer(&self, buffer: Vec<u8>) {
+        if let Some(pool) = &self.buffer_pool {
+            pool.release(buffer);
+        }
+        // Otherwise, buffer is dropped
+    }
+
+    /// Get the buffer pool if configured
+    ///
+    /// Returns a clone of the buffer pool handle, or `None` if no pool is configured.
+    pub fn buffer_pool(&self) -> Option<BufferPool> {
+        self.buffer_pool.clone()
     }
 
     /// Submit a task to the worker pool
@@ -288,6 +392,7 @@ impl Worker {
         stats: Arc<WorkerStats>,
         pin_to_cpu: bool,
         numa_aware: bool,
+        buffer_pool: Option<BufferPool>,
     ) -> Self {
         let handle = thread::Builder::new()
             .name(format!("wraith-worker-{}", id))
@@ -321,9 +426,17 @@ impl Worker {
                             match task {
                                 Task::ProcessPacket { data, source } => {
                                     Self::process_packet(&data, source, &stats);
+                                    // Release buffer back to pool if configured
+                                    if let Some(ref pool) = buffer_pool {
+                                        pool.release(data);
+                                    }
                                 }
                                 Task::SendPacket { data, destination } => {
                                     Self::send_packet(&data, destination, &stats);
+                                    // Release buffer back to pool if configured
+                                    if let Some(ref pool) = buffer_pool {
+                                        pool.release(data);
+                                    }
                                 }
                                 Task::Shutdown => {
                                     debug!("Worker {} received shutdown signal", id);
@@ -429,6 +542,16 @@ mod tests {
         let config = WorkerConfig::default();
         assert_eq!(config.num_workers, 0); // Auto-detect
         assert_eq!(config.queue_capacity, 10000);
+        assert!(config.buffer_pool.is_none());
+    }
+
+    #[test]
+    fn test_worker_config_with_buffer_pool() {
+        let config = WorkerConfig::with_buffer_pool(1500, 128);
+        assert!(config.buffer_pool.is_some());
+        let pool = config.buffer_pool.as_ref().unwrap();
+        assert_eq!(pool.buffer_size(), 1500);
+        assert_eq!(pool.capacity(), 128);
     }
 
     #[test]
@@ -438,6 +561,7 @@ mod tests {
             queue_capacity: 100,
             pin_to_cpu: false,
             numa_aware: false,
+            buffer_pool: None,
         };
 
         let pool = WorkerPool::new(config);
@@ -451,6 +575,7 @@ mod tests {
             queue_capacity: 10,
             pin_to_cpu: false,
             numa_aware: false,
+            buffer_pool: None,
         };
 
         let pool = WorkerPool::new(config);
@@ -476,6 +601,7 @@ mod tests {
             queue_capacity: 10,
             pin_to_cpu: false,
             numa_aware: false,
+            buffer_pool: None,
         };
 
         let pool = WorkerPool::new(config);
@@ -503,6 +629,7 @@ mod tests {
             queue_capacity: 100,
             pin_to_cpu: false,
             numa_aware: false,
+            buffer_pool: None,
         };
 
         let pool = WorkerPool::new(config);
@@ -532,6 +659,7 @@ mod tests {
             queue_capacity: 5,
             pin_to_cpu: false,
             numa_aware: false,
+            buffer_pool: None,
         };
 
         let pool = WorkerPool::new(config);
@@ -583,6 +711,96 @@ mod tests {
         let pool = WorkerPool::new(config);
         let num_cpus = num_cpus::get();
         assert_eq!(pool.num_workers(), num_cpus);
+    }
+
+    #[test]
+    fn test_worker_pool_with_buffer_pool() {
+        // Create pool with buffer pool
+        let config = WorkerConfig {
+            num_workers: 2,
+            queue_capacity: 100,
+            pin_to_cpu: false,
+            numa_aware: false,
+            buffer_pool: Some(BufferPool::new(1024, 64)),
+        };
+
+        let pool = WorkerPool::new(config);
+
+        // Verify buffer pool is accessible
+        assert!(pool.buffer_pool().is_some());
+        let bp = pool.buffer_pool().unwrap();
+        assert_eq!(bp.buffer_size(), 1024);
+
+        // Acquire buffer via pool
+        let buffer = pool.acquire_buffer(1024);
+        assert_eq!(buffer.len(), 1024);
+
+        // Submit task with buffer from pool
+        let task = Task::ProcessPacket {
+            data: buffer,
+            source: 0,
+        };
+        pool.submit(task).unwrap();
+
+        // Give workers time to process and release buffer
+        std::thread::sleep(Duration::from_millis(100));
+
+        // Buffer should be back in pool
+        let stats = pool.stats();
+        assert!(stats.total_tasks() > 0);
+
+        pool.shutdown();
+    }
+
+    #[test]
+    fn test_worker_pool_buffer_recycling() {
+        let buffer_pool = BufferPool::new(256, 10);
+        let config = WorkerConfig {
+            num_workers: 1,
+            queue_capacity: 50,
+            pin_to_cpu: false,
+            numa_aware: false,
+            buffer_pool: Some(buffer_pool.clone()),
+        };
+
+        let pool = WorkerPool::new(config);
+
+        // Initially, all 10 buffers should be available
+        assert_eq!(buffer_pool.available(), 10);
+
+        // Submit 5 tasks using buffers from the pool
+        for i in 0..5 {
+            let buf = buffer_pool.acquire();
+            let task = Task::ProcessPacket {
+                data: buf,
+                source: i,
+            };
+            pool.submit(task).unwrap();
+        }
+
+        // Pool should have 5 less immediately after acquire
+        assert_eq!(buffer_pool.available(), 5);
+
+        // Give workers time to process and release buffers
+        std::thread::sleep(Duration::from_millis(200));
+
+        // All buffers should be recycled back
+        assert_eq!(buffer_pool.available(), 10);
+
+        pool.shutdown();
+    }
+
+    #[test]
+    fn test_acquire_buffer_without_pool() {
+        let config = WorkerConfig::default();
+        let pool = WorkerPool::new(config);
+
+        // Without buffer pool, should allocate new buffer
+        let buffer = pool.acquire_buffer(512);
+        assert_eq!(buffer.len(), 512);
+
+        // Release should be a no-op (buffer is dropped)
+        pool.release_buffer(buffer);
     }
 
     #[test]

@@ -16,6 +16,7 @@ rayon = ["blake3/rayon"]
 
 [dependencies]
 wraith-crypto = { workspace = true }
+wraith-transport = { workspace = true }
 # BLAKE3 with conditional SIMD features
 blake3 = { workspace = true }
 tokio = { workspace = true, features = ["fs"] }

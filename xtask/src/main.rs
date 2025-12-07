@@ -87,7 +87,11 @@ fn main() -> anyhow::Result<()> {
         Commands::Doc => {
             run_command("cargo", &["doc", "--workspace", "--no-deps", "--open"])?;
         }
-        Commands::Coverage { html, lcov, output_dir } => {
+        Commands::Coverage {
+            html,
+            lcov,
+            output_dir,
+        } => {
             println!("Generating code coverage report...");
             println!("Note: Requires cargo-llvm-cov (install with: cargo install cargo-llvm-cov)");
 
@@ -150,10 +154,7 @@ fn main() -> anyhow::Result<()> {
                 println!("LCOV report generated: {}", lcov_path);
             } else {
                 // Default: show summary in terminal
-                run_command(
-                    "cargo",
-                    &["llvm-cov", "--workspace", "--all-features"],
-                )?;
+                run_command("cargo", &["llvm-cov", "--workspace", "--all-features"])?;
             }
 
             println!("Coverage report complete!");

@@ -118,7 +118,9 @@ impl Node {
             transport: Arc::new(Mutex::new(None)),
             discovery: Arc::new(Mutex::new(None)),
         };
-        Ok(Self { inner: Arc::new(inner) })
+        Ok(Self {
+            inner: Arc::new(inner),
+        })
     }
 }
 
@@ -161,7 +163,9 @@ impl Node {
                 }
                 Ok(addr)
             }
-            None => Err(NodeError::InvalidState("Transport not initialized".to_string())),
+            None => Err(NodeError::InvalidState(
+                "Transport not initialized".to_string(),
+            )),
         }
     }
 }
@@ -173,11 +177,20 @@ impl Node {
 impl Node {
     /// Start the node
     pub async fn start(&self) -> Result<()> {
-        if self.inner.running.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_err() {
+        if self
+            .inner
+            .running
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .is_err()
+        {
             return Err(NodeError::InvalidState("Node already running".to_string()));
         }
 
-        tracing::info!("Starting node {} on {}", hex::encode(self.node_id()), self.inner.config.listen_addr);
+        tracing::info!(
+            "Starting node {} on {}",
+            hex::encode(self.node_id()),
+            self.inner.config.listen_addr
+        );
 
         // Initialize transport
         let transport = AsyncUdpTransport::bind(self.inner.config.listen_addr)
@@ -188,25 +201,33 @@ impl Node {
 
         // Initialize discovery
         let node_id_bytes = wraith_discovery::dht::NodeId::from_bytes(*self.node_id());
-        let mut discovery_config = DiscoveryConfigInternal::new(node_id_bytes, self.inner.config.listen_addr);
+        let mut discovery_config =
+            DiscoveryConfigInternal::new(node_id_bytes, self.inner.config.listen_addr);
         discovery_config.nat_detection_enabled = self.inner.config.discovery.enable_nat_traversal;
         discovery_config.relay_enabled = self.inner.config.discovery.enable_relay;
 
-        let discovery = DiscoveryManager::new(discovery_config).await
-            .map_err(|e| NodeError::Discovery(format!("Failed to create discovery manager: {}", e)))?;
+        let discovery = DiscoveryManager::new(discovery_config).await.map_err(|e| {
+            NodeError::Discovery(format!("Failed to create discovery manager: {}", e))
+        })?;
         let discovery = Arc::new(discovery);
         *self.inner.discovery.lock().await = Some(Arc::clone(&discovery));
-        discovery.start().await
+        discovery
+            .start()
+            .await
             .map_err(|e| NodeError::Discovery(format!("Failed to start discovery: {}", e)))?;
 
         // Start packet receive loop (defined in packet_handler.rs)
         let node = self.clone();
-        tokio::spawn(async move { node.packet_receive_loop().await; });
+        tokio::spawn(async move {
+            node.packet_receive_loop().await;
+        });
 
         // Start cover traffic if enabled
         if self.inner.config.obfuscation.cover_traffic.enabled {
             let node = self.clone();
-            tokio::spawn(async move { node.cover_traffic_loop().await; });
+            tokio::spawn(async move {
+                node.cover_traffic_loop().await;
+            });
         }
 
         tracing::info!("Node started: {:?}", hex::encode(self.node_id()));
@@ -215,7 +236,12 @@ impl Node {
 
     /// Stop the node
     pub async fn stop(&self) -> Result<()> {
-        if self.inner.running.compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst).is_err() {
+        if self
+            .inner
+            .running
+            .compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst)
+            .is_err()
+        {
             return Err(NodeError::InvalidState("Node not running".to_string()));
         }
 
@@ -264,7 +290,11 @@ impl Node {
     }
 
     /// Establish session with peer at known address
-    pub async fn establish_session_with_addr(&self, _expected_peer_id: &PeerId, peer_addr: SocketAddr) -> Result<SessionId> {
+    pub async fn establish_session_with_addr(
+        &self,
+        _expected_peer_id: &PeerId,
+        peer_addr: SocketAddr,
+    ) -> Result<SessionId> {
         let transport = self.get_transport().await?;
         tracing::info!("Establishing session with peer at {}", peer_addr);
 
@@ -272,8 +302,12 @@ impl Node {
         self.inner.pending_handshakes.insert(peer_addr, msg2_tx);
 
         let handshake_result = crate::node::session::perform_handshake_initiator(
-            self.inner.identity.x25519_keypair(), peer_addr, transport.as_ref(), Some(msg2_rx)
-        ).await;
+            self.inner.identity.x25519_keypair(),
+            peer_addr,
+            transport.as_ref(),
+            Some(msg2_rx),
+        )
+        .await;
         self.inner.pending_handshakes.remove(&peer_addr);
         let (crypto, session_id, peer_id) = handshake_result?;
 
@@ -286,17 +320,27 @@ impl Node {
         let connection_id = ConnectionId::from_bytes(connection_id_bytes);
         let connection = PeerConnection::new(session_id, peer_id, peer_addr, connection_id, crypto);
 
-        connection.transition_to(SessionState::Handshaking(HandshakePhase::InitSent)).await?;
-        connection.transition_to(SessionState::Handshaking(HandshakePhase::InitComplete)).await?;
+        connection
+            .transition_to(SessionState::Handshaking(HandshakePhase::InitSent))
+            .await?;
+        connection
+            .transition_to(SessionState::Handshaking(HandshakePhase::InitComplete))
+            .await?;
         connection.transition_to(SessionState::Established).await?;
 
         let connection_arc = Arc::new(connection);
-        self.inner.sessions.insert(peer_id, Arc::clone(&connection_arc));
+        self.inner
+            .sessions
+            .insert(peer_id, Arc::clone(&connection_arc));
         let cid_u64 = u64::from_be_bytes(connection_id_bytes);
         self.inner.routing.add_route(cid_u64, connection_arc);
 
-        tracing::info!("Session established with peer {} (X25519), session: {}, route: {:016x}",
-            hex::encode(&peer_id[..8]), hex::encode(&session_id[..8]), cid_u64);
+        tracing::info!(
+            "Session established with peer {} (X25519), session: {}, route: {:016x}",
+            hex::encode(&peer_id[..8]),
+            hex::encode(&session_id[..8]),
+            cid_u64
+        );
         Ok(session_id)
     }
 
@@ -306,7 +350,9 @@ impl Node {
             return Ok(Arc::clone(connection.value()));
         }
         let _session_id = self.establish_session(peer_id).await?;
-        self.inner.sessions.get(peer_id)
+        self.inner
+            .sessions
+            .get(peer_id)
             .map(|entry| Arc::clone(entry.value()))
             .ok_or(NodeError::SessionNotFound(*peer_id))
     }
@@ -317,7 +363,11 @@ impl Node {
             let cid_u64 = connection.connection_id.as_u64();
             self.inner.routing.remove_route(cid_u64);
             connection.transition_to(SessionState::Closed).await?;
-            tracing::info!("Session closed with peer {:?}, route {:016x} removed", peer_id, cid_u64);
+            tracing::info!(
+                "Session closed with peer {:?}, route {:016x} removed",
+                peer_id,
+                cid_u64
+            );
             Ok(())
         } else {
             Err(NodeError::SessionNotFound(*peer_id))
@@ -326,7 +376,11 @@ impl Node {
 
     /// List active sessions
     pub async fn active_sessions(&self) -> Vec<PeerId> {
-        self.inner.sessions.iter().map(|entry| *entry.key()).collect()
+        self.inner
+            .sessions
+            .iter()
+            .map(|entry| *entry.key())
+            .collect()
     }
 
     /// Get routing statistics
@@ -346,36 +400,59 @@ impl Node {
 
 impl Node {
     /// Send file to peer
-    pub async fn send_file(&self, file_path: impl AsRef<Path>, peer_id: &PeerId) -> Result<TransferId> {
+    pub async fn send_file(
+        &self,
+        file_path: impl AsRef<Path>,
+        peer_id: &PeerId,
+    ) -> Result<TransferId> {
         let file_path = file_path.as_ref();
         let file_size = std::fs::metadata(file_path).map_err(NodeError::Io)?.len();
         if file_size == 0 {
-            return Err(NodeError::InvalidState("Cannot send empty file".to_string()));
+            return Err(NodeError::InvalidState(
+                "Cannot send empty file".to_string(),
+            ));
         }
 
         let chunk_size = self.inner.config.transfer.chunk_size;
         let tree_hash = compute_tree_hash(file_path, chunk_size).map_err(NodeError::Io)?;
         let transfer_id = Self::generate_transfer_id();
 
-        let mut transfer = TransferSession::new_send(transfer_id, file_path.to_path_buf(), file_size, chunk_size);
+        let mut transfer =
+            TransferSession::new_send(transfer_id, file_path.to_path_buf(), file_size, chunk_size);
         transfer.start();
 
         let transfer_arc = Arc::new(RwLock::new(transfer));
-        let context = Arc::new(FileTransferContext::new_send(transfer_id, Arc::clone(&transfer_arc), tree_hash.clone()));
-        self.inner.transfers.insert(transfer_id, Arc::clone(&context));
+        let context = Arc::new(FileTransferContext::new_send(
+            transfer_id,
+            Arc::clone(&transfer_arc),
+            tree_hash.clone(),
+        ));
+        self.inner
+            .transfers
+            .insert(transfer_id, Arc::clone(&context));
 
         let connection = self.get_or_establish_session(peer_id).await?;
         let stream_id = ((transfer_id[0] as u16) << 8) | (transfer_id[1] as u16);
 
         let metadata = crate::node::file_transfer::FileMetadata::from_path_and_hash(
-            transfer_id, file_path, file_size, chunk_size, &tree_hash)?;
-        let metadata_frame = crate::node::file_transfer::build_metadata_frame(stream_id, &metadata)?;
-        self.send_encrypted_frame(&connection, &metadata_frame).await?;
+            transfer_id,
+            file_path,
+            file_size,
+            chunk_size,
+            &tree_hash,
+        )?;
+        let metadata_frame =
+            crate::node::file_transfer::build_metadata_frame(stream_id, &metadata)?;
+        self.send_encrypted_frame(&connection, &metadata_frame)
+            .await?;
 
         let node = self.clone();
         let file_path_buf = file_path.to_path_buf();
         tokio::spawn(async move {
-            if let Err(e) = node.send_file_chunks(transfer_id, file_path_buf, stream_id, connection).await {
+            if let Err(e) = node
+                .send_file_chunks(transfer_id, file_path_buf, stream_id, connection)
+                .await
+            {
                 tracing::error!("Error sending file chunks: {}", e);
             }
         });
@@ -399,15 +476,23 @@ impl Node {
 
     /// Get transfer progress
     pub async fn get_transfer_progress(&self, transfer_id: &TransferId) -> Option<f64> {
-        self.inner.transfers.get(transfer_id)
+        self.inner
+            .transfers
+            .get(transfer_id)
             .map(|context| context.transfer_session.clone())
             .map(|session| async move { session.read().await.progress() })
-            .map(|fut| tokio::task::block_in_place(|| tokio::runtime::Handle::current().block_on(fut)))
+            .map(|fut| {
+                tokio::task::block_in_place(|| tokio::runtime::Handle::current().block_on(fut))
+            })
     }
 
     /// List active transfers
     pub async fn active_transfers(&self) -> Vec<TransferId> {
-        self.inner.transfers.iter().map(|entry| *entry.key()).collect()
+        self.inner
+            .transfers
+            .iter()
+            .map(|entry| *entry.key())
+            .collect()
     }
 
     /// Generate random transfer ID
@@ -426,7 +511,8 @@ impl Node {
     /// Get transport layer
     pub(crate) async fn get_transport(&self) -> Result<Arc<AsyncUdpTransport>> {
         let guard = self.inner.transport.lock().await;
-        guard.as_ref()
+        guard
+            .as_ref()
             .ok_or_else(|| NodeError::InvalidState("Transport not initialized".to_string()))
             .cloned()
     }
@@ -488,13 +574,19 @@ mod tests {
         let alice_crypto = SessionCrypto::new([4u8; 32], [5u8; 32], &[6u8; 32]);
         let bob_crypto = SessionCrypto::new([5u8; 32], [4u8; 32], &[6u8; 32]);
 
-        let alice = PeerConnection::new(session_id, peer_id, peer_addr, connection_id, alice_crypto);
+        let alice =
+            PeerConnection::new(session_id, peer_id, peer_addr, connection_id, alice_crypto);
         let bob = PeerConnection::new(session_id, peer_id, peer_addr, connection_id, bob_crypto);
 
         let payload = b"Hello, encrypted WRAITH!";
         let frame_bytes = FrameBuilder::new()
-            .frame_type(FrameType::Data).stream_id(42).sequence(1000).offset(0).payload(payload)
-            .build(FRAME_HEADER_SIZE + payload.len()).unwrap();
+            .frame_type(FrameType::Data)
+            .stream_id(42)
+            .sequence(1000)
+            .offset(0)
+            .payload(payload)
+            .build(FRAME_HEADER_SIZE + payload.len())
+            .unwrap();
 
         let encrypted = alice.encrypt_frame(&frame_bytes).await.unwrap();
         let decrypted = bob.decrypt_frame(&encrypted).await.unwrap();
@@ -513,16 +605,34 @@ mod tests {
         let alice_crypto = SessionCrypto::new([4u8; 32], [5u8; 32], &[6u8; 32]);
         let bob_crypto = SessionCrypto::new([5u8; 32], [4u8; 32], &[6u8; 32]);
 
-        let alice = PeerConnection::new([1u8; 32], [2u8; 32], "127.0.0.1:5000".parse().unwrap(), ConnectionId::from_bytes([3u8; 8]), alice_crypto);
-        let bob = PeerConnection::new([1u8; 32], [2u8; 32], "127.0.0.1:5000".parse().unwrap(), ConnectionId::from_bytes([3u8; 8]), bob_crypto);
+        let alice = PeerConnection::new(
+            [1u8; 32],
+            [2u8; 32],
+            "127.0.0.1:5000".parse().unwrap(),
+            ConnectionId::from_bytes([3u8; 8]),
+            alice_crypto,
+        );
+        let bob = PeerConnection::new(
+            [1u8; 32],
+            [2u8; 32],
+            "127.0.0.1:5000".parse().unwrap(),
+            ConnectionId::from_bytes([3u8; 8]),
+            bob_crypto,
+        );
 
         let payload = b"Secret data";
         let frame_bytes = FrameBuilder::new()
-            .frame_type(FrameType::Data).stream_id(100).sequence(1).payload(payload)
-            .build(FRAME_HEADER_SIZE + payload.len()).unwrap();
+            .frame_type(FrameType::Data)
+            .stream_id(100)
+            .sequence(1)
+            .payload(payload)
+            .build(FRAME_HEADER_SIZE + payload.len())
+            .unwrap();
 
         let mut encrypted = alice.encrypt_frame(&frame_bytes).await.unwrap();
-        if let Some(byte) = encrypted.get_mut(10) { *byte ^= 0xFF; }
+        if let Some(byte) = encrypted.get_mut(10) {
+            *byte ^= 0xFF;
+        }
         assert!(bob.decrypt_frame(&encrypted).await.is_err());
     }
 }
