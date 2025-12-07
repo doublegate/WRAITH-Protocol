@@ -453,7 +453,10 @@ mod tests {
     /// Timing tests are inherently incompatible with coverage instrumentation,
     /// so this test is disabled when running under coverage (cfg(coverage)).
     #[test]
-    #[cfg_attr(coverage, ignore = "Timing tests incompatible with coverage instrumentation")]
+    #[cfg_attr(
+        coverage,
+        ignore = "Timing tests incompatible with coverage instrumentation"
+    )]
     fn test_decode_timing_consistency() {
         use std::time::Instant;
 

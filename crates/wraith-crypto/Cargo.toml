@@ -28,6 +28,10 @@ proptest = { workspace = true }
 criterion = { workspace = true }
 rand = "0.8"
 
+[lints.rust]
+# Allow 'coverage' cfg set by cargo-llvm-cov for conditional test exclusion
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(coverage)'] }
+
 [[bench]]
 name = "crypto_bench"
 harness = false
