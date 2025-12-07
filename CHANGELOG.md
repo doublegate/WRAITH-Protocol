@@ -5,6 +5,90 @@ All notable changes to WRAITH Protocol will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2025-12-06 - Maintenance Release
+
+**WRAITH Protocol v1.1.1 - Maintenance Release**
+
+This release focuses on repository organization, Phase 12 planning documentation, and technical debt analysis. No functional changes to the protocol implementation.
+
+### Repository Organization
+
+**Documentation Reorganization:**
+- Moved `GEMINI.md` to `docs/archive/GEMINI.md` (outdated documentation from early project phases)
+- Moved `RELEASE_NOTES_v1.1.0.md` to `docs/engineering/RELEASE_NOTES_v1.1.0.md` (release documentation)
+- Created `docs/archive/` directory for archived/outdated documentation
+- Enhanced `CLAUDE.md` with comprehensive docs/ directory structure documentation
+
+**Standard GitHub File Structure:**
+- ✅ Root-level standard files maintained: README.md, LICENSE, CHANGELOG.md, CONTRIBUTING.md, CODE_OF_CONDUCT.md, SECURITY.md
+- ✅ All technical documentation organized under `docs/` with clear subdirectories
+- ✅ Improved navigability and maintainability of documentation
+
+### Project Planning
+
+**Phase 12 v1.2.0 Planning Document:**
+- Created comprehensive Phase 12 planning document in `to-dos/protocol/phase-12-technical-excellence.md`
+- **126 story points** planned across **6 sprints** (Q2 2026 target)
+- Focus areas:
+  - Sprint 12.1: Code quality improvements (21 SP)
+  - Sprint 12.2: Performance optimization (21 SP)
+  - Sprint 12.3: Security hardening (21 SP)
+  - Sprint 12.4: Testing enhancements (21 SP)
+  - Sprint 12.5: Documentation & tooling (21 SP)
+  - Sprint 12.6: Production readiness (21 SP)
+
+**Technical Debt Analysis:**
+- Created comprehensive technical debt analysis document in `docs/technical/TECH-DEBT-POST-PHASE-11.md`
+- Identified and categorized technical debt across all crates
+- Prioritized remediation tasks for Phase 12
+- Established quality metrics and improvement goals
+
+### Dependencies
+
+**Updated:**
+- `libc` 0.2.177 → 0.2.178 (patch update)
+
+### Security
+
+**Dependency Audit:**
+- ✅ **0 vulnerabilities** in 286 dependencies (cargo audit clean)
+- ✅ All dependencies up to date with latest security patches
+- ✅ Quarterly audit schedule maintained
+
+### Code Quality
+
+**Quality Gates:**
+- ✅ **0 clippy warnings** with strict `-D warnings` enforcement
+- ✅ **0 compilation warnings**
+- ✅ **0 format issues** (cargo fmt --check passes)
+- ✅ **1,157 tests passing** - 100% pass rate on active tests (20 timing-sensitive tests ignored)
+
+### Changed
+
+**Documentation Structure:**
+- Enhanced documentation organization under `docs/` directory
+- All release notes now under `docs/engineering/`
+- All archived documentation under `docs/archive/`
+- Updated `CLAUDE.md` with comprehensive repository structure documentation
+
+### Quality Metrics
+
+**Current Metrics:**
+- **Tests:** 1,177 total (1,157 passing, 20 ignored) - 100% pass rate on active tests
+- **Code Volume:** ~36,949 lines of Rust code (~29,049 LOC + ~7,900 comments) across 7 active crates
+- **Documentation:** 60+ files, 45,000+ lines
+- **Security:** Zero vulnerabilities in 286 dependencies
+- **Quality Grade:** A+ (95/100), 12% debt ratio
+
+**What's Next:**
+- Phase 12: Technical Excellence & Production Hardening (Q2 2026)
+  - Code quality improvements (complexity reduction, test coverage)
+  - Performance optimization (profiling, benchmarking, hot path optimization)
+  - Security hardening (fuzzing, penetration testing, formal verification)
+  - Testing enhancements (property-based testing, integration tests, chaos engineering)
+  - Documentation & tooling (API documentation, developer guides, CI/CD improvements)
+  - Production readiness (monitoring, deployment, operations guides)
+
 ## [1.1.0] - 2025-12-06 - Security Validated Production Release
 
 **WRAITH Protocol v1.1.0 - Security Validated Production Release**
