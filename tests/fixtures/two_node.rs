@@ -176,8 +176,12 @@ impl TwoNodeFixture {
         }
 
         // Establish session from initiator to responder using establish_session_with_addr
+        // Note: Sessions are keyed by X25519 public keys, not Ed25519 node IDs
         self.initiator
-            .establish_session_with_addr(self.responder_identity.public_key(), self.responder_addr)
+            .establish_session_with_addr(
+                self.responder_identity.x25519_public_key(),
+                self.responder_addr,
+            )
             .await?;
 
         self.session_established = true;
@@ -207,9 +211,10 @@ impl TwoNodeFixture {
         }
 
         // Initiate file transfer - send_file takes (file_path, peer_id)
+        // Note: Sessions are keyed by X25519 public keys, not Ed25519 node IDs
         let transfer_id = self
             .initiator
-            .send_file(path, self.responder_identity.public_key())
+            .send_file(path, self.responder_identity.x25519_public_key())
             .await?;
 
         Ok(transfer_id)
@@ -244,14 +249,18 @@ impl TwoNodeFixture {
             .map(|progress| progress.progress_percent)
     }
 
-    /// Get the responder's peer ID
+    /// Get the responder's peer ID (X25519 public key)
+    ///
+    /// Note: Sessions are keyed by X25519 public keys, not Ed25519 node IDs
     pub fn responder_peer_id(&self) -> [u8; 32] {
-        *self.responder_identity.public_key()
+        *self.responder_identity.x25519_public_key()
     }
 
-    /// Get the initiator's peer ID
+    /// Get the initiator's peer ID (X25519 public key)
+    ///
+    /// Note: Sessions are keyed by X25519 public keys, not Ed25519 node IDs
     pub fn initiator_peer_id(&self) -> [u8; 32] {
-        *self.initiator_identity.public_key()
+        *self.initiator_identity.x25519_public_key()
     }
 
     /// Get the number of active sessions on the initiator
@@ -269,14 +278,15 @@ impl TwoNodeFixture {
     /// Should be called at the end of each test to ensure clean shutdown.
     pub async fn cleanup(self) -> Result<(), NodeError> {
         // Close all sessions
+        // Note: Sessions are keyed by X25519 public keys, not Ed25519 node IDs
         if self.session_established {
             let _ = self
                 .initiator
-                .close_session(self.responder_identity.public_key())
+                .close_session(self.responder_identity.x25519_public_key())
                 .await;
             let _ = self
                 .responder
-                .close_session(self.initiator_identity.public_key())
+                .close_session(self.initiator_identity.x25519_public_key())
                 .await;
         }
 
@@ -319,7 +329,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore] // TODO: Fix handshake timeout - responder needs to accept incoming connections
     async fn test_fixture_file_transfer() {
         let mut fixture = TwoNodeFixture::new().await.unwrap();
 
