@@ -328,7 +328,22 @@ impl SecurityMonitor {
         }
 
         let now = Instant::now();
-        let one_minute_ago = now - Duration::from_secs(60);
+
+        // Use checked_sub to avoid underflow on Windows or early system uptime
+        let one_minute_ago = match now.checked_sub(Duration::from_secs(60)) {
+            Some(t) => t,
+            None => {
+                // Less than 60 seconds since epoch - count all events
+                // and calculate rate based on actual elapsed time
+                if let Some((first_timestamp, _)) = history.first() {
+                    let elapsed = now.duration_since(*first_timestamp).as_secs_f64();
+                    if elapsed > 0.0 {
+                        return history.len() as f64 / elapsed;
+                    }
+                }
+                return 0.0;
+            }
+        };
 
         // Count events in last minute
         let recent_events = history
@@ -380,7 +395,15 @@ impl SecurityMonitor {
         let mut ip_events = self.ip_events.write().await;
 
         let now = Instant::now();
-        let cutoff = now - self.config.history_retention;
+
+        // Use checked_sub to avoid underflow on Windows or early system uptime
+        let cutoff = match now.checked_sub(self.config.history_retention) {
+            Some(c) => c,
+            None => {
+                // Retention period is longer than time since epoch - keep all events
+                return;
+            }
+        };
 
         // Remove old events from history
         history.retain(|(timestamp, _)| *timestamp >= cutoff);
