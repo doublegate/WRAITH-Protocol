@@ -12,7 +12,6 @@ build-dir = "book"
 default-theme = "rust"
 preferred-dark-theme = "navy"
 git-repository-url = "https://github.com/doublegate/WRAITH-Protocol"
-git-repository-icon = "fa-github"
 edit-url-template = "https://github.com/doublegate/WRAITH-Protocol/edit/main/{path}"
 
 [output.html.search]
