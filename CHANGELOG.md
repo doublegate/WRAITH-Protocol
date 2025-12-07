@@ -120,6 +120,27 @@ This release completes Phase 11 with packet routing infrastructure, network perf
 
 ### Fixed
 
+**CI/CD Infrastructure:**
+- **Fuzz Workflow Failures** (commit 57894a9):
+  - Fixed GitHub Action reference: `dtolnay/rust-action` → `dtolnay/rust-toolchain@nightly`
+  - Added `fuzz` to workspace exclusions to prevent build conflicts
+  - All 5 fuzz targets now compile and execute correctly
+  - Impact: Weekly fuzzing and manual fuzzing workflows now functional
+- **Documentation Build Failures** (commit d10587b):
+  - Fixed 3 unresolved rustdoc links in `wraith-core/src/node/node.rs`
+  - Added `Self::` scope qualification for method references
+  - Impact: `cargo doc` now builds without warnings
+- **Cross-Platform Integration Tests** (commit d10587b):
+  - Fixed macOS/Windows test failures (os error 10049) in `test_connection_establishment`
+  - Modified `listen_addr()` to convert unspecified addresses (0.0.0.0/::) to loopback (127.0.0.1/::1)
+  - Ensures returned addresses work as connection destinations on all platforms
+  - Impact: All integration tests now pass on Linux, macOS, and Windows
+- **Padding Fuzz Target Crash** (commit 528b9fa):
+  - Capped `plaintext_len` to 16,384 bytes (maximum padding size class)
+  - Prevents unrealistic allocation attempts (fuzzer found 72 PB input causing crashes)
+  - Improved fuzzing efficiency by focusing on realistic packet sizes
+  - Impact: Padding fuzz target now passes with 354,181 executions, no crashes
+
 **Test Stability:**
 - Marked `test_multi_peer_fastest_first` as `#[ignore]` - Flaky test due to timing sensitivity in performance tracking
 - Test is non-deterministic due to scheduler behavior and performance measurement timing
@@ -129,7 +150,8 @@ This release completes Phase 11 with packet routing infrastructure, network perf
 ### Changed
 
 **Documentation Updates:**
-- README.md: Updated test count (1,157 tests), version (1.1.0), security audit reference
+- README.md: Updated test count (1,178 total: 1,157 passing + 21 ignored), version (1.1.0), security audit reference, comprehensive features and metrics
+- CHANGELOG.md: Added CI/CD infrastructure fixes (fuzz workflow, rustdoc, cross-platform tests, padding fuzz target)
 - SECURITY.md: Added v1.1.0 audit summary, version support matrix, quarterly audit schedule
 - CLAUDE.md: Updated implementation status, version, current phase completion
 - CLAUDE.local.md: Updated for Sprint 11.6 completion, v1.1.0 release preparation
@@ -147,20 +169,18 @@ This release completes Phase 11 with packet routing infrastructure, network perf
 ### Quality Metrics
 
 **Test Coverage:**
-- Total tests: 1,157 passing + 20 ignored = 1,177 total
-- Test distribution:
-  - wraith-core: 263 tests (session, stream, BBR, migration, node API, rate limiting, health, circuit breakers, resume, multi-peer)
-  - wraith-crypto: 125 tests (comprehensive cryptographic coverage)
-  - wraith-transport: 33 tests (UDP, AF_XDP, io_uring, worker pools)
-  - wraith-obfuscation: 154 tests (padding, timing, protocol mimicry)
-  - wraith-discovery: 15 tests (DHT, NAT traversal, relay)
-  - wraith-files: 24 tests (file I/O, chunking, hashing, tree hash)
-  - Integration tests: 40 tests (advanced + basic scenarios, all 7 deferred tests now passing)
-  - Property tests: 29 tests (proptest invariants for state machines)
-  - Doctests: 108 tests (documentation examples)
-  - Benchmarks: 28 Criterion benchmarks (file operations, network performance)
+- Total tests: 1,157 passing + 21 ignored = 1,178 total
+- Test distribution (by crate):
+  - wraith-core: 357 tests (session, stream, BBR, migration, node API, rate limiting, health, circuit breakers, resume, multi-peer)
+  - wraith-crypto: 152 tests (comprehensive cryptographic coverage)
+  - wraith-transport: 96 tests (UDP, AF_XDP, io_uring, worker pools)
+  - wraith-obfuscation: 167 tests (padding, timing, protocol mimicry)
+  - wraith-discovery: 231 tests (DHT, NAT traversal, relay)
+  - wraith-files: 38 tests (file I/O, chunking, hashing, tree hash)
+  - Integration tests: 158 tests (advanced + basic scenarios, all 7 deferred tests now passing, 3 ignored for timing sensitivity)
 - **Pass rate:** 100% on active tests
 - **Integration tests:** All 7 deferred tests from Phase 10 Session 4 now passing (end-to-end file transfer, multi-peer, NAT traversal, discovery, connection migration, error recovery, concurrent transfers)
+- **Fuzzing:** 5 libFuzzer targets (frame_parser, dht_message, padding, crypto, tree_hash)
 
 **Code Quality:**
 - Clippy warnings: 0 (with `-D warnings`)

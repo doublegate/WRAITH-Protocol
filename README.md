@@ -66,40 +66,38 @@ WRAITH Protocol has completed comprehensive security validation and quality assu
 **Code Quality Metrics:**
 - **Quality Grade:** A+ (95/100)
 - **Technical Debt Ratio:** 12% (healthy range)
-- **Test Coverage:** 1,177 tests total (1,157 passing, 20 ignored) - 100% pass rate on active tests
-  - 263 wraith-core (frame parsing, sessions, streams, BBR, migration, **Node API** with 57 new tests)
-  - 125 wraith-crypto (Ed25519, X25519, Elligator2, AEAD, Noise, Ratchet, encryption at rest)
-  - 24 wraith-files (chunking, reassembly, tree hashing, O(m) algorithms)
-  - 154 wraith-obfuscation (padding, timing, TLS/WebSocket/DoH mimicry)
-  - 15 wraith-discovery (DHT, STUN, ICE, relay)
-  - 33 wraith-transport (AF_XDP, io_uring, UDP, worker pools)
-  - 40 integration tests (end-to-end, Node API integration, cryptographic vectors)
-  - 29 property tests (proptest invariants for state machines)
-  - 108 doc tests (API examples across all crates)
-- **Security Vulnerabilities:** Zero (cargo audit clean, CodeQL verified, [v1.1.0 audit](docs/security/SECURITY_AUDIT_v1.1.0.md))
-- **Clippy Warnings:** Zero
-- **Code Volume:** ~36,949 lines of Rust code (~29,049 LOC + ~7,900 comments) across 7 active crates
+- **Test Coverage:** 1,178 tests total (1,157 passing, 21 ignored) - 100% pass rate on active tests
+  - 357 wraith-core (frame parsing, sessions, streams, BBR, migration, Node API, rate limiting, health, circuit breakers, resume, multi-peer)
+  - 152 wraith-crypto (Ed25519, X25519, Elligator2, AEAD, Noise, Ratchet, encryption at rest)
+  - 38 wraith-files (chunking, reassembly, tree hashing, O(m) algorithms)
+  - 167 wraith-obfuscation (padding, timing, TLS/WebSocket/DoH mimicry)
+  - 231 wraith-discovery (DHT, STUN, ICE, relay)
+  - 96 wraith-transport (AF_XDP, io_uring, UDP, worker pools)
+  - 158 integration tests (end-to-end, Node API integration, NAT traversal, multi-peer, error recovery)
+- **Security Vulnerabilities:** Zero (286 dependencies scanned with cargo audit, CodeQL verified, [v1.1.0 audit](docs/security/SECURITY_AUDIT_v1.1.0.md))
+- **Clippy Warnings:** Zero (strict `-D warnings` enforcement)
+- **Compiler Warnings:** Zero
+- **Code Volume:** ~43,919 lines total (~27,103 LOC + comments/blanks) across 7 active crates
 - **Fuzzing:** 5 libFuzzer targets continuously testing parser robustness
   - frame_parser: SIMD/scalar frame parsing with arbitrary bytes
   - dht_message: Kademlia message handling (FIND_NODE, FIND_VALUE, STORE)
   - padding: All padding modes with round-trip validation
   - crypto: AEAD encrypt/decrypt and key derivation
   - tree_hash: Merkle tree construction with incremental hashing
-- **Property Tests:** 29 proptest invariants validating state machine correctness
+- **Property Tests:** State machine invariants validating correctness
 - **Unsafe Code:** 50 blocks with 100% SAFETY documentation (zero unsafe in crypto paths)
-- **Documentation:** 60+ files, 45,000+ lines, complete API coverage, deployment guides
+- **Documentation:** 60+ files, 45,000+ lines, complete API coverage, deployment guides, 2,670+ lines of XDP documentation
 
 **Implementation Status:**
-- **Core workspace:** 9 crates (8 active + 1 XDP), ~32,600 lines of Rust code (~24,700 LOC + ~7,900 comments)
-- **Test coverage:** 1,128 total tests (1,104 active, 24 ignored) with 100% pass rate
-  - **wraith-core** (341 tests): **Node API orchestration layer**, Frame parsing with SIMD acceleration (172M frames/sec), session state machine with 7 states, stream multiplexing with prioritization, BBR congestion control with pacing, path MTU discovery with caching, connection migration with PATH_CHALLENGE/RESPONSE, transfer session management, **padding strategy pattern** (5 pluggable implementations with 8 dedicated tests)
-  - **wraith-crypto** (125 tests): Ed25519 signatures with batch verification, X25519 key exchange with Elligator2 encoding, XChaCha20-Poly1305 AEAD with key commitment (3.2 GB/s), BLAKE3 hashing with SIMD (8.5 GB/s), Noise_XX handshake with mutual authentication, Double Ratchet with DH and symmetric ratcheting, replay protection with 64-bit sliding window, private key encryption at rest (Argon2id + XChaCha20-Poly1305)
-  - **wraith-files** (24 tests): io_uring async file I/O with registered buffers and zero-copy, file chunking with seek support (>1.5 GiB/s), file reassembly with O(m) missing chunks algorithm, BLAKE3 tree hashing with Merkle verification (>3 GiB/s), incremental tree hasher for streaming
-  - **wraith-obfuscation** (154 tests): Padding engine with 5 modes (PowerOfTwo, SizeClasses, ConstantRate, Statistical), timing obfuscation with 5 distributions (Uniform, Normal, Exponential), TLS 1.3 record layer mimicry, WebSocket binary framing (RFC 6455), DNS-over-HTTPS tunneling, adaptive threat-level profiles (Low/Medium/High/Paranoid)
-  - **wraith-discovery** (15 tests): Privacy-enhanced Kademlia DHT with BLAKE3 NodeIds, S/Kademlia Sybil resistance (20-bit difficulty), DHT privacy with keyed info_hash, STUN client (RFC 5389) with MESSAGE-INTEGRITY, ICE candidate gathering with UDP hole punching, DERP-style relay infrastructure (client/server/selector)
-  - **wraith-transport** (33 tests): AF_XDP zero-copy sockets with batch processing (rx_batch/tx_batch), worker thread pools with CPU pinning, UDP transport with SO_REUSEPORT, MTU discovery with binary search, NUMA-aware allocation
-  - **Integration & Benchmarks** (113 tests): End-to-end file transfer (5MB with resume), multi-peer coordination (3 peers, 20 chunks), NAT traversal components, relay fallback, obfuscation modes integration, Noise_XX + ratcheting workflow, cryptographic test vectors
-  - **Doc tests** (303 tests): API documentation examples with runnable code across all crates
+- **Core workspace:** 9 crates (8 active + 1 XDP), ~43,919 lines total (~27,103 LOC + comments/blanks)
+- **Test coverage:** 1,178 total tests (1,157 passing, 21 ignored) with 100% pass rate on active tests
+  - **wraith-core** (357 tests): **Node API orchestration layer**, Frame parsing with SIMD acceleration (172M frames/sec), session state machine with 7 states, stream multiplexing with prioritization, BBR congestion control with pacing, path MTU discovery with caching, connection migration with PATH_CHALLENGE/RESPONSE, transfer session management, rate limiting (token bucket), health monitoring (3 states), circuit breakers, resume robustness, multi-peer optimization (4 strategies)
+  - **wraith-crypto** (152 tests): Ed25519 signatures with batch verification, X25519 key exchange with Elligator2 encoding, XChaCha20-Poly1305 AEAD with key commitment (3.2 GB/s), BLAKE3 hashing with SIMD (8.5 GB/s), Noise_XX handshake with mutual authentication, Double Ratchet with DH and symmetric ratcheting, replay protection with 64-bit sliding window, private key encryption at rest (Argon2id + XChaCha20-Poly1305)
+  - **wraith-files** (38 tests): io_uring async file I/O with registered buffers and zero-copy, file chunking with seek support (14.85 GiB/s), file reassembly with O(m) missing chunks algorithm (5.42 GiB/s), BLAKE3 tree hashing with Merkle verification (4.71 GiB/s), incremental tree hasher for streaming, chunk verification (4.78 GiB/s)
+  - **wraith-obfuscation** (167 tests): Padding engine with 5 modes (PowerOfTwo, SizeClasses, ConstantRate, Statistical), timing obfuscation with 5 distributions (Uniform, Normal, Exponential), TLS 1.3 record layer mimicry, WebSocket binary framing (RFC 6455), DNS-over-HTTPS tunneling, adaptive threat-level profiles (Low/Medium/High/Paranoid)
+  - **wraith-discovery** (231 tests): Privacy-enhanced Kademlia DHT with BLAKE3 NodeIds, S/Kademlia Sybil resistance (20-bit difficulty), DHT privacy with keyed info_hash, STUN client (RFC 5389) with MESSAGE-INTEGRITY, ICE candidate gathering with UDP hole punching, DERP-style relay infrastructure (client/server/selector)
+  - **wraith-transport** (96 tests): AF_XDP zero-copy sockets with batch processing (rx_batch/tx_batch), worker thread pools with CPU pinning, UDP transport with SO_REUSEPORT, MTU discovery with binary search, NUMA-aware allocation
+  - **Integration tests** (158 tests): End-to-end file transfer (5MB with resume), multi-peer coordination (3 peers, 20 chunks), NAT traversal components, relay fallback, obfuscation modes integration, Noise_XX + ratcheting workflow, cryptographic test vectors, connection migration, error recovery, concurrent transfers
 - **Benchmarks:** 28 Criterion benchmarks measuring frame parsing/building (~232 GiB/s theoretical), transport throughput/latency, MTU cache performance, worker pool scaling, obfuscation operation overhead, file chunking/reassembly, tree hashing throughput
 - **Performance highlights (Phase 10 Session 4 benchmarks):**
   - Frame parsing: 172M frames/sec with SIMD acceleration (SSE2/NEON)
@@ -694,7 +692,8 @@ WRAITH Protocol uses comprehensive automated workflows for quality assurance and
 - **CodeQL:** Static analysis for security vulnerabilities
 - **cargo-audit:** RustSec advisory database scanning
 - **Gitleaks:** Secret scanning with false positive suppression
-- **Weekly Scans:** Automated security checks every Monday
+- **Fuzzing:** 5 libFuzzer targets (frame_parser, dht_message, padding, crypto, tree_hash) with weekly automated runs
+- **Weekly Scans:** Automated security checks every Monday (audit, fuzz, CodeQL)
 
 ### Release Automation
 - **Multi-Platform Builds:** 6 platform targets (Linux x86_64/aarch64, macOS Intel/ARM, Windows)
@@ -702,7 +701,7 @@ WRAITH Protocol uses comprehensive automated workflows for quality assurance and
 - **GitHub Releases:** Automatic release creation from version tags
 - **Changelog Integration:** Automated release notes from CHANGELOG.md
 
-See [CI Workflow](.github/workflows/ci.yml), [CodeQL Workflow](.github/workflows/codeql.yml), and [Release Workflow](.github/workflows/release.yml) for configuration details.
+See [CI Workflow](.github/workflows/ci.yml), [CodeQL Workflow](.github/workflows/codeql.yml), [Fuzz Workflow](.github/workflows/fuzz.yml), and [Release Workflow](.github/workflows/release.yml) for configuration details.
 
 ## Security
 
@@ -860,4 +859,4 @@ WRAITH Protocol builds on the work of many excellent projects and technologies:
 
 **WRAITH Protocol** - *Secure. Fast. Invisible.*
 
-**Status:** v1.0.0 Production Release | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 1,128 (1,104 passing + 24 ignored) | **Quality:** Grade A+ (95/100), 12% debt ratio, 0 vulnerabilities, 5 fuzz targets | **Protocol:** Phase 10 Sessions 2-8 COMPLETE - Production Ready (1,017/947 SP, 107%)
+**Status:** v1.1.0 Security Validated Production Release | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 1,178 (1,157 passing + 21 ignored) | **Quality:** Grade A+ (95/100), 12% debt ratio, 0 vulnerabilities, 5 fuzz targets, zero warnings | **Protocol:** Phase 11 COMPLETE - Security Validated Production Ready (128 SP delivered)
