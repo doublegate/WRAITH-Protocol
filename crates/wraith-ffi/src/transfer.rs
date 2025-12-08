@@ -161,20 +161,21 @@ pub unsafe extern "C" fn wraith_transfer_get_progress(
 
     match progress_opt {
         Some(progress) => {
-            let is_complete =
-                progress.bytes_sent >= progress.bytes_total && progress.bytes_total > 0;
-            let pct = if progress.bytes_total > 0 {
-                (progress.bytes_sent as f32) / (progress.bytes_total as f32)
+            let is_complete = progress.is_complete();
+            let pct = (progress.progress_percent / 100.0) as f32; // Convert from 0-100 to 0-1
+
+            let eta_seconds = if let Some(eta) = progress.eta {
+                eta.as_secs()
             } else {
-                0.0
+                0
             };
 
             *progress_out = WraithTransferProgress {
                 total_bytes: progress.bytes_total,
                 transferred_bytes: progress.bytes_sent,
                 progress: pct,
-                eta_seconds: 0,        // TODO: Calculate from rate
-                rate_bytes_per_sec: 0, // TODO: Get from progress tracker
+                eta_seconds,
+                rate_bytes_per_sec: progress.speed_bytes_per_sec as u64,
                 is_complete,
             };
         }
@@ -224,6 +225,51 @@ pub unsafe extern "C" fn wraith_transfer_count(
 
     let transfers = runtime.block_on(async move { node_clone.active_transfers().await });
     *count_out = transfers.len() as u32;
+
+    WraithErrorCode::Success as c_int
+}
+
+/// Cancel an active transfer
+///
+/// Removes the transfer from the active transfers map and sends a STREAM_CLOSE
+/// frame to the peer if the transfer has an active session.
+///
+/// # Safety
+///
+/// - `node` must be a valid node handle
+/// - `transfer` must be a valid transfer handle
+/// - `error_out` must be null or a valid pointer to receive error message
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn wraith_transfer_cancel(
+    node: *mut WraithNode,
+    transfer: *const WraithTransfer,
+    error_out: *mut *mut c_char,
+) -> c_int {
+    if node.is_null() {
+        if !error_out.is_null() {
+            *error_out = WraithError::invalid_argument("node is null").to_c_string();
+        }
+        return WraithErrorCode::InvalidArgument as c_int;
+    }
+
+    if transfer.is_null() {
+        if !error_out.is_null() {
+            *error_out = WraithError::invalid_argument("transfer is null").to_c_string();
+        }
+        return WraithErrorCode::InvalidArgument as c_int;
+    }
+
+    let transfer_id = *(transfer as *const [u8; 32]);
+    let handle = &mut *(node as *mut NodeHandle);
+    let node_clone = handle.node.clone();
+    let runtime = handle.runtime.clone();
+
+    ffi_try!(
+        runtime
+            .block_on(async move { node_clone.cancel_transfer(&transfer_id).await })
+            .map_err(WraithError::from),
+        error_out
+    );
 
     WraithErrorCode::Success as c_int
 }

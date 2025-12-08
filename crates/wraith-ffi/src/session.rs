@@ -143,18 +143,30 @@ pub unsafe extern "C" fn wraith_session_get_stats(
         return WraithErrorCode::InvalidArgument as c_int;
     }
 
-    // TODO: Implement actual stats retrieval from Node API
-    // For now, return zeroed stats
-    *stats_out = WraithConnectionStats {
-        bytes_sent: 0,
-        bytes_received: 0,
-        packets_sent: 0,
-        packets_received: 0,
-        rtt_us: 0,
-        loss_rate: 0.0,
-    };
+    // Get peer_id from session handle
+    let peer_id_bytes = *(session as *const [u8; 32]);
 
-    WraithErrorCode::Success as c_int
+    let handle = &*(node as *const NodeHandle);
+    let node_clone = handle.node.clone();
+
+    // Get connection stats from Node API
+    if let Some(stats) = node_clone.get_connection_stats(&peer_id_bytes) {
+        *stats_out = WraithConnectionStats {
+            bytes_sent: stats.bytes_sent,
+            bytes_received: stats.bytes_received,
+            packets_sent: stats.packets_sent,
+            packets_received: stats.packets_received,
+            rtt_us: stats.rtt_us.unwrap_or(0),
+            loss_rate: stats.loss_rate as f32,
+        };
+
+        WraithErrorCode::Success as c_int
+    } else {
+        if !error_out.is_null() {
+            *error_out = WraithError::session_not_found().to_c_string();
+        }
+        WraithErrorCode::SessionNotFound as c_int
+    }
 }
 
 /// Get the number of active sessions

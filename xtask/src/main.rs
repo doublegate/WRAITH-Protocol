@@ -112,8 +112,8 @@ fn main() -> anyhow::Result<()> {
 
             if html {
                 // Generate HTML report
-                let html_dir = format!("{}/html", output_dir);
-                println!("Generating HTML report in {}", html_dir);
+                let html_dir = format!("{output_dir}/html");
+                println!("Generating HTML report in {html_dir}");
                 run_command(
                     "cargo",
                     &[
@@ -125,12 +125,12 @@ fn main() -> anyhow::Result<()> {
                         &html_dir,
                     ],
                 )?;
-                println!("HTML report generated: {}/index.html", html_dir);
+                println!("HTML report generated: {html_dir}/index.html");
 
                 // Try to open in browser
                 #[cfg(target_os = "linux")]
                 let _ = Command::new("xdg-open")
-                    .arg(format!("{}/index.html", html_dir))
+                    .arg(format!("{html_dir}/index.html"))
                     .spawn();
                 #[cfg(target_os = "macos")]
                 let _ = Command::new("open")
@@ -138,8 +138,8 @@ fn main() -> anyhow::Result<()> {
                     .spawn();
             } else if lcov {
                 // Generate LCOV report for CI
-                let lcov_path = format!("{}/lcov.info", output_dir);
-                println!("Generating LCOV report: {}", lcov_path);
+                let lcov_path = format!("{output_dir}/lcov.info");
+                println!("Generating LCOV report: {lcov_path}");
                 run_command(
                     "cargo",
                     &[
@@ -151,7 +151,7 @@ fn main() -> anyhow::Result<()> {
                         &lcov_path,
                     ],
                 )?;
-                println!("LCOV report generated: {}", lcov_path);
+                println!("LCOV report generated: {lcov_path}");
             } else {
                 // Default: show summary in terminal
                 run_command("cargo", &["llvm-cov", "--workspace", "--all-features"])?;

@@ -46,11 +46,11 @@ pub async fn start_node(state: State<'_, AppState>) -> AppResult<NodeStatus> {
     let config = NodeConfig::default();
     let node = Node::new_with_config(config)
         .await
-        .map_err(|e| AppError::Node(e.to_string()))?;
+        .map_err(|e| AppError::Node(format!("Failed to create node: {}", e)))?;
 
     node.start()
         .await
-        .map_err(|e| AppError::Node(e.to_string()))?;
+        .map_err(|e| AppError::Node(format!("Failed to start node: {}", e)))?;
 
     let node_id = hex::encode(node.node_id());
     info!("Node started with ID: {}", node_id);
@@ -78,7 +78,7 @@ pub async fn stop_node(state: State<'_, AppState>) -> AppResult<()> {
     if let Some(node) = node_lock.take() {
         node.stop()
             .await
-            .map_err(|e| AppError::Node(e.to_string()))?;
+            .map_err(|e| AppError::Node(format!("Failed to stop node: {}", e)))?;
         info!("Node stopped");
     }
 
@@ -103,11 +103,26 @@ pub async fn get_sessions(state: State<'_, AppState>) -> AppResult<Vec<SessionIn
     let mut result = Vec::with_capacity(sessions.len());
 
     for peer_id in sessions {
+        // Get connection stats
+        let (bytes_sent, bytes_received) = if let Some(stats) = node.get_connection_stats(&peer_id)
+        {
+            (stats.bytes_sent, stats.bytes_received)
+        } else {
+            (0, 0)
+        };
+
+        // Get established_at timestamp (seconds since epoch)
+        let established_at = node
+            .get_session_established_at(&peer_id)
+            .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
+            .map(|duration| duration.as_secs())
+            .unwrap_or(0);
+
         result.push(SessionInfo {
             peer_id: hex::encode(peer_id),
-            established_at: 0, // TODO: Track establishment time
-            bytes_sent: 0,     // TODO: Get from connection stats
-            bytes_received: 0, // TODO: Get from connection stats
+            established_at,
+            bytes_sent,
+            bytes_received,
         });
     }
 
@@ -314,13 +329,91 @@ pub async fn get_transfer_progress(
 /// Cancel an active transfer
 #[tauri::command]
 pub async fn cancel_transfer(state: State<'_, AppState>, transfer_id: String) -> AppResult<()> {
+    let node = state.node.read().await;
+    let Some(node) = node.as_ref() else {
+        return Err(AppError::NodeNotRunning);
+    };
+
+    let transfer_bytes =
+        hex::decode(&transfer_id).map_err(|_| AppError::Transfer("Invalid transfer ID".into()))?;
+
+    if transfer_bytes.len() != 32 {
+        return Err(AppError::Transfer("Transfer ID must be 32 bytes".into()));
+    }
+
+    let mut transfer_id_arr = [0u8; 32];
+    transfer_id_arr.copy_from_slice(&transfer_bytes);
+
+    // Call actual cancellation via Node API
+    node.cancel_transfer(&transfer_id_arr)
+        .await
+        .map_err(|e| AppError::Transfer(e.to_string()))?;
+
     // Remove from tracked transfers
     {
         let mut transfers = state.transfers.write().await;
         transfers.remove(&transfer_id);
     }
 
-    // TODO: Implement actual transfer cancellation in wraith-core
     info!("Cancelled transfer: {}", transfer_id);
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashMap;
+    use std::sync::Arc;
+    use tokio::sync::RwLock;
+
+    /// Create a mock AppState for testing
+    fn mock_app_state() -> AppState {
+        AppState {
+            node: Arc::new(RwLock::new(None)),
+            transfers: Arc::new(RwLock::new(HashMap::new())),
+            download_dir: Arc::new(RwLock::new(None)),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_app_state_node_not_running() {
+        let state = mock_app_state();
+        let running = state.is_node_running().await;
+        assert!(!running, "Node should not be running");
+    }
+
+    #[tokio::test]
+    async fn test_app_state_node_id_none() {
+        let state = mock_app_state();
+        let node_id = state.get_node_id_hex().await;
+        assert!(node_id.is_none(), "Node ID should be None");
+    }
+
+    #[tokio::test]
+    async fn test_app_state_session_count() {
+        let state = mock_app_state();
+        let count = state.active_session_count().await;
+        assert_eq!(count, 0, "Active sessions should be 0");
+    }
+
+    #[tokio::test]
+    async fn test_app_state_transfer_count() {
+        let state = mock_app_state();
+        let count = state.active_transfer_count().await;
+        assert_eq!(count, 0, "Active transfers should be 0");
+    }
+
+    #[tokio::test]
+    async fn test_app_state_transfers_empty() {
+        let state = mock_app_state();
+        let transfers = state.transfers.read().await;
+        assert!(transfers.is_empty(), "Transfers map should be empty");
+    }
+
+    #[tokio::test]
+    async fn test_app_state_download_dir_none() {
+        let state = mock_app_state();
+        let download_dir = state.download_dir.read().await;
+        assert!(download_dir.is_none(), "Download directory should be None");
+    }
 }

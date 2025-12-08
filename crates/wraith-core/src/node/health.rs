@@ -6,6 +6,7 @@
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
+use tracing::{debug, info, warn};
 
 /// Health status
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -183,18 +184,36 @@ impl SystemInfo {
     fn get_memory_usage_linux() -> Option<(u64, u64)> {
         use std::fs;
 
-        let meminfo = fs::read_to_string("/proc/meminfo").ok()?;
+        let meminfo = match fs::read_to_string("/proc/meminfo") {
+            Ok(data) => data,
+            Err(e) => {
+                warn!("Failed to read /proc/meminfo: {}", e);
+                return None;
+            }
+        };
         let mut mem_total = 0u64;
         let mut mem_available = 0u64;
 
         for line in meminfo.lines() {
             if line.starts_with("MemTotal:") {
                 if let Some(kb_str) = line.split_whitespace().nth(1) {
-                    mem_total = kb_str.parse::<u64>().ok()? * 1024;
+                    match kb_str.parse::<u64>() {
+                        Ok(kb) => mem_total = kb * 1024,
+                        Err(e) => {
+                            warn!("Failed to parse MemTotal '{}': {}", kb_str, e);
+                            return None;
+                        }
+                    }
                 }
             } else if line.starts_with("MemAvailable:") {
                 if let Some(kb_str) = line.split_whitespace().nth(1) {
-                    mem_available = kb_str.parse::<u64>().ok()? * 1024;
+                    match kb_str.parse::<u64>() {
+                        Ok(kb) => mem_available = kb * 1024,
+                        Err(e) => {
+                            warn!("Failed to parse MemAvailable '{}': {}", kb_str, e);
+                            return None;
+                        }
+                    }
                 }
             }
         }
@@ -203,6 +222,10 @@ impl SystemInfo {
             let used = mem_total.saturating_sub(mem_available);
             Some((used, mem_total))
         } else {
+            warn!(
+                "Memory info incomplete: mem_total={}, mem_available={}",
+                mem_total, mem_available
+            );
             None
         }
     }
@@ -237,14 +260,49 @@ impl HealthMonitor {
 
         if new_status != metrics.status && since_transition >= self.config.transition_cooldown {
             // State transition
+            let old_status = metrics.status;
             match new_status {
-                HealthStatus::Healthy => metrics.recovery_count += 1,
-                HealthStatus::Degraded => metrics.degraded_count += 1,
-                HealthStatus::Critical => metrics.critical_count += 1,
+                HealthStatus::Healthy => {
+                    info!(
+                        "Health status recovered: {:?} -> {:?} (memory: {:.1}%, sessions: {})",
+                        old_status,
+                        new_status,
+                        memory_usage * 100.0,
+                        session_count
+                    );
+                    metrics.recovery_count += 1;
+                }
+                HealthStatus::Degraded => {
+                    warn!(
+                        "Health status degraded: {:?} -> {:?} (memory: {:.1}%, sessions: {})",
+                        old_status,
+                        new_status,
+                        memory_usage * 100.0,
+                        session_count
+                    );
+                    metrics.degraded_count += 1;
+                }
+                HealthStatus::Critical => {
+                    warn!(
+                        "Health status CRITICAL: {:?} -> {:?} (memory: {:.1}%, sessions: {})",
+                        old_status,
+                        new_status,
+                        memory_usage * 100.0,
+                        session_count
+                    );
+                    metrics.critical_count += 1;
+                }
             }
 
             metrics.status = new_status;
             metrics.last_transition = now;
+        } else {
+            debug!(
+                "Health check: status={:?}, memory={:.1}%, sessions={}",
+                metrics.status,
+                memory_usage * 100.0,
+                session_count
+            );
         }
 
         // Update metrics

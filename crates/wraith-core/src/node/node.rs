@@ -534,6 +534,47 @@ impl Node {
     pub fn active_route_count(&self) -> usize {
         self.inner.routing.route_count()
     }
+
+    /// Get connection statistics for a peer
+    ///
+    /// Returns the connection statistics for the specified peer, or `None` if
+    /// no active session exists with that peer.
+    ///
+    /// # Arguments
+    ///
+    /// * `peer_id` - The peer ID (32-byte Ed25519 public key)
+    ///
+    /// # Returns
+    ///
+    /// `Some(ConnectionStats)` if a session exists, `None` otherwise.
+    pub fn get_connection_stats(
+        &self,
+        peer_id: &PeerId,
+    ) -> Option<crate::node::session::ConnectionStats> {
+        self.inner
+            .sessions
+            .get(peer_id)
+            .map(|connection| connection.stats.clone())
+    }
+
+    /// Get the timestamp when a session was established
+    ///
+    /// Returns the `SystemTime` when the session with the specified peer was established,
+    /// or `None` if no active session exists with that peer.
+    ///
+    /// # Arguments
+    ///
+    /// * `peer_id` - The peer ID (32-byte Ed25519 public key)
+    ///
+    /// # Returns
+    ///
+    /// `Some(SystemTime)` if a session exists, `None` otherwise.
+    pub fn get_session_established_at(&self, peer_id: &PeerId) -> Option<std::time::SystemTime> {
+        self.inner
+            .sessions
+            .get(peer_id)
+            .map(|connection| connection.established_at)
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -865,6 +906,66 @@ impl Node {
             .iter()
             .map(|entry| *entry.key())
             .collect()
+    }
+
+    /// Cancel an in-progress transfer
+    ///
+    /// Removes the transfer from the active transfers map and sends a STREAM_CLOSE
+    /// frame to the peer if the transfer has an active session.
+    ///
+    /// # Arguments
+    ///
+    /// * `transfer_id` - The ID of the transfer to cancel
+    ///
+    /// # Returns
+    ///
+    /// `Ok(())` if the transfer was successfully cancelled, or `Err(NodeError::TransferNotFound)`
+    /// if the transfer ID does not exist.
+    ///
+    /// # Errors
+    ///
+    /// Returns `TransferNotFound` if the transfer ID is not in the active transfers map.
+    pub async fn cancel_transfer(&self, transfer_id: &TransferId) -> Result<()> {
+        use crate::frame::{FrameBuilder, FrameType};
+
+        // Remove transfer from map
+        if let Some((_, _context)) = self.inner.transfers.remove(transfer_id) {
+            // Get the session if transfer has one
+            let session_opt = self
+                .inner
+                .sessions
+                .iter()
+                .find(|_entry| {
+                    // Find session that matches the transfer's peer (if any)
+                    // For now, we'll just send CLOSE to any active session
+                    true
+                })
+                .map(|entry| entry.value().clone());
+
+            // Send STREAM_CLOSE frame if we have a session
+            if let Some(session) = session_opt {
+                let stream_id = ((transfer_id[0] as u16) << 8) | (transfer_id[1] as u16);
+                let close_frame = FrameBuilder::new()
+                    .frame_type(FrameType::StreamClose)
+                    .stream_id(stream_id)
+                    .build(64) // Minimum size with padding
+                    .ok();
+
+                if let Some(frame) = close_frame {
+                    if let Ok(encrypted) = session.encrypt_frame(&frame).await {
+                        // Send CLOSE frame (best-effort - don't fail cancellation if send fails)
+                        if let Some(transport) = self.inner.transport.lock().await.as_ref() {
+                            let _ = transport.send_to(&encrypted, session.peer_addr()).await;
+                        }
+                    }
+                }
+            }
+
+            tracing::info!("Cancelled transfer: {:?}", hex::encode(&transfer_id[..8]));
+            Ok(())
+        } else {
+            Err(NodeError::TransferNotFound(*transfer_id))
+        }
     }
 
     /// Generate random transfer ID

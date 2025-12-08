@@ -96,7 +96,10 @@ impl WraithError {
     /// Convert error to C-compatible error string
     pub fn to_c_string(&self) -> *mut c_char {
         CString::new(self.message.clone())
-            .unwrap_or_else(|_| CString::new("Error message contains null byte").unwrap())
+            .unwrap_or_else(|_| {
+                // Safety: ASCII string without null bytes is guaranteed valid
+                unsafe { CString::from_vec_unchecked(b"Invalid error message".to_vec()) }
+            })
             .into_raw()
     }
 }

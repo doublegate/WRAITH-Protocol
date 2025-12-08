@@ -79,6 +79,9 @@ pub struct PeerConnection {
 
     /// Failed consecutive ping counter (lock-free using atomic)
     failed_pings: std::sync::atomic::AtomicU32,
+
+    /// Timestamp when the session was established
+    pub established_at: std::time::SystemTime,
 }
 
 /// Get current time as milliseconds since UNIX epoch
@@ -106,6 +109,7 @@ impl Clone for PeerConnection {
             failed_pings: std::sync::atomic::AtomicU32::new(
                 self.failed_pings.load(Ordering::Relaxed),
             ),
+            established_at: self.established_at,
         }
     }
 }
@@ -129,6 +133,7 @@ impl PeerConnection {
             stats: ConnectionStats::default(),
             last_activity_ms: AtomicU64::new(current_time_ms()),
             failed_pings: std::sync::atomic::AtomicU32::new(0),
+            established_at: std::time::SystemTime::now(),
         }
     }
 
@@ -215,6 +220,7 @@ impl PeerConnection {
             stats: ConnectionStats::default(),
             last_activity_ms: AtomicU64::new(current_time_ms()),
             failed_pings: std::sync::atomic::AtomicU32::new(0),
+            established_at: std::time::SystemTime::now(),
         }
     }
 
