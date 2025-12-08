@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.5.0] - 2025-12-08 - WRAITH Transfer Desktop Application (Phase 15 Complete)
+
+**WRAITH Protocol v1.5.0 - Desktop Application Release**
+
+This release completes Phase 15, delivering WRAITH Transfer, a production-ready cross-platform desktop application built with Tauri 2.0. The application provides an intuitive React 18 frontend with full wraith-core integration, enabling secure peer-to-peer file transfers through a modern, user-friendly interface. Key features include Zustand state management, real-time transfer monitoring, and comprehensive CI/CD improvements for cross-platform builds.
+
 ### Added
 
 #### Phase 15: Reference Client Foundation - WRAITH Transfer (Complete)
@@ -67,6 +75,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - All workspace tests passing (1,303 tests)
 - Frontend TypeScript strict mode enabled
 - Production build verified
+
+### Fixed
+
+#### CI/CD Workflow Improvements
+
+**Tauri System Dependencies (Ubuntu CI)**
+- Added complete Tauri 2.0 system dependencies for Ubuntu CI jobs
+  - GTK3 development libraries (libgtk-3-dev)
+  - WebKit2GTK development (libwebkit2gtk-4.1-dev)
+  - AppIndicator library (libayatana-appindicator3-dev)
+  - JavaScriptCore GTK (libjavascriptcoregtk-4.1-dev)
+  - Soup 3.0 (libsoup-3.0-dev)
+  - GLib 2.0 (libglib2.0-dev)
+- Resolved package conflict between libappindicator3-dev and libayatana-appindicator3-dev
+- Fixed wraith-transfer crate exclusion from workspace builds (frontend requires separate setup)
+
+**Security Audit Warnings**
+- Ignored GTK3 unmaintained warnings in cargo audit (unavoidable Tauri dependencies)
+- Cross-platform test matrix fully passing (Ubuntu, macOS, Windows)
 
 ---
 
