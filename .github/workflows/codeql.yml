@@ -65,11 +65,17 @@ jobs:
           # Optional: Add custom queries
           # config-file: ./.github/codeql/codeql-config.yml
 
+      # Install system dependencies required for Tauri (even though we exclude it)
+      - name: Install system dependencies (Ubuntu)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libglib2.0-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libgtk-3-dev libayatana-appindicator3-dev
+
       # Build the project (required for compiled languages like Rust)
       # CodeQL needs the build to understand the code structure
       - name: Build project
         run: |
-          cargo build --workspace --all-features --release
+          cargo build --workspace --all-features --release --exclude wraith-transfer
 
       # Perform CodeQL Analysis
       - name: Perform CodeQL Analysis

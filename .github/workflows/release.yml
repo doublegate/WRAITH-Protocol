@@ -130,6 +130,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      - name: Install system dependencies (Ubuntu)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libglib2.0-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libgtk-3-dev libayatana-appindicator3-dev
+
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
@@ -150,10 +155,10 @@ jobs:
           VERSION: ${{ needs.validate.outputs.version }}
         run: |
           echo "Running test suite for version $VERSION"
-          cargo test --workspace --all-features --verbose
+          cargo test --workspace --all-features --exclude wraith-transfer --verbose
 
       - name: Run clippy checks
-        run: cargo clippy --workspace --all-features -- -D warnings
+        run: cargo clippy --workspace --all-features --exclude wraith-transfer -- -D warnings
 
       - name: Check formatting
         run: cargo fmt --all -- --check

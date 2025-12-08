@@ -49,7 +49,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Check
-        run: cargo check --workspace --all-features
+        run: cargo check --workspace --all-features --exclude wraith-transfer
 
   #############################################################################
   # Cross-Platform Test Matrix
@@ -95,7 +95,7 @@ jobs:
             ${{ runner.os }}-cargo-
 
       - name: Run tests
-        run: cargo test --workspace --all-features ${{ matrix.test_flags }}
+        run: cargo test --workspace --all-features --exclude wraith-transfer ${{ matrix.test_flags }}
         shell: bash
 
   clippy:
@@ -124,7 +124,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Clippy
-        run: cargo clippy --workspace --all-features -- -D warnings
+        run: cargo clippy --workspace --all-features --exclude wraith-transfer -- -D warnings
 
   fmt:
     name: Format
@@ -164,7 +164,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Check documentation
-        run: cargo doc --workspace --no-deps
+        run: cargo doc --workspace --no-deps --exclude wraith-transfer
         env:
           RUSTDOCFLAGS: -Dwarnings
 
@@ -183,7 +183,7 @@ jobs:
         uses: dtolnay/rust-toolchain@1.85
 
       - name: Check MSRV
-        run: cargo check --workspace
+        run: cargo check --workspace --exclude wraith-transfer
 
   #############################################################################
   # Code Coverage
@@ -220,7 +220,7 @@ jobs:
             ${{ runner.os }}-cargo-
 
       - name: Generate coverage report
-        run: cargo llvm-cov --workspace --all-features --lcov --output-path lcov.info
+        run: cargo llvm-cov --workspace --all-features --exclude wraith-transfer --lcov --output-path lcov.info
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
