@@ -96,128 +96,128 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 
 ## Development Timeline (Planned)
 
-### Phase 13: Reference Client Foundation (Planned Q1-Q2 2026)
+### Phase 15: Reference Client Foundation (Planned Q1-Q2 2026)
 
 **Target Completion:** Q2 2026
 **Estimated Story Points:** ~80 SP
 
 **Focus:** Foundation for Tauri-based desktop applications
 
-#### Sprint 13.1: Core Library Bindings
+#### Sprint 15.1: Core Library Bindings
 - [ ] FFI layer for wraith-core (C ABI for cross-language compatibility)
 - [ ] Memory safety wrappers (safe borrowing across FFI boundary)
 - [ ] Error code mapping (Rust Result → C-style error codes)
 - [ ] Basic type conversions (strings, buffers, callbacks)
 
-#### Sprint 13.2: Tauri Desktop Shell
+#### Sprint 15.2: Tauri Desktop Shell
 - [ ] Tauri 2.0 project setup (Rust backend + webview frontend)
 - [ ] IPC command structure (send_file, receive_file, get_sessions)
 - [ ] Window management (multi-window support, tray integration)
 - [ ] System tray integration (notifications, quick actions)
 
-#### Sprint 13.3: React UI Foundation
+#### Sprint 15.3: React UI Foundation
 - [ ] Component library setup (shadcn/ui + Tailwind CSS)
 - [ ] State management (Zustand stores for transfers, sessions, config)
 - [ ] Theme system (dark/light mode with system detection)
 - [ ] Accessibility foundation (WCAG 2.1 Level AA compliance)
 
-#### Sprint 13.4: Transfer UI
+#### Sprint 15.4: Transfer UI
 - [ ] File picker integration (native dialogs on all platforms)
 - [ ] Progress visualization (speed, ETA, percentage)
 - [ ] Transfer queue management (pause, resume, cancel)
 - [ ] History view (completed transfers with search/filter)
 
-**Phase 13 Deliverables:**
+**Phase 15 Deliverables:**
 - Functional desktop client MVP
 - Cross-platform builds (Windows, macOS, Linux)
 - Basic file transfer operations via GUI
 
 ---
 
-### Phase 14: Mobile Clients (Planned Q2-Q4 2026)
+### Phase 16: Mobile Clients (Planned Q2-Q4 2026)
 
 **Target Completion:** Q4 2026
 **Estimated Story Points:** ~120 SP
 
 **Focus:** Android and iOS applications for Transfer and Chat
 
-#### Sprint 14.1-14.2: Android Client
+#### Sprint 16.1-16.2: Android Client
 - [ ] Kotlin/Rust interop via JNI (native library integration)
 - [ ] Jetpack Compose UI (Material Design 3)
 - [ ] Background service (foreground service for transfers)
 - [ ] Notification integration (progress, completion, errors)
 
-#### Sprint 14.3-14.4: iOS Client
+#### Sprint 16.3-16.4: iOS Client
 - [ ] Swift/Rust interop via UniFFI (automated bindings generation)
 - [ ] SwiftUI interface (native iOS design patterns)
 - [ ] Background task handling (URLSession background uploads)
 - [ ] Share extension (send files from other apps)
 
-**Phase 14 Deliverables:**
+**Phase 16 Deliverables:**
 - Android app (Play Store ready, API 26+)
 - iOS app (App Store ready, iOS 15+)
 - Mobile-optimized UI/UX
 
 ---
 
-### Phase 15: SDKs and Libraries (Planned Q1 2027)
+### Phase 17: SDKs and Libraries (Planned Q1 2027)
 
 **Target Completion:** Q1 2027
 **Estimated Story Points:** ~100 SP
 
 **Focus:** Language bindings for developer integration
 
-#### Sprint 15.1: Python SDK
+#### Sprint 17.1: Python SDK
 - [ ] PyO3 bindings (Rust ↔ Python FFI)
 - [ ] Async support (asyncio integration, async/await)
 - [ ] Type hints (complete .pyi stub files)
 - [ ] PyPI package (wheels for Linux/macOS/Windows)
 
-#### Sprint 15.2: Go SDK
+#### Sprint 17.2: Go SDK
 - [ ] CGO bindings (Rust static library → Go)
 - [ ] Go-native error handling (error interface)
 - [ ] Context support (cancellation, timeouts)
 - [ ] Module publishing (go.mod, versioned releases)
 
-#### Sprint 15.3: Node.js SDK
+#### Sprint 17.3: Node.js SDK
 - [ ] N-API bindings (native addon with Rust backend)
 - [ ] Promise-based API (async Node.js patterns)
 - [ ] TypeScript definitions (.d.ts for autocomplete)
 - [ ] npm package (native modules for all platforms)
 
-#### Sprint 15.4: C Library
+#### Sprint 17.4: C Library
 - [ ] Pure C API (stable ABI, no C++ dependencies)
 - [ ] Header generation (automatic from Rust with cbindgen)
 - [ ] Static/dynamic linking options
 - [ ] pkg-config support (Linux standard integration)
 
-**Phase 15 Deliverables:**
+**Phase 17 Deliverables:**
 - Language SDKs with full API coverage
 - Package manager distribution (PyPI, npm, crates.io)
 - Comprehensive API documentation
 
 ---
 
-### Phase 16: Web and Embedded (Planned Q2 2027)
+### Phase 18: Web and Embedded (Planned Q2 2027)
 
 **Target Completion:** Q2 2027
 **Estimated Story Points:** ~80 SP
 
 **Focus:** Browser-based and embedded deployments
 
-#### Sprint 16.1-16.2: Web Client
+#### Sprint 18.1-18.2: Web Client
 - [ ] WebAssembly compilation (wasm32-unknown-unknown target)
 - [ ] WebRTC transport adaptation (TURN/STUN for NAT)
 - [ ] Progressive Web App (service workers, offline support)
 - [ ] Browser extension (WebExtension API for all browsers)
 
-#### Sprint 16.3-16.4: Embedded Client
+#### Sprint 18.3-18.4: Embedded Client
 - [ ] no_std Rust implementation (zero std library dependencies)
 - [ ] Minimal memory footprint (<1 MB RAM for basic operations)
 - [ ] RTOS integration examples (FreeRTOS, Zephyr)
 - [ ] Hardware crypto support (AES-NI, ARM TrustZone)
 
-**Phase 16 Deliverables:**
+**Phase 18 Deliverables:**
 - Browser-based file transfer (WASM + WebRTC)
 - Embedded device support (IoT integration)
 - Reference implementations for common platforms
@@ -230,10 +230,10 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 
 | Phase | Focus | Target SP | Actual SP | Status |
 |-------|-------|-----------|-----------|--------|
-| Phase 13 | Reference Client | ~80 | - | Planned |
-| Phase 14 | Mobile Clients | ~120 | - | Planned |
-| Phase 15 | SDKs & Libraries | ~100 | - | Planned |
-| Phase 16 | Web & Embedded | ~80 | - | Planned |
+| Phase 15 | Reference Client | ~80 | - | Planned |
+| Phase 16 | Mobile Clients | ~120 | - | Planned |
+| Phase 17 | SDKs & Libraries | ~100 | - | Planned |
+| Phase 18 | Web & Embedded | ~80 | - | Planned |
 | **Total** | **Client Foundation** | **~380** | **0** | **Not Started** |
 
 ### Client Implementation Status
@@ -520,7 +520,7 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 
 **Component:** Contact/Peer Management
 - **Used By:** Chat, Share, Publish, Vault
-- **Crate:** `wraith-contacts` (to be created in Phase 13)
+- **Crate:** `wraith-contacts` (to be created in Phase 15)
 - **Development:** Before Tier 1 client work begins
 
 **Component:** File Transfer Engine
@@ -535,8 +535,8 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 
 **Component:** GUI Framework (Tauri)
 - **Used By:** Transfer, Chat, Sync, Share, Stream, RedOps (Operator Client)
-- **Shared Library:** `wraith-gui-common` (to be created in Phase 13)
-- **Development:** Sprint 13.2-13.3
+- **Shared Library:** `wraith-gui-common` (to be created in Phase 15)
+- **Development:** Sprint 15.2-15.3
 
 ---
 
@@ -638,11 +638,11 @@ RedOps                                                          [=============]
 **Client Development Status:**
 - ✅ Comprehensive planning complete (roadmap, specifications)
 - ✅ All client specifications documented (10 clients × 3-6 docs each)
-- ⬜ Development not yet started (awaiting Phase 13 kickoff)
+- ⬜ Development not yet started (awaiting Phase 15 kickoff)
 
 **Upcoming Work:**
 
-**Phase 13: Reference Client Foundation (Q1-Q2 2026):**
+**Phase 15: Reference Client Foundation (Q1-Q2 2026):**
 1. FFI layer for wraith-core (C ABI bindings)
 2. Tauri 2.0 desktop shell (IPC, window management)
 3. React UI foundation (components, state, theme)
@@ -654,7 +654,7 @@ RedOps                                                          [=============]
 
 **Next Steps:**
 1. Review and approve client development roadmap
-2. Establish Phase 13 sprint planning (reference client foundation)
+2. Establish Phase 15 sprint planning (reference client foundation)
 3. Set up shared component development (wraith-contacts, wraith-gui-common)
 4. Configure cross-client CI/CD pipeline
 5. Begin Tier 1 client design sprints
@@ -702,6 +702,6 @@ RedOps                                                          [=============]
 
 **WRAITH Protocol Client Applications Development History** - *From Planning to Production*
 
-**Status:** Planning Complete | **Total Scope:** 10 clients, 1,028 SP, ~70 weeks | **Prerequisites:** Protocol v1.2.1 ✅ Complete | **Next:** Phase 13 (Q1-Q2 2026)
+**Status:** Planning Complete | **Total Scope:** 10 clients, 1,028 SP, ~70 weeks | **Prerequisites:** Protocol v1.2.1 ✅ Complete | **Next:** Phase 15 (Q1-Q2 2026)
 
 *Last Updated: 2025-12-07*
