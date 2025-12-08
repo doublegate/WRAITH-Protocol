@@ -88,7 +88,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 # Testing
 proptest = "1.4"
-criterion = "0.5"
+criterion = "0.8"
 
 # Error handling
 thiserror = "2.0"
