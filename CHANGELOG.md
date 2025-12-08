@@ -9,6 +9,109 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.5.5] - 2025-12-08 - Technical Debt & Quality Release
+
+**WRAITH Protocol v1.5.5 - Code Quality & Technical Debt Remediation**
+
+This patch release addresses technical debt identified in TECH-DEBT-v1.5.0.md, implementing comprehensive code quality improvements across the codebase. Key improvements include enhanced documentation, improved error handling, clippy pedantic compliance, and standardized coding patterns.
+
+### Fixed
+
+#### Sprint 1: wraith-core Health Monitoring & Documentation (TECH-DEBT-v1.5.0)
+
+**Health Monitoring Improvements** (`crates/wraith-core/src/node/health.rs`)
+- Added comprehensive tracing/logging for health state transitions:
+  - Debug logging for health check process with peer count and state
+  - Info logging for state transitions (Healthy → Degraded → Critical)
+  - Warning logging for degraded state with peer count thresholds
+  - Error logging for critical state detection
+- Implemented state validation logic with proper fallback behavior
+- Added connection statistics collection with peer health metrics
+
+**Session Management** (`crates/wraith-core/src/node/session.rs`)
+- Enhanced session documentation with detailed field descriptions
+- Added TODO tracking for incomplete health state enum matching
+- Improved connection statistics initialization
+
+#### Sprint 2: wraith-ffi Error Handling & Safety (TECH-DEBT-v1.5.0)
+
+**FFI Error Handling** (`crates/wraith-ffi/src/error.rs`)
+- Enhanced error code documentation with detailed descriptions
+- Added comprehensive error mapping for all NodeError variants
+- Implemented proper CString handling for error messages
+- Added safety documentation for unsafe FFI functions
+
+**Session FFI Bindings** (`crates/wraith-ffi/src/session.rs`)
+- Added detailed safety documentation for all unsafe functions
+- Improved null pointer handling with proper error propagation
+- Enhanced documentation for session lifecycle management
+- Added comprehensive parameter documentation
+
+**Transfer FFI Bindings** (`crates/wraith-ffi/src/transfer.rs`)
+- Added safety documentation for transfer operations
+- Improved error handling for file path validation
+- Enhanced documentation for progress tracking functions
+
+**Build Configuration** (`crates/wraith-ffi/build.rs`)
+- Added comprehensive documentation for cbindgen configuration
+- Improved header generation with detailed comments
+- Added platform-specific notes for library linking
+
+#### Sprint 3: wraith-cli & wraith-transfer Documentation (TECH-DEBT-v1.5.0)
+
+**CLI Configuration** (`crates/wraith-cli/src/config.rs`)
+- Enhanced configuration documentation with field descriptions
+- Added examples for configuration file format
+- Improved documentation for default values
+
+**CLI Main Module** (`crates/wraith-cli/src/main.rs`)
+- Added comprehensive command documentation
+- Enhanced error handling documentation
+- Improved help text for all CLI options
+
+**Tauri Commands** (`clients/wraith-transfer/src-tauri/src/commands.rs`)
+- Added detailed documentation for all 10 IPC commands
+- Enhanced parameter documentation with type information
+- Added return value documentation with error cases
+
+**Tauri Build** (`clients/wraith-transfer/src-tauri/build.rs`)
+- Added build script documentation
+
+#### Sprint 4: Clippy Pedantic Auto-Fixes (TECH-DEBT-v1.5.0)
+
+**Automated Code Quality Fixes**
+- Applied 104 auto-fixes for clippy pedantic warnings:
+  - `uninlined_format_args`: 101 fixes - Inlined format arguments in println!, format!, write! macros
+  - `semicolon_if_nothing_returned`: 3 fixes - Added semicolons to unit-returning expressions
+- Reduced total clippy pedantic warnings from 962 to 858
+- Zero warnings on standard clippy with `-D warnings` flag
+
+**Files Modified:**
+- Multiple files across wraith-core, wraith-discovery, wraith-transport
+- Consistent formatting improvements throughout codebase
+
+### Changed
+
+- **Code Quality:** Improved clippy pedantic compliance (104 auto-fixes)
+- **Documentation:** Enhanced technical documentation across FFI, CLI, and core modules
+- **Logging:** Added comprehensive tracing for health monitoring and state transitions
+
+### Documentation
+
+- Updated TECH-DEBT-v1.5.0.md with completion status for all 4 sprints
+- Marked Sprint 1-3 as COMPLETE with implementation dates
+- Marked Sprint 4 as PARTIAL with auto-fix statistics
+- Added detailed implementation notes for future reference
+
+### Quality Assurance
+
+- **Tests:** All 1,303 tests passing (1,280 active + 23 ignored)
+- **Clippy:** Zero warnings with `-D warnings` flag
+- **Format:** Code formatted with `cargo fmt --all`
+- **Security:** Zero vulnerabilities (cargo audit clean)
+
+---
+
 ## [1.5.0] - 2025-12-08 - WRAITH Transfer Desktop Application (Phase 15 Complete)
 
 **WRAITH Protocol v1.5.0 - Desktop Application Release**
