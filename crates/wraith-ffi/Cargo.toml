@@ -1,0 +1,52 @@
+# wraith-ffi - C-compatible FFI bindings for WRAITH Protocol
+#
+# Provides a stable C ABI for Node API operations, enabling integration
+# with Tauri, Electron, Python, Go, and other ecosystems.
+
+[package]
+name = "wraith-ffi"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description = "C-compatible FFI bindings for WRAITH Protocol"
+
+[lib]
+crate-type = ["cdylib", "staticlib", "rlib"]
+
+[dependencies]
+wraith-core = { workspace = true }
+wraith-crypto = { workspace = true }
+wraith-discovery = { workspace = true }
+wraith-files = { workspace = true }
+wraith-obfuscation = { workspace = true }
+wraith-transport = { workspace = true }
+
+# FFI helpers
+libc = "0.2"
+
+# Async runtime for FFI
+tokio = { workspace = true }
+
+# Serialization for data passing
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Error handling
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+# Logging
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+[dev-dependencies]
+tokio-test = "0.4"
+
+[build-dependencies]
+cbindgen = "0.27"

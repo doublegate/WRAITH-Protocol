@@ -7,6 +7,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+#### Phase 15: Reference Client Foundation - WRAITH Transfer (Complete)
+
+**Sprint 15.1: FFI Core Library Bindings**
+- Completed in previous session (wraith-ffi crate with C-compatible API)
+
+**Sprint 15.2: Tauri Desktop Shell**
+- **Tauri 2.0 Backend** (`clients/wraith-transfer/src-tauri/`)
+  - lib.rs (84 lines) - Main entry point with IPC handler registration
+  - commands.rs (315 lines) - 10 IPC commands for node/session/transfer management
+  - state.rs - AppState with Arc<RwLock<Option<Node>>> for thread-safe node access
+  - error.rs - AppError enum with Serialize implementation for frontend
+  - Cargo.toml - Tauri 2.9.4 with plugins (dialog, fs, shell, log)
+- **Tauri Plugins Integration**
+  - tauri-plugin-dialog for file selection dialogs
+  - tauri-plugin-fs for file system access
+  - tauri-plugin-shell for shell commands
+  - tauri-plugin-log for structured logging
+- **wraith-core Integration**
+  - Node lifecycle management (start/stop)
+  - Session establishment and closure
+  - File transfer with progress tracking
+
+**Sprint 15.3: React UI Foundation**
+- **React 18 + TypeScript Frontend** (`clients/wraith-transfer/frontend/`)
+  - Vite 7.2.7 build system with HMR
+  - Tailwind CSS v4 with WRAITH brand colors
+  - Type definitions for NodeStatus, TransferInfo, SessionInfo
+- **State Management** (Zustand stores)
+  - nodeStore.ts - Node status, start/stop actions
+  - transferStore.ts - Transfer list, send file, cancel actions
+  - sessionStore.ts - Session list, close session actions
+- **Tauri IPC Bindings** (lib/tauri.ts)
+  - Full TypeScript bindings for all 10 backend commands
+  - Type-safe invoke wrappers
+
+**Sprint 15.4: Transfer UI Components**
+- **Core Components** (`src/components/`)
+  - Header.tsx - Connection status, node ID, session/transfer counts, start/stop button
+  - TransferList.tsx - Transfer items with progress bars, status, cancel buttons
+  - SessionPanel.tsx - Active sessions sidebar with disconnect capability
+  - NewTransferDialog.tsx - Modal for initiating transfers with file picker
+  - StatusBar.tsx - Quick actions, error display, "New Transfer" button
+- **Main Application** (App.tsx)
+  - Full layout with header, main content, sidebar, status bar
+  - 1-second polling for status updates when node is running
+  - Dialog state management
+
+**Code Statistics:**
+- Tauri Backend: ~500 lines of Rust
+- Frontend: ~800 lines of TypeScript/TSX
+- 10 IPC commands, 5 React components, 3 Zustand stores
+- Full type coverage with TypeScript
+
+**Quality Assurance:**
+- Zero clippy warnings
+- All workspace tests passing (1,303 tests)
+- Frontend TypeScript strict mode enabled
+- Production build verified
+
 ---
 
 ## [1.4.0] - 2025-12-07 - Node API Integration & Code Quality (Phase 14 Complete)

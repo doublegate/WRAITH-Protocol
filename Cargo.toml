@@ -14,6 +14,8 @@ members = [
     "crates/wraith-discovery",
     "crates/wraith-files",
     "crates/wraith-cli",
+    "crates/wraith-ffi",
+    "clients/wraith-transfer/src-tauri",
     "xtask",
     "tests",
 ]

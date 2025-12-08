@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+/* Custom theme overrides */
+@theme {
+  /* WRAITH brand colors */
+  --color-wraith-primary: #7c3aed;
+  --color-wraith-secondary: #4f46e5;
+  --color-wraith-accent: #06b6d4;
+  --color-wraith-dark: #0f172a;
+  --color-wraith-darker: #020617;
+
+  /* Status colors */
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+
+  /* Background colors for dark theme */
+  --color-bg-primary: #0f172a;
+  --color-bg-secondary: #1e293b;
+  --color-bg-tertiary: #334155;
+}
+
+/* Base styles */
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: var(--color-bg-primary);
+  color: #e2e8f0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Focus styles for accessibility */
+:focus-visible {
+  outline: 2px solid var(--color-wraith-accent);
+  outline-offset: 2px;
+}
