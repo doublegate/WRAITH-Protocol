@@ -22,9 +22,9 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
 WRAITH Protocol is production-ready with a cross-platform desktop application. Phase 15 delivers WRAITH Transfer, a Tauri 2.0-based desktop client with React 18 frontend, providing full wraith-core integration with an intuitive UI for secure file transfers.
 
 **Project Metrics (2025-12-08):**
-- **Code Volume:** ~41,177 lines of Rust code (~30,876 LOC + 2,743 comments + 7,558 blanks) across 115 source files
+- **Code Volume:** ~49,586 lines of Rust code (~37,027 LOC + 3,514 comments + 9,045 blanks) across 115+ source files
 - **Test Coverage:** 1,303 total tests (1,280 passing, 23 ignored) - 100% pass rate on active tests
-- **Documentation:** 100+ markdown files, ~46,000+ lines of comprehensive documentation
+- **Documentation:** 100+ markdown files, ~63,000+ lines of comprehensive documentation
 - **Dependencies:** 286 audited packages (zero vulnerabilities via cargo-audit)
 - **Security:** Grade A+ (EXCELLENT), zero vulnerabilities, comprehensive DPI evasion validation
 - **Quality:** Code quality 98/100, zero compiler/clippy warnings, 3.8% technical debt ratio, production-ready codebase
@@ -212,7 +212,7 @@ WRAITH-Protocol/
 | **wraith-transfer** | Tauri 2.0 desktop application (Rust + React + TypeScript) | ~12,500 | - | - | 0 |
 | **wraith-xdp** | eBPF/XDP programs (excluded from default build) | 0 | 0 | 0 | 0 |
 
-**Total Protocol:** ~41,177 lines (~30,876 LOC + 2,743 comments + 7,558 blanks) across 115 Rust files, 1,303 tests (1,280 passing, 23 ignored)
+**Total Protocol:** ~49,586 lines (~37,027 LOC + 3,514 comments + 9,045 blanks) across 115+ Rust files, 1,303 tests (1,280 passing, 23 ignored)
 
 ## Documentation
 
