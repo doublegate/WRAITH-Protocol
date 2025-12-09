@@ -84,7 +84,7 @@ If code scanning alerts need to be suppressed:
 
 - [RFC 5389: Session Traversal Utilities for NAT (STUN)](https://datatracker.ietf.org/doc/html/rfc5389)
 - [RFC 5389 Section 15.4: MESSAGE-INTEGRITY](https://datatracker.ietf.org/doc/html/rfc5389#section-15.4)
-- [WRAITH Cryptography Guidelines](../cryptography.md)
+- [WRAITH Security Documentation](./README.md)
 
 ## Review
 
