@@ -2,10 +2,10 @@
 
 **Development Timeline:** Phase 15 (2025-12-08) - WRAITH Transfer Desktop Application Complete
 
-This document tracks the development journey of WRAITH Protocol client applications, from planning through implementation and release. The first client (WRAITH Transfer) was delivered in Phase 15 (v1.5.5).
+This document tracks the development journey of WRAITH Protocol client applications, from planning through implementation and release. The first client (WRAITH Transfer) was delivered in Phase 15 (v1.5.6).
 
 [![Version](https://img.shields.io/badge/clients-1%20complete-green.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
-[![Protocol](https://img.shields.io/badge/protocol-v1.5.5-blue.svg)](../../README.md)
+[![Protocol](https://img.shields.io/badge/protocol-v1.5.6-blue.svg)](../../README.md)
 [![Clients](https://img.shields.io/badge/clients-9%20planned-orange.svg)](../../to-dos/ROADMAP-clients.md)
 
 ---
@@ -34,8 +34,8 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 - **Security Testing:** Authorized assessment tools (Recon, RedOps)
 
 **Current Status (2025-12-08):**
-- Protocol v1.5.5 complete (all prerequisites available)
-- **WRAITH Transfer v1.5.5:** ✅ **COMPLETE** (102 SP delivered)
+- Protocol v1.5.6 complete (all prerequisites available)
+- **WRAITH Transfer v1.5.6:** ✅ **COMPLETE** (102 SP delivered)
   - Cross-platform desktop application (Windows, macOS, Linux)
   - Tauri 2.0 backend with full wraith-core integration
   - React 18 + TypeScript frontend with Vite
@@ -50,7 +50,7 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 
 | # | Client | Description | Platform | Story Points | Status |
 |---|--------|-------------|----------|--------------|--------|
-| 1 | **WRAITH-Transfer** | Direct P2P file transfer with drag-and-drop GUI | Desktop (Linux/macOS/Windows) | 102 | ✅ **Complete (v1.5.5)** |
+| 1 | **WRAITH-Transfer** | Direct P2P file transfer with drag-and-drop GUI | Desktop (Linux/macOS/Windows) | 102 | ✅ **Complete (v1.5.6)** |
 | 2 | **WRAITH-Chat** | E2EE messaging with Double Ratchet algorithm | Desktop + Mobile | 162 | Planned |
 
 **WRAITH Transfer Delivered (2025-12-08):**

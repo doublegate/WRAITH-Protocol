@@ -2,9 +2,9 @@
 
 **Development Timeline:** Phase 1 (2024) through Phase 15 (2025-12-08)
 
-This document captures the complete development journey of WRAITH Protocol from inception through version 1.5.5, including detailed phase accomplishments, sprint summaries, and implementation milestones.
+This document captures the complete development journey of WRAITH Protocol from inception through version 1.5.6, including detailed phase accomplishments, sprint summaries, and implementation milestones.
 
-[![Version](https://img.shields.io/badge/version-1.5.5-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
+[![Version](https://img.shields.io/badge/version-1.5.6-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
 [![Security](https://img.shields.io/badge/security-audited-green.svg)](../security/DPI_EVASION_REPORT.md)
 [![Rust](https://img.shields.io/badge/rust-1.85%2B-orange.svg)](https://www.rust-lang.org/)
 
