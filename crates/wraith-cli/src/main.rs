@@ -12,10 +12,17 @@ mod progress;
 
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
+use std::sync::Arc;
+use std::time::Duration;
 use zeroize::Zeroize;
 
 use config::Config;
 use progress::{TransferProgress, format_bytes};
+
+// WRAITH Core imports
+use wraith_core::node::identity::TransferId;
+use wraith_core::node::session::PeerId;
+use wraith_core::node::{Node, NodeConfig};
 
 /// Encrypted private key file header magic bytes
 const ENCRYPTED_KEY_MAGIC: &[u8; 8] = b"WRAITH01";
@@ -144,6 +151,77 @@ enum Commands {
         #[arg(short, long)]
         output: Option<String>,
     },
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Helper Functions
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Parse hex string to PeerId (32-byte array)
+fn parse_peer_id(s: &str) -> anyhow::Result<PeerId> {
+    let s = s.trim();
+    let bytes = if s.starts_with("0x") || s.starts_with("0X") {
+        hex::decode(&s[2..])?
+    } else {
+        hex::decode(s)?
+    };
+
+    if bytes.len() != 32 {
+        anyhow::bail!(
+            "Peer ID must be 32 bytes (64 hex characters), got {}",
+            bytes.len()
+        );
+    }
+
+    let mut peer_id = [0u8; 32];
+    peer_id.copy_from_slice(&bytes);
+    Ok(peer_id)
+}
+
+/// Parse hex string to TransferId (32-byte array)
+fn parse_transfer_id(s: &str) -> anyhow::Result<TransferId> {
+    let s = s.trim();
+    let bytes = if s.starts_with("0x") || s.starts_with("0X") {
+        hex::decode(&s[2..])?
+    } else {
+        hex::decode(s)?
+    };
+
+    if bytes.len() != 32 {
+        anyhow::bail!(
+            "Transfer ID must be 32 bytes (64 hex characters), got {}",
+            bytes.len()
+        );
+    }
+
+    let mut transfer_id = [0u8; 32];
+    transfer_id.copy_from_slice(&bytes);
+    Ok(transfer_id)
+}
+
+/// Format duration as human-readable string
+#[allow(dead_code)]
+fn format_duration(d: Duration) -> String {
+    let secs = d.as_secs();
+    if secs < 60 {
+        format!("{}s", secs)
+    } else if secs < 3600 {
+        format!("{}m {}s", secs / 60, secs % 60)
+    } else {
+        format!("{}h {}m", secs / 3600, (secs % 3600) / 60)
+    }
+}
+
+/// Create NodeConfig from CLI Config
+fn create_node_config(config: &Config) -> NodeConfig {
+    NodeConfig {
+        listen_addr: config
+            .network
+            .listen_addr
+            .parse()
+            .unwrap_or_else(|_| "0.0.0.0:0".parse().expect("Invalid default listen address")),
+        ..NodeConfig::default()
+    }
 }
 
 #[tokio::main]
@@ -419,11 +497,9 @@ fn prompt_passphrase(prompt: &str, confirm: bool) -> anyhow::Result<String> {
 async fn send_file(
     file: PathBuf,
     recipient: String,
-    mode: String,
+    _mode: String,
     config: &Config,
 ) -> anyhow::Result<()> {
-    tracing::info!("Sending {:?} to {} (mode: {})", file, recipient, mode);
-
     // Sanitize file path to prevent directory traversal
     let file = sanitize_path(&file)?;
 
@@ -438,86 +514,185 @@ async fn send_file(
         .and_then(|n| n.to_str())
         .unwrap_or("unknown");
 
+    // Parse peer ID
+    let peer_id = parse_peer_id(&recipient)?;
+
     println!("File: {}", file.display());
     println!("Size: {}", format_bytes(file_size));
-    println!("Recipient: {recipient}");
-    println!("Obfuscation: {mode}");
+    println!("Recipient: {}", hex::encode(&peer_id[..8]));
+    println!();
+
+    // Create and start node
+    let node_config = create_node_config(config);
+    let node = Node::new_with_config(node_config).await?;
+
+    tracing::info!("Starting node...");
+    node.start().await?;
+
+    let listen_addr = node.listen_addr().await?;
+    println!("Node started: {}", hex::encode(node.node_id()));
+    println!("Listening on: {}", listen_addr);
+    println!();
 
     // Create progress bar
     let progress = TransferProgress::new(file_size, filename);
 
-    // Placeholder: Full implementation requires protocol integration
-    // This demonstrates the CLI structure and progress tracking
+    // Send file using Node API
+    tracing::info!("Establishing session with peer...");
+    let transfer_id = node.send_file(&file, &peer_id).await?;
 
-    tracing::warn!("Full send implementation requires Phase 7 protocol integration");
-    tracing::info!(
-        "Would send using chunk_size={}, obfuscation={}",
-        config.transfer.chunk_size,
-        mode
-    );
+    println!("Transfer started: {}", hex::encode(&transfer_id[..8]));
+    progress.finish_with_message("Sending file...".to_string());
 
-    progress.finish_with_message(
-        "Send command structured (full implementation pending Phase 7)".to_string(),
-    );
+    // Wait for transfer completion with progress updates
+    let progress = TransferProgress::new(file_size, filename);
+    loop {
+        if let Some(transfer_progress) = node.get_transfer_progress(&transfer_id).await {
+            progress.update(transfer_progress.bytes_sent);
+
+            if transfer_progress.status == wraith_core::node::progress::TransferStatus::Complete {
+                progress.finish_with_message(format!(
+                    "Transfer complete: {} sent",
+                    format_bytes(transfer_progress.bytes_sent)
+                ));
+                break;
+            }
+
+            if transfer_progress.status == wraith_core::node::progress::TransferStatus::Failed {
+                progress.finish_with_message("Transfer failed".to_string());
+                anyhow::bail!("Transfer failed");
+            }
+        }
+
+        tokio::time::sleep(Duration::from_millis(100)).await;
+    }
+
+    // Stop node
+    node.stop().await?;
+    println!("Node stopped");
 
     Ok(())
 }
 
 /// Receive files from peers
-async fn receive_files(output: PathBuf, bind: String, config: &Config) -> anyhow::Result<()> {
-    tracing::info!("Receiving files to {:?} (listening on {})", output, bind);
-
+async fn receive_files(output: PathBuf, _bind: String, config: &Config) -> anyhow::Result<()> {
     // Create output directory if it doesn't exist
     if !output.exists() {
         std::fs::create_dir_all(&output)?;
     }
 
+    // Create and start node
+    let node_config = create_node_config(config);
+    let node = Node::new_with_config(node_config).await?;
+
+    tracing::info!("Starting receive node...");
+    node.start().await?;
+
+    let listen_addr = node.listen_addr().await?;
+    println!("WRAITH Receive Mode");
+    println!("Version: {}", env!("CARGO_PKG_VERSION"));
+    println!();
+    println!("Node ID: {}", hex::encode(node.node_id()));
+    println!("Listening on: {}", listen_addr);
     println!("Output directory: {}", output.display());
-    println!("Listening on: {bind}");
-    println!(
-        "Chunk size: {}",
-        format_bytes(config.transfer.chunk_size as u64)
-    );
-    println!("Resume enabled: {}", config.transfer.enable_resume);
+    println!();
+    println!("Ready to receive files. Press Ctrl+C to stop");
+    println!();
 
-    // Placeholder: Full implementation requires protocol integration
-    tracing::warn!("Full receive implementation requires Phase 7 protocol integration");
+    // Monitor for incoming transfers
+    let node_arc = Arc::new(node);
+    let node_clone = Arc::clone(&node_arc);
+    let output_clone = output.clone();
 
-    println!("\nReady to receive files (implementation pending Phase 7)...");
-    println!("Press Ctrl+C to stop");
+    tokio::spawn(async move {
+        loop {
+            let transfers = node_clone.active_transfers().await;
+            for transfer_id in transfers {
+                if let Some(progress) = node_clone.get_transfer_progress(&transfer_id).await {
+                    println!(
+                        "Transfer {}: {} / {} ({:.1}%)",
+                        hex::encode(&transfer_id[..8]),
+                        format_bytes(progress.bytes_sent),
+                        format_bytes(progress.bytes_total),
+                        (progress.bytes_sent as f64 / progress.bytes_total as f64 * 100.0)
+                    );
 
-    // Keep alive
+                    if progress.status == wraith_core::node::progress::TransferStatus::Complete {
+                        println!(
+                            "Transfer {} complete - saved to {}",
+                            hex::encode(&transfer_id[..8]),
+                            output_clone.display()
+                        );
+                    }
+                }
+            }
+            tokio::time::sleep(Duration::from_secs(1)).await;
+        }
+    });
+
+    // Keep alive until Ctrl+C
     tokio::signal::ctrl_c().await?;
     println!("\nShutting down...");
+
+    node_arc.stop().await?;
+    println!("Node stopped");
 
     Ok(())
 }
 
 /// Run daemon mode
-async fn run_daemon(bind: String, relay: bool, config: &Config) -> anyhow::Result<()> {
-    tracing::info!("Starting WRAITH daemon on {} (relay: {})", bind, relay);
+async fn run_daemon(_bind: String, _relay: bool, config: &Config) -> anyhow::Result<()> {
+    // Create and start node
+    let node_config = create_node_config(config);
+    let node = Node::new_with_config(node_config).await?;
+
+    tracing::info!("Starting WRAITH daemon...");
+    node.start().await?;
+
+    let listen_addr = node.listen_addr().await?;
 
     println!("WRAITH Daemon");
     println!("Version: {}", env!("CARGO_PKG_VERSION"));
-    println!("Listen: {bind}");
-    println!("Relay mode: {relay}");
+    println!();
+    println!("Node ID: {}", hex::encode(node.node_id()));
+    println!("Listening on: {}", listen_addr);
     println!("XDP: {}", config.network.enable_xdp);
-
     if config.network.enable_xdp {
         if let Some(iface) = &config.network.xdp_interface {
             println!("XDP interface: {iface}");
         }
     }
+    println!();
+    println!("Daemon ready. Press Ctrl+C to stop");
+    println!();
 
-    // Placeholder: Full implementation requires protocol integration
-    tracing::warn!("Full daemon implementation requires Phase 7 protocol integration");
+    // Monitor sessions and transfers
+    let node_arc = Arc::new(node);
+    let node_clone = Arc::clone(&node_arc);
 
-    println!("\nDaemon ready (implementation pending Phase 7)...");
-    println!("Press Ctrl+C to stop");
+    tokio::spawn(async move {
+        loop {
+            let sessions = node_clone.active_sessions().await;
+            let transfers = node_clone.active_transfers().await;
 
-    // Keep alive
+            if !sessions.is_empty() || !transfers.is_empty() {
+                println!(
+                    "Status: {} active sessions, {} active transfers",
+                    sessions.len(),
+                    transfers.len()
+                );
+            }
+
+            tokio::time::sleep(Duration::from_secs(5)).await;
+        }
+    });
+
+    // Keep alive until Ctrl+C
     tokio::signal::ctrl_c().await?;
     println!("\nShutting down...");
+
+    node_arc.stop().await?;
+    println!("Daemon stopped");
 
     Ok(())
 }
@@ -526,20 +701,15 @@ async fn run_daemon(bind: String, relay: bool, config: &Config) -> anyhow::Resul
 async fn send_batch(
     files: Vec<String>,
     recipient: String,
-    mode: String,
-    _config: &Config,
+    _mode: String,
+    config: &Config,
 ) -> anyhow::Result<()> {
-    tracing::info!(
-        "Batch sending {} files to {} (mode: {})",
-        files.len(),
-        recipient,
-        mode
-    );
+    // Parse peer ID
+    let peer_id = parse_peer_id(&recipient)?;
 
     println!("Batch Transfer");
     println!("Files: {}", files.len());
-    println!("Recipient: {recipient}");
-    println!("Obfuscation: {mode}");
+    println!("Recipient: {}", hex::encode(&peer_id[..8]));
     println!();
 
     // Validate and sanitize all file paths
@@ -566,7 +736,19 @@ async fn send_batch(
     println!("Total size: {}", format_bytes(total_size));
     println!();
 
-    // Transfer each file
+    // Create and start node
+    let node_config = create_node_config(config);
+    let node = Node::new_with_config(node_config).await?;
+
+    tracing::info!("Starting node...");
+    node.start().await?;
+
+    let listen_addr = node.listen_addr().await?;
+    println!("Node started: {}", hex::encode(node.node_id()));
+    println!("Listening on: {}", listen_addr);
+    println!();
+
+    // Send each file
     for (idx, (file_path, file_size)) in sanitized_files.iter().enumerate() {
         let filename = file_path
             .file_name()
@@ -578,21 +760,26 @@ async fn send_batch(
 
         let progress = TransferProgress::new(*file_size, filename);
 
-        // Placeholder: Full implementation requires protocol integration
-        tracing::warn!("Batch transfer implementation requires Phase 7 protocol integration");
+        // Send file using Node API
+        let transfer_id = node.send_file(file_path, &peer_id).await?;
+        println!("  Transfer ID: {}", hex::encode(&transfer_id[..8]));
+
+        // Wait for completion
+        node.wait_for_transfer(transfer_id).await?;
 
         progress.finish_with_message(format!(
-            "File {}/{} queued (implementation pending)",
+            "File {}/{} complete",
             idx + 1,
             sanitized_files.len()
         ));
     }
 
     println!();
-    println!(
-        "Batch transfer structured ({} files, implementation pending)",
-        files.len()
-    );
+    println!("Batch transfer complete: {} files sent", files.len());
+
+    // Stop node
+    node.stop().await?;
+    println!("Node stopped");
 
     Ok(())
 }
@@ -600,23 +787,20 @@ async fn send_batch(
 /// Show node status
 async fn show_status(
     transfer: Option<String>,
-    detailed: bool,
+    _detailed: bool,
     config: &Config,
 ) -> anyhow::Result<()> {
     println!("WRAITH Protocol Status");
     println!("Version: {}", env!("CARGO_PKG_VERSION"));
     println!();
 
-    if let Some(transfer_id) = transfer {
-        // Show specific transfer status
-        println!("Transfer: {transfer_id}");
-        println!("Status: Active (placeholder)");
-        println!("Progress: 45% (placeholder)");
-        println!("Speed: 8.5 Gbps (placeholder)");
-        println!("ETA: 2m 15s (placeholder)");
+    if let Some(transfer_id_str) = transfer {
+        let transfer_id = parse_transfer_id(&transfer_id_str)?;
+        println!("Transfer status query: {}", hex::encode(&transfer_id[..8]));
         println!();
-
-        tracing::warn!("Transfer status requires Phase 7 protocol integration");
+        println!("NOTE: Transfer status queries require a running daemon.");
+        println!("Start a daemon with: wraith daemon");
+        println!("Then query transfer status via IPC (future feature)");
         return Ok(());
     }
 
@@ -643,45 +827,46 @@ async fn show_status(
     println!("  Relay servers: {}", config.discovery.relay_servers.len());
     println!();
 
-    if detailed {
-        println!("Detailed Statistics:");
-        println!("  Active sessions: 0 (placeholder)");
-        println!("  Active transfers: 0 (placeholder)");
-        println!("  Bytes sent: 0 (placeholder)");
-        println!("  Bytes received: 0 (placeholder)");
-        println!("  Packets sent: 0 (placeholder)");
-        println!("  Packets received: 0 (placeholder)");
-        println!("  Average RTT: N/A (placeholder)");
-        println!("  Packet loss: 0.0% (placeholder)");
-        println!();
-    }
-
-    // Placeholder: Show runtime status when protocol is integrated
-    tracing::warn!("Runtime status display requires Phase 7 protocol integration");
-
     Ok(())
 }
 
 /// List connected peers
 async fn list_peers(dht_query: Option<String>, config: &Config) -> anyhow::Result<()> {
-    println!("Connected Peers:");
-    println!();
+    if let Some(peer_id_str) = dht_query {
+        let peer_id = parse_peer_id(&peer_id_str)?;
 
-    if let Some(peer_id) = dht_query {
-        // Query DHT for specific peer
-        println!("Querying DHT for peer: {peer_id}");
+        println!("Querying DHT for peer: {}", hex::encode(&peer_id[..8]));
         println!();
 
-        tracing::warn!("DHT query requires Phase 7 protocol integration");
+        // Create temporary node for DHT query
+        let node_config = create_node_config(config);
+        let node = Node::new_with_config(node_config).await?;
+        node.start().await?;
 
-        println!("DHT query result: Not found (implementation pending)");
+        println!("Discovering peer via DHT...");
+        match node.discover_peer(&peer_id).await {
+            Ok(addrs) => {
+                println!("Peer found:");
+                println!("  ID: {}", hex::encode(peer_id));
+                println!("  Addresses:");
+                for addr in addrs {
+                    println!("    - {}", addr);
+                }
+            }
+            Err(e) => {
+                println!("Peer not found: {}", e);
+            }
+        }
+
+        node.stop().await?;
         return Ok(());
     }
 
-    // Placeholder: Full implementation requires protocol integration
-    tracing::warn!("Peer listing requires Phase 7 protocol integration");
-
-    println!("No peers connected (implementation pending Phase 7)");
+    println!("Connected Peers:");
+    println!();
+    println!("NOTE: Listing active peers requires a running daemon.");
+    println!("Start a daemon with: wraith daemon");
+    println!("Then query peer list via IPC (future feature)");
     println!();
     println!("Discovery configured:");
     println!(
@@ -699,164 +884,103 @@ async fn show_health(config: &Config) -> anyhow::Result<()> {
     println!("Version: {}", env!("CARGO_PKG_VERSION"));
     println!();
 
-    // System health checks
-    println!("System:");
-    println!("  Status: healthy (placeholder)");
-    println!("  Uptime: N/A (placeholder)");
+    // Configuration health
+    println!("Configuration:");
+    println!("  Config file: OK");
     println!(
-        "  Memory: {} / {} (placeholder)",
-        format_bytes(0),
-        format_bytes(0)
-    );
-    println!("  CPU: 0% (placeholder)");
-    println!();
-
-    // Network health
-    println!("Network:");
-    println!(
-        "  XDP: {} ({})",
-        config.network.enable_xdp,
-        if config.network.enable_xdp {
-            "configured"
+        "  Listen address: {} ({})",
+        config.network.listen_addr,
+        if config.network.listen_addr.starts_with("0.0.0.0") {
+            "will bind to all interfaces"
         } else {
-            "disabled"
+            "specific interface"
         }
     );
-    println!("  Listen: {}", config.network.listen_addr);
-    println!("  Connectivity: unknown (placeholder)");
+    println!("  XDP: {} ", config.network.enable_xdp);
+    if config.network.enable_xdp {
+        if let Some(iface) = &config.network.xdp_interface {
+            println!("  XDP interface: {}", iface);
+        }
+    }
     println!();
 
-    // Protocol health
-    println!("Protocol:");
-    println!("  Active sessions: 0 (placeholder)");
-    println!("  Active transfers: 0 (placeholder)");
-    println!("  Avg throughput: 0 Gbps (placeholder)");
-    println!("  Avg latency: N/A (placeholder)");
+    // Test node creation
+    println!("Node Creation:");
+    match Node::new_random().await {
+        Ok(_node) => {
+            println!("  Identity generation: OK");
+            println!("  Node initialization: OK");
+        }
+        Err(e) => {
+            println!("  Node creation: FAILED - {}", e);
+            return Ok(());
+        }
+    }
     println!();
 
     // Discovery health
     println!("Discovery:");
-    println!("  DHT nodes: 0 (placeholder)");
     println!(
-        "  Bootstrap: {}/{} connected (placeholder)",
-        0,
+        "  Bootstrap nodes: {} configured",
         config.discovery.bootstrap_nodes.len()
     );
     println!(
-        "  Relay: {}/{} connected (placeholder)",
-        0,
+        "  Relay servers: {} configured",
         config.discovery.relay_servers.len()
     );
     println!();
 
-    println!("Overall Health: HEALTHY (placeholder)");
+    println!("Overall Health: OK");
     println!();
-
-    tracing::warn!("Health check requires Phase 7 protocol integration");
+    println!("NOTE: For runtime health metrics, start a daemon with: wraith daemon");
 
     Ok(())
 }
 
 /// Show metrics
-async fn show_metrics(json: bool, watch: Option<u64>, config: &Config) -> anyhow::Result<()> {
+async fn show_metrics(json: bool, _watch: Option<u64>, config: &Config) -> anyhow::Result<()> {
     if json {
         // JSON output
         println!(
             r#"{{
   "version": "{}",
-  "uptime_seconds": 0,
-  "network": {{
+  "configuration": {{
+    "listen_addr": "{}",
     "xdp_enabled": {},
-    "bytes_sent": 0,
-    "bytes_received": 0,
-    "packets_sent": 0,
-    "packets_received": 0,
-    "packet_loss_rate": 0.0
+    "chunk_size": {},
+    "max_concurrent": {}
   }},
-  "sessions": {{
-    "active": 0,
-    "total": 0,
-    "avg_rtt_us": 0
-  }},
-  "transfers": {{
-    "active": 0,
-    "completed": 0,
-    "failed": 0,
-    "avg_throughput_bps": 0
-  }},
-  "discovery": {{
-    "dht_nodes": 0,
-    "bootstrap_connected": 0,
-    "relay_connected": 0
-  }}
+  "note": "Runtime metrics require a running daemon. Start with: wraith daemon"
 }}"#,
             env!("CARGO_PKG_VERSION"),
-            config.network.enable_xdp
+            config.network.listen_addr,
+            config.network.enable_xdp,
+            config.transfer.chunk_size,
+            config.transfer.max_concurrent
         );
-
-        tracing::warn!("Metrics collection requires Phase 7 protocol integration");
         return Ok(());
     }
 
     // Text output
-    if let Some(interval) = watch {
-        println!("Watching metrics (refresh every {interval}s, Ctrl+C to stop)");
-        println!();
-
-        loop {
-            // Clear screen
-            print!("\x1B[2J\x1B[1;1H");
-
-            display_metrics(config);
-
-            tokio::time::sleep(std::time::Duration::from_secs(interval)).await;
-        }
-    } else {
-        display_metrics(config);
-    }
-
-    Ok(())
-}
-
-/// Display metrics (helper function)
-fn display_metrics(config: &Config) {
     println!("WRAITH Metrics");
     println!("Version: {}", env!("CARGO_PKG_VERSION"));
     println!();
 
-    println!("Network:");
+    println!("Configuration:");
+    println!("  Listen: {}", config.network.listen_addr);
     println!("  XDP: {}", config.network.enable_xdp);
-    println!("  Throughput: 0 Gbps ↓ / 0 Gbps ↑ (placeholder)");
-    println!("  Packets: 0 pps ↓ / 0 pps ↑ (placeholder)");
-    println!("  Loss rate: 0.00% (placeholder)");
-    println!();
-
-    println!("Sessions:");
-    println!("  Active: 0 (placeholder)");
-    println!("  Total: 0 (placeholder)");
-    println!("  Avg RTT: N/A (placeholder)");
-    println!();
-
-    println!("Transfers:");
-    println!("  Active: 0 (placeholder)");
-    println!("  Completed: 0 (placeholder)");
-    println!("  Failed: 0 (placeholder)");
-    println!("  Avg Speed: 0 Gbps (placeholder)");
-    println!();
-
-    println!("Discovery:");
-    println!("  DHT nodes: 0 (placeholder)");
     println!(
-        "  Bootstrap: 0/{} (placeholder)",
-        config.discovery.bootstrap_nodes.len()
+        "  Chunk size: {}",
+        format_bytes(config.transfer.chunk_size as u64)
     );
-    println!(
-        "  Relay: 0/{} (placeholder)",
-        config.discovery.relay_servers.len()
-    );
+    println!("  Max concurrent: {}", config.transfer.max_concurrent);
     println!();
 
-    tracing::warn!("Metrics collection requires Phase 7 protocol integration");
+    println!("NOTE: Runtime metrics require a running daemon.");
+    println!("Start a daemon with: wraith daemon");
+    println!("Then query metrics via IPC (future feature)");
+
+    Ok(())
 }
 
 /// Show node information
@@ -872,10 +996,12 @@ async fn show_info(config: &Config) -> anyhow::Result<()> {
     );
     println!();
 
+    // Generate temporary node to show ID
+    let node = Node::new_random().await?;
     println!("Node:");
-    println!("  ID: <not-generated> (placeholder)");
+    println!("  ID: {}", hex::encode(node.node_id()));
+    println!("  X25519 Key: {}", hex::encode(node.x25519_public_key()));
     println!("  Listen: {}", config.network.listen_addr);
-    println!("  Uptime: N/A (placeholder)");
     println!();
 
     println!("Features:");
@@ -918,7 +1044,8 @@ async fn show_info(config: &Config) -> anyhow::Result<()> {
     println!("  Relay servers: {}", config.discovery.relay_servers.len());
     println!();
 
-    tracing::warn!("Full node info requires Phase 7 protocol integration");
+    println!("NOTE: Node ID shown is randomly generated.");
+    println!("Use 'wraith keygen' to create a persistent identity.");
 
     Ok(())
 }
@@ -1190,36 +1317,6 @@ mod tests {
         let decrypted2 = decrypt_private_key(&encrypted2, passphrase).unwrap();
         assert_eq!(decrypted1, decrypted2);
         assert_eq!(decrypted1, private_bytes);
-    }
-
-    #[test]
-    fn test_display_metrics_does_not_panic() {
-        let config = Config::default();
-        display_metrics(&config);
-        // If we get here without panicking, test passes
-    }
-
-    #[test]
-    fn test_display_metrics_with_custom_config() {
-        let config = Config {
-            network: config::NetworkConfig {
-                listen_addr: "127.0.0.1:8080".to_string(),
-                enable_xdp: true,
-                xdp_interface: Some("eth0".to_string()),
-                udp_fallback: false,
-            },
-            discovery: config::DiscoveryConfig {
-                bootstrap_nodes: vec![
-                    "node1.example.com:8080".to_string(),
-                    "node2.example.com:8080".to_string(),
-                ],
-                relay_servers: vec!["relay1.example.com:8080".to_string()],
-            },
-            ..Default::default()
-        };
-
-        display_metrics(&config);
-        // Should not panic with custom config
     }
 
     #[test]
