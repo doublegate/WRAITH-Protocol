@@ -1,0 +1,38 @@
+# CodeQL Configuration for WRAITH Protocol
+#
+# This configuration file customizes CodeQL analysis to handle protocol-specific
+# requirements and justified use of legacy algorithms.
+
+name: "WRAITH CodeQL Config"
+
+# Disable specific queries that flag RFC-mandated algorithm usage
+# These are not security vulnerabilities in our context
+disable-default-queries: false
+
+# Query configuration
+queries:
+  - uses: security-extended
+
+# Query filters to handle known false positives
+# Note: CodeQL for Rust doesn't yet support query-level suppressions via config,
+# but we document the justifications here for transparency
+
+# Known justified uses (not actual vulnerabilities):
+# 1. MD5 in crates/wraith-discovery/src/nat/stun.rs
+#    - Required by RFC 5389 Section 15.4 for STUN long-term credential derivation
+#    - Used only for protocol compliance, not for collision resistance
+#    - Isolated to STUN implementation, not used elsewhere
+#
+# 2. SHA1 in crates/wraith-discovery/src/nat/stun.rs
+#    - Required by RFC 5389 Section 15.4 for STUN MESSAGE-INTEGRITY (HMAC-SHA1)
+#    - HMAC construction provides better security properties than plain SHA1
+#    - Protocol-mandated, cannot be changed without breaking STUN compatibility
+#
+# 3. HMAC-SHA1 in crates/wraith-discovery/src/nat/stun.rs
+#    - Required by RFC 5389 Section 15.4 for STUN authentication
+#    - HMAC provides keyed-hash security suitable for message authentication
+#    - Used only for STUN protocol, not for general cryptographic operations
+
+# For documentation of these justified uses, see:
+# - docs/security/rfc-required-algorithms.md
+# - Inline comments in crates/wraith-discovery/src/nat/stun.rs

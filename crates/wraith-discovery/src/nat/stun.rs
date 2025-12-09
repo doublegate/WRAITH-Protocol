@@ -8,8 +8,28 @@
 //! This implementation includes RFC 5389 MESSAGE-INTEGRITY authentication using
 //! HMAC-SHA1, transaction ID validation, and fingerprint verification for secure
 //! STUN operations.
+//!
+//! # Security Note on Cryptographic Algorithms
+//!
+//! **IMPORTANT:** This module uses MD5 and SHA1 algorithms as mandated by RFC 5389
+//! for STUN protocol compliance. While MD5 and SHA1 are considered cryptographically
+//! weak for general purposes, their use here is:
+//!
+//! 1. **RFC-Mandated**: RFC 5389 Section 15.4 specifically requires HMAC-SHA1 for
+//!    MESSAGE-INTEGRITY and MD5 for long-term credential key derivation.
+//! 2. **Protocol-Specific**: These algorithms are used only for STUN protocol
+//!    operations, not for general cryptographic purposes in WRAITH.
+//! 3. **Contextually Safe**: In the STUN context with proper authentication and
+//!    message integrity checks, the protocol provides adequate security for its
+//!    intended NAT traversal purpose.
+//!
+//! **DO NOT** use MD5 or SHA1 from this module for any other cryptographic
+//! operations. For general cryptography in WRAITH, use the strong algorithms
+//! provided in the `wraith-crypto` crate (e.g., BLAKE3, ChaCha20-Poly1305, X25519, Ed25519).
 
 use hmac::{Hmac, Mac};
+// These imports are required by RFC 5389 for STUN protocol compliance.
+// DO NOT use for general cryptographic purposes - see security note above.
 use md5::Md5;
 use sha1::Sha1;
 use std::collections::HashMap;
@@ -139,9 +159,17 @@ impl StunAuthentication {
     ///
     /// For long-term credentials: MD5(username:realm:password)
     /// For short-term credentials: password
+    ///
+    /// # Security Note
+    ///
+    /// This function uses MD5 as required by RFC 5389 Section 15.4 for STUN
+    /// long-term credential key derivation. This is a protocol requirement
+    /// and cannot be changed without breaking STUN compatibility.
+    /// MD5 is used here only for protocol compliance, not for collision resistance.
     fn derive_key(&self) -> Zeroizing<Vec<u8>> {
         if let Some(realm) = &self.realm {
             // Long-term credentials: MD5(username:realm:password)
+            // Required by RFC 5389 Section 15.4 - DO NOT change to a different hash
             use md5::Digest;
             let mut hasher = Md5::new();
             hasher.update(self.username.as_bytes());
@@ -583,6 +611,13 @@ impl StunMessage {
     /// Computes HMAC-SHA1 over the message up to (but not including) the
     /// MESSAGE-INTEGRITY attribute itself. Must be called before encoding.
     ///
+    /// # Security Note
+    ///
+    /// This function uses HMAC-SHA1 as mandated by RFC 5389 Section 15.4 for
+    /// STUN MESSAGE-INTEGRITY computation. This is a protocol requirement and
+    /// cannot be changed without breaking STUN compatibility with other implementations.
+    /// The use of HMAC-SHA1 here is for protocol compliance only.
+    ///
     /// # Arguments
     ///
     /// * `auth` - Authentication credentials
@@ -625,7 +660,7 @@ impl StunMessage {
         let msg_length = bytes.len() - HEADER_SIZE + 24;
         bytes[length_offset..length_offset + 2].copy_from_slice(&(msg_length as u16).to_be_bytes());
 
-        // Compute HMAC-SHA1
+        // Compute HMAC-SHA1 (RFC 5389 Section 15.4 requirement)
         let key = auth.derive_key();
         type HmacSha1 = Hmac<Sha1>;
         let mut mac = HmacSha1::new_from_slice(&key).expect("HMAC can take key of any size");
@@ -641,6 +676,11 @@ impl StunMessage {
     /// Verify MESSAGE-INTEGRITY attribute (SEC-003)
     ///
     /// Validates that the MESSAGE-INTEGRITY HMAC is correct.
+    ///
+    /// # Security Note
+    ///
+    /// This function uses HMAC-SHA1 as mandated by RFC 5389 Section 15.4 for
+    /// STUN MESSAGE-INTEGRITY verification. This is a protocol requirement.
     ///
     /// # Arguments
     ///
@@ -700,7 +740,7 @@ impl StunMessage {
             bytes.extend_from_slice(&attr.encode(&temp_msg.transaction_id));
         }
 
-        // Compute expected HMAC
+        // Compute expected HMAC (RFC 5389 Section 15.4 requirement)
         let key = auth.derive_key();
         type HmacSha1 = Hmac<Sha1>;
         let mut mac = HmacSha1::new_from_slice(&key).expect("HMAC can take key of any size");
@@ -1359,7 +1399,7 @@ mod tests {
     fn test_authentication_key_derivation_long_term() {
         let auth = StunAuthentication::new("user", "pass", Some("realm".to_string()));
         let key = auth.derive_key();
-        // Long-term credentials use MD5(username:realm:password)
+        // Long-term credentials use MD5(username:realm:password) as mandated by RFC 5389
         assert_eq!(key.len(), 16); // MD5 produces 16 bytes
     }
 }

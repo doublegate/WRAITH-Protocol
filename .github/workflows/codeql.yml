@@ -60,10 +60,8 @@ jobs:
         uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
-          # Use security-extended query suite for comprehensive analysis
-          queries: security-extended
-          # Optional: Add custom queries
-          # config-file: ./.github/codeql/codeql-config.yml
+          # Use custom config that documents justified algorithm usage
+          config-file: ./.github/codeql/codeql-config.yml
 
       # Install system dependencies required for Tauri (even though we exclude it)
       - name: Install system dependencies (Ubuntu)
