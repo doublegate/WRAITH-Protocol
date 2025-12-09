@@ -2,10 +2,10 @@
 
 **Development Timeline:** Phase 15 (2025-12-09) - WRAITH Transfer Desktop Application Complete
 
-This document tracks the development journey of WRAITH Protocol client applications, from planning through implementation and release. The first client (WRAITH Transfer) was delivered in Phase 15 (v1.5.7).
+This document tracks the development journey of WRAITH Protocol client applications, from planning through implementation and release. The first client (WRAITH Transfer) was delivered in Phase 15 (v1.5.8).
 
 [![Version](https://img.shields.io/badge/clients-1%20complete-green.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
-[![Protocol](https://img.shields.io/badge/protocol-v1.5.7-blue.svg)](../../README.md)
+[![Protocol](https://img.shields.io/badge/protocol-v1.5.8-blue.svg)](../../README.md)
 [![Clients](https://img.shields.io/badge/clients-9%20planned-orange.svg)](../../to-dos/ROADMAP-clients.md)
 
 ---
@@ -34,12 +34,13 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 - **Security Testing:** Authorized assessment tools (Recon, RedOps)
 
 **Current Status (2025-12-09):**
-- Protocol v1.5.7 complete (all prerequisites available)
-- **WRAITH Transfer v1.5.7:** ✅ **COMPLETE** (102 SP delivered)
-  - Cross-platform desktop application (Windows, macOS, Linux)
+- Protocol v1.5.8 complete (all prerequisites available)
+- **WRAITH Transfer v1.5.8:** ✅ **COMPLETE** (102 SP delivered)
+  - Cross-platform desktop application (Windows, macOS, Linux with X11/Wayland)
   - Tauri 2.0 backend with full wraith-core integration
   - React 18 + TypeScript frontend with Vite
   - 10 IPC commands, 5 React components, 3 Zustand stores
+  - v1.5.8: Wayland compatibility fix (KDE Plasma 6 crash resolved)
 - **Development Status:** 1 of 10 clients complete (10% delivered, 926 SP remaining)
 
 ---
@@ -50,7 +51,7 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 
 | # | Client | Description | Platform | Story Points | Status |
 |---|--------|-------------|----------|--------------|--------|
-| 1 | **WRAITH-Transfer** | Direct P2P file transfer with drag-and-drop GUI | Desktop (Linux/macOS/Windows) | 102 | ✅ **Complete (v1.5.7)** |
+| 1 | **WRAITH-Transfer** | Direct P2P file transfer with drag-and-drop GUI | Desktop (Linux/macOS/Windows) | 102 | ✅ **Complete (v1.5.8)** |
 | 2 | **WRAITH-Chat** | E2EE messaging with Double Ratchet algorithm | Desktop + Mobile | 162 | Planned |
 
 **WRAITH Transfer Delivered (2025-12-09):**
@@ -60,8 +61,9 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 - 10 IPC commands for node/session/transfer management
 - 5 React components with real-time status updates
 - 3 Zustand stores for state management
-- Cross-platform builds for Windows, macOS, Linux
+- Cross-platform builds for Windows, macOS, Linux (X11/Wayland)
 - FFI layer (wraith-ffi crate) for C-compatible API
+- v1.5.8: Wayland compatibility fix (resolves KDE Plasma 6 crashes)
 
 **WRAITH Chat Timeline:** Planned Q2-Q3 2026 (12 weeks development)
 **Prerequisites:** Protocol Phase 6 (Integration) - ✅ Complete
@@ -676,15 +678,16 @@ RedOps                                                          [=============]
 
 **Protocol Status (2025-12-09):**
 - ✅ All 15 protocol development phases complete (1,635 SP delivered)
-- ✅ 1,382 tests passing (1,367 active, 16 ignored) - 100% pass rate
+- ✅ 1,396 tests passing (1,380 active, 16 ignored) - 100% pass rate
 - ✅ Zero vulnerabilities, zero clippy warnings
 - ✅ Grade A+ quality (98/100)
-- ✅ Production-ready architecture with v1.5.7 release
+- ✅ Production-ready architecture with v1.5.8 release
 
 **Client Development Status:**
 - ✅ Comprehensive planning complete (roadmap, specifications)
 - ✅ All client specifications documented (10 clients × 3-6 docs each)
-- ✅ **WRAITH Transfer v1.5.7 complete** (102 SP delivered, Phase 15)
+- ✅ **WRAITH Transfer v1.5.8 complete** (102 SP delivered, Phase 15)
+- ✅ Wayland compatibility fix (KDE Plasma 6 crash resolved)
 - ⬜ 9 remaining clients awaiting Phase 16+ development
 
 **Completed Work:**
@@ -705,7 +708,7 @@ RedOps                                                          [=============]
 1. WRAITH-Chat beta (1-on-1 messaging, group chat)
 
 **Next Steps:**
-1. Review Phase 15 deliverables (WRAITH Transfer v1.5.5)
+1. Review Phase 15 deliverables (WRAITH Transfer v1.5.8)
 2. Begin Phase 16 sprint planning (mobile clients)
 3. Set up shared component development (wraith-contacts, wraith-gui-common)
 4. Configure cross-client CI/CD pipeline
@@ -754,6 +757,6 @@ RedOps                                                          [=============]
 
 **WRAITH Protocol Client Applications Development History** - *From Planning to Production*
 
-**Status:** Phase 15 Complete (WRAITH Transfer v1.5.7) | **Total Scope:** 10 clients, 1,028 SP | **Delivered:** 102 SP (10%) | **Remaining:** 926 SP (9 clients) | **Prerequisites:** Protocol v1.5.7 ✅ Complete | **Next:** Phase 16 (Mobile Clients)
+**Status:** Phase 15 Complete (WRAITH Transfer v1.5.8) | **Total Scope:** 10 clients, 1,028 SP | **Delivered:** 102 SP (10%) | **Remaining:** 926 SP (9 clients) | **Prerequisites:** Protocol v1.5.8 ✅ Complete | **Next:** Phase 16 (Mobile Clients)
 
 *Last Updated: 2025-12-09*

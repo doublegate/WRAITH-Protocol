@@ -2,9 +2,9 @@
 
 **Development Timeline:** Phase 1 (2024) through Phase 15 (2025-12-09)
 
-This document captures the complete development journey of WRAITH Protocol from inception through version 1.5.7, including detailed phase accomplishments, sprint summaries, and implementation milestones.
+This document captures the complete development journey of WRAITH Protocol from inception through version 1.5.8, including detailed phase accomplishments, sprint summaries, and implementation milestones.
 
-[![Version](https://img.shields.io/badge/version-1.5.7-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
+[![Version](https://img.shields.io/badge/version-1.5.8-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
 [![Security](https://img.shields.io/badge/security-audited-green.svg)](../security/DPI_EVASION_REPORT.md)
 [![Rust](https://img.shields.io/badge/rust-1.85%2B-orange.svg)](https://www.rust-lang.org/)
 
@@ -23,15 +23,15 @@ For the current production README, see [../../README.md](../../README.md).
 **Total Development Effort:** 1,635 story points delivered across 15 phases
 
 **Project Metrics (2025-12-09):**
-- **Code Volume:** ~47,617 lines of Rust code (~35,979 LOC + 2,999 comments + 8,639 blanks) across 125 source files
-- **Test Coverage:** 1,382 total tests (1,367 passing, 16 ignored) - 100% pass rate on active tests
+- **Code Volume:** ~53,777 lines of Rust code (~40,226 LOC + 3,764 comments + 9,787 blanks) across 145 source files
+- **Test Coverage:** 1,396 total tests (1,380 passing, 16 ignored) - 100% pass rate on active tests
 - **Documentation:** 100+ markdown files, ~63,000+ lines of comprehensive documentation
 - **Dependencies:** 286 audited packages (zero vulnerabilities via cargo-audit)
 - **Security:** Grade A+ (EXCELLENT) - zero vulnerabilities, 100% unsafe documentation, comprehensive audits
 
 **Quality Metrics:**
 - **Quality Grade:** 98/100 (Production-ready)
-- **Test Coverage:** 1,382 total tests (1,367 passing, 16 ignored) - 100% pass rate on active tests
+- **Test Coverage:** 1,396 total tests (1,380 passing, 16 ignored) - 100% pass rate on active tests
   - 406 wraith-core - frame parsing, sessions, streams, BBR, migration, ring buffers, Node API
   - 128 wraith-crypto (1 ignored) - Ed25519, X25519, Elligator2, AEAD, Noise_XX, Double Ratchet
   - 34 wraith-files - chunking, reassembly, tree hashing
@@ -733,7 +733,7 @@ For the current production README, see [../../README.md](../../README.md).
 | **wraith-transfer** | ✅ Phase 15 Complete | ~12,500 | - | - | 6 | Tauri 2.0 desktop application, React 18 + TypeScript frontend, 10 IPC commands, 5 React components, 3 Zustand stores, cross-platform (Windows/macOS/Linux) |
 | **wraith-xdp** | Not started | 0 | 0 | 0 | 0 | eBPF/XDP programs for in-kernel packet filtering (excluded from default build) |
 
-**Total Protocol:** ~47,617 lines (~35,979 LOC + 2,999 comments + 8,639 blanks) across 125 Rust source files in 9 crates (7 protocol + 1 FFI + 1 desktop app)
+**Total Protocol:** ~53,777 lines (~40,226 LOC + 3,764 comments + 9,787 blanks) across 145 Rust source files in 9 crates (7 protocol + 1 FFI + 1 desktop app)
 
 ---
 
@@ -860,23 +860,23 @@ For the current production README, see [../../README.md](../../README.md).
 
 ## Current Status & Next Steps
 
-**Version 1.5.7 Status (2025-12-09):**
+**Version 1.5.8 Status (2025-12-09):**
 - ✅ All 15 protocol development phases complete (1,635 SP delivered)
-- ✅ 1,382 tests (1,367 passing, 16 ignored) - 100% pass rate on active tests (+269 tests from v1.5.6)
+- ✅ 1,396 tests (1,380 passing, 16 ignored) - 100% pass rate on active tests (+14 tests from v1.5.7)
 - ✅ Zero vulnerabilities, zero warnings
 - ✅ Code quality: 98/100 (production-ready)
 - ✅ Technical debt ratio: 3.8% (healthy range)
 - ✅ 100% unsafe block documentation coverage
 - ✅ Production-ready with comprehensive security audits (Grade A+)
 - ✅ Full Node API integration (PING/PONG, PATH_CHALLENGE/RESPONSE, chunk transfer)
+- ✅ Complete CLI integration (all 12 commands operational with Node API backend)
 - ✅ Lock-free data structures (DashMap, AtomicU64)
 - ✅ Zero-allocation error handling (Cow<'static, str>)
 - ✅ Complete documentation (100+ files, ~63,000+ lines)
 - ✅ WRAITH Transfer desktop application (Tauri 2.0 + React 18)
+- ✅ Wayland compatibility fix (KDE Plasma 6 crash resolved)
 - ✅ FFI bindings for C/C++ integration (wraith-ffi crate)
-- ✅ Clippy pedantic compliance (104 auto-fixes applied)
-- ✅ Windows compatibility (io_uring fallback test fixed)
-- ✅ Comprehensive test coverage expansion (+65 CLI, +61 discovery, +92 FFI, +51 transport)
+- ✅ Cross-platform desktop application (Windows, macOS, Linux X11/Wayland)
 
 **Upcoming Work:**
 
@@ -916,4 +916,4 @@ See [../../to-dos/ROADMAP.md](../../to-dos/ROADMAP.md) for detailed future plann
 
 **WRAITH Protocol Development History** - *From Foundation to Production (Phases 1-15)*
 
-**Development Period:** 2024 - 2025-12-09 | **Total Effort:** 1,635 story points delivered across 15 phases | **Quality:** Production-ready (98/100), 1,382 tests (100% pass rate), 0 vulnerabilities, Grade A+ security
+**Development Period:** 2024 - 2025-12-09 | **Total Effort:** 1,635 story points delivered across 15 phases | **Quality:** Production-ready (98/100), 1,396 tests (100% pass rate), 0 vulnerabilities, Grade A+ security

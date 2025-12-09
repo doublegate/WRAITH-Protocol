@@ -19,11 +19,11 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
 
 **Version:** 1.5.8 CLI Integration & Wayland Fix | **Development Phase:** Phase 15 Complete
 
-WRAITH Protocol is production-ready with a cross-platform desktop application. Phase 15 delivers WRAITH Transfer, a Tauri 2.0-based desktop client with React 18 frontend, providing full wraith-core integration with an intuitive UI for secure file transfers.
+WRAITH Protocol is production-ready with a cross-platform desktop application and fully integrated CLI. Phase 15 delivers WRAITH Transfer, a Tauri 2.0-based desktop client with React 18 frontend, providing full wraith-core integration with an intuitive UI for secure file transfers. v1.5.8 adds complete Node API integration to all CLI commands and resolves critical Wayland compatibility issues.
 
 **Project Metrics (2025-12-09):**
-- **Code Volume:** ~47,617 lines of Rust code (~35,979 LOC + 2,999 comments + 8,639 blanks) across 125 source files
-- **Test Coverage:** 1,382 total tests (1,367 passing, 16 ignored) - 100% pass rate on active tests
+- **Code Volume:** ~53,777 lines of Rust code (~40,226 LOC + 3,764 comments + 9,787 blanks) across 145 source files
+- **Test Coverage:** 1,396 total tests (1,380 passing, 16 ignored) - 100% pass rate on active tests
 - **Documentation:** 100+ markdown files, ~63,000+ lines of comprehensive documentation
 - **Dependencies:** 286 audited packages (zero vulnerabilities via cargo-audit)
 - **Security:** Grade A+ (EXCELLENT), zero vulnerabilities, comprehensive DPI evasion validation
@@ -86,7 +86,7 @@ For detailed development history and phase accomplishments, see [Protocol Develo
 - Comprehensive configuration system (6 subsystems)
 
 **WRAITH Transfer Desktop Application:**
-- Cross-platform GUI (Windows, macOS, Linux)
+- Cross-platform GUI (Windows, macOS, Linux with X11/Wayland support)
 - Tauri 2.0 backend with full wraith-core integration
 - React 18 + TypeScript frontend with Vite bundling
 - Tailwind CSS v4 with WRAITH brand colors (#FF5722 primary, #4A148C secondary)
@@ -96,6 +96,7 @@ For detailed development history and phase accomplishments, see [Protocol Develo
 - 10 IPC commands for node/session/transfer control
 - Zustand state management (nodeStore, transferStore, sessionStore)
 - Production-ready packaging for all platforms
+- v1.5.8: Wayland compatibility fix (resolves KDE Plasma 6 crashes)
 
 ![WRAITH Protocol Architecture](images/wraith-protocol_arch-infographic.jpg)
 
@@ -149,23 +150,32 @@ cargo test --workspace
 
 ## Quick Start
 
-**Note:** WRAITH Protocol v1.3.0 has a complete Node API and protocol implementation. The CLI interface is scaffolded but not yet fully integrated with the Node API. The following commands represent the planned interface:
+**Note:** WRAITH Protocol v1.5.8 features a complete Node API and protocol implementation with fully integrated CLI commands. The wraith-cli binary provides production-ready command-line access to all protocol features.
 
 ```bash
-# Send a file (coming soon)
-wraith send document.pdf alice@peer.key
+# Generate identity keypair
+wraith keygen --output ~/.wraith/identity.key
 
-# Receive files (coming soon)
+# Send a file to peer
+wraith send document.pdf <peer-id>
+
+# Receive files
 wraith receive --output ./downloads
 
-# Run as daemon (coming soon)
+# Run as background daemon
 wraith daemon --bind 0.0.0.0:0
 
-# Generate a keypair (coming soon)
-wraith keygen --output ~/.wraith/identity.key
+# Check node status
+wraith status
+
+# List discovered peers and sessions
+wraith peers
+
+# Manage configuration
+wraith config --show
 ```
 
-For current development status, see [ROADMAP.md](to-dos/ROADMAP.md).
+For detailed usage, see [User Guide](docs/USER_GUIDE.md) and [Tutorial](docs/TUTORIAL.md).
 
 ## Project Structure
 
@@ -207,12 +217,12 @@ WRAITH-Protocol/
 | **wraith-transport** | AF_XDP, io_uring, UDP, worker pools | ~2,800+ | - | - | 140 (1 ignored) |
 | **wraith-obfuscation** | Padding, timing, protocol mimicry | ~3,500+ | - | - | 130 |
 | **wraith-files** | File chunking, tree hashing, reassembly | ~1,300 | - | - | 34 |
-| **wraith-cli** | Command-line interface | ~1,100 | - | - | 72 |
+| **wraith-cli** | Command-line interface with Node API integration | ~1,100 | - | - | 72 |
 | **wraith-ffi** | Foreign function interface for C/C++ integration | ~1,200 | - | - | 111 |
 | **wraith-transfer** | Tauri 2.0 desktop application (Rust + React + TypeScript) | ~12,500 | - | - | 6 |
 | **wraith-xdp** | eBPF/XDP programs (excluded from default build) | 0 | 0 | 0 | 0 |
 
-**Total Protocol:** ~47,617 lines (~35,979 LOC + 2,999 comments + 8,639 blanks) across 125 Rust files, 1,382 tests (1,367 passing, 16 ignored)
+**Total Protocol:** ~53,777 lines (~40,226 LOC + 3,764 comments + 9,787 blanks) across 145 Rust files, 1,396 tests (1,380 passing, 16 ignored)
 
 ## Documentation
 
@@ -535,7 +545,7 @@ WRAITH Protocol is designed with security as a core principle:
 - **Unsafe Code Audit:** 100% documentation coverage with SAFETY comments
 
 **Validation:**
-- **Test Coverage:** 923 tests (913 passing, 10 ignored) covering all protocol layers
+- **Test Coverage:** 1,396 tests (1,380 passing, 16 ignored) covering all protocol layers
 - **DPI Evasion:** Comprehensive validation against Wireshark, Zeek, Suricata, nDPI (see [DPI Evasion Report](docs/security/DPI_EVASION_REPORT.md))
 - **Fuzzing:** 5 libFuzzer targets continuously testing robustness
 - **Property-Based Tests:** QuickCheck-style invariant validation
@@ -627,4 +637,4 @@ WRAITH Protocol builds on the work of many excellent projects and technologies:
 
 **WRAITH Protocol** - *Secure. Fast. Invisible.*
 
-**Status:** v1.5.8 CLI Integration & Wayland Fix (Phase 15 Complete) | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 1,382 (1,367 passing + 16 ignored) | **Quality:** Production-ready, 0 vulnerabilities, zero warnings, 98/100 quality grade
+**Status:** v1.5.8 CLI Integration & Wayland Fix (Phase 15 Complete) | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 1,396 (1,380 passing + 16 ignored) | **Quality:** Production-ready, 0 vulnerabilities, zero warnings, 98/100 quality grade
