@@ -161,8 +161,22 @@ async fn main() -> anyhow::Result<()> {
 
     tracing_subscriber::fmt().with_env_filter(log_level).init();
 
-    // Load configuration
-    let config_path = PathBuf::from(&cli.config);
+    // Keygen command doesn't need config - handle it separately
+    if matches!(cli.command, Commands::Keygen { .. }) {
+        if let Commands::Keygen { output } = cli.command {
+            return generate_keypair(output, &Config::default()).await;
+        }
+    }
+
+    // Load configuration (expand tilde if present)
+    let config_path = if cli.config.starts_with("~/") {
+        dirs::home_dir()
+            .unwrap_or_else(|| PathBuf::from("/tmp"))
+            .join(&cli.config[2..])
+    } else {
+        PathBuf::from(&cli.config)
+    };
+
     let config = if config_path.exists() {
         Config::load(&config_path)?
     } else if config_path == Config::default_path() {
@@ -206,8 +220,9 @@ async fn main() -> anyhow::Result<()> {
         Commands::Info => {
             show_info(&config).await?;
         }
-        Commands::Keygen { output } => {
-            generate_keypair(output, &config).await?;
+        Commands::Keygen { .. } => {
+            // Already handled above before config loading
+            unreachable!("Keygen command should have been handled earlier")
         }
     }
 

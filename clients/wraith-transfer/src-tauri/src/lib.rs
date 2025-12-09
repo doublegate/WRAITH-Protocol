@@ -4,7 +4,6 @@
 //! integrating with wraith-core for secure peer-to-peer file transfers.
 
 use serde::{Deserialize, Serialize};
-use tracing::info;
 
 mod commands;
 mod error;
@@ -50,16 +49,6 @@ pub struct SessionInfo {
 /// Initialize the Tauri application
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // Initialize tracing
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
-        )
-        .init();
-
-    info!("Starting WRAITH Transfer application");
-
     tauri::Builder::default()
         .manage(AppState::default())
         .plugin(tauri_plugin_log::Builder::default().build())

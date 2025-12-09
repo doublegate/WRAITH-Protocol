@@ -13,6 +13,7 @@
 3. [Discovery Issues](#3-discovery-issues)
 4. [Performance Issues](#4-performance-issues)
 5. [Common Error Messages](#5-common-error-messages)
+6. [Desktop Application Issues](#6-desktop-application-issues-wraith-transfer)
 
 ---
 
@@ -971,6 +972,161 @@ wraith peers --list-blocked
 # Unblock peer
 wraith peers --unblock <NODE_ID>
 ```
+
+---
+
+## 6. Desktop Application Issues (WRAITH Transfer)
+
+### 6.1 Wayland Display Protocol Warnings
+
+**Symptoms:**
+```
+Gdk-Message: Error 71 (Protocol error) dispatching to Wayland display.
+```
+
+**Cause:**
+- Tauri GUI framework initializes display subsystems even for non-GUI operations
+- GTK/GDK emits protocol warnings during cleanup on Wayland
+- This is a harmless warning from the underlying Tauri framework
+
+**Impact:**
+- None - the application functions correctly despite this warning
+- Warning appears during initialization/cleanup, not during normal operation
+- Does not affect file transfer functionality or GUI behavior
+
+**Solutions:**
+
+1. **Ignore the Warning (Recommended)**
+   - The warning is harmless and can be safely ignored
+   - Application functionality is not affected
+
+2. **Suppress stderr Output (For Scripts)**
+   ```bash
+   # Suppress all stderr warnings
+   wraith-transfer 2>/dev/null
+
+   # Capture only stdout, discard stderr
+   wraith-transfer > output.txt 2>/dev/null
+   ```
+
+3. **Known Issue**
+   - This is a Tauri framework limitation
+   - Reported upstream to Tauri project
+   - No application-level fix available without modifying Tauri internals
+
+**Note:** Previous versions also showed a `libayatana-appindicator` warning, which has been fixed by removing unused system tray functionality in v0.1.0+.
+
+### 6.2 Application Won't Start
+
+**Symptoms:**
+- Window doesn't appear
+- Application crashes on startup
+- "Failed to initialize GTK backend" errors
+
+**Diagnostic Commands:**
+```bash
+# Check GTK installation
+pkg-config --modversion gtk+-3.0
+
+# Verify Wayland/X11 display
+echo $WAYLAND_DISPLAY
+echo $DISPLAY
+
+# Test with debug output
+RUST_BACKTRACE=1 wraith-transfer
+```
+
+**Common Causes and Solutions:**
+
+1. **Missing GTK Dependencies**
+   ```bash
+   # Ubuntu/Debian
+   sudo apt install libgtk-3-0 libwebkit2gtk-4.1-0
+
+   # Fedora/RHEL
+   sudo dnf install gtk3 webkit2gtk4.1
+
+   # Arch Linux
+   sudo pacman -S gtk3 webkit2gtk
+   ```
+
+2. **Display Server Issues**
+   ```bash
+   # Check if display is available
+   if [ -z "$DISPLAY" ] && [ -z "$WAYLAND_DISPLAY" ]; then
+       echo "No display server available"
+   fi
+
+   # Try running with X11 backend (if Wayland fails)
+   GDK_BACKEND=x11 wraith-transfer
+   ```
+
+3. **Permission Issues**
+   ```bash
+   # Check if binary is executable
+   chmod +x /path/to/wraith-transfer
+
+   # Verify no AppArmor/SELinux restrictions
+   sudo aa-status  # AppArmor
+   sudo sestatus   # SELinux
+   ```
+
+### 6.3 File Picker Not Working
+
+**Symptoms:**
+- File selection dialog doesn't appear
+- Dialog appears but files can't be selected
+- Permission denied errors
+
+**Solutions:**
+
+1. **Portal Permissions (Flatpak/Snap)**
+   ```bash
+   # Grant file access permissions
+   flatpak permission-set desktop-used-apps wraith-transfer yes
+
+   # Or use XDG portal
+   xdg-desktop-portal --version
+   ```
+
+2. **Check Sandbox Restrictions**
+   ```bash
+   # Disable sandbox for testing (development only)
+   WEBKIT_DISABLE_COMPOSITING_MODE=1 wraith-transfer
+   ```
+
+### 6.4 High Memory/CPU Usage
+
+**Symptoms:**
+- Application uses excessive RAM (>500 MB)
+- CPU usage high when idle
+- System becomes sluggish
+
+**Diagnostic Commands:**
+```bash
+# Monitor resource usage
+top -p $(pgrep wraith-transfer)
+
+# Check WebView memory
+ps aux | grep -i webkit
+
+# Monitor heap allocations (requires valgrind)
+valgrind --tool=massif wraith-transfer
+```
+
+**Solutions:**
+
+1. **Close Unused Transfers**
+   - Active transfers consume memory for chunk buffers
+   - Close completed or failed transfers to free resources
+
+2. **Reduce Concurrent Transfers**
+   - Settings → Transfer → Max Concurrent Transfers
+   - Lower value reduces memory usage
+
+3. **Disable Logging (If Excessive)**
+   - Settings → Logging → Set to "Warn" or "Error"
+   - Verbose logging increases CPU usage
 
 ---
 
