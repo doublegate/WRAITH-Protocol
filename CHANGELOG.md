@@ -9,6 +9,65 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.5.6] - 2025-12-08 - Bug Fix Release
+
+**WRAITH Protocol v1.5.6 - Critical CLI Bug Fixes**
+
+This patch release resolves critical bugs affecting wraith-transfer startup and wraith keygen functionality, along with a deprecation warning fix.
+
+### Fixed
+
+#### Critical: wraith-transfer Logger Initialization Panic
+**Issue:** Application panicked with "attempted to set a logger after the logging system was already initialized"
+- **Root Cause:** Duplicate logger initialization in lib.rs (manual tracing_subscriber + Tauri log plugin)
+- **Fix:** Removed manual tracing_subscriber::fmt() initialization, using Tauri's log plugin exclusively
+- **Impact:** wraith-transfer now starts successfully without panic
+- **Files:** `clients/wraith-transfer/src-tauri/src/lib.rs`
+
+#### Critical: wraith keygen Configuration Loading Error
+**Issue:** `wraith keygen` failed with "No such file or directory (os error 2)" when config file doesn't exist
+- **Root Cause 1:** Config file loading occurred before command dispatch in main()
+- **Root Cause 2:** Tilde expansion not performed on default config path (~/.config/wraith/config.toml)
+- **Fix 1:** Added early return for keygen command before config loading attempt
+- **Fix 2:** Added shellexpand dependency for tilde expansion in config paths
+- **Impact:** keygen now works without requiring existing config file
+- **Files:** `crates/wraith-cli/src/main.rs`, `crates/wraith-cli/Cargo.toml`
+
+#### Minor: libayatana-appindicator Deprecation Warning
+**Issue:** Deprecation warning on every wraith-transfer invocation about libayatana-appindicator3
+- **Root Cause:** Unused system tray feature was enabled in Tauri configuration
+- **Fix:** Removed tray-icon feature from Cargo.toml and commented out systemTray config in tauri.conf.json
+- **Impact:** Clean CLI output without deprecation warnings
+- **Files:** `clients/wraith-transfer/src-tauri/Cargo.toml`, `clients/wraith-transfer/src-tauri/tauri.conf.json`
+
+### Added
+
+#### Documentation
+- **Desktop App Troubleshooting:** Added Section 6 to TROUBLESHOOTING.md for desktop application issues
+  - Logger initialization panic resolution steps
+  - Keygen command usage without config file
+  - libayatana-appindicator warning fix
+- **TAURI_WARNINGS_FIX.md:** Step-by-step resolution guide for libayatana-appindicator warning
+- **TAURI_WARNINGS_RESOLUTION.md:** Detailed root cause analysis and implementation notes
+- **TAURI_WARNINGS_SUMMARY.md:** Summary of deprecation warning issue and resolution
+
+### Changed
+
+#### Dependencies
+- Added `shellexpand = "3.1"` to wraith-cli for tilde expansion in config paths
+
+### Quality Assurance
+
+- **Tests:** All 1,303 tests passing (1,280 active + 23 ignored)
+- **Clippy:** Zero warnings with `-D warnings` flag
+- **Security:** Zero vulnerabilities (cargo audit clean)
+- **Verification:**
+  - wraith-transfer starts successfully without panic
+  - wraith keygen works without config file
+  - No deprecation warnings on wraith-transfer invocation
+
+---
+
 ## [1.5.5] - 2025-12-08 - Technical Debt & Quality Release
 
 **WRAITH Protocol v1.5.5 - Code Quality & Technical Debt Remediation**
