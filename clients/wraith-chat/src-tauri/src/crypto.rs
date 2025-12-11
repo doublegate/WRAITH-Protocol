@@ -88,23 +88,33 @@ impl DoubleRatchet {
         hkdf.expand(b"wraith-chat-send-chain", &mut sending_chain_key)
             .map_err(|_| CryptoError::KdfFailed)?;
 
-        let mut ratchet = Self {
+        // If we're the responder, set up receiving chain to match initiator's sending chain
+        // The receiving chain must be derived from the same source as the initiator's sending chain
+        // so that decryption works. DH ratchet only happens when we send a reply or receive
+        // a message with a new DH public key.
+        let (receiving_chain_key, dh_receiving_public) = if let Some(remote_pub) = remote_public_key
+        {
+            // Derive receiving chain from shared secret (same as initiator's sending chain)
+            let mut recv_chain_key = vec![0u8; 32];
+            hkdf.expand(b"wraith-chat-send-chain", &mut recv_chain_key)
+                .map_err(|_| CryptoError::KdfFailed)?;
+            (Some(recv_chain_key), Some(remote_pub.to_vec()))
+        } else {
+            (None, None)
+        };
+
+        let ratchet = Self {
             root_key,
             sending_chain_key,
-            receiving_chain_key: None,
+            receiving_chain_key,
             dh_sending_secret,
             dh_sending_public,
-            dh_receiving_public: None,
+            dh_receiving_public,
             sending_chain_index: 0,
             receiving_chain_index: 0,
             previous_sending_chain_length: 0,
             skipped_keys: HashMap::new(),
         };
-
-        // If we're the responder, perform initial DH ratchet
-        if let Some(remote_pub) = remote_public_key {
-            ratchet.dh_ratchet_receive(remote_pub)?;
-        }
 
         Ok(ratchet)
     }
