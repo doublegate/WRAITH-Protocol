@@ -40,14 +40,5 @@
     "shortDescription": "Secure peer-to-peer file transfer",
     "longDescription": "WRAITH Transfer is a cross-platform desktop application for secure, private file transfers using the WRAITH Protocol."
   },
-  "plugins": {
-    "dialog": {
-      "all": true,
-      "open": true,
-      "save": true
-    },
-    "fs": {
-      "scope": ["$HOME/**"]
-    }
-  }
+  "plugins": {}
 }
