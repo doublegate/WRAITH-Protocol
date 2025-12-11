@@ -58,15 +58,15 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Send a file to a peer
+    /// Send a file to one or more peers
     Send {
         /// File to send
         #[arg(required = true)]
         file: String,
 
-        /// Recipient peer ID or address
+        /// Recipient peer ID or address (can be specified multiple times)
         #[arg(required = true)]
-        recipient: String,
+        recipient: Vec<String>,
 
         /// Obfuscation mode
         #[arg(long, default_value = "privacy")]
@@ -97,6 +97,14 @@ enum Commands {
         /// Listen address
         #[arg(short, long, default_value = "0.0.0.0:0")]
         bind: String,
+
+        /// Automatically accept transfers without prompting
+        #[arg(long)]
+        auto_accept: bool,
+
+        /// Comma-separated list of trusted peer IDs (only accept from these peers)
+        #[arg(long)]
+        trusted_peers: Option<String>,
     },
 
     /// Run as background daemon
@@ -150,6 +158,45 @@ enum Commands {
         /// Output file for private key
         #[arg(short, long)]
         output: Option<String>,
+    },
+
+    /// Ping a peer to measure connectivity
+    Ping {
+        /// Peer ID to ping
+        #[arg(required = true)]
+        peer: String,
+
+        /// Number of ping packets to send
+        #[arg(short, long, default_value = "4")]
+        count: u32,
+
+        /// Interval between pings in milliseconds
+        #[arg(short, long, default_value = "1000")]
+        interval: u64,
+    },
+
+    /// View or modify configuration
+    Config {
+        #[command(subcommand)]
+        action: ConfigAction,
+    },
+}
+
+#[derive(Subcommand)]
+enum ConfigAction {
+    /// Show current configuration
+    Show {
+        /// Show specific configuration key
+        key: Option<String>,
+    },
+
+    /// Set a configuration value
+    Set {
+        /// Configuration key to set
+        key: String,
+
+        /// Value to set
+        value: String,
     },
 }
 
@@ -277,8 +324,20 @@ async fn main() -> anyhow::Result<()> {
         Commands::Batch { files, to, mode } => {
             send_batch(files, to, mode, &config).await?;
         }
-        Commands::Receive { output, bind } => {
-            receive_files(PathBuf::from(output), bind, &config).await?;
+        Commands::Receive {
+            output,
+            bind,
+            auto_accept,
+            trusted_peers,
+        } => {
+            receive_files(
+                PathBuf::from(output),
+                bind,
+                auto_accept,
+                trusted_peers,
+                &config,
+            )
+            .await?;
         }
         Commands::Daemon { bind, relay } => {
             run_daemon(bind, relay, &config).await?;
@@ -302,6 +361,21 @@ async fn main() -> anyhow::Result<()> {
             // Already handled above before config loading
             unreachable!("Keygen command should have been handled earlier")
         }
+        Commands::Ping {
+            peer,
+            count,
+            interval,
+        } => {
+            ping_peer(peer, count, interval, &config).await?;
+        }
+        Commands::Config { action } => match action {
+            ConfigAction::Show { key } => {
+                config_show(key, &config).await?;
+            }
+            ConfigAction::Set { key, value } => {
+                config_set(key, value, &cli.config).await?;
+            }
+        },
     }
 
     Ok(())
@@ -493,10 +567,10 @@ fn prompt_passphrase(prompt: &str, confirm: bool) -> anyhow::Result<String> {
     Ok(passphrase)
 }
 
-/// Send a file to a recipient
+/// Send a file to one or more recipients
 async fn send_file(
     file: PathBuf,
-    recipient: String,
+    recipients: Vec<String>,
     _mode: String,
     config: &Config,
 ) -> anyhow::Result<()> {
@@ -514,12 +588,19 @@ async fn send_file(
         .and_then(|n| n.to_str())
         .unwrap_or("unknown");
 
-    // Parse peer ID
-    let peer_id = parse_peer_id(&recipient)?;
+    // Parse all peer IDs
+    let mut peer_ids = Vec::new();
+    for recipient in &recipients {
+        let peer_id = parse_peer_id(recipient)?;
+        peer_ids.push(peer_id);
+    }
 
     println!("File: {}", file.display());
     println!("Size: {}", format_bytes(file_size));
-    println!("Recipient: {}", hex::encode(&peer_id[..8]));
+    println!("Recipients: {}", peer_ids.len());
+    for (idx, peer_id) in peer_ids.iter().enumerate() {
+        println!("  {}: {}", idx + 1, hex::encode(&peer_id[..8]));
+    }
     println!();
 
     // Create and start node
@@ -534,34 +615,78 @@ async fn send_file(
     println!("Listening on: {}", listen_addr);
     println!();
 
-    // Create progress bar
-    let progress = TransferProgress::new(file_size, filename);
+    // Send file to each recipient
+    let mut transfer_ids = Vec::new();
+    for (idx, peer_id) in peer_ids.iter().enumerate() {
+        println!(
+            "[{}/{}] Sending to {}...",
+            idx + 1,
+            peer_ids.len(),
+            hex::encode(&peer_id[..8])
+        );
 
-    // Send file using Node API
-    tracing::info!("Establishing session with peer...");
-    let transfer_id = node.send_file(&file, &peer_id).await?;
+        // Send file using Node API
+        tracing::info!("Establishing session with peer...");
+        let transfer_id = node.send_file(&file, peer_id).await?;
+        transfer_ids.push(transfer_id);
 
-    println!("Transfer started: {}", hex::encode(&transfer_id[..8]));
-    progress.finish_with_message("Sending file...".to_string());
+        println!("  Transfer started: {}", hex::encode(&transfer_id[..8]));
+    }
 
-    // Wait for transfer completion with progress updates
-    let progress = TransferProgress::new(file_size, filename);
+    println!();
+    println!("Monitoring {} transfer(s)...", transfer_ids.len());
+
+    // Wait for all transfers to complete
+    let progress = TransferProgress::new(file_size * peer_ids.len() as u64, filename);
+    let mut completed = vec![false; transfer_ids.len()];
+    let mut total_sent = 0u64;
+
     loop {
-        if let Some(transfer_progress) = node.get_transfer_progress(&transfer_id).await {
-            progress.update(transfer_progress.bytes_sent);
+        let mut all_done = true;
 
-            if transfer_progress.status == wraith_core::node::progress::TransferStatus::Complete {
-                progress.finish_with_message(format!(
-                    "Transfer complete: {} sent",
-                    format_bytes(transfer_progress.bytes_sent)
-                ));
-                break;
+        for (idx, transfer_id) in transfer_ids.iter().enumerate() {
+            if completed[idx] {
+                continue;
             }
 
-            if transfer_progress.status == wraith_core::node::progress::TransferStatus::Failed {
-                progress.finish_with_message("Transfer failed".to_string());
-                anyhow::bail!("Transfer failed");
+            if let Some(transfer_progress) = node.get_transfer_progress(transfer_id).await {
+                if transfer_progress.status == wraith_core::node::progress::TransferStatus::Complete
+                {
+                    completed[idx] = true;
+                    total_sent += file_size;
+                    println!(
+                        "Transfer {} complete: {} sent to {}",
+                        hex::encode(&transfer_id[..8]),
+                        format_bytes(file_size),
+                        hex::encode(&peer_ids[idx][..8])
+                    );
+                } else if transfer_progress.status
+                    == wraith_core::node::progress::TransferStatus::Failed
+                {
+                    completed[idx] = true;
+                    println!(
+                        "Transfer {} failed to {}",
+                        hex::encode(&transfer_id[..8]),
+                        hex::encode(&peer_ids[idx][..8])
+                    );
+                } else {
+                    all_done = false;
+                }
+            } else {
+                all_done = false;
             }
+        }
+
+        progress.update(total_sent);
+
+        if all_done {
+            let successful = completed.iter().filter(|&&c| c).count();
+            progress.finish_with_message(format!(
+                "All transfers complete: {}/{} successful",
+                successful,
+                transfer_ids.len()
+            ));
+            break;
         }
 
         tokio::time::sleep(Duration::from_millis(100)).await;
@@ -575,10 +700,25 @@ async fn send_file(
 }
 
 /// Receive files from peers
-async fn receive_files(output: PathBuf, _bind: String, config: &Config) -> anyhow::Result<()> {
+async fn receive_files(
+    output: PathBuf,
+    _bind: String,
+    auto_accept: bool,
+    trusted_peers: Option<String>,
+    config: &Config,
+) -> anyhow::Result<()> {
     // Create output directory if it doesn't exist
     if !output.exists() {
         std::fs::create_dir_all(&output)?;
+    }
+
+    // Parse trusted peers if provided
+    let mut trusted_peer_ids = Vec::new();
+    if let Some(peers_str) = trusted_peers {
+        for peer_str in peers_str.split(',') {
+            let peer_id = parse_peer_id(peer_str.trim())?;
+            trusted_peer_ids.push(peer_id);
+        }
     }
 
     // Create and start node
@@ -595,6 +735,13 @@ async fn receive_files(output: PathBuf, _bind: String, config: &Config) -> anyho
     println!("Node ID: {}", hex::encode(node.node_id()));
     println!("Listening on: {}", listen_addr);
     println!("Output directory: {}", output.display());
+    println!("Auto-accept: {}", auto_accept);
+    if !trusted_peer_ids.is_empty() {
+        println!("Trusted peers: {}", trusted_peer_ids.len());
+        for (idx, peer_id) in trusted_peer_ids.iter().enumerate() {
+            println!("  {}: {}", idx + 1, hex::encode(&peer_id[..8]));
+        }
+    }
     println!();
     println!("Ready to receive files. Press Ctrl+C to stop");
     println!();
@@ -603,6 +750,8 @@ async fn receive_files(output: PathBuf, _bind: String, config: &Config) -> anyho
     let node_arc = Arc::new(node);
     let node_clone = Arc::clone(&node_arc);
     let output_clone = output.clone();
+    let _auto_accept = auto_accept;
+    let _trusted_peer_ids = trusted_peer_ids;
 
     tokio::spawn(async move {
         loop {
@@ -787,11 +936,12 @@ async fn send_batch(
 /// Show node status
 async fn show_status(
     transfer: Option<String>,
-    _detailed: bool,
+    detailed: bool,
     config: &Config,
 ) -> anyhow::Result<()> {
     println!("WRAITH Protocol Status");
     println!("Version: {}", env!("CARGO_PKG_VERSION"));
+    println!("Build: {} edition", env!("CARGO_PKG_RUST_VERSION"));
     println!();
 
     if let Some(transfer_id_str) = transfer {
@@ -804,6 +954,7 @@ async fn show_status(
         return Ok(());
     }
 
+    // Basic status information
     println!("Configuration:");
     println!("  Listen: {}", config.network.listen_addr);
     println!("  Obfuscation: {}", config.obfuscation.default_level);
@@ -816,6 +967,11 @@ async fn show_status(
 
     println!("Network:");
     println!("  XDP: {}", config.network.enable_xdp);
+    if config.network.enable_xdp {
+        if let Some(iface) = &config.network.xdp_interface {
+            println!("  XDP interface: {}", iface);
+        }
+    }
     println!("  UDP fallback: {}", config.network.udp_fallback);
     println!();
 
@@ -827,6 +983,58 @@ async fn show_status(
     println!("  Relay servers: {}", config.discovery.relay_servers.len());
     println!();
 
+    // Detailed information
+    if detailed {
+        println!("Detailed Configuration:");
+        println!();
+
+        println!("  Obfuscation:");
+        println!("    Default level: {}", config.obfuscation.default_level);
+        println!("    TLS mimicry: {}", config.obfuscation.tls_mimicry);
+        println!();
+
+        println!("  Transfer:");
+        println!(
+            "    Chunk size: {}",
+            format_bytes(config.transfer.chunk_size as u64)
+        );
+        println!("    Max concurrent: {}", config.transfer.max_concurrent);
+        println!("    Enable resume: {}", config.transfer.enable_resume);
+        println!();
+
+        println!("  Logging:");
+        println!("    Level: {}", config.logging.level);
+        if let Some(file) = &config.logging.file {
+            println!("    File: {}", file.display());
+        }
+        println!();
+
+        println!("  Bootstrap Nodes:");
+        for (idx, node) in config.discovery.bootstrap_nodes.iter().enumerate() {
+            println!("    {}: {}", idx + 1, node);
+        }
+        println!();
+
+        if !config.discovery.relay_servers.is_empty() {
+            println!("  Relay Servers:");
+            for (idx, server) in config.discovery.relay_servers.iter().enumerate() {
+                println!("    {}: {}", idx + 1, server);
+            }
+            println!();
+        }
+
+        // Platform information
+        println!("Platform:");
+        println!("  OS: {}", std::env::consts::OS);
+        println!("  Architecture: {}", std::env::consts::ARCH);
+        println!("  io_uring support: {}", cfg!(target_os = "linux"));
+        println!();
+    }
+
+    println!("NOTE: Runtime status requires a running daemon.");
+    println!("Start a daemon with: wraith daemon");
+    println!("Then query status via IPC (future feature)");
+
     Ok(())
 }
 
@@ -835,45 +1043,87 @@ async fn list_peers(dht_query: Option<String>, config: &Config) -> anyhow::Resul
     if let Some(peer_id_str) = dht_query {
         let peer_id = parse_peer_id(&peer_id_str)?;
 
-        println!("Querying DHT for peer: {}", hex::encode(&peer_id[..8]));
+        println!("DHT Peer Query");
+        println!("Peer ID: {}", hex::encode(peer_id));
         println!();
 
         // Create temporary node for DHT query
         let node_config = create_node_config(config);
         let node = Node::new_with_config(node_config).await?;
+
+        println!("Starting node for DHT query...");
         node.start().await?;
+
+        let listen_addr = node.listen_addr().await?;
+        println!("Node started: {}", hex::encode(node.node_id()));
+        println!("Listening on: {}", listen_addr);
+        println!();
 
         println!("Discovering peer via DHT...");
         match node.discover_peer(&peer_id).await {
             Ok(addrs) => {
-                println!("Peer found:");
-                println!("  ID: {}", hex::encode(peer_id));
-                println!("  Addresses:");
-                for addr in addrs {
-                    println!("    - {}", addr);
+                println!();
+                println!("Peer found successfully!");
+                println!();
+                println!("Details:");
+                println!("  Peer ID: {}", hex::encode(peer_id));
+                println!("  Addresses: {}", addrs.len());
+                for (idx, addr) in addrs.iter().enumerate() {
+                    println!("    {}: {}", idx + 1, addr);
                 }
+                println!();
             }
             Err(e) => {
-                println!("Peer not found: {}", e);
+                println!();
+                println!("Peer discovery failed: {}", e);
+                println!();
+                println!("Possible reasons:");
+                println!("  - Peer is not online");
+                println!("  - Peer ID is invalid");
+                println!("  - DHT network is not reachable");
+                println!("  - Bootstrap nodes are offline");
+                println!();
             }
         }
 
+        println!("Stopping node...");
         node.stop().await?;
+        println!("Node stopped");
+
         return Ok(());
     }
 
-    println!("Connected Peers:");
+    // List mode (no DHT query)
+    println!("Connected Peers");
+    println!("Version: {}", env!("CARGO_PKG_VERSION"));
     println!();
-    println!("NOTE: Listing active peers requires a running daemon.");
-    println!("Start a daemon with: wraith daemon");
-    println!("Then query peer list via IPC (future feature)");
-    println!();
-    println!("Discovery configured:");
+
+    println!("Discovery Configuration:");
     println!(
         "  Bootstrap nodes: {}",
         config.discovery.bootstrap_nodes.len()
     );
+    if !config.discovery.bootstrap_nodes.is_empty() {
+        for (idx, node) in config.discovery.bootstrap_nodes.iter().enumerate() {
+            println!("    {}: {}", idx + 1, node);
+        }
+    }
+    println!();
+
     println!("  Relay servers: {}", config.discovery.relay_servers.len());
+    if !config.discovery.relay_servers.is_empty() {
+        for (idx, server) in config.discovery.relay_servers.iter().enumerate() {
+            println!("    {}: {}", idx + 1, server);
+        }
+    }
+    println!();
+
+    println!("NOTE: Listing active peers requires a running daemon.");
+    println!("Start a daemon with: wraith daemon");
+    println!("Then query peer list via IPC (future feature)");
+    println!();
+    println!("To query a specific peer via DHT, use:");
+    println!("  wraith peers --dht-query <peer-id>");
 
     Ok(())
 }
@@ -1121,6 +1371,286 @@ async fn generate_keypair(output: Option<String>, _config: &Config) -> anyhow::R
         println!("WARNING: Private key not saved (use --output to save)");
         println!("The key will be lost when this program exits.");
     }
+
+    Ok(())
+}
+
+/// Ping a peer to measure connectivity and RTT
+async fn ping_peer(peer: String, count: u32, interval: u64, config: &Config) -> anyhow::Result<()> {
+    // Parse peer ID
+    let peer_id = parse_peer_id(&peer)?;
+
+    println!("WRAITH Ping");
+    println!("Peer: {}", hex::encode(peer_id));
+    println!("Count: {count}, Interval: {interval}ms");
+    println!();
+
+    // Create and start node
+    let node_config = create_node_config(config);
+    let node = Node::new_with_config(node_config).await?;
+
+    tracing::info!("Starting ping node...");
+    node.start().await?;
+
+    println!("Node ID: {}", hex::encode(node.node_id()));
+    println!();
+
+    // Ping statistics
+    let mut rtts = Vec::new();
+    let mut packets_sent = 0u32;
+    let mut packets_received = 0u32;
+
+    for seq in 0..count {
+        packets_sent += 1;
+        let start = std::time::Instant::now();
+
+        print!(
+            "Ping {} ({}/{}): ",
+            hex::encode(&peer_id[..8]),
+            seq + 1,
+            count
+        );
+        std::io::Write::flush(&mut std::io::stdout())?;
+
+        // Attempt to establish connection or use existing session for RTT measurement
+        match node.discover_peer(&peer_id).await {
+            Ok(addrs) => {
+                let rtt = start.elapsed();
+                rtts.push(rtt);
+                packets_received += 1;
+
+                println!(
+                    "time={:.2}ms, addrs={}",
+                    rtt.as_secs_f64() * 1000.0,
+                    addrs.len()
+                );
+            }
+            Err(e) => {
+                println!("timeout ({})", e);
+            }
+        }
+
+        // Wait for interval before next ping (except for last one)
+        if seq < count - 1 {
+            tokio::time::sleep(Duration::from_millis(interval)).await;
+        }
+    }
+
+    println!();
+
+    // Calculate statistics
+    if !rtts.is_empty() {
+        let min_rtt = rtts.iter().min().unwrap();
+        let max_rtt = rtts.iter().max().unwrap();
+        let avg_rtt = rtts.iter().map(|d| d.as_secs_f64()).sum::<f64>() / rtts.len() as f64;
+
+        // Calculate standard deviation for mdev
+        let variance = rtts
+            .iter()
+            .map(|d| {
+                let diff = d.as_secs_f64() - avg_rtt;
+                diff * diff
+            })
+            .sum::<f64>()
+            / rtts.len() as f64;
+        let mdev = variance.sqrt();
+
+        let packet_loss = if packets_sent > 0 {
+            ((packets_sent - packets_received) as f64 / packets_sent as f64) * 100.0
+        } else {
+            0.0
+        };
+
+        println!("--- {} ping statistics ---", hex::encode(&peer_id[..8]));
+        println!(
+            "{} packets transmitted, {} received, {:.1}% packet loss",
+            packets_sent, packets_received, packet_loss
+        );
+        println!(
+            "rtt min/avg/max/mdev = {:.3}/{:.3}/{:.3}/{:.3} ms",
+            min_rtt.as_secs_f64() * 1000.0,
+            avg_rtt * 1000.0,
+            max_rtt.as_secs_f64() * 1000.0,
+            mdev * 1000.0
+        );
+    } else {
+        println!("--- {} ping statistics ---", hex::encode(&peer_id[..8]));
+        println!(
+            "{} packets transmitted, 0 received, 100.0% packet loss",
+            packets_sent
+        );
+    }
+
+    println!();
+
+    // Stop node
+    node.stop().await?;
+
+    Ok(())
+}
+
+/// Show configuration (all or specific key)
+async fn config_show(key: Option<String>, config: &Config) -> anyhow::Result<()> {
+    if let Some(key_name) = key {
+        // Show specific key
+        let key_lower = key_name.to_lowercase();
+
+        match key_lower.as_str() {
+            "network.listen_addr" | "listen_addr" => {
+                println!("{}", config.network.listen_addr);
+            }
+            "network.enable_xdp" | "enable_xdp" => {
+                println!("{}", config.network.enable_xdp);
+            }
+            "network.xdp_interface" | "xdp_interface" => {
+                if let Some(iface) = &config.network.xdp_interface {
+                    println!("{}", iface);
+                } else {
+                    println!("(not set)");
+                }
+            }
+            "network.udp_fallback" | "udp_fallback" => {
+                println!("{}", config.network.udp_fallback);
+            }
+            "obfuscation.default_level" | "default_level" => {
+                println!("{}", config.obfuscation.default_level);
+            }
+            "obfuscation.tls_mimicry" | "tls_mimicry" => {
+                println!("{}", config.obfuscation.tls_mimicry);
+            }
+            "transfer.chunk_size" | "chunk_size" => {
+                println!("{}", config.transfer.chunk_size);
+            }
+            "transfer.max_concurrent" | "max_concurrent" => {
+                println!("{}", config.transfer.max_concurrent);
+            }
+            "transfer.enable_resume" | "enable_resume" => {
+                println!("{}", config.transfer.enable_resume);
+            }
+            _ => {
+                anyhow::bail!("Unknown configuration key: {}", key_name);
+            }
+        }
+    } else {
+        // Show all configuration
+        println!("WRAITH Configuration");
+        println!();
+
+        println!("[network]");
+        println!("  listen_addr = \"{}\"", config.network.listen_addr);
+        println!("  enable_xdp = {}", config.network.enable_xdp);
+        if let Some(iface) = &config.network.xdp_interface {
+            println!("  xdp_interface = \"{}\"", iface);
+        }
+        println!("  udp_fallback = {}", config.network.udp_fallback);
+        println!();
+
+        println!("[obfuscation]");
+        println!("  default_level = \"{}\"", config.obfuscation.default_level);
+        println!("  tls_mimicry = {}", config.obfuscation.tls_mimicry);
+        println!();
+
+        println!("[transfer]");
+        println!("  chunk_size = {}", config.transfer.chunk_size);
+        println!("  max_concurrent = {}", config.transfer.max_concurrent);
+        println!("  enable_resume = {}", config.transfer.enable_resume);
+        println!();
+
+        println!("[discovery]");
+        println!(
+            "  bootstrap_nodes = {} configured",
+            config.discovery.bootstrap_nodes.len()
+        );
+        println!(
+            "  relay_servers = {} configured",
+            config.discovery.relay_servers.len()
+        );
+        println!();
+
+        println!("[logging]");
+        println!("  level = \"{}\"", config.logging.level);
+        println!("  file = {:?}", config.logging.file);
+    }
+
+    Ok(())
+}
+
+/// Set a configuration value
+async fn config_set(key: String, value: String, config_path: &str) -> anyhow::Result<()> {
+    // Expand tilde in config path
+    let config_path_buf = if let Some(stripped) = config_path.strip_prefix("~/") {
+        dirs::home_dir()
+            .unwrap_or_else(|| PathBuf::from("/tmp"))
+            .join(stripped)
+    } else {
+        PathBuf::from(config_path)
+    };
+
+    // Load current config
+    let mut config = if config_path_buf.exists() {
+        Config::load(&config_path_buf)?
+    } else {
+        Config::default()
+    };
+
+    // Set the value
+    let key_lower = key.to_lowercase();
+    match key_lower.as_str() {
+        "network.listen_addr" | "listen_addr" => {
+            config.network.listen_addr = value.clone();
+        }
+        "network.enable_xdp" | "enable_xdp" => {
+            config.network.enable_xdp = value
+                .parse()
+                .map_err(|_| anyhow::anyhow!("Invalid boolean value for enable_xdp: {}", value))?;
+        }
+        "network.xdp_interface" | "xdp_interface" => {
+            config.network.xdp_interface = Some(value.clone());
+        }
+        "network.udp_fallback" | "udp_fallback" => {
+            config.network.udp_fallback = value.parse().map_err(|_| {
+                anyhow::anyhow!("Invalid boolean value for udp_fallback: {}", value)
+            })?;
+        }
+        "obfuscation.default_level" | "default_level" => {
+            config.obfuscation.default_level = value.clone();
+        }
+        "obfuscation.tls_mimicry" | "tls_mimicry" => {
+            config.obfuscation.tls_mimicry = value
+                .parse()
+                .map_err(|_| anyhow::anyhow!("Invalid boolean value for tls_mimicry: {}", value))?;
+        }
+        "transfer.chunk_size" | "chunk_size" => {
+            config.transfer.chunk_size = value
+                .parse()
+                .map_err(|_| anyhow::anyhow!("Invalid number for chunk_size: {}", value))?;
+        }
+        "transfer.max_concurrent" | "max_concurrent" => {
+            config.transfer.max_concurrent = value
+                .parse()
+                .map_err(|_| anyhow::anyhow!("Invalid number for max_concurrent: {}", value))?;
+        }
+        "transfer.enable_resume" | "enable_resume" => {
+            config.transfer.enable_resume = value.parse().map_err(|_| {
+                anyhow::anyhow!("Invalid boolean value for enable_resume: {}", value)
+            })?;
+        }
+        "logging.level" | "level" => {
+            config.logging.level = value.clone();
+        }
+        _ => {
+            anyhow::bail!("Unknown configuration key: {}", key);
+        }
+    }
+
+    // Validate the new configuration
+    config.validate()?;
+
+    // Save the configuration
+    config.save(&config_path_buf)?;
+
+    println!("Configuration updated: {} = {}", key, value);
+    println!("Saved to: {}", config_path_buf.display());
 
     Ok(())
 }
@@ -1454,5 +1984,213 @@ mod tests {
         let sanitized = sanitize_path(&nested_path).unwrap();
         assert!(sanitized.exists());
         assert!(sanitized.is_absolute());
+    }
+
+    #[test]
+    fn test_parse_peer_id_valid() {
+        // Valid 64 hex character peer ID
+        let peer_id_hex = "a".repeat(64);
+        let result = parse_peer_id(&peer_id_hex);
+        assert!(result.is_ok());
+
+        let peer_id = result.unwrap();
+        assert_eq!(peer_id.len(), 32);
+    }
+
+    #[test]
+    fn test_parse_peer_id_with_0x_prefix() {
+        let peer_id_hex = format!("0x{}", "b".repeat(64));
+        let result = parse_peer_id(&peer_id_hex);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_parse_peer_id_invalid_length() {
+        let peer_id_hex = "a".repeat(32); // Only 16 bytes
+        let result = parse_peer_id(&peer_id_hex);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("32 bytes"));
+    }
+
+    #[test]
+    fn test_parse_peer_id_invalid_hex() {
+        let invalid_hex = "zzzz".repeat(16);
+        let result = parse_peer_id(&invalid_hex);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_transfer_id_valid() {
+        let transfer_id_hex = "c".repeat(64);
+        let result = parse_transfer_id(&transfer_id_hex);
+        assert!(result.is_ok());
+
+        let transfer_id = result.unwrap();
+        assert_eq!(transfer_id.len(), 32);
+    }
+
+    #[test]
+    fn test_parse_transfer_id_with_0x_prefix() {
+        let transfer_id_hex = format!("0X{}", "d".repeat(64));
+        let result = parse_transfer_id(&transfer_id_hex);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_parse_transfer_id_invalid_length() {
+        let transfer_id_hex = "e".repeat(62); // Not 64 hex chars
+        let result = parse_transfer_id(&transfer_id_hex);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_format_duration() {
+        assert_eq!(format_duration(Duration::from_secs(30)), "30s");
+        assert_eq!(format_duration(Duration::from_secs(90)), "1m 30s");
+        assert_eq!(format_duration(Duration::from_secs(3661)), "1h 1m");
+        assert_eq!(format_duration(Duration::from_secs(7200)), "2h 0m");
+    }
+
+    #[tokio::test]
+    async fn test_config_show_all() {
+        let config = Config::default();
+        // Should not panic when showing all config
+        let result = config_show(None, &config).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_config_show_specific_key() {
+        let config = Config::default();
+
+        // Test valid keys
+        let result = config_show(Some("listen_addr".to_string()), &config).await;
+        assert!(result.is_ok());
+
+        let result = config_show(Some("network.enable_xdp".to_string()), &config).await;
+        assert!(result.is_ok());
+
+        let result = config_show(Some("chunk_size".to_string()), &config).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_config_show_unknown_key() {
+        let config = Config::default();
+
+        let result = config_show(Some("invalid_key".to_string()), &config).await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("Unknown"));
+    }
+
+    #[tokio::test]
+    async fn test_config_set_valid_values() {
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = temp_dir.path().join("test_config.toml");
+        let config_path_str = config_path.to_str().unwrap();
+
+        // Set a valid value
+        let result = config_set(
+            "chunk_size".to_string(),
+            "2097152".to_string(),
+            config_path_str,
+        )
+        .await;
+        assert!(result.is_ok());
+
+        // Verify it was saved
+        assert!(config_path.exists());
+
+        // Load and verify
+        let loaded_config = Config::load(&config_path).unwrap();
+        assert_eq!(loaded_config.transfer.chunk_size, 2_097_152);
+    }
+
+    #[tokio::test]
+    async fn test_config_set_boolean_value() {
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = temp_dir.path().join("test_config.toml");
+        let config_path_str = config_path.to_str().unwrap();
+
+        // Set a boolean value (use tls_mimicry which has no validation constraints)
+        let result = config_set(
+            "tls_mimicry".to_string(),
+            "true".to_string(),
+            config_path_str,
+        )
+        .await;
+        assert!(result.is_ok());
+
+        // Verify it was saved
+        let loaded_config = Config::load(&config_path).unwrap();
+        assert!(loaded_config.obfuscation.tls_mimicry);
+    }
+
+    #[tokio::test]
+    async fn test_config_set_string_value() {
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = temp_dir.path().join("test_config.toml");
+        let config_path_str = config_path.to_str().unwrap();
+
+        // Set a string value
+        let result = config_set(
+            "listen_addr".to_string(),
+            "127.0.0.1:8080".to_string(),
+            config_path_str,
+        )
+        .await;
+        assert!(result.is_ok());
+
+        // Verify it was saved
+        let loaded_config = Config::load(&config_path).unwrap();
+        assert_eq!(loaded_config.network.listen_addr, "127.0.0.1:8080");
+    }
+
+    #[tokio::test]
+    async fn test_config_set_invalid_key() {
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = temp_dir.path().join("test_config.toml");
+        let config_path_str = config_path.to_str().unwrap();
+
+        let result = config_set(
+            "invalid_key".to_string(),
+            "value".to_string(),
+            config_path_str,
+        )
+        .await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("Unknown"));
+    }
+
+    #[tokio::test]
+    async fn test_config_set_invalid_boolean() {
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = temp_dir.path().join("test_config.toml");
+        let config_path_str = config_path.to_str().unwrap();
+
+        let result = config_set(
+            "enable_xdp".to_string(),
+            "not_a_boolean".to_string(),
+            config_path_str,
+        )
+        .await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("Invalid boolean"));
+    }
+
+    #[tokio::test]
+    async fn test_config_set_invalid_number() {
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = temp_dir.path().join("test_config.toml");
+        let config_path_str = config_path.to_str().unwrap();
+
+        let result = config_set(
+            "chunk_size".to_string(),
+            "not_a_number".to_string(),
+            config_path_str,
+        )
+        .await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("Invalid number"));
     }
 }
