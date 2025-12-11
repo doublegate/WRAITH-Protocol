@@ -668,7 +668,7 @@ mod tests {
         // Poll should return up to 16 (batch limit)
         let completions = ctx.poll_completions().unwrap();
         assert!(completions.len() <= 16);
-        assert!(completions.len() > 0);
+        assert!(!completions.is_empty());
     }
 
     #[test]

@@ -28,6 +28,114 @@ use wraith_crypto::signatures::SigningKey as Ed25519SigningKey;
 /// Generated randomly for each new transfer.
 pub type TransferId = [u8; 32];
 
+/// Peer ID (32-byte unique identifier)
+///
+/// Used to identify peers in the network (typically an X25519 public key).
+pub type PeerId = [u8; 32];
+
+/// Error type for parsing hex-encoded identifiers
+#[derive(Debug, thiserror::Error)]
+pub enum ParseError {
+    /// Invalid hexadecimal encoding
+    #[error("Invalid hex encoding: {0}")]
+    InvalidHex(#[from] hex::FromHexError),
+
+    /// Invalid length for the identifier
+    #[error("Invalid length: expected {expected} bytes, got {actual}")]
+    InvalidLength {
+        /// Expected number of bytes
+        expected: usize,
+        /// Actual number of bytes
+        actual: usize,
+    },
+}
+
+/// Parse a peer ID from hex string (with optional 0x prefix)
+///
+/// Accepts hex strings with or without "0x" prefix and converts them to a 32-byte array.
+///
+/// # Arguments
+///
+/// * `input` - Hex string (with or without "0x" prefix)
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - The input is not valid hexadecimal
+/// - The decoded bytes are not exactly 32 bytes
+///
+/// # Example
+///
+/// ```
+/// use wraith_core::node::identity::parse_peer_id;
+///
+/// // With 0x prefix
+/// let peer_id = parse_peer_id("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef").unwrap();
+/// assert_eq!(peer_id.len(), 32);
+///
+/// // Without prefix
+/// let peer_id = parse_peer_id("1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef").unwrap();
+/// assert_eq!(peer_id.len(), 32);
+/// ```
+pub fn parse_peer_id(input: &str) -> std::result::Result<PeerId, ParseError> {
+    parse_fixed_array(input, "Peer ID")
+}
+
+/// Parse a transfer ID from hex string (with optional 0x prefix)
+///
+/// Accepts hex strings with or without "0x" prefix and converts them to a 32-byte array.
+///
+/// # Arguments
+///
+/// * `input` - Hex string (with or without "0x" prefix)
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - The input is not valid hexadecimal
+/// - The decoded bytes are not exactly 32 bytes
+///
+/// # Example
+///
+/// ```
+/// use wraith_core::node::identity::parse_transfer_id;
+///
+/// // With 0x prefix
+/// let transfer_id = parse_transfer_id("0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890").unwrap();
+/// assert_eq!(transfer_id.len(), 32);
+///
+/// // Without prefix
+/// let transfer_id = parse_transfer_id("abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890").unwrap();
+/// assert_eq!(transfer_id.len(), 32);
+/// ```
+pub fn parse_transfer_id(input: &str) -> std::result::Result<TransferId, ParseError> {
+    parse_fixed_array(input, "Transfer ID")
+}
+
+/// Internal helper to parse a fixed-size array from hex string
+fn parse_fixed_array<const N: usize>(
+    input: &str,
+    _name: &str,
+) -> std::result::Result<[u8; N], ParseError> {
+    let input = input.trim();
+    let bytes = if input.starts_with("0x") || input.starts_with("0X") {
+        hex::decode(&input[2..])?
+    } else {
+        hex::decode(input)?
+    };
+
+    if bytes.len() != N {
+        return Err(ParseError::InvalidLength {
+            expected: N,
+            actual: bytes.len(),
+        });
+    }
+
+    let mut result = [0u8; N];
+    result.copy_from_slice(&bytes);
+    Ok(result)
+}
+
 /// Node identity containing cryptographic keypairs
 ///
 /// The identity combines an Ed25519 keypair (for node identification) with
@@ -127,6 +235,7 @@ impl Identity {
     ///
     /// For session lookups, use [`Self::x25519_public_key`] instead, since
     /// sessions are keyed by X25519 public keys from the Noise handshake.
+    #[must_use]
     pub fn public_key(&self) -> &[u8; 32] {
         &self.node_id
     }
@@ -135,6 +244,7 @@ impl Identity {
     ///
     /// Returns the X25519 public key used in Noise handshakes.
     /// This is the key that identifies the node in sessions.
+    #[must_use]
     pub fn x25519_public_key(&self) -> &[u8; 32] {
         self.x25519.public_key()
     }
@@ -143,6 +253,7 @@ impl Identity {
     ///
     /// Returns a reference to the full keypair, including the private key.
     /// This is needed for performing Noise handshakes.
+    #[must_use]
     pub fn x25519_keypair(&self) -> &NoiseKeypair {
         &self.x25519
     }
@@ -216,5 +327,74 @@ mod tests {
     fn test_transfer_id_type() {
         let transfer_id: TransferId = [0u8; 32];
         assert_eq!(transfer_id.len(), 32);
+    }
+
+    #[test]
+    fn test_parse_peer_id_with_prefix() {
+        let input = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
+        let result = parse_peer_id(input).unwrap();
+        assert_eq!(result.len(), 32);
+        assert_eq!(result[0], 0x12);
+        assert_eq!(result[1], 0x34);
+    }
+
+    #[test]
+    fn test_parse_peer_id_without_prefix() {
+        let input = "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
+        let result = parse_peer_id(input).unwrap();
+        assert_eq!(result.len(), 32);
+        assert_eq!(result[0], 0x12);
+        assert_eq!(result[1], 0x34);
+    }
+
+    #[test]
+    fn test_parse_peer_id_uppercase_prefix() {
+        let input = "0X1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF";
+        let result = parse_peer_id(input).unwrap();
+        assert_eq!(result.len(), 32);
+    }
+
+    #[test]
+    fn test_parse_peer_id_invalid_length() {
+        let input = "0x1234"; // Too short
+        let result = parse_peer_id(input);
+        assert!(result.is_err());
+        assert!(matches!(
+            result.unwrap_err(),
+            ParseError::InvalidLength { .. }
+        ));
+    }
+
+    #[test]
+    fn test_parse_peer_id_invalid_hex() {
+        let input = "0xzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz";
+        let result = parse_peer_id(input);
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), ParseError::InvalidHex(_)));
+    }
+
+    #[test]
+    fn test_parse_transfer_id_with_prefix() {
+        let input = "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890";
+        let result = parse_transfer_id(input).unwrap();
+        assert_eq!(result.len(), 32);
+        assert_eq!(result[0], 0xab);
+        assert_eq!(result[1], 0xcd);
+    }
+
+    #[test]
+    fn test_parse_transfer_id_without_prefix() {
+        let input = "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890";
+        let result = parse_transfer_id(input).unwrap();
+        assert_eq!(result.len(), 32);
+        assert_eq!(result[0], 0xab);
+        assert_eq!(result[1], 0xcd);
+    }
+
+    #[test]
+    fn test_parse_transfer_id_whitespace() {
+        let input = " \t0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890  \n";
+        let result = parse_transfer_id(input).unwrap();
+        assert_eq!(result.len(), 32);
     }
 }

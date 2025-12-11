@@ -243,7 +243,7 @@ mod tests {
 
     #[test]
     fn test_transport_error_from_io() {
-        let io_err = std::io::Error::new(std::io::ErrorKind::Other, "test");
+        let io_err = std::io::Error::other("test");
         let transport_err = TransportError::from(io_err);
 
         assert!(matches!(transport_err, TransportError::Io(_)));

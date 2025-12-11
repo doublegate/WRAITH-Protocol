@@ -340,13 +340,19 @@ mod tests {
 
     #[test]
     fn test_constants() {
-        assert_eq!(MAX_PROBE_ATTEMPTS, 20);
-        assert!(MAX_PROBE_ATTEMPTS > 0);
+        // Verify constants are reasonable values
+        // Note: These are compile-time constants, but we verify their values
+        let max_probe_val = MAX_PROBE_ATTEMPTS;
+        let max_port_val = MAX_PORT_RANGE;
+        let probe_interval_val = PROBE_INTERVAL;
 
-        assert_eq!(MAX_PORT_RANGE, 10);
-        assert!(MAX_PORT_RANGE > 0);
+        assert_eq!(max_probe_val, 20);
+        assert!(max_probe_val > 0);
 
-        assert_eq!(PROBE_INTERVAL, Duration::from_millis(100));
+        assert_eq!(max_port_val, 10);
+        assert!(max_port_val > 0);
+
+        assert_eq!(probe_interval_val, Duration::from_millis(100));
         assert_eq!(PROBE_TIMEOUT, Duration::from_millis(50));
     }
 

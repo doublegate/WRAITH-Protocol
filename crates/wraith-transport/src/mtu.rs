@@ -533,7 +533,7 @@ mod tests {
 
     #[test]
     fn test_mtu_error_from_io() {
-        let io_err = std::io::Error::new(std::io::ErrorKind::Other, "test");
+        let io_err = std::io::Error::other("test");
         let mtu_err = MtuError::from(io_err);
 
         assert!(matches!(mtu_err, MtuError::Io(_)));
@@ -602,9 +602,16 @@ mod tests {
 
     #[test]
     fn test_mtu_constants_relationships() {
-        assert!(MIN_MTU <= ETHERNET_MTU);
-        assert!(ETHERNET_MTU <= MAX_MTU);
-        assert_eq!(DEFAULT_MTU, MIN_MTU);
+        // Test relationships between MTU constants
+        // Note: These are compile-time constants, but we verify their relationships
+        let min_mtu_val = MIN_MTU;
+        let ethernet_mtu_val = ETHERNET_MTU;
+        let max_mtu_val = MAX_MTU;
+        let default_mtu_val = DEFAULT_MTU;
+
+        assert!(min_mtu_val <= ethernet_mtu_val);
+        assert!(ethernet_mtu_val <= max_mtu_val);
+        assert_eq!(default_mtu_val, min_mtu_val);
     }
 
     #[test]

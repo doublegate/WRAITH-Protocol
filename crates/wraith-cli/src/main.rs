@@ -206,44 +206,14 @@ enum ConfigAction {
 
 /// Parse hex string to PeerId (32-byte array)
 fn parse_peer_id(s: &str) -> anyhow::Result<PeerId> {
-    let s = s.trim();
-    let bytes = if s.starts_with("0x") || s.starts_with("0X") {
-        hex::decode(&s[2..])?
-    } else {
-        hex::decode(s)?
-    };
-
-    if bytes.len() != 32 {
-        anyhow::bail!(
-            "Peer ID must be 32 bytes (64 hex characters), got {}",
-            bytes.len()
-        );
-    }
-
-    let mut peer_id = [0u8; 32];
-    peer_id.copy_from_slice(&bytes);
-    Ok(peer_id)
+    wraith_core::node::identity::parse_peer_id(s)
+        .map_err(|e| anyhow::anyhow!("Failed to parse peer ID: {}", e))
 }
 
 /// Parse hex string to TransferId (32-byte array)
 fn parse_transfer_id(s: &str) -> anyhow::Result<TransferId> {
-    let s = s.trim();
-    let bytes = if s.starts_with("0x") || s.starts_with("0X") {
-        hex::decode(&s[2..])?
-    } else {
-        hex::decode(s)?
-    };
-
-    if bytes.len() != 32 {
-        anyhow::bail!(
-            "Transfer ID must be 32 bytes (64 hex characters), got {}",
-            bytes.len()
-        );
-    }
-
-    let mut transfer_id = [0u8; 32];
-    transfer_id.copy_from_slice(&bytes);
-    Ok(transfer_id)
+    wraith_core::node::identity::parse_transfer_id(s)
+        .map_err(|e| anyhow::anyhow!("Failed to parse transfer ID: {}", e))
 }
 
 /// Format duration as human-readable string

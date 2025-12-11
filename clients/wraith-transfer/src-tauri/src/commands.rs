@@ -137,15 +137,8 @@ pub async fn close_session(state: State<'_, AppState>, peer_id: String) -> AppRe
         return Err(AppError::NodeNotRunning);
     };
 
-    let peer_bytes =
-        hex::decode(&peer_id).map_err(|e| AppError::InvalidPeerId(format!("Invalid hex: {e}")))?;
-
-    if peer_bytes.len() != 32 {
-        return Err(AppError::InvalidPeerId("Peer ID must be 32 bytes".into()));
-    }
-
-    let mut peer_id_arr = [0u8; 32];
-    peer_id_arr.copy_from_slice(&peer_bytes);
+    let peer_id_arr = wraith_core::node::identity::parse_peer_id(&peer_id)
+        .map_err(|e| AppError::InvalidPeerId(format!("Failed to parse peer ID: {e}")))?;
 
     node.close_session(&peer_id_arr)
         .await
@@ -167,15 +160,8 @@ pub async fn send_file(
         return Err(AppError::NodeNotRunning);
     };
 
-    let peer_bytes =
-        hex::decode(&peer_id).map_err(|e| AppError::InvalidPeerId(format!("Invalid hex: {e}")))?;
-
-    if peer_bytes.len() != 32 {
-        return Err(AppError::InvalidPeerId("Peer ID must be 32 bytes".into()));
-    }
-
-    let mut peer_id_arr = [0u8; 32];
-    peer_id_arr.copy_from_slice(&peer_bytes);
+    let peer_id_arr = wraith_core::node::identity::parse_peer_id(&peer_id)
+        .map_err(|e| AppError::InvalidPeerId(format!("Failed to parse peer ID: {e}")))?;
 
     let path = PathBuf::from(&file_path);
     if !path.exists() {
