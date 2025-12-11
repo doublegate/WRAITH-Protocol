@@ -2,6 +2,14 @@
 //!
 //! Provides bidirectional encrypted communication with automatic nonce
 //! management, replay protection, and key-committing AEAD.
+//!
+//! # Lint Note
+//!
+//! This module allows `unused_assignments` because Rust 1.92+ incorrectly flags
+//! struct fields with `#[zeroize(skip)]` as "assigned but never read" due to
+//! the `ZeroizeOnDrop` derive macro not reading those fields in Drop. The fields
+//! ARE actively used in the struct's methods.
+#![allow(unused_assignments)]
 
 use super::cipher::{AeadKey, Nonce};
 use super::replay::ReplayProtection;

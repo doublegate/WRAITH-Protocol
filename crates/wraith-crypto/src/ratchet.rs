@@ -13,6 +13,14 @@
 //! - Separate sending and receiving chain keys
 //! - Current DH keypair for the DH ratchet
 //!
+//! # Lint Note
+//!
+//! This module allows `unused_assignments` because Rust 1.92+ incorrectly flags
+//! struct fields with `#[zeroize(skip)]` as "assigned but never read" due to
+//! the `ZeroizeOnDrop` derive macro not reading those fields in Drop. The fields
+//! ARE actively used in the struct's methods.
+#![allow(unused_assignments)]
+//!
 //! ## Security Properties
 //!
 //! - **Forward Secrecy**: Compromising current keys doesn't reveal past messages
