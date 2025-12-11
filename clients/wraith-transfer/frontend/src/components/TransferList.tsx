@@ -1,5 +1,6 @@
 // WRAITH Transfer - Transfer List Component
 
+import { useEffect, useRef } from 'react';
 import { useTransferStore } from '../stores/transferStore';
 import type { TransferInfo } from '../types';
 
@@ -11,9 +12,51 @@ function formatBytes(bytes: number): string {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
+function formatSpeed(bytesPerSecond: number): string {
+  if (bytesPerSecond === 0) return '0 B/s';
+  const k = 1024;
+  const sizes = ['B/s', 'KB/s', 'MB/s', 'GB/s'];
+  const i = Math.floor(Math.log(bytesPerSecond) / Math.log(k));
+  return parseFloat((bytesPerSecond / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function formatETA(seconds: number): string {
+  if (!isFinite(seconds) || seconds < 0) return '--:--';
+
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
+  return `${minutes}:${secs.toString().padStart(2, '0')}`;
+}
+
 function TransferItem({ transfer }: { transfer: TransferInfo }) {
   const { cancelTransfer } = useTransferStore();
   const progressPercent = Math.round(transfer.progress * 100);
+
+  // Track previous state for speed calculation
+  const prevBytesRef = useRef(transfer.transferred_bytes);
+  const prevTimeRef = useRef(Date.now());
+  const speedRef = useRef(0);
+
+  useEffect(() => {
+    const now = Date.now();
+    const timeDiff = (now - prevTimeRef.current) / 1000; // seconds
+
+    if (timeDiff >= 1.0 && transfer.status === 'in_progress') {
+      const bytesDiff = transfer.transferred_bytes - prevBytesRef.current;
+      speedRef.current = bytesDiff / timeDiff;
+      prevBytesRef.current = transfer.transferred_bytes;
+      prevTimeRef.current = now;
+    }
+  }, [transfer.transferred_bytes, transfer.status]);
+
+  const speed = speedRef.current;
+  const remainingBytes = transfer.total_bytes - transfer.transferred_bytes;
+  const eta = speed > 0 ? remainingBytes / speed : 0;
 
   const statusColors: Record<string, string> = {
     initializing: 'text-yellow-500',
@@ -77,6 +120,17 @@ function TransferItem({ transfer }: { transfer: TransferInfo }) {
             style={{ width: `${progressPercent}%` }}
           />
         </div>
+
+        {isActive && (
+          <div className="flex justify-between text-xs text-slate-500">
+            <span>
+              {speed > 0 ? formatSpeed(speed) : 'Calculating...'}
+            </span>
+            <span>
+              ETA: {eta > 0 && isFinite(eta) ? formatETA(eta) : '--:--'}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

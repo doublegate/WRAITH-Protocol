@@ -4,9 +4,28 @@
 **Tier:** 1 (High Priority)
 **Description:** Cross-platform P2P file transfer GUI application
 **Target Platforms:** Windows, macOS, Linux
-**UI Framework:** Tauri + React/TypeScript
+**UI Framework:** Tauri 2.0 + React/TypeScript + Zustand
 **Timeline:** 12 weeks (3 sprints × 4 weeks)
 **Total Story Points:** 156
+
+**Status:** v1.5.8 - Basic functionality complete, Sprint 1 partially complete
+
+---
+
+## Implementation Status (v1.5.8)
+
+**Current Implementation:**
+- Simplified architecture using wraith-core Node API directly
+- Basic Tauri application with React UI and Zustand state management
+- 10 IPC commands for node/session/transfer management
+- File selection with native dialog (fixed in v1.5.8)
+- Node ID display with click-to-copy (fixed in v1.5.8)
+- Transfer progress tracking
+- Session management
+- NAT detection with STUN (fixed in v1.5.8)
+
+**Divergence from Plan:**
+The actual implementation is simpler than originally planned. Instead of building a complex TransferManager with separate sender/receiver/progress modules, the application uses wraith-core's Node API directly. This provides all protocol functionality with minimal application-layer code.
 
 ---
 
@@ -15,11 +34,11 @@
 WRAITH-Transfer is the flagship client application providing an intuitive graphical interface for secure peer-to-peer file transfers using the WRAITH protocol. It targets non-technical users who need military-grade security without complexity.
 
 **Core Value Proposition:**
-- Drag-and-drop file transfer between any two devices
+- Click-to-send file transfer between any two devices
 - No account creation or central servers required
-- Traffic indistinguishable from normal HTTPS
+- Encrypted peer-to-peer connections
 - Cross-platform native performance
-- Real-time transfer progress and peer status
+- Real-time transfer progress and session status
 
 ---
 
@@ -117,6 +136,36 @@ WRAITH-Transfer is the flagship client application providing an intuitive graphi
 Establish the Tauri application scaffold and implement core file transfer workflow with basic UI.
 
 **Total Story Points:** 52
+**Actual Points Completed:** ~35 (67%)
+
+### Sprint 1 Actual Status (v1.5.8)
+
+| Task | Planned | Actual | Status | Notes |
+|------|---------|--------|--------|-------|
+| S1.1: Tauri Scaffold | 8 pts | 8 pts | ✅ COMPLETE | Tauri 2.0 with React + TypeScript + Zustand |
+| S1.2: Main Window Layout | 5 pts | 5 pts | ✅ COMPLETE | Simple header, transfer list, session panel layout |
+| S1.3: File Selection | 8 pts | 8 pts | ✅ COMPLETE | Native dialog with browse button (fixed v1.5.8) |
+| S1.4: Peer Connection | 13 pts | 8 pts | ⚠️ PARTIAL | Manual node ID exchange, no discovery UI yet |
+| S1.5: Transfer Progress | 8 pts | 6 pts | ✅ COMPLETE | Basic progress display, no pause/resume yet |
+| S1.6: System Tray | 5 pts | 0 pts | ❌ REMOVED | tray-icon dependency removed in v1.5.6 |
+| S1.7: Settings Panel | 3 pts | 0 pts | ❌ NOT IMPL | No settings UI yet |
+| S1.8: Theme Toggle | 2 pts | 0 pts | ❌ NOT IMPL | Single dark theme only |
+
+**Key Achievements:**
+- Working Tauri desktop application with React UI
+- Node lifecycle management (start/stop)
+- File transfer initiation and progress tracking
+- Session management UI
+- Click-to-copy node ID with tooltip (v1.5.8)
+- Browse button with proper permissions (v1.5.8)
+- NAT detection with Google STUN servers (v1.5.8)
+
+**Deferred to Future Sprints:**
+- Settings panel with configuration options
+- Theme customization (light/dark toggle)
+- System tray integration (may use different approach)
+- Advanced peer discovery UI
+- Transfer pause/resume functionality
 
 ---
 

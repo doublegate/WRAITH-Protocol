@@ -12,13 +12,15 @@ use std::time::Duration;
 use thiserror::Error;
 use tokio::sync::RwLock;
 
-/// Default STUN server 1 (Cloudflare DNS - placeholder for STUN)
+/// Default STUN server 1 (Google Public STUN - stun.l.google.com:19302)
+/// TODO: Implement DNS resolution instead of hardcoded IP
 const DEFAULT_STUN_SERVER_1: SocketAddr =
-    SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::new(1, 1, 1, 1), 3478));
+    SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::new(74, 125, 250, 129), 19302));
 
-/// Default STUN server 2 (Google DNS - placeholder for STUN)
+/// Default STUN server 2 (Google Public STUN - stun1.l.google.com:19302)
+/// TODO: Implement DNS resolution instead of hardcoded IP
 const DEFAULT_STUN_SERVER_2: SocketAddr =
-    SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::new(8, 8, 8, 8), 3478));
+    SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::new(74, 125, 250, 130), 19302));
 
 /// Discovery manager errors
 #[derive(Debug, Error)]
@@ -241,7 +243,7 @@ impl DiscoveryManager {
         // 1. Bootstrap DHT
         self.bootstrap_dht().await?;
 
-        // 2. Detect NAT type
+        // 2. Detect NAT type (non-blocking - failure is not fatal)
         if let Some(detector) = &self.nat_detector {
             match detector.detect().await {
                 Ok(nat_type) => {
@@ -249,7 +251,14 @@ impl DiscoveryManager {
                     println!("Detected NAT type: {nat_type:?}");
                 }
                 Err(e) => {
-                    eprintln!("NAT detection failed: {e:?}");
+                    eprintln!(
+                        "Warning: NAT detection failed ({}), continuing in local mode",
+                        e
+                    );
+                    eprintln!(
+                        "Note: This is not fatal - the node will still function for local connections"
+                    );
+                    *self.nat_type.write().await = Some(NatType::Unknown);
                 }
             }
         }

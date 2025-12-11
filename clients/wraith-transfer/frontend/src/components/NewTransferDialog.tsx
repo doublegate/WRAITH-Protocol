@@ -12,48 +12,112 @@ interface Props {
 export function NewTransferDialog({ isOpen, onClose }: Props) {
   const [peerId, setPeerId] = useState('');
   const [filePath, setFilePath] = useState('');
+  const [validationError, setValidationError] = useState<string | null>(null);
   const { sendFile, loading, error, clearError } = useTransferStore();
 
-  const handleSelectFile = async () => {
-    const selected = await open({
-      multiple: false,
-      title: 'Select file to send',
-    });
+  const validatePeerId = (id: string): boolean => {
+    // Remove any whitespace
+    const trimmedId = id.trim();
 
-    if (selected) {
-      setFilePath(selected as string);
+    // Check length (64 hex chars = 32 bytes)
+    if (trimmedId.length !== 64) {
+      setValidationError('Peer ID must be exactly 64 hexadecimal characters');
+      return false;
+    }
+
+    // Check if valid hex
+    if (!/^[0-9a-fA-F]{64}$/.test(trimmedId)) {
+      setValidationError('Peer ID must contain only hexadecimal characters (0-9, a-f, A-F)');
+      return false;
+    }
+
+    setValidationError(null);
+    return true;
+  };
+
+  const handleSelectFile = async () => {
+    try {
+      const selected = await open({
+        multiple: false,
+        title: 'Select file to send',
+      });
+
+      if (selected) {
+        console.log('File selected:', selected);
+        setFilePath(selected as string);
+      } else {
+        console.log('No file selected (user cancelled)');
+      }
+    } catch (error) {
+      console.error('Error opening file dialog:', error);
     }
   };
 
   const handleSend = async () => {
     if (!peerId || !filePath) return;
 
-    const transferId = await sendFile(peerId, filePath);
+    // Validate peer ID before sending
+    if (!validatePeerId(peerId)) {
+      return;
+    }
+
+    const transferId = await sendFile(peerId.trim(), filePath);
     if (transferId) {
       // Reset form and close
       setPeerId('');
       setFilePath('');
+      setValidationError(null);
       onClose();
+    }
+  };
+
+  const handlePeerIdChange = (value: string) => {
+    setPeerId(value);
+    if (validationError) {
+      setValidationError(null);
     }
   };
 
   const handleClose = () => {
     setPeerId('');
     setFilePath('');
+    setValidationError(null);
     clearError();
     onClose();
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      handleClose();
+    } else if (e.key === 'Enter' && peerId && filePath && !loading) {
+      handleSend();
+    }
+  };
+
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-bg-secondary rounded-xl border border-slate-700 w-full max-w-md p-6">
-        <h2 className="text-xl font-semibold text-white mb-4">New Transfer</h2>
+  const displayError = validationError || error;
 
-        {error && (
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      onClick={handleClose}
+      onKeyDown={handleKeyDown}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="new-transfer-title"
+    >
+      <div
+        className="bg-bg-secondary rounded-xl border border-slate-700 w-full max-w-md p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 id="new-transfer-title" className="text-xl font-semibold text-white mb-4">
+          New Transfer
+        </h2>
+
+        {displayError && (
           <div className="mb-4 p-3 bg-red-900/30 border border-red-700 rounded-lg text-red-400 text-sm">
-            {error}
+            {displayError}
           </div>
         )}
 
@@ -65,10 +129,20 @@ export function NewTransferDialog({ isOpen, onClose }: Props) {
             <input
               type="text"
               value={peerId}
-              onChange={(e) => setPeerId(e.target.value)}
+              onChange={(e) => handlePeerIdChange(e.target.value)}
+              onBlur={() => peerId && validatePeerId(peerId)}
               placeholder="Enter 64-character hex peer ID"
-              className="w-full bg-bg-primary border border-slate-600 rounded-lg px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-wraith-primary font-mono text-sm"
+              className={`w-full bg-bg-primary border rounded-lg px-3 py-2 text-white placeholder-slate-500 focus:outline-none font-mono text-sm ${
+                validationError ? 'border-red-500 focus:border-red-500' : 'border-slate-600 focus:border-wraith-primary'
+              }`}
+              aria-invalid={!!validationError}
+              aria-describedby={validationError ? 'peer-id-error' : undefined}
             />
+            {peerId.length > 0 && (
+              <div className="mt-1 text-xs text-slate-500">
+                {peerId.length}/64 characters
+              </div>
+            )}
           </div>
 
           <div>
@@ -102,9 +176,9 @@ export function NewTransferDialog({ isOpen, onClose }: Props) {
           </button>
           <button
             onClick={handleSend}
-            disabled={!peerId || !filePath || loading}
+            disabled={!peerId || !filePath || loading || !!validationError}
             className={`px-4 py-2 bg-wraith-primary hover:bg-wraith-secondary rounded-lg text-white font-medium transition-colors ${
-              (!peerId || !filePath || loading) ? 'opacity-50 cursor-not-allowed' : ''
+              (!peerId || !filePath || loading || validationError) ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
             {loading ? 'Sending...' : 'Send File'}

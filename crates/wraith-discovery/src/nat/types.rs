@@ -102,18 +102,26 @@ pub struct NatDetector {
 impl NatDetector {
     /// Create a new NAT detector with default STUN servers
     ///
-    /// Note: In production, these IP addresses should be resolved from hostnames
-    /// like "stun.l.google.com" and "stun1.l.google.com". For now, we use
-    /// placeholder addresses that need to be configured with actual STUN servers.
+    /// Uses Google's public STUN servers. Note that these IPs are hardcoded
+    /// and may change. In production, implement DNS resolution for:
+    /// - stun.l.google.com:19302
+    /// - stun1.l.google.com:19302
+    /// - stun2.l.google.com:19302
+    ///
+    /// TODO: Implement DNS-based STUN server resolution
     #[must_use]
     pub fn new() -> Self {
         Self {
             stun_servers: vec![
-                // Placeholder STUN server addresses
-                // In production, resolve: stun.l.google.com:19302
-                "1.1.1.1:3478".parse().expect("valid STUN server address"),
-                // In production, resolve: stun1.l.google.com:19302
-                "8.8.8.8:3478".parse().expect("valid STUN server address"),
+                // Google Public STUN servers (hardcoded IPs)
+                // stun.l.google.com:19302
+                "74.125.250.129:19302"
+                    .parse()
+                    .expect("valid STUN server address"),
+                // stun1.l.google.com:19302
+                "74.125.250.130:19302"
+                    .parse()
+                    .expect("valid STUN server address"),
             ],
         }
     }

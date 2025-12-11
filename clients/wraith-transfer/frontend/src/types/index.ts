@@ -16,6 +16,9 @@ export interface TransferInfo {
   progress: number;
   status: 'initializing' | 'in_progress' | 'completed' | 'failed' | 'cancelled';
   direction: 'upload' | 'download';
+  speed?: number; // bytes per second (calculated client-side)
+  eta?: number; // seconds remaining (calculated client-side)
+  started_at?: number; // timestamp when transfer started
 }
 
 export interface SessionInfo {
@@ -23,6 +26,8 @@ export interface SessionInfo {
   established_at: number;
   bytes_sent: number;
   bytes_received: number;
+  connection_status?: 'connecting' | 'connected' | 'disconnecting' | 'failed';
+  nickname?: string; // User-assigned nickname for peer
 }
 
 export interface ConnectionHealth {
@@ -31,4 +36,12 @@ export interface ConnectionHealth {
   loss_rate: number;
   last_activity: number;
   status: 'healthy' | 'degraded' | 'unhealthy';
+}
+
+export interface Settings {
+  theme: 'light' | 'dark' | 'system';
+  downloadDir: string;
+  maxConcurrentTransfers: number;
+  port: number;
+  autoAcceptTransfers: boolean;
 }

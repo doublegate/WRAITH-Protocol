@@ -14,29 +14,69 @@ function formatBytes(bytes: number): string {
 function SessionItem({ session }: { session: SessionInfo }) {
   const { closeSession } = useSessionStore();
 
+  const connectionStatus = session.connection_status || 'connected';
+  const statusColors: Record<string, string> = {
+    connecting: 'text-yellow-500',
+    connected: 'text-green-500',
+    disconnecting: 'text-orange-500',
+    failed: 'text-red-500',
+  };
+
+  const statusDots: Record<string, string> = {
+    connecting: 'bg-yellow-500 animate-pulse',
+    connected: 'bg-green-500',
+    disconnecting: 'bg-orange-500 animate-pulse',
+    failed: 'bg-red-500',
+  };
+
+  // Calculate connection duration
+  const now = Math.floor(Date.now() / 1000);
+  const duration = now - session.established_at;
+  const formatDuration = (seconds: number): string => {
+    if (seconds < 60) return `${seconds}s`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+    return `${Math.floor(seconds / 3600)}h`;
+  };
+
   return (
     <div className="bg-bg-secondary rounded-lg p-3 border border-slate-700">
       <div className="flex items-center justify-between mb-2">
-        <div className="font-mono text-sm text-white">
-          {session.peer_id.slice(0, 16)}...
+        <div className="flex items-center gap-2">
+          <div
+            className={`w-2 h-2 rounded-full ${statusDots[connectionStatus]}`}
+            title={connectionStatus}
+          />
+          <div className="font-mono text-sm text-white">
+            {session.nickname || `${session.peer_id.slice(0, 16)}...`}
+          </div>
         </div>
         <button
           onClick={() => closeSession(session.peer_id)}
           className="text-xs text-slate-400 hover:text-red-500 transition-colors"
           title="Close session"
         >
-          Disconnect
+          ✕
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 text-xs text-slate-400">
-        <div>
-          <span className="text-slate-500">Sent: </span>
-          {formatBytes(session.bytes_sent)}
+      <div className="space-y-1 text-xs text-slate-400">
+        <div className="flex justify-between">
+          <span className="text-slate-500">Status:</span>
+          <span className={statusColors[connectionStatus]}>
+            {connectionStatus}
+          </span>
         </div>
-        <div>
-          <span className="text-slate-500">Recv: </span>
-          {formatBytes(session.bytes_received)}
+        <div className="flex justify-between">
+          <span className="text-slate-500">Duration:</span>
+          <span>{formatDuration(duration)}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-slate-500">Sent:</span>
+          <span>{formatBytes(session.bytes_sent)}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-slate-500">Recv:</span>
+          <span>{formatBytes(session.bytes_received)}</span>
         </div>
       </div>
     </div>
