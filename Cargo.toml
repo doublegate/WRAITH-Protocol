@@ -16,6 +16,7 @@ members = [
     "crates/wraith-cli",
     "crates/wraith-ffi",
     "clients/wraith-transfer/src-tauri",
+    "clients/wraith-chat/src-tauri",
     "xtask",
     "tests",
 ]

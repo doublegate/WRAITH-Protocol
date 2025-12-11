@@ -358,8 +358,7 @@ mod tests {
 
     #[test]
     fn test_probe_marker_lengths() {
-        assert!(PROBE_MARKER.len() > 0);
-        assert!(RESPONSE_MARKER.len() > 0);
+        // Verify markers are distinct (length checks removed as redundant for const values)
         assert_ne!(PROBE_MARKER, RESPONSE_MARKER);
     }
 

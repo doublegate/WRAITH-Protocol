@@ -1,0 +1,82 @@
+// UniFFI Interface Definition for WRAITH iOS
+namespace wraith {
+    WraithNode create_node(string listen_addr, NodeConfig config);
+};
+
+// Node configuration
+dictionary NodeConfig {
+    u32 max_sessions;
+    u32 max_transfers;
+    u32 buffer_size;
+};
+
+// Session information
+dictionary SessionInfo {
+    string session_id;
+    string peer_id;
+    boolean connected;
+};
+
+// Transfer information
+dictionary TransferInfo {
+    string transfer_id;
+    string peer_id;
+    string file_path;
+    u64 file_size;
+    u64 bytes_transferred;
+    TransferStatus status;
+};
+
+// Node status
+dictionary NodeStatus {
+    boolean running;
+    string local_peer_id;
+    u32 session_count;
+    u32 active_transfers;
+};
+
+// Transfer status enum
+enum TransferStatus {
+    "Pending",
+    "Sending",
+    "Receiving",
+    "Completed",
+    "Failed",
+    "Cancelled",
+};
+
+// Main WRAITH node interface
+interface WraithNode {
+    constructor(NodeConfig config);
+
+    [Throws=WraithError]
+    void start(string listen_addr);
+
+    [Throws=WraithError]
+    void shutdown();
+
+    [Throws=WraithError]
+    SessionInfo establish_session(string peer_id);
+
+    [Throws=WraithError]
+    TransferInfo send_file(string peer_id, string file_path);
+
+    [Throws=WraithError]
+    NodeStatus get_status();
+
+    boolean is_running();
+
+    string local_peer_id();
+};
+
+// Error types
+[Error]
+enum WraithError {
+    "InitializationFailed",
+    "SessionFailed",
+    "TransferFailed",
+    "NotStarted",
+    "InvalidPeerId",
+    "InvalidFilePath",
+    "Other",
+};

@@ -4,7 +4,6 @@
 // verifying that cryptographic operations work correctly with frame
 // encoding/decoding and session management.
 
-use hex;
 use rand_core::{OsRng, RngCore};
 use wraith_core::{
     ConnectionId, FRAME_HEADER_SIZE, Frame, FrameBuilder, FrameFlags, FrameType, HandshakePhase,
