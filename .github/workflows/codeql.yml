@@ -56,8 +56,10 @@ jobs:
             ${{ runner.os }}-cargo-
 
       # Initialize CodeQL tools for scanning
+      # Note: Using v3 as v4 has repository properties API issues on some repos
+      # TODO: Upgrade to v4 once the init action compatibility issues are resolved
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
+        uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
           # Use security-extended queries for better coverage
@@ -79,7 +81,7 @@ jobs:
 
       # Perform CodeQL Analysis
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v4
+        uses: github/codeql-action/analyze@v3
         with:
           category: "/language:${{ matrix.language }}"
           # Fail the workflow if high or critical severity issues are found
