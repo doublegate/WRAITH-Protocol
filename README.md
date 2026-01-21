@@ -9,7 +9,7 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
 [![CI Status](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/ci.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml)
 [![Release](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml)
-[![Version](https://img.shields.io/badge/version-1.6.3-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
+[![Version](https://img.shields.io/badge/version-1.7.0-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
 [![Security](https://img.shields.io/badge/security-audited-green.svg)](docs/security/SECURITY_AUDIT_v1.1.0.md)
 [![Rust](https://img.shields.io/badge/rust-1.85%2B-orange.svg)](https://www.rust-lang.org/)
 [![Edition](https://img.shields.io/badge/edition-2024-orange.svg)](https://doc.rust-lang.org/edition-guide/rust-2024/index.html)
@@ -17,7 +17,7 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
 
 ## Current Status
 
-**Version:** 1.6.3 Phase 17 Complete - Full Mobile Integration & Real-Time Communications | **Development Phase:** Phase 17 Complete
+**Version:** 1.7.0 Phase 17 Complete + WRAITH-Sync | **Development Phase:** Phase 17 Complete
 
 WRAITH Protocol is production-ready with desktop, mobile, and messaging applications featuring full protocol integration, real-time voice/video calling, and advanced group messaging. Phase 17 completes the mobile ecosystem with actual WRAITH protocol bindings (replacing placeholders), secure native storage (Android Keystore, iOS Keychain), push notifications (FCM/APNs), encrypted voice/video calls (Opus/VP8/VP9), and Sender Keys group messaging for efficient multi-party encryption.
 
@@ -215,7 +215,7 @@ cargo test --workspace
 
 ## Quick Start
 
-**Note:** WRAITH Protocol v1.6.3 features a complete Node API and protocol implementation with fully integrated CLI commands. The wraith-cli binary provides production-ready command-line access to all protocol features including `ping` for connectivity testing and `config` for runtime configuration.
+**Note:** WRAITH Protocol v1.7.0 features a complete Node API and protocol implementation with fully integrated CLI commands. The wraith-cli binary provides production-ready command-line access to all protocol features including `ping` for connectivity testing and `config` for runtime configuration.
 
 ```bash
 # Generate identity keypair
@@ -302,9 +302,9 @@ WRAITH-Protocol/
 | Application | Description | Platform | Tests | Status |
 |-------------|-------------|----------|-------|--------|
 | **wraith-transfer** | P2P file transfer with drag-and-drop GUI (Tauri 2.0 + React 18 + TypeScript) | Desktop | 6 | ✅ v1.5.0 |
-| **wraith-android** | Mobile client with full protocol integration (Kotlin + Jetpack Compose + JNI) | Android | 96 | ✅ v1.6.3 |
-| **wraith-ios** | Mobile client with full protocol integration (Swift + SwiftUI + UniFFI) | iOS | 93 | ✅ v1.6.3 |
-| **wraith-chat** | E2EE messaging with voice/video/groups (Tauri 2.0 + React 18 + SQLCipher) | Desktop | 38 | ✅ v1.6.3 |
+| **wraith-android** | Mobile client with full protocol integration (Kotlin + Jetpack Compose + JNI) | Android | 96 | ✅ v1.7.0 |
+| **wraith-ios** | Mobile client with full protocol integration (Swift + SwiftUI + UniFFI) | iOS | 93 | ✅ v1.7.0 |
+| **wraith-chat** | E2EE messaging with voice/video/groups (Tauri 2.0 + React 18 + SQLCipher) | Desktop | 38 | ✅ v1.7.0 |
 
 **Total Clients:** 233 tests, 4 production applications (~11,650 lines: 4,750 Rust, 2,400 Kotlin, 1,900 Swift, 2,600 TypeScript/React)
 
@@ -560,9 +560,9 @@ See [ROADMAP.md](to-dos/ROADMAP.md) and [Protocol Development History](docs/arch
 10 client applications across 3 priority tiers:
 - **Tier 1 (Complete):**
   - ✅ WRAITH-Transfer (Desktop P2P file transfer - v1.5.0)
-  - ✅ WRAITH-Android (Android mobile client with full protocol integration - v1.6.3)
-  - ✅ WRAITH-iOS (iOS mobile client with full protocol integration - v1.6.3)
-  - ✅ WRAITH-Chat (E2EE messaging with voice/video/groups - v1.6.3)
+  - ✅ WRAITH-Android (Android mobile client with full protocol integration - v1.7.0)
+  - ✅ WRAITH-iOS (iOS mobile client with full protocol integration - v1.7.0)
+  - ✅ WRAITH-Chat (E2EE messaging with voice/video/groups - v1.7.0)
 - **Tier 2 (Planned):** WRAITH-Sync (backup sync), WRAITH-Share (distributed sharing)
 - **Tier 3 (Planned):** WRAITH-Stream, WRAITH-Mesh, WRAITH-Publish, WRAITH-Vault
 - **Security Testing (Planned):** WRAITH-Recon, WRAITH-RedOps (authorized use only)
@@ -751,6 +751,6 @@ WRAITH Protocol builds on the work of many excellent projects and technologies:
 
 **WRAITH Protocol** - *Secure. Fast. Invisible.*
 
-**Status:** v1.6.3 Phase 17 Complete - Full Mobile Integration & Real-Time Communications | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 1,695+ (100% pass rate) | **Quality:** Production-ready, 0 vulnerabilities, zero warnings, 98/100 quality grade | **Clients:** 4 Tier 1 applications with full protocol integration, voice/video calling, and group messaging
+**Status:** v1.7.0 Phase 17 Complete + WRAITH-Sync | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 1,695+ (100% pass rate) | **Quality:** Production-ready, 0 vulnerabilities, zero warnings, 98/100 quality grade | **Clients:** 5 applications with full protocol integration, voice/video calling, group messaging, and file synchronization
 
 *Last Updated: 2026-01-21*

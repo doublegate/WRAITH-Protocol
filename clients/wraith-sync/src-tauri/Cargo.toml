@@ -1,0 +1,78 @@
+[package]
+name = "wraith-sync"
+version = "1.7.0"
+description = "WRAITH-Sync - Decentralized File Synchronization"
+authors = ["WRAITH Protocol Contributors"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/doublegate/WRAITH-Protocol"
+edition = "2024"
+rust-version = "1.85"
+
+[lib]
+name = "wraith_sync_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[[bin]]
+name = "wraith-sync"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2.0", features = [] }
+
+[dependencies]
+# Tauri 2.0
+tauri = { version = "2.0", features = ["tray-icon"] }
+tauri-plugin-dialog = "2.0"
+tauri-plugin-fs = "2.0"
+tauri-plugin-shell = "2.0"
+tauri-plugin-log = "2.0"
+tauri-plugin-notification = "2.0"
+
+# WRAITH Protocol
+wraith-core = { path = "../../../crates/wraith-core" }
+wraith-crypto = { path = "../../../crates/wraith-crypto" }
+wraith-files = { path = "../../../crates/wraith-files" }
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# File system watching
+notify = "7"
+notify-debouncer-mini = "0.5"
+
+# Database
+rusqlite = { version = "0.38", features = ["bundled"] }
+
+# Hashing
+blake3 = "1"
+
+# Compression
+zstd = "0.13"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Error handling
+thiserror = "2"
+anyhow = "1.0"
+
+# Logging
+log = "0.4"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Utilities
+hex = "0.4"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4"] }
+parking_lot = "0.12"
+hostname = "0.4"
+glob = "0.3"
+
+[dev-dependencies]
+tempfile = "3"
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]

@@ -1,0 +1,64 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "WRAITH Sync",
+  "version": "1.7.0",
+  "identifier": "io.wraith.sync",
+  "build": {
+    "frontendDist": "../frontend/dist",
+    "devUrl": "http://localhost:5173",
+    "beforeDevCommand": "npm run dev --prefix frontend",
+    "beforeBuildCommand": "npm run build --prefix frontend"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "WRAITH Sync",
+        "width": 1000,
+        "height": 700,
+        "minWidth": 800,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false,
+        "center": true,
+        "decorations": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data: asset: https://asset.localhost"
+    },
+    "trayIcon": {
+      "iconPath": "icons/icon.png",
+      "iconAsTemplate": true
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "category": "Utility",
+    "shortDescription": "Decentralized file synchronization",
+    "longDescription": "WRAITH Sync is a cross-platform desktop application for secure, private file synchronization using the WRAITH Protocol. Sync folders across unlimited devices with end-to-end encryption, delta sync, and conflict resolution."
+  },
+  "plugins": {
+    "dialog": {},
+    "fs": {
+      "scope": ["$HOME/*", "$HOME/**", "$APPDATA/*", "$APPDATA/**"]
+    },
+    "shell": {
+      "open": true
+    },
+    "log": {
+      "targets": ["stdout", "logfile"],
+      "maxFileSize": 5242880
+    },
+    "notification": {
+      "all": true
+    }
+  }
+}

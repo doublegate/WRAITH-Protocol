@@ -1,0 +1,1 @@
+{"root":["./src/App.tsx","./src/main.tsx","./src/components/ConflictResolver.tsx","./src/components/FolderList.tsx","./src/components/Settings.tsx","./src/components/SyncStatus.tsx","./src/components/VersionHistory.tsx","./src/lib/tauri.ts","./src/stores/configStore.ts","./src/stores/syncStore.ts","./src/stores/versionStore.ts","./src/types/index.ts"],"version":"5.6.3"}

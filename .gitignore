@@ -63,3 +63,12 @@ fuzz/artifacts/
 fuzz/corpus/
 fuzz/target/
 clients/wraith-ios/wraith-swift-ffi/target/
+clients/wraith-android/app/src/main/rust/target/
+
+# Node.js
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+**/dist/
+**/package-lock.json

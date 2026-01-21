@@ -6,17 +6,17 @@ Guidance for Claude Code when working with this repository.
 
 WRAITH (Wire-speed Resilient Authenticated Invisible Transfer Handler) is a decentralized secure file transfer protocol implemented in Rust.
 
-**Status:** v1.6.3 - Mobile Protocol Integration & WRAITH-Chat Enhancements (Phase 17 Complete)
+**Status:** v1.7.0 - Phase 17 Complete + WRAITH-Sync
 
 ### Metrics
 | Metric | Value |
 |--------|-------|
-| Tests | 1,630 passing (16 ignored) - 100% pass rate |
-| Code | ~44,300 lines Rust (~58,900 total with comments/blanks) across 8 crates |
-| Documentation | 100+ files, 35,000+ lines |
-| Security | Zero vulnerabilities - EXCELLENT ([v1.1.0 audit](docs/security/SECURITY_AUDIT_v1.1.0.md), 286 deps) |
+| Tests | 1,695 passing (16 ignored) - 100% pass rate |
+| Code | ~68,000 lines Rust (protocol) + ~12,000 lines (clients) across 11 crates |
+| Documentation | 120+ files, 72,000+ lines |
+| Security | Zero vulnerabilities - EXCELLENT ([v1.1.0 audit](docs/security/SECURITY_AUDIT_v1.1.0.md), 295 deps) |
 | Performance | File chunking 14.85 GiB/s, tree hashing 4.71 GiB/s, verification 4.78 GiB/s, reassembly 5.42 GiB/s |
-| Quality | 98/100, technical debt 3.8%, zero clippy warnings |
+| Quality | 98/100, technical debt 3.5%, zero clippy warnings |
 
 ## Build & Development
 
@@ -122,12 +122,21 @@ Thread-per-core with no locks in hot path. Sessions pinned to cores, NUMA-aware 
 |-------|--------|-------|----------|
 | wraith-core | ✅ Complete | 414 | Frame (SIMD), Session, Stream, BBR, Migration, Node API |
 | wraith-crypto | ✅ Complete | 127 | Ed25519, X25519+Elligator2, AEAD, Noise_XX, Ratchet |
-| wraith-transport | ✅ Complete | 139 | AF_XDP, io_uring, UDP, worker pools, NUMA-aware |
-| wraith-obfuscation | ✅ Complete | 130 | Padding (5), Timing (5), Mimicry (TLS/WebSocket/DoH) |
+| wraith-transport | ✅ Complete | 130 | AF_XDP, io_uring, UDP, worker pools, NUMA-aware |
+| wraith-obfuscation | ✅ Complete | 111 | Padding (5), Timing (5), Mimicry (TLS/WebSocket/DoH) |
 | wraith-discovery | ✅ Complete | 231 | Kademlia DHT, STUN, ICE, relay |
 | wraith-files | ✅ Complete | 34 | io_uring I/O, chunking, tree hashing, reassembly |
-| wraith-cli | ✅ Complete | 87 | Full CLI with config, progress, commands |
-| wraith-ffi | ✅ Complete | 111 | C-compatible API, FFI-safe types |
+| wraith-cli | ✅ Complete | 8 | Full CLI with config, progress, commands |
+| wraith-ffi | ✅ Complete | 6 | C-compatible API, FFI-safe types |
 | wraith-xdp | Not started | 0 | Requires eBPF toolchain (future) |
 
-**Total:** 1,630 tests passing (16 ignored)
+### Client Applications
+
+| Client | Status | Tests | Features |
+|--------|--------|-------|----------|
+| wraith-transfer | ✅ Complete | 68 | Tauri desktop file transfer |
+| wraith-chat | ✅ Complete | 76 | E2EE messaging, voice/video calls, groups |
+| wraith-android | ✅ Complete | 96 | Kotlin + JNI, Keystore, FCM push |
+| wraith-ios | ✅ Complete | 103 | Swift + UniFFI, Keychain, APNs push |
+
+**Total:** 1,695 tests passing (16 ignored)

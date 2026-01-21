@@ -1,6 +1,6 @@
 {
   "productName": "WRAITH Chat",
-  "version": "1.0.0",
+  "version": "1.7.0",
   "identifier": "com.wraith.chat",
   "build": {
     "beforeDevCommand": "cd ../frontend && npm run dev",

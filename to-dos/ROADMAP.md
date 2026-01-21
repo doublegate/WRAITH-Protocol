@@ -1,19 +1,20 @@
 # WRAITH Protocol Development Roadmap
 
-**Version:** 1.6.0
-**Last Updated:** 2025-12-11
-**Status:** Protocol Complete, Core Clients Complete, Extended Client Development Ongoing
+**Version:** 1.6.3
+**Last Updated:** 2026-01-21
+**Status:** Protocol Complete, Tier 1 Clients Complete (Phase 17), Extended Client Development Ongoing
 
 ---
 
 ## Executive Summary
 
-This roadmap documents the development of WRAITH Protocol and its ecosystem. The project has completed the core protocol implementation and initial client applications:
+This roadmap documents the development of WRAITH Protocol and its ecosystem. The project has completed the core protocol implementation and all Tier 1 client applications:
 
 1. **Protocol Track:** ✅ COMPLETE - Phases 1-13 (Foundation through Optimization)
 2. **Client Track:** ✅ WRAITH Transfer (Tauri Desktop) - Phase 15 Complete
-3. **Client Track:** ✅ Mobile Clients & WRAITH-Chat - Phase 16 Complete
-4. **Ongoing:** Additional client applications, performance optimization, post-quantum crypto
+3. **Client Track:** ✅ Mobile Clients & WRAITH-Chat (placeholders) - Phase 16 Complete
+4. **Client Track:** ✅ Full Mobile Integration & Real-Time Communications - Phase 17 Complete
+5. **Ongoing:** Tier 2/3 client applications, XDP support, post-quantum crypto
 
 ---
 
@@ -34,8 +35,9 @@ This roadmap documents the development of WRAITH Protocol and its ecosystem. The
 | **Phase 10** | Documentation & Integration | 4-5 weeks | 130 | ✅ COMPLETE | 2025-12 |
 | **Phase 13** | Connection Management & Performance | 3-4 weeks | 67 | ✅ COMPLETE | 2025-12-07 |
 | **Phase 15** | Desktop Client (WRAITH Transfer) | 4-5 weeks | 102 | ✅ COMPLETE | 2025-12-07 |
-| **Phase 16** | Mobile Clients & WRAITH-Chat | 3-4 weeks | 302 | ✅ COMPLETE | 2025-12-11 |
-| **Total** | | **44-56 weeks** | **1,607+ points** | **COMPLETE** | |
+| **Phase 16** | Mobile Clients & WRAITH-Chat (placeholders) | 3-4 weeks | 302 | ✅ COMPLETE | 2025-12-11 |
+| **Phase 17** | Full Mobile Integration & Real-Time Communications | 17-23 weeks | 280-370 | ✅ COMPLETE | 2026-01-21 |
+| **Total** | | **61-79 weeks** | **~1,950 points** | **COMPLETE** | |
 
 ### Dependency Chart
 

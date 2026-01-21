@@ -1,6 +1,6 @@
 [package]
 name = "wraith-android"
-version = "1.6.3"
+version = "1.7.0"
 edition = "2024"
 rust-version = "1.85"
 
