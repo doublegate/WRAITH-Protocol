@@ -78,7 +78,7 @@ jobs:
 
       - name: Download existing corpus (if available)
         continue-on-error: true
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: corpus-${{ matrix.target }}
           path: fuzz/corpus/${{ matrix.target }}
