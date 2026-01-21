@@ -61,11 +61,10 @@ jobs:
             ${{ runner.os }}-cargo-
 
       # Initialize CodeQL tools for scanning
-      # Note: v4 recommended (v3 deprecated Dec 2026). Both versions experience
-      # intermittent "repository properties API" errors - this is a known GitHub
-      # infrastructure issue, not a version-specific bug.
+      # Note: Using v3 due to v4 "repository properties API" errors on this repo.
+      # v3 deprecated Dec 2026, but works more reliably. Monitor for v4 fix.
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
+        uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
           # Use security-extended queries for better coverage
@@ -86,7 +85,7 @@ jobs:
 
       # Perform CodeQL Analysis
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v4
+        uses: github/codeql-action/analyze@v3
         with:
           category: "/language:${{ matrix.language }}"
 
