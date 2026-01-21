@@ -1,22 +1,56 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-:root {
-  --wraith-primary: #00bcd4;
-  --wraith-secondary: #0097a7;
-  --wraith-dark: #1a1a2e;
-  --wraith-darker: #0f0f1a;
+/* Custom theme overrides - WRAITH Design System */
+@theme {
+  /* WRAITH brand colors (aligned with design reference) */
+  --color-wraith-primary: #7c3aed;    /* Violet 600 - Primary actions */
+  --color-wraith-secondary: #4f46e5;  /* Indigo 600 - Secondary actions */
+  --color-wraith-accent: #06b6d4;     /* Cyan 500 - Highlights, progress */
+  --color-wraith-dark: #0f172a;       /* Slate 900 - Primary background */
+  --color-wraith-darker: #020617;     /* Slate 950 - Deepest background */
+
+  /* Status colors (standardized) */
+  --color-success: #22c55e;   /* Green 500 - Connected, completed */
+  --color-warning: #f59e0b;   /* Amber 500 - Caution, pending */
+  --color-error: #ef4444;     /* Red 500 - Errors, disconnected */
+
+  /* Background colors for dark theme (aligned with design reference) */
+  --color-bg-primary: #0f172a;    /* Main content area */
+  --color-bg-secondary: #1e293b;  /* Sidebars, headers, cards */
+  --color-bg-tertiary: #334155;   /* Elevated elements, hovers */
+}
+
+/* Base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
 }
 
 body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  background-color: var(--wraith-darker);
-  color: #ffffff;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: var(--color-bg-primary);
+  color: #e2e8f0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont,
+               'Segoe UI', Roboto, 'Oxygen', 'Ubuntu',
+               'Cantarell', 'Fira Sans', 'Droid Sans',
+               'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Focus styles for accessibility */
+:focus-visible {
+  outline: 2px solid var(--color-wraith-accent);
+  outline-offset: 2px;
 }
 
 /* Custom scrollbar */
@@ -26,31 +60,21 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--wraith-darker);
+  background: var(--color-bg-secondary);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #333;
+  background: var(--color-wraith-primary);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #444;
-}
-
-/* Focus styles */
-*:focus {
-  outline: 2px solid var(--wraith-primary);
-  outline-offset: 2px;
-}
-
-*:focus:not(:focus-visible) {
-  outline: none;
+  background: var(--color-wraith-secondary);
 }
 
 /* Custom checkbox styles */
 input[type='checkbox'] {
-  accent-color: var(--wraith-primary);
+  accent-color: var(--color-wraith-primary);
 }
 
 /* Prevent text selection on UI elements */

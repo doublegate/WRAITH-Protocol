@@ -1,7 +1,7 @@
 // WRAITH Chat - Header Component
 
-import { useState } from 'react';
-import { useNodeStore } from '../stores/nodeStore';
+import { useState } from "react";
+import { useNodeStore } from "../stores/nodeStore";
 
 interface HeaderProps {
   onOpenSettings: () => void;
@@ -21,7 +21,7 @@ export default function Header({ onOpenSettings }: HeaderProps) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('Failed to copy peer ID:', err);
+      console.error("Failed to copy peer ID:", err);
     }
   };
 
@@ -33,8 +33,18 @@ export default function Header({ onOpenSettings }: HeaderProps) {
           <div className="flex items-center gap-3">
             {/* WRAITH Logo */}
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-wraith-primary to-wraith-secondary flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              <svg
+                className="w-5 h-5 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                />
               </svg>
             </div>
             <h1 className="text-lg font-semibold text-white">WRAITH Chat</h1>
@@ -44,11 +54,11 @@ export default function Header({ onOpenSettings }: HeaderProps) {
           <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-bg-primary">
             <div
               className={`w-2 h-2 rounded-full ${
-                isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'
+                isConnected ? "bg-green-500 animate-pulse" : "bg-red-500"
               }`}
             />
             <span className="text-sm text-slate-400">
-              {isConnected ? 'Connected' : 'Offline'}
+              {isConnected ? "Connected" : "Offline"}
             </span>
           </div>
         </div>
@@ -64,7 +74,8 @@ export default function Header({ onOpenSettings }: HeaderProps) {
             >
               <span className="text-slate-500">Peer:</span>
               <span className="font-mono">
-                {status.local_peer_id.slice(0, 8)}...{status.local_peer_id.slice(-4)}
+                {status.local_peer_id.slice(0, 8)}...
+                {status.local_peer_id.slice(-4)}
               </span>
               <CopyIcon className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100" />
               {copied && (
@@ -102,7 +113,12 @@ export default function Header({ onOpenSettings }: HeaderProps) {
 // Icons
 function SettingsIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -121,7 +137,12 @@ function SettingsIcon({ className }: { className?: string }) {
 
 function CopyIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
       <path
         strokeLinecap="round"
         strokeLinejoin="round"

@@ -17,9 +17,9 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
 
 ## Current Status
 
-**Version:** 1.7.1 WRAITH-Chat UI Redesign | **Development Phase:** Phase 17 Complete
+**Version:** 1.7.1 WRAITH-Chat UI Redesign & UI/UX Standardization | **Development Phase:** Phase 17 Complete
 
-WRAITH Protocol is production-ready with desktop, mobile, and messaging applications featuring full protocol integration, real-time voice/video calling, and advanced group messaging. Phase 17 completes the mobile ecosystem with actual WRAITH protocol bindings (replacing placeholders), secure native storage (Android Keystore, iOS Keychain), push notifications (FCM/APNs), encrypted voice/video calls (Opus/VP8/VP9), and Sender Keys group messaging for efficient multi-party encryption. Version 1.7.1 adds a comprehensive UI redesign for WRAITH-Chat with professional header, sidebar navigation, enhanced message bubbles, 7-tab settings modal, video call overlay, and group creation wizard.
+WRAITH Protocol is production-ready with desktop, mobile, and messaging applications featuring full protocol integration, real-time voice/video calling, and advanced group messaging. Phase 17 completes the mobile ecosystem with actual WRAITH protocol bindings (replacing placeholders), secure native storage (Android Keystore, iOS Keychain), push notifications (FCM/APNs), encrypted voice/video calls (Opus/VP8/VP9), and Sender Keys group messaging for efficient multi-party encryption. Version 1.7.1 adds a comprehensive UI redesign for WRAITH-Chat with professional header, sidebar navigation, enhanced message bubbles, 7-tab settings modal, video call overlay, and group creation wizard. Additionally, v1.7.1 standardizes UI/UX across all WRAITH desktop clients (Transfer, Chat, Sync) with consistent color palette (slate tones), modal styling, accessibility improvements, and a new comprehensive UI/UX Design Reference document.
 
 **Project Metrics (2026-01-21):**
 - **Code Volume:** ~72,400 lines of Rust code across protocol crates + ~14,100 lines in client applications (Kotlin/Swift/TypeScript)
@@ -31,7 +31,7 @@ WRAITH Protocol is production-ready with desktop, mobile, and messaging applicat
 - **Client Applications:** 5 production-ready applications (4 Tier 1 + 1 Tier 2) with full protocol integration
 - **CI/CD:** GitHub Actions updated (upload-artifact v6, download-artifact v7, cache v5)
 
-**v1.7.1 Highlights (WRAITH-Chat UI Redesign):**
+**v1.7.1 Highlights (WRAITH-Chat UI Redesign & UI/UX Standardization):**
 - Professional Header: Connection status indicator, peer ID display, session statistics
 - Sidebar Navigation: Search, conversation filters (All/Direct/Groups), New Chat/Group buttons
 - Enhanced Chat: Voice/video call buttons, message bubbles with read receipts, date separators
@@ -41,6 +41,10 @@ WRAITH Protocol is production-ready with desktop, mobile, and messaging applicat
 - Group Creation Wizard: Step-by-step group setup with member selection
 - Tailwind CSS v4: Upgraded with @tailwindcss/vite plugin
 - Frontend expanded from ~1,800 to ~3,200 lines with 8 new UI components
+- **UI/UX Design Reference**: New 2,400+ line design guide (docs/clients/UI-UX-DESIGN-REFERENCE.md)
+- **UI/UX Standardization**: Consistent styling across WRAITH-Transfer, WRAITH-Chat, WRAITH-Sync
+- **Accessibility**: 50+ component fixes including ARIA attributes, focus states, and color contrast
+- **JACK/ALSA Fix**: Resolved audio device enumeration errors in WRAITH-Chat voice calls
 
 **Phase 17 Highlights:**
 - Mobile Protocol Integration: Android JNI and iOS UniFFI with actual WRAITH protocol bindings (26 new tests)
@@ -381,6 +385,7 @@ WRAITH-Protocol/
 ### Client Applications
 - [Client Overview](docs/clients/overview.md)
 - [Reference Client Design](docs/clients/REFERENCE_CLIENT.md) - GUI design guidelines for client applications
+- [UI/UX Design Reference](docs/clients/UI-UX-DESIGN-REFERENCE.md) - Comprehensive design system for all WRAITH clients
 - [Client Roadmap](to-dos/ROADMAP-clients.md)
 
 ### Project Planning

@@ -1,16 +1,16 @@
 // Chat View Component
 
-import React, { useEffect, useState, useRef } from 'react';
-import { useConversationStore } from '../stores/conversationStore';
-import { useMessageStore } from '../stores/messageStore';
-import MessageBubble from './MessageBubble';
+import React, { useEffect, useState, useRef } from "react";
+import { useConversationStore } from "../stores/conversationStore";
+import { useMessageStore } from "../stores/messageStore";
+import MessageBubble from "./MessageBubble";
 
 interface ChatViewProps {
   conversationId: number;
 }
 
 export default function ChatView({ conversationId }: ChatViewProps) {
-  const [inputText, setInputText] = useState('');
+  const [inputText, setInputText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { conversations } = useConversationStore();
@@ -27,7 +27,7 @@ export default function ChatView({ conversationId }: ChatViewProps) {
   // Scroll to bottom when messages change
   const messageCount = conversationMessages.length;
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messageCount]);
 
   const handleSend = async () => {
@@ -35,14 +35,14 @@ export default function ChatView({ conversationId }: ChatViewProps) {
 
     try {
       await sendMessage(conversationId, conversation.peer_id, inputText);
-      setInputText('');
+      setInputText("");
     } catch (error) {
-      console.error('Failed to send message:', error);
+      console.error("Failed to send message:", error);
     }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
@@ -51,12 +51,12 @@ export default function ChatView({ conversationId }: ChatViewProps) {
   return (
     <div className="flex-1 flex flex-col">
       {/* Header */}
-      <div className="p-4 border-b border-gray-700 bg-bg-secondary">
+      <div className="p-4 border-b border-slate-700 bg-bg-secondary">
         <h2 className="text-xl font-semibold">
-          {conversation?.display_name || 'Unknown'}
+          {conversation?.display_name || "Unknown"}
         </h2>
         {conversation?.peer_id && (
-          <p className="text-sm text-gray-400 font-mono">
+          <p className="text-sm text-slate-400 font-mono">
             {conversation.peer_id.substring(0, 32)}...
           </p>
         )}
@@ -65,9 +65,11 @@ export default function ChatView({ conversationId }: ChatViewProps) {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-2">
         {conversationMessages.length === 0 ? (
-          <div className="text-center text-gray-400 mt-8">
+          <div className="text-center text-slate-400 mt-8">
             <p>No messages yet</p>
-            <p className="text-sm mt-2">Send a message to start the conversation</p>
+            <p className="text-sm mt-2">
+              Send a message to start the conversation
+            </p>
           </div>
         ) : (
           conversationMessages.map((msg) => (
@@ -78,21 +80,21 @@ export default function ChatView({ conversationId }: ChatViewProps) {
       </div>
 
       {/* Input */}
-      <div className="p-4 border-t border-gray-700 bg-bg-secondary">
+      <div className="p-4 border-t border-slate-700 bg-bg-secondary">
         <div className="flex gap-2">
           <textarea
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Type a message..."
-            className="flex-1 p-3 rounded-lg bg-bg-primary border border-gray-600 focus:border-wraith-primary focus:outline-none resize-none"
+            className="flex-1 p-3 rounded-lg bg-bg-primary border border-slate-600 focus:border-wraith-primary focus:outline-none resize-none"
             rows={1}
             maxLength={10000}
           />
           <button
             onClick={handleSend}
             disabled={!inputText.trim()}
-            className="px-6 py-3 bg-wraith-primary hover:bg-wraith-secondary disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-semibold transition"
+            className="px-6 py-3 bg-wraith-primary hover:bg-wraith-secondary disabled:bg-slate-600 disabled:cursor-not-allowed rounded-lg font-semibold transition"
           >
             Send
           </button>

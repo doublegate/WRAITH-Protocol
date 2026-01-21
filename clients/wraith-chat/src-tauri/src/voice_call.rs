@@ -811,6 +811,80 @@ impl VoiceCallManager {
         Ok(())
     }
 
+    /// Set up environment variables to suppress spurious audio backend errors.
+    ///
+    /// On Linux, ALSA's plugin system (libasound) probes various backends during
+    /// device enumeration, including JACK and OSS plugins. When these backends
+    /// aren't available, they emit error messages to stderr. This function sets
+    /// environment variables to suppress these harmless warnings.
+    ///
+    /// # Safety
+    /// This function sets environment variables using unsafe blocks. It uses
+    /// `Once` to ensure the variables are only set once, and is typically called
+    /// early in the audio subsystem initialization before any multi-threading
+    /// occurs in the audio code path.
+    #[cfg(target_os = "linux")]
+    fn suppress_audio_backend_errors() {
+        use std::env;
+        use std::sync::Once;
+
+        static INIT: Once = Once::new();
+        INIT.call_once(|| {
+            // SAFETY: These environment variables are set once during initialization
+            // before any ALSA/JACK threads are spawned. The Once guard ensures
+            // thread-safety for this initialization.
+            unsafe {
+                // Prevent JACK plugin from trying to connect to/start a JACK server
+                if env::var("JACK_NO_START_SERVER").is_err() {
+                    env::set_var("JACK_NO_START_SERVER", "1");
+                }
+
+                // Prevent JACK-related auto-start behavior
+                if env::var("JACK_NO_AUDIO_RESERVATION").is_err() {
+                    env::set_var("JACK_NO_AUDIO_RESERVATION", "1");
+                }
+
+                // Set a very short timeout for JACK connection attempts (in ms)
+                // This minimizes delay when JACK isn't available
+                if env::var("JACK_DEFAULT_SERVER").is_err() {
+                    env::set_var("JACK_DEFAULT_SERVER", "");
+                }
+            }
+        });
+    }
+
+    /// Get the preferred cpal host for this platform.
+    ///
+    /// On Linux, this explicitly selects ALSA to avoid JACK initialization.
+    /// Environment variables are set to suppress ALSA plugin errors from JACK/OSS.
+    fn get_preferred_host() -> cpal::Host {
+        #[cfg(target_os = "linux")]
+        {
+            // Set up environment variables to suppress backend errors
+            Self::suppress_audio_backend_errors();
+
+            // On Linux, use ALSA explicitly to avoid JACK initialization
+            use cpal::HostId;
+
+            // Try to get ALSA host explicitly
+            for host_id in cpal::available_hosts() {
+                if host_id == HostId::Alsa {
+                    if let Ok(host) = cpal::host_from_id(host_id) {
+                        return host;
+                    }
+                }
+            }
+
+            // Fallback to default host if ALSA isn't available
+            cpal::default_host()
+        }
+
+        #[cfg(not(target_os = "linux"))]
+        {
+            cpal::default_host()
+        }
+    }
+
     async fn audio_capture_loop(
         call_id: String,
         call_arc: Arc<Mutex<Call>>,
@@ -831,7 +905,7 @@ impl VoiceCallManager {
 
         // Spawn the audio input stream in a blocking thread (since Stream is !Send)
         let audio_handle = std::thread::spawn(move || {
-            let host = cpal::default_host();
+            let host = Self::get_preferred_host();
             let device = match host.default_input_device() {
                 Some(d) => d,
                 None => {
@@ -968,7 +1042,7 @@ impl VoiceCallManager {
 
         // Spawn the audio output stream in a blocking thread (since Stream is !Send)
         let audio_handle = std::thread::spawn(move || {
-            let host = cpal::default_host();
+            let host = Self::get_preferred_host();
             let device = match host.default_output_device() {
                 Some(d) => d,
                 None => {

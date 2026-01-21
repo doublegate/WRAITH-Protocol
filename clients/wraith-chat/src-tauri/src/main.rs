@@ -70,6 +70,30 @@ fn main() {
                 env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
             }
         }
+
+        // Suppress JACK/ALSA audio backend error messages
+        // See: ALSA's plugin system (libasound) probes backends like JACK and OSS
+        //      during device enumeration. When these backends aren't available,
+        //      they emit error messages to stderr. Setting these environment
+        //      variables prevents the JACK plugin from attempting to connect to
+        //      or start a JACK server.
+        //
+        // Affected messages:
+        // - "Cannot connect to server socket err = No such file or directory"
+        // - "jack server is not running or cannot be started"
+        // - "ALSA lib pcm_oss.c:404:(_snd_pcm_oss_open) Cannot open device /dev/dsp"
+        if env::var("JACK_NO_START_SERVER").is_err() {
+            // SAFETY: We're in main() before any threads are spawned
+            unsafe {
+                env::set_var("JACK_NO_START_SERVER", "1");
+            }
+        }
+        if env::var("JACK_NO_AUDIO_RESERVATION").is_err() {
+            // SAFETY: We're in main() before any threads are spawned
+            unsafe {
+                env::set_var("JACK_NO_AUDIO_RESERVATION", "1");
+            }
+        }
     }
 
     wraith_chat_lib::run();

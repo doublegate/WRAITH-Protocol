@@ -1,8 +1,8 @@
 // WRAITH Transfer - Test Utilities
 // Custom render functions and test helpers
 
-import { render, RenderOptions } from '@testing-library/react';
-import { ReactElement, ReactNode } from 'react';
+import { render, type RenderOptions } from '@testing-library/react';
+import type { ReactElement, ReactNode } from 'react';
 
 // Custom render function that can wrap components with providers
 function customRender(

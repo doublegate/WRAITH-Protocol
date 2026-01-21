@@ -1,10 +1,10 @@
 // WRAITH Chat - Sidebar Component
 
-import { useState, useMemo } from 'react';
-import { useConversationStore } from '../stores/conversationStore';
-import { formatDistanceToNow } from 'date-fns';
+import { useState, useMemo } from "react";
+import { useConversationStore } from "../stores/conversationStore";
+import { formatDistanceToNow } from "date-fns";
 
-type ConversationFilter = 'all' | 'direct' | 'groups';
+type ConversationFilter = "all" | "direct" | "groups";
 
 interface SidebarProps {
   onNewChat: () => void;
@@ -12,8 +12,8 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ onNewChat, onNewGroup }: SidebarProps) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filter, setFilter] = useState<ConversationFilter>('all');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filter, setFilter] = useState<ConversationFilter>("all");
 
   const { conversations, selectedConversationId, selectConversation } =
     useConversationStore();
@@ -22,13 +22,18 @@ export default function Sidebar({ onNewChat, onNewGroup }: SidebarProps) {
   const filteredConversations = useMemo(() => {
     return conversations.filter((conv) => {
       // Filter by type
-      if (filter === 'direct' && conv.conv_type !== 'direct') return false;
-      if (filter === 'groups' && conv.conv_type !== 'group') return false;
+      if (filter === "direct" && conv.conv_type !== "direct") return false;
+      if (filter === "groups" && conv.conv_type !== "group") return false;
 
       // Filter by search query
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
-        const name = (conv.display_name || conv.peer_id || conv.group_id || '').toLowerCase();
+        const name = (
+          conv.display_name ||
+          conv.peer_id ||
+          conv.group_id ||
+          ""
+        ).toLowerCase();
         return name.includes(query);
       }
 
@@ -37,8 +42,12 @@ export default function Sidebar({ onNewChat, onNewGroup }: SidebarProps) {
   }, [conversations, filter, searchQuery]);
 
   // Count by type
-  const directCount = conversations.filter((c) => c.conv_type === 'direct').length;
-  const groupCount = conversations.filter((c) => c.conv_type === 'group').length;
+  const directCount = conversations.filter(
+    (c) => c.conv_type === "direct",
+  ).length;
+  const groupCount = conversations.filter(
+    (c) => c.conv_type === "group",
+  ).length;
 
   return (
     <div className="w-80 bg-bg-secondary border-r border-slate-700 flex flex-col h-full">
@@ -80,20 +89,20 @@ export default function Sidebar({ onNewChat, onNewGroup }: SidebarProps) {
         <FilterTab
           label="All"
           count={conversations.length}
-          active={filter === 'all'}
-          onClick={() => setFilter('all')}
+          active={filter === "all"}
+          onClick={() => setFilter("all")}
         />
         <FilterTab
           label="Direct"
           count={directCount}
-          active={filter === 'direct'}
-          onClick={() => setFilter('direct')}
+          active={filter === "direct"}
+          onClick={() => setFilter("direct")}
         />
         <FilterTab
           label="Groups"
           count={groupCount}
-          active={filter === 'groups'}
-          onClick={() => setFilter('groups')}
+          active={filter === "groups"}
+          onClick={() => setFilter("groups")}
         />
       </div>
 
@@ -149,14 +158,14 @@ function FilterTab({ label, count, active, onClick }: FilterTabProps) {
     <button
       onClick={onClick}
       className={`flex-1 py-2.5 text-sm font-medium transition-colors relative ${
-        active ? 'text-wraith-primary' : 'text-slate-400 hover:text-slate-200'
+        active ? "text-wraith-primary" : "text-slate-400 hover:text-slate-200"
       }`}
     >
       {label}
       {count > 0 && (
         <span
           className={`ml-1.5 text-xs ${
-            active ? 'text-wraith-primary' : 'text-slate-500'
+            active ? "text-wraith-primary" : "text-slate-500"
           }`}
         >
           ({count})
@@ -173,7 +182,7 @@ function FilterTab({ label, count, active, onClick }: FilterTabProps) {
 interface ConversationItemProps {
   conversation: {
     id: number;
-    conv_type: 'direct' | 'group';
+    conv_type: "direct" | "group";
     peer_id?: string;
     group_id?: string;
     display_name?: string;
@@ -185,21 +194,30 @@ interface ConversationItemProps {
   onClick: () => void;
 }
 
-function ConversationItem({ conversation, isSelected, onClick }: ConversationItemProps) {
-  const name = conversation.display_name ||
-    (conversation.peer_id ? `${conversation.peer_id.substring(0, 12)}...` : null) ||
-    (conversation.group_id ? `Group ${conversation.group_id.substring(0, 8)}` : 'Unknown');
+function ConversationItem({
+  conversation,
+  isSelected,
+  onClick,
+}: ConversationItemProps) {
+  const name =
+    conversation.display_name ||
+    (conversation.peer_id
+      ? `${conversation.peer_id.substring(0, 12)}...`
+      : null) ||
+    (conversation.group_id
+      ? `Group ${conversation.group_id.substring(0, 8)}`
+      : "Unknown");
 
-  const isGroup = conversation.conv_type === 'group';
-  const initial = name[0]?.toUpperCase() || '?';
+  const isGroup = conversation.conv_type === "group";
+  const initial = name[0]?.toUpperCase() || "?";
 
   return (
     <button
       onClick={onClick}
       className={`w-full p-3 flex items-center gap-3 transition-colors text-left ${
         isSelected
-          ? 'bg-wraith-primary/20 border-l-2 border-wraith-primary'
-          : 'hover:bg-bg-primary border-l-2 border-transparent'
+          ? "bg-wraith-primary/20 border-l-2 border-wraith-primary"
+          : "hover:bg-bg-primary border-l-2 border-transparent"
       }`}
     >
       {/* Avatar */}
@@ -207,8 +225,8 @@ function ConversationItem({ conversation, isSelected, onClick }: ConversationIte
         <div
           className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-semibold ${
             isGroup
-              ? 'bg-gradient-to-br from-purple-500 to-pink-500'
-              : 'bg-gradient-to-br from-wraith-primary to-wraith-secondary'
+              ? "bg-gradient-to-br from-purple-500 to-pink-500"
+              : "bg-gradient-to-br from-wraith-primary to-wraith-secondary"
           }`}
         >
           {isGroup ? (
@@ -229,15 +247,20 @@ function ConversationItem({ conversation, isSelected, onClick }: ConversationIte
           <h3 className="font-medium text-white truncate">{name}</h3>
           {conversation.last_message_at && (
             <span className="text-xs text-slate-500 ml-2 flex-shrink-0">
-              {formatDistanceToNow(new Date(conversation.last_message_at * 1000), {
-                addSuffix: false,
-              })}
+              {formatDistanceToNow(
+                new Date(conversation.last_message_at * 1000),
+                {
+                  addSuffix: false,
+                },
+              )}
             </span>
           )}
         </div>
         <div className="flex items-center justify-between">
           <p className="text-sm text-slate-400 truncate">
-            {isGroup ? `${conversation.group_id ? 'Group chat' : 'No messages'}` : 'Start a conversation'}
+            {isGroup
+              ? `${conversation.group_id ? "Group chat" : "No messages"}`
+              : "Start a conversation"}
           </p>
           <div className="flex items-center gap-2 flex-shrink-0">
             {conversation.muted && (
@@ -245,7 +268,9 @@ function ConversationItem({ conversation, isSelected, onClick }: ConversationIte
             )}
             {conversation.unread_count > 0 && (
               <span className="min-w-[20px] h-5 px-1.5 flex items-center justify-center bg-wraith-accent text-white text-xs font-medium rounded-full">
-                {conversation.unread_count > 99 ? '99+' : conversation.unread_count}
+                {conversation.unread_count > 99
+                  ? "99+"
+                  : conversation.unread_count}
               </span>
             )}
           </div>
@@ -258,41 +283,96 @@ function ConversationItem({ conversation, isSelected, onClick }: ConversationIte
 // Icons
 function SearchIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+      />
     </svg>
   );
 }
 
 function PlusIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 4v16m8-8H4"
+      />
     </svg>
   );
 }
 
 function UsersIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+      />
     </svg>
   );
 }
 
 function MessageIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+      />
     </svg>
   );
 }
 
 function MuteIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"
+      />
     </svg>
   );
 }

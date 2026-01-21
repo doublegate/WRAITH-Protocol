@@ -1,14 +1,14 @@
 // Voice Call Store (Zustand) - Sprint 17.5
 
-import { create } from 'zustand';
-import { invoke } from '@tauri-apps/api/core';
+import { create } from "zustand";
+import { invoke } from "@tauri-apps/api/core";
 
 // Types
 export interface CallInfo {
   call_id: string;
   peer_id: string;
   state: CallState;
-  direction: 'outgoing' | 'incoming';
+  direction: "outgoing" | "incoming";
   started_at: number;
   connected_at?: number;
   muted: boolean;
@@ -17,13 +17,13 @@ export interface CallInfo {
 }
 
 export type CallState =
-  | 'initiating'
-  | 'ringing'
-  | 'incoming'
-  | 'connected'
-  | 'on_hold'
-  | 'reconnecting'
-  | 'ended';
+  | "initiating"
+  | "ringing"
+  | "incoming"
+  | "connected"
+  | "on_hold"
+  | "reconnecting"
+  | "ended";
 
 export interface CallStats {
   duration_secs: number;
@@ -52,6 +52,8 @@ interface CallStoreState {
   outputDevices: AudioDevice[];
   selectedInputDevice: string | null;
   selectedOutputDevice: string | null;
+  audioDevicesLoading: boolean;
+  audioDevicesError: string | null;
 
   // Loading states
   loading: boolean;
@@ -86,13 +88,15 @@ export const useCallStore = create<CallStoreState>((set, get) => ({
   outputDevices: [],
   selectedInputDevice: null,
   selectedOutputDevice: null,
+  audioDevicesLoading: false,
+  audioDevicesError: null,
   loading: false,
   error: null,
 
   startCall: async (peerId: string) => {
     set({ loading: true, error: null });
     try {
-      const call: CallInfo = await invoke('start_call', { peerId });
+      const call: CallInfo = await invoke("start_call", { peerId });
       set({ activeCall: call, loading: false });
       return call;
     } catch (error) {
@@ -104,7 +108,7 @@ export const useCallStore = create<CallStoreState>((set, get) => ({
   answerCall: async (callId: string) => {
     set({ loading: true, error: null });
     try {
-      const call: CallInfo = await invoke('answer_call', { callId });
+      const call: CallInfo = await invoke("answer_call", { callId });
       set({ activeCall: call, incomingCall: null, loading: false });
       return call;
     } catch (error) {
@@ -116,7 +120,7 @@ export const useCallStore = create<CallStoreState>((set, get) => ({
   rejectCall: async (callId: string, reason?: string) => {
     set({ loading: true, error: null });
     try {
-      await invoke('reject_call', { callId, reason });
+      await invoke("reject_call", { callId, reason });
       set({ incomingCall: null, loading: false });
     } catch (error) {
       set({ error: (error as Error).message, loading: false });
@@ -127,7 +131,7 @@ export const useCallStore = create<CallStoreState>((set, get) => ({
   endCall: async (callId: string, reason?: string) => {
     set({ loading: true, error: null });
     try {
-      await invoke('end_call', { callId, reason });
+      await invoke("end_call", { callId, reason });
       set({ activeCall: null, loading: false });
     } catch (error) {
       set({ error: (error as Error).message, loading: false });
@@ -137,7 +141,7 @@ export const useCallStore = create<CallStoreState>((set, get) => ({
 
   toggleMute: async (callId: string) => {
     try {
-      const muted: boolean = await invoke('toggle_mute', { callId });
+      const muted: boolean = await invoke("toggle_mute", { callId });
       const { activeCall } = get();
       if (activeCall && activeCall.call_id === callId) {
         set({ activeCall: { ...activeCall, muted } });
@@ -151,7 +155,7 @@ export const useCallStore = create<CallStoreState>((set, get) => ({
 
   toggleSpeaker: async (callId: string) => {
     try {
-      const speakerOn: boolean = await invoke('toggle_speaker', { callId });
+      const speakerOn: boolean = await invoke("toggle_speaker", { callId });
       const { activeCall } = get();
       if (activeCall && activeCall.call_id === callId) {
         set({ activeCall: { ...activeCall, speaker_on: speakerOn } });
@@ -165,22 +169,22 @@ export const useCallStore = create<CallStoreState>((set, get) => ({
 
   refreshCallInfo: async (callId: string) => {
     try {
-      const call: CallInfo | null = await invoke('get_call_info', { callId });
+      const call: CallInfo | null = await invoke("get_call_info", { callId });
       const { activeCall } = get();
       if (call && activeCall && activeCall.call_id === callId) {
         set({ activeCall: call });
       }
-      if (call && call.state === 'ended') {
+      if (call && call.state === "ended") {
         set({ activeCall: null });
       }
     } catch (error) {
-      console.error('Failed to refresh call info:', error);
+      console.error("Failed to refresh call info:", error);
     }
   },
 
   refreshActiveCalls: async () => {
     try {
-      const calls: CallInfo[] = await invoke('get_active_calls');
+      const calls: CallInfo[] = await invoke("get_active_calls");
       set({ allCalls: calls });
 
       // Update active call if it exists in the list
@@ -195,25 +199,38 @@ export const useCallStore = create<CallStoreState>((set, get) => ({
         }
       }
     } catch (error) {
-      console.error('Failed to refresh active calls:', error);
+      console.error("Failed to refresh active calls:", error);
     }
   },
 
   loadAudioDevices: async () => {
+    set({ audioDevicesLoading: true, audioDevicesError: null });
     try {
       const [inputDevices, outputDevices] = await Promise.all([
-        invoke<AudioDevice[]>('list_audio_input_devices'),
-        invoke<AudioDevice[]>('list_audio_output_devices'),
+        invoke<AudioDevice[]>("list_audio_input_devices"),
+        invoke<AudioDevice[]>("list_audio_output_devices"),
       ]);
-      set({ inputDevices, outputDevices });
+      set({ inputDevices, outputDevices, audioDevicesLoading: false });
+
+      // Log a warning if no devices found (helpful for debugging)
+      if (inputDevices.length === 0 && outputDevices.length === 0) {
+        console.warn(
+          "No audio devices detected. This may indicate an audio subsystem issue.",
+        );
+      }
     } catch (error) {
-      console.error('Failed to load audio devices:', error);
+      console.error("Failed to load audio devices:", error);
+      set({
+        audioDevicesError:
+          "Unable to enumerate audio devices. Please check your audio settings.",
+        audioDevicesLoading: false,
+      });
     }
   },
 
   setInputDevice: async (deviceId: string | null) => {
     try {
-      await invoke('set_audio_input_device', { deviceId });
+      await invoke("set_audio_input_device", { deviceId });
       set({ selectedInputDevice: deviceId });
     } catch (error) {
       set({ error: (error as Error).message });
@@ -223,7 +240,7 @@ export const useCallStore = create<CallStoreState>((set, get) => ({
 
   setOutputDevice: async (deviceId: string | null) => {
     try {
-      await invoke('set_audio_output_device', { deviceId });
+      await invoke("set_audio_output_device", { deviceId });
       set({ selectedOutputDevice: deviceId });
     } catch (error) {
       set({ error: (error as Error).message });
@@ -251,28 +268,28 @@ export function formatCallDuration(seconds: number): string {
   const secs = seconds % 60;
 
   if (hours > 0) {
-    return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    return `${hours}:${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   }
-  return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  return `${minutes}:${secs.toString().padStart(2, "0")}`;
 }
 
 // Helper to get human-readable call state
 export function getCallStateText(state: CallState): string {
   switch (state) {
-    case 'initiating':
-      return 'Connecting...';
-    case 'ringing':
-      return 'Ringing...';
-    case 'incoming':
-      return 'Incoming call';
-    case 'connected':
-      return 'Connected';
-    case 'on_hold':
-      return 'On hold';
-    case 'reconnecting':
-      return 'Reconnecting...';
-    case 'ended':
-      return 'Call ended';
+    case "initiating":
+      return "Connecting...";
+    case "ringing":
+      return "Ringing...";
+    case "incoming":
+      return "Incoming call";
+    case "connected":
+      return "Connected";
+    case "on_hold":
+      return "On hold";
+    case "reconnecting":
+      return "Reconnecting...";
+    case "ended":
+      return "Call ended";
     default:
       return state;
   }

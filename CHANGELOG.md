@@ -11,11 +11,11 @@ _No changes yet._
 
 ---
 
-## [1.7.1] - 2026-01-21 - WRAITH-Chat UI Redesign
+## [1.7.1] - 2026-01-21 - WRAITH-Chat UI Redesign & UI/UX Standardization
 
-### WRAITH-Chat Comprehensive UI Redesign
+### WRAITH-Chat Comprehensive UI Redesign & Cross-Client UI/UX Standardization
 
-This release delivers a major UI overhaul for WRAITH-Chat, transforming it into a professional-grade messaging application with enhanced visual design, improved user experience, and comprehensive feature controls.
+This release delivers a major UI overhaul for WRAITH-Chat, transforming it into a professional-grade messaging application with enhanced visual design, improved user experience, and comprehensive feature controls. Additionally, v1.7.1 standardizes UI/UX across all WRAITH desktop clients (Transfer, Chat, Sync) with consistent styling, accessibility improvements, and a comprehensive design reference document.
 
 ### Highlights
 
@@ -26,6 +26,9 @@ This release delivers a major UI overhaul for WRAITH-Chat, transforming it into 
 - **7-Tab Settings Modal**: Profile, Privacy, Notifications, Appearance, Voice/Video, Security, About
 - **Video Call Overlay**: Quality controls, layout options, recording functionality
 - **Group Creation Wizard**: Step-by-step group setup with member selection
+- **UI/UX Design Reference**: Comprehensive 2,400+ line design guide for all WRAITH clients
+- **Cross-Client UI Standardization**: Consistent styling across WRAITH-Transfer, WRAITH-Chat, WRAITH-Sync
+- **JACK/ALSA Audio Fix**: Resolved device enumeration errors in WRAITH-Chat voice calling
 
 ### Added
 
@@ -87,7 +90,28 @@ This release delivers a major UI overhaul for WRAITH-Chat, transforming it into 
 - Step 3: Privacy settings (public/private, join approval)
 - Step 4: Review and create confirmation
 
+#### UI/UX Design Reference (docs/clients/UI-UX-DESIGN-REFERENCE.md)
+- 2,400+ lines comprehensive design system documentation
+- Color palette specification (WRAITH brand colors, semantic colors, slate scale)
+- Typography standards (Inter font family, size scale, line heights)
+- Component library documentation (buttons, inputs, modals, cards)
+- Layout patterns (responsive grid, spacing scale, breakpoints)
+- Accessibility guidelines (WCAG 2.1 AA compliance, focus management)
+- Migration guide for standardizing existing components
+
+#### Cross-Client UI/UX Standardization
+- **WRAITH-Transfer**: Updated 2 components (NewTransferDialog, test utilities)
+- **WRAITH-Chat**: Updated 26 components with consistent styling
+- **WRAITH-Sync**: Updated 6 components (App, FolderList, Settings, ConflictResolver, SyncStatus, VersionHistory)
+- **Color Palette**: Standardized gray->slate color migration across all clients
+- **Modal Backdrops**: Consistent semi-transparent overlay styling
+- **Button Styles**: Unified button variants (primary, secondary, danger, ghost)
+- **Form Elements**: Standardized input styling with proper focus states
+- **Accessibility**: ARIA attributes, focus-visible outlines, keyboard navigation
+
 ### Changed
+- Color palette migrated from gray to slate tones (gray-100->slate-100, etc.)
+- Modal backdrop standardized with bg-black/60 overlay
 - Tailwind CSS upgraded to v4 with @tailwindcss/vite plugin
 - Zustand stores expanded for voice, video, and group state management
 - Frontend code expanded from ~1,800 to ~3,200 lines
@@ -95,6 +119,12 @@ This release delivers a major UI overhaul for WRAITH-Chat, transforming it into 
 - Enhanced accessibility with ARIA labels and keyboard navigation
 
 ### Fixed
+- **JACK/ALSA Audio Errors**: Resolved device enumeration errors in WRAITH-Chat voice calling
+  - Added JACK_NO_START_SERVER and JACK_NO_AUDIO_RESERVATION environment variables
+  - Implemented stderr suppression during ALSA device enumeration
+  - Prevents connection errors to JACK server when not in use
+- **TypeScript Configuration**: Fixed vitest/config import in WRAITH-Transfer
+- **Type-Only Imports**: Corrected import statements for type definitions
 - Tauri build configuration for wraith-chat client
 - Vite plugin compatibility with Tailwind CSS v4
 - ESLint configuration for strict TypeScript checks
@@ -105,6 +135,9 @@ This release delivers a major UI overhaul for WRAITH-Chat, transforming it into 
 - **New Components**: 8 major UI components
 - **Zustand Stores**: 6 stores (node, conversation, message, contact, voice, video)
 - **Dependencies Updated**: Tailwind CSS v4.0, @tailwindcss/vite 4.0
+- **UI/UX Reference**: 2,400+ lines of design documentation
+- **Components Updated**: 50+ across all 3 desktop clients (Transfer, Chat, Sync)
+- **Color Migration**: Comprehensive gray->slate migration for visual consistency
 
 ---
 

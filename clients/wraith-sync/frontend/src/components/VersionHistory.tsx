@@ -61,9 +61,9 @@ export default function VersionHistory() {
   return (
     <div className="flex h-full">
       {/* Folder selector */}
-      <div className="w-64 border-r border-gray-700 flex flex-col">
-        <div className="p-4 border-b border-gray-700">
-          <h3 className="text-sm font-semibold text-gray-400 uppercase">
+      <div className="w-64 border-r border-slate-700 flex flex-col">
+        <div className="p-4 border-b border-slate-700">
+          <h3 className="text-sm font-semibold text-slate-400 uppercase">
             Folders
           </h3>
         </div>
@@ -72,18 +72,18 @@ export default function VersionHistory() {
             <button
               key={folder.id}
               onClick={() => handleFolderSelect(folder.id)}
-              className={`w-full px-4 py-3 text-left flex items-center gap-2 hover:bg-wraith-dark transition-colors ${
-                browseFolderId === folder.id ? 'bg-wraith-dark' : ''
+              className={`w-full px-4 py-3 text-left flex items-center gap-2 hover:bg-bg-tertiary transition-colors ${
+                browseFolderId === folder.id ? 'bg-bg-secondary' : ''
               }`}
             >
-              <span className="text-gray-400">...</span>
+              <span className="text-slate-400">...</span>
               <span className="truncate">
                 {folder.local_path.split(/[/\\]/).pop()}
               </span>
             </button>
           ))}
           {folders.length === 0 && (
-            <div className="p-4 text-center text-gray-400 text-sm">
+            <div className="p-4 text-center text-slate-400 text-sm">
               No folders synced
             </div>
           )}
@@ -91,19 +91,19 @@ export default function VersionHistory() {
       </div>
 
       {/* File selector */}
-      <div className="w-80 border-r border-gray-700 flex flex-col">
-        <div className="p-4 border-b border-gray-700">
-          <h3 className="text-sm font-semibold text-gray-400 uppercase">
+      <div className="w-80 border-r border-slate-700 flex flex-col">
+        <div className="p-4 border-b border-slate-700">
+          <h3 className="text-sm font-semibold text-slate-400 uppercase">
             Files
           </h3>
         </div>
         <div className="flex-1 overflow-y-auto">
           {browseFolderId === null ? (
-            <div className="p-4 text-center text-gray-400 text-sm">
+            <div className="p-4 text-center text-slate-400 text-sm">
               Select a folder to view files
             </div>
           ) : folderFiles.length === 0 ? (
-            <div className="p-4 text-center text-gray-400 text-sm">
+            <div className="p-4 text-center text-slate-400 text-sm">
               No files in this folder
             </div>
           ) : (
@@ -113,24 +113,24 @@ export default function VersionHistory() {
                 onClick={() =>
                   handleFileSelect(browseFolderId, file.relative_path)
                 }
-                className={`w-full px-4 py-3 text-left hover:bg-wraith-dark transition-colors ${
+                className={`w-full px-4 py-3 text-left hover:bg-bg-tertiary transition-colors ${
                   selectedFile?.relativePath === file.relative_path
-                    ? 'bg-wraith-dark'
+                    ? 'bg-bg-secondary'
                     : ''
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <span className="text-gray-400">...</span>
+                  <span className="text-slate-400">...</span>
                   <span className="truncate flex-1">
                     {file.relative_path.split(/[/\\]/).pop()}
                   </span>
                   {file.versions.length > 0 && (
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-slate-500">
                       {file.versions.length}v
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-gray-500 mt-1 truncate pl-6">
+                <p className="text-xs text-slate-500 mt-1 truncate pl-6">
                   {file.relative_path}
                 </p>
               </button>
@@ -141,8 +141,8 @@ export default function VersionHistory() {
 
       {/* Version history */}
       <div className="flex-1 flex flex-col">
-        <div className="p-4 border-b border-gray-700">
-          <h3 className="text-sm font-semibold text-gray-400 uppercase">
+        <div className="p-4 border-b border-slate-700">
+          <h3 className="text-sm font-semibold text-slate-400 uppercase">
             Version History
           </h3>
           {selectedFile && (
@@ -154,7 +154,7 @@ export default function VersionHistory() {
 
         <div className="flex-1 overflow-y-auto p-4">
           {!selectedFile ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-400">
+            <div className="flex flex-col items-center justify-center h-full text-slate-400">
               <svg
                 className="w-12 h-12 mb-3"
                 fill="currentColor"
@@ -173,7 +173,7 @@ export default function VersionHistory() {
               <div className="animate-spin h-8 w-8 border-2 border-wraith-primary border-t-transparent rounded-full" />
             </div>
           ) : fileVersions.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-400">
+            <div className="flex flex-col items-center justify-center h-full text-slate-400">
               <p className="text-sm">No version history available</p>
               <p className="text-xs mt-1">
                 Versions are created when files are modified
@@ -187,7 +187,7 @@ export default function VersionHistory() {
                   className={`p-4 rounded-lg border ${
                     index === 0
                       ? 'border-green-500/50 bg-green-500/5'
-                      : 'border-gray-700 bg-wraith-dark'
+                      : 'border-slate-700 bg-bg-secondary'
                   }`}
                 >
                   <div className="flex items-start justify-between">
@@ -202,10 +202,10 @@ export default function VersionHistory() {
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-400 mt-1">
+                      <p className="text-sm text-slate-400 mt-1">
                         {formatDate(version.modified_at)}
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-slate-500 mt-1">
                         {formatSize(version.size)}
                       </p>
                     </div>

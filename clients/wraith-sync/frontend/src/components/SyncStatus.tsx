@@ -7,7 +7,7 @@ export default function SyncStatus() {
 
   if (!status) {
     return (
-      <div className="flex items-center gap-2 text-gray-400">
+      <div className="flex items-center gap-2 text-slate-400">
         <div className="animate-spin h-4 w-4 border-2 border-wraith-primary border-t-transparent rounded-full" />
         <span>Loading...</span>
       </div>
@@ -23,7 +23,7 @@ export default function SyncStatus() {
       case 'error':
         return 'text-red-400';
       case 'offline':
-        return 'text-gray-400';
+        return 'text-slate-400';
       default:
         return 'text-green-400';
     }
@@ -119,7 +119,7 @@ export default function SyncStatus() {
 
       {/* Pending operations */}
       {status.pending_operations > 0 && (
-        <span className="text-xs text-gray-400">
+        <span className="text-xs text-slate-400">
           {status.pending_operations} pending
         </span>
       )}

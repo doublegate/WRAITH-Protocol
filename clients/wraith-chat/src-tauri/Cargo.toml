@@ -73,6 +73,10 @@ cpal = "0.15"
 ringbuf = "0.4"
 webrtc-vad = "0.2"
 
+# Platform-specific dependencies
+[target.'cfg(target_os = "linux")'.dependencies]
+libc = "0.2"
+
 # RNNoise for noise suppression
 nnnoiseless = "0.5"
 

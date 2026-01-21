@@ -1,7 +1,7 @@
 // Group Messaging Store (Zustand) - Sprint 17.7
 
-import { create } from 'zustand';
-import { invoke } from '@tauri-apps/api/core';
+import { create } from "zustand";
+import { invoke } from "@tauri-apps/api/core";
 
 // Types
 export interface GroupInfo {
@@ -16,7 +16,7 @@ export interface GroupInfo {
 export interface GroupMember {
   peer_id: string;
   display_name?: string;
-  role: 'admin' | 'member';
+  role: "admin" | "member";
   joined_at: number;
   key_generation: number;
 }
@@ -38,13 +38,17 @@ interface GroupStoreState {
     groupId: string,
     name?: string,
     description?: string,
-    avatar?: number[]
+    avatar?: number[],
   ) => Promise<GroupInfo>;
   leaveGroup: (groupId: string) => Promise<void>;
 
   // Member actions
   loadGroupMembers: (groupId: string) => Promise<GroupMember[]>;
-  addMember: (groupId: string, peerId: string, displayName?: string) => Promise<GroupMember>;
+  addMember: (
+    groupId: string,
+    peerId: string,
+    displayName?: string,
+  ) => Promise<GroupMember>;
   removeMember: (groupId: string, peerId: string) => Promise<void>;
   promoteToAdmin: (groupId: string, peerId: string) => Promise<void>;
   demoteFromAdmin: (groupId: string, peerId: string) => Promise<void>;
@@ -70,7 +74,7 @@ export const useGroupStore = create<GroupStoreState>((set, get) => ({
   createGroup: async (name: string, memberPeerIds?: string[]) => {
     set({ loading: true, error: null });
     try {
-      const group: GroupInfo = await invoke('create_group', {
+      const group: GroupInfo = await invoke("create_group", {
         name,
         memberPeerIds,
       });
@@ -87,12 +91,12 @@ export const useGroupStore = create<GroupStoreState>((set, get) => ({
 
   loadGroupInfo: async (groupId: string) => {
     try {
-      const group: GroupInfo | null = await invoke('get_group_info', { groupId });
+      const group: GroupInfo | null = await invoke("get_group_info", {
+        groupId,
+      });
       if (group) {
         set((state) => ({
-          groups: state.groups.map((g) =>
-            g.group_id === groupId ? group : g
-          ),
+          groups: state.groups.map((g) => (g.group_id === groupId ? group : g)),
         }));
       }
       return group;
@@ -106,20 +110,18 @@ export const useGroupStore = create<GroupStoreState>((set, get) => ({
     groupId: string,
     name?: string,
     description?: string,
-    avatar?: number[]
+    avatar?: number[],
   ) => {
     set({ loading: true, error: null });
     try {
-      const group: GroupInfo = await invoke('update_group_settings', {
+      const group: GroupInfo = await invoke("update_group_settings", {
         groupId,
         name,
         description,
         avatar,
       });
       set((state) => ({
-        groups: state.groups.map((g) =>
-          g.group_id === groupId ? group : g
-        ),
+        groups: state.groups.map((g) => (g.group_id === groupId ? group : g)),
         loading: false,
       }));
       return group;
@@ -132,10 +134,11 @@ export const useGroupStore = create<GroupStoreState>((set, get) => ({
   leaveGroup: async (groupId: string) => {
     set({ loading: true, error: null });
     try {
-      await invoke('leave_group', { groupId });
+      await invoke("leave_group", { groupId });
       set((state) => ({
         groups: state.groups.filter((g) => g.group_id !== groupId),
-        currentGroupId: state.currentGroupId === groupId ? null : state.currentGroupId,
+        currentGroupId:
+          state.currentGroupId === groupId ? null : state.currentGroupId,
         loading: false,
       }));
     } catch (error) {
@@ -146,7 +149,9 @@ export const useGroupStore = create<GroupStoreState>((set, get) => ({
 
   loadGroupMembers: async (groupId: string) => {
     try {
-      const members: GroupMember[] = await invoke('get_group_members', { groupId });
+      const members: GroupMember[] = await invoke("get_group_members", {
+        groupId,
+      });
       if (get().currentGroupId === groupId) {
         set({ currentGroupMembers: members });
       }
@@ -160,7 +165,7 @@ export const useGroupStore = create<GroupStoreState>((set, get) => ({
   addMember: async (groupId: string, peerId: string, displayName?: string) => {
     set({ loading: true, error: null });
     try {
-      const member: GroupMember = await invoke('add_group_member', {
+      const member: GroupMember = await invoke("add_group_member", {
         groupId,
         peerId,
         displayName,
@@ -183,11 +188,11 @@ export const useGroupStore = create<GroupStoreState>((set, get) => ({
   removeMember: async (groupId: string, peerId: string) => {
     set({ loading: true, error: null });
     try {
-      await invoke('remove_group_member', { groupId, peerId });
+      await invoke("remove_group_member", { groupId, peerId });
       if (get().currentGroupId === groupId) {
         set((state) => ({
           currentGroupMembers: state.currentGroupMembers.filter(
-            (m) => m.peer_id !== peerId
+            (m) => m.peer_id !== peerId,
           ),
           loading: false,
         }));
@@ -203,11 +208,11 @@ export const useGroupStore = create<GroupStoreState>((set, get) => ({
   promoteToAdmin: async (groupId: string, peerId: string) => {
     set({ loading: true, error: null });
     try {
-      await invoke('promote_to_admin', { groupId, peerId });
+      await invoke("promote_to_admin", { groupId, peerId });
       if (get().currentGroupId === groupId) {
         set((state) => ({
           currentGroupMembers: state.currentGroupMembers.map((m) =>
-            m.peer_id === peerId ? { ...m, role: 'admin' as const } : m
+            m.peer_id === peerId ? { ...m, role: "admin" as const } : m,
           ),
           loading: false,
         }));
@@ -221,11 +226,11 @@ export const useGroupStore = create<GroupStoreState>((set, get) => ({
   demoteFromAdmin: async (groupId: string, peerId: string) => {
     set({ loading: true, error: null });
     try {
-      await invoke('demote_from_admin', { groupId, peerId });
+      await invoke("demote_from_admin", { groupId, peerId });
       if (get().currentGroupId === groupId) {
         set((state) => ({
           currentGroupMembers: state.currentGroupMembers.map((m) =>
-            m.peer_id === peerId ? { ...m, role: 'member' as const } : m
+            m.peer_id === peerId ? { ...m, role: "member" as const } : m,
           ),
           loading: false,
         }));
@@ -238,7 +243,7 @@ export const useGroupStore = create<GroupStoreState>((set, get) => ({
 
   sendGroupMessage: async (groupId: string, body: string) => {
     try {
-      const messageId: number = await invoke('send_group_message', {
+      const messageId: number = await invoke("send_group_message", {
         groupId,
         body,
       });
@@ -252,7 +257,7 @@ export const useGroupStore = create<GroupStoreState>((set, get) => ({
   rotateGroupKeys: async (groupId: string) => {
     set({ loading: true, error: null });
     try {
-      await invoke('rotate_group_keys', { groupId });
+      await invoke("rotate_group_keys", { groupId });
       set({ loading: false });
     } catch (error) {
       set({ error: (error as Error).message, loading: false });
@@ -277,12 +282,12 @@ export const useGroupStore = create<GroupStoreState>((set, get) => ({
 
 // Helper functions
 export function formatMemberCount(count: number): string {
-  if (count === 1) return '1 member';
+  if (count === 1) return "1 member";
   return `${count} members`;
 }
 
-export function getRoleLabel(role: 'admin' | 'member'): string {
-  return role === 'admin' ? 'Admin' : 'Member';
+export function getRoleLabel(role: "admin" | "member"): string {
+  return role === "admin" ? "Admin" : "Member";
 }
 
 export function formatJoinedDate(timestamp: number): string {

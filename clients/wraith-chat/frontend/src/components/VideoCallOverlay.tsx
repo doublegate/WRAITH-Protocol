@@ -1,29 +1,29 @@
 // WRAITH Chat - Video Call Overlay Component
 
-import { useState, useEffect, useCallback } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import { useState, useEffect, useCallback } from "react";
+import { invoke } from "@tauri-apps/api/core";
 
 interface VideoCallInfo {
   call_id: string;
   peer_id: string;
   state: VideoCallState;
-  direction: 'outgoing' | 'incoming';
+  direction: "outgoing" | "incoming";
   started_at: number;
   connected_at?: number;
   muted: boolean;
   video_enabled: boolean;
   screen_sharing: boolean;
-  quality: 'low' | 'medium' | 'high' | 'auto';
+  quality: "low" | "medium" | "high" | "auto";
   stats: VideoCallStats;
 }
 
 type VideoCallState =
-  | 'initiating'
-  | 'ringing'
-  | 'incoming'
-  | 'connected'
-  | 'reconnecting'
-  | 'ended';
+  | "initiating"
+  | "ringing"
+  | "incoming"
+  | "connected"
+  | "reconnecting"
+  | "ended";
 
 interface VideoCallStats {
   duration_secs: number;
@@ -59,7 +59,7 @@ export default function VideoCallOverlay({
   }, [peerId, activeCall, loading]);
 
   // Update duration timer
-  const isConnected = activeCall?.state === 'connected';
+  const isConnected = activeCall?.state === "connected";
   const connectedAt = activeCall?.connected_at;
   useEffect(() => {
     if (!isConnected || !connectedAt) return;
@@ -79,7 +79,7 @@ export default function VideoCallOverlay({
 
   // Handle call end callback
   useEffect(() => {
-    if (activeCall?.state === 'ended' && onCallEnd) {
+    if (activeCall?.state === "ended" && onCallEnd) {
       onCallEnd();
     }
   }, [activeCall?.state, onCallEnd]);
@@ -88,7 +88,7 @@ export default function VideoCallOverlay({
     setLoading(true);
     setError(null);
     try {
-      const call: VideoCallInfo = await invoke('start_video_call', {
+      const call: VideoCallInfo = await invoke("start_video_call", {
         peerId: targetPeerId,
       });
       setActiveCall(call);
@@ -103,7 +103,7 @@ export default function VideoCallOverlay({
     if (!incomingCall) return;
     setLoading(true);
     try {
-      const call: VideoCallInfo = await invoke('accept_incoming_video_call', {
+      const call: VideoCallInfo = await invoke("accept_incoming_video_call", {
         callId: incomingCall.call_id,
       });
       setActiveCall(call);
@@ -117,7 +117,7 @@ export default function VideoCallOverlay({
   const handleRejectCall = useCallback(async () => {
     if (!incomingCall) return;
     try {
-      await invoke('reject_incoming_video_call', {
+      await invoke("reject_incoming_video_call", {
         callId: incomingCall.call_id,
       });
       onCallEnd?.();
@@ -129,7 +129,7 @@ export default function VideoCallOverlay({
   const handleEndCall = useCallback(async () => {
     if (!activeCall) return;
     try {
-      await invoke('end_video_call', { callId: activeCall.call_id });
+      await invoke("end_video_call", { callId: activeCall.call_id });
       setActiveCall(null);
       onCallEnd?.();
     } catch (err) {
@@ -140,7 +140,7 @@ export default function VideoCallOverlay({
   const handleToggleMute = useCallback(async () => {
     if (!activeCall) return;
     try {
-      await invoke('toggle_mute', { callId: activeCall.call_id });
+      await invoke("toggle_mute", { callId: activeCall.call_id });
       setActiveCall((prev) => (prev ? { ...prev, muted: !prev.muted } : null));
     } catch (err) {
       setError((err as Error).message);
@@ -150,9 +150,9 @@ export default function VideoCallOverlay({
   const handleToggleVideo = useCallback(async () => {
     if (!activeCall) return;
     try {
-      await invoke('toggle_video', { callId: activeCall.call_id });
+      await invoke("toggle_video", { callId: activeCall.call_id });
       setActiveCall((prev) =>
-        prev ? { ...prev, video_enabled: !prev.video_enabled } : null
+        prev ? { ...prev, video_enabled: !prev.video_enabled } : null,
       );
     } catch (err) {
       setError((err as Error).message);
@@ -162,9 +162,9 @@ export default function VideoCallOverlay({
   const handleToggleScreenShare = useCallback(async () => {
     if (!activeCall) return;
     try {
-      await invoke('toggle_screen_share', { callId: activeCall.call_id });
+      await invoke("toggle_screen_share", { callId: activeCall.call_id });
       setActiveCall((prev) =>
-        prev ? { ...prev, screen_sharing: !prev.screen_sharing } : null
+        prev ? { ...prev, screen_sharing: !prev.screen_sharing } : null,
       );
     } catch (err) {
       setError((err as Error).message);
@@ -172,10 +172,10 @@ export default function VideoCallOverlay({
   }, [activeCall]);
 
   const handleSetQuality = useCallback(
-    async (quality: 'low' | 'medium' | 'high' | 'auto') => {
+    async (quality: "low" | "medium" | "high" | "auto") => {
       if (!activeCall) return;
       try {
-        await invoke('set_video_quality', {
+        await invoke("set_video_quality", {
           callId: activeCall.call_id,
           quality,
         });
@@ -184,7 +184,7 @@ export default function VideoCallOverlay({
         setError((err as Error).message);
       }
     },
-    [activeCall]
+    [activeCall],
   );
 
   // Incoming call UI
@@ -195,7 +195,9 @@ export default function VideoCallOverlay({
           <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-4xl font-bold mx-auto mb-4">
             {incomingCall.peer_id.substring(0, 2).toUpperCase()}
           </div>
-          <h2 className="text-2xl font-semibold text-white">Incoming Video Call</h2>
+          <h2 className="text-2xl font-semibold text-white">
+            Incoming Video Call
+          </h2>
           <p className="text-slate-400 mt-2">
             {incomingCall.peer_id.substring(0, 16)}...
           </p>
@@ -268,20 +270,24 @@ export default function VideoCallOverlay({
                 {activeCall.peer_id.substring(0, 16)}...
               </span>
             </div>
-            {activeCall.state === 'connected' && (
+            {activeCall.state === "connected" && (
               <div className="px-3 py-1.5 bg-black/50 rounded-full backdrop-blur">
-                <span className="text-white text-sm">{formatDuration(callDuration)}</span>
+                <span className="text-white text-sm">
+                  {formatDuration(callDuration)}
+                </span>
               </div>
             )}
-            {activeCall.state !== 'connected' && (
+            {activeCall.state !== "connected" && (
               <div className="px-3 py-1.5 bg-black/50 rounded-full backdrop-blur">
-                <span className="text-yellow-400 text-sm">{getStateText(activeCall.state)}</span>
+                <span className="text-yellow-400 text-sm">
+                  {getStateText(activeCall.state)}
+                </span>
               </div>
             )}
           </div>
 
           {/* Quality Indicator */}
-          {activeCall.state === 'connected' && (
+          {activeCall.state === "connected" && (
             <div className="absolute top-4 right-4">
               <button
                 onClick={() => setShowSettings(!showSettings)}
@@ -295,27 +301,33 @@ export default function VideoCallOverlay({
           {/* Settings Panel */}
           {showSettings && (
             <div className="absolute top-14 right-4 w-64 bg-bg-secondary rounded-lg border border-slate-700 p-4">
-              <h3 className="text-sm font-medium text-white mb-3">Video Quality</h3>
+              <h3 className="text-sm font-medium text-white mb-3">
+                Video Quality
+              </h3>
               <div className="space-y-2">
-                {(['auto', 'low', 'medium', 'high'] as const).map((q) => (
+                {(["auto", "low", "medium", "high"] as const).map((q) => (
                   <button
                     key={q}
                     onClick={() => handleSetQuality(q)}
                     className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
                       activeCall.quality === q
-                        ? 'bg-wraith-primary text-white'
-                        : 'text-slate-300 hover:bg-bg-tertiary'
+                        ? "bg-wraith-primary text-white"
+                        : "text-slate-300 hover:bg-bg-tertiary"
                     }`}
                   >
                     {q.charAt(0).toUpperCase() + q.slice(1)}
-                    {q === 'auto' && ' (Recommended)'}
+                    {q === "auto" && " (Recommended)"}
                   </button>
                 ))}
               </div>
               <div className="mt-4 pt-4 border-t border-slate-700 text-xs text-slate-500">
                 <p>Latency: {activeCall.stats.avg_latency_ms}ms</p>
-                <p>Video: {Math.round(activeCall.stats.video_bitrate / 1000)}kbps</p>
-                <p>Audio: {Math.round(activeCall.stats.audio_bitrate / 1000)}kbps</p>
+                <p>
+                  Video: {Math.round(activeCall.stats.video_bitrate / 1000)}kbps
+                </p>
+                <p>
+                  Audio: {Math.round(activeCall.stats.audio_bitrate / 1000)}kbps
+                </p>
               </div>
             </div>
           )}
@@ -336,10 +348,10 @@ export default function VideoCallOverlay({
               onClick={handleToggleMute}
               className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${
                 activeCall.muted
-                  ? 'bg-red-500 text-white'
-                  : 'bg-bg-tertiary text-white hover:bg-slate-600'
+                  ? "bg-red-500 text-white"
+                  : "bg-bg-tertiary text-white hover:bg-slate-600"
               }`}
-              title={activeCall.muted ? 'Unmute' : 'Mute'}
+              title={activeCall.muted ? "Unmute" : "Mute"}
             >
               {activeCall.muted ? (
                 <MicOffIcon className="w-6 h-6" />
@@ -353,10 +365,12 @@ export default function VideoCallOverlay({
               onClick={handleToggleVideo}
               className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${
                 !activeCall.video_enabled
-                  ? 'bg-red-500 text-white'
-                  : 'bg-bg-tertiary text-white hover:bg-slate-600'
+                  ? "bg-red-500 text-white"
+                  : "bg-bg-tertiary text-white hover:bg-slate-600"
               }`}
-              title={activeCall.video_enabled ? 'Turn off camera' : 'Turn on camera'}
+              title={
+                activeCall.video_enabled ? "Turn off camera" : "Turn on camera"
+              }
             >
               {activeCall.video_enabled ? (
                 <VideoIcon className="w-6 h-6" />
@@ -370,10 +384,12 @@ export default function VideoCallOverlay({
               onClick={handleToggleScreenShare}
               className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${
                 activeCall.screen_sharing
-                  ? 'bg-wraith-primary text-white'
-                  : 'bg-bg-tertiary text-white hover:bg-slate-600'
+                  ? "bg-wraith-primary text-white"
+                  : "bg-bg-tertiary text-white hover:bg-slate-600"
               }`}
-              title={activeCall.screen_sharing ? 'Stop sharing' : 'Share screen'}
+              title={
+                activeCall.screen_sharing ? "Stop sharing" : "Share screen"
+              }
             >
               <ScreenShareIcon className="w-6 h-6" />
             </button>
@@ -402,25 +418,25 @@ function formatDuration(seconds: number): string {
   const secs = seconds % 60;
 
   if (hours > 0) {
-    return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    return `${hours}:${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   }
-  return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  return `${minutes}:${secs.toString().padStart(2, "0")}`;
 }
 
 function getStateText(state: VideoCallState): string {
   switch (state) {
-    case 'initiating':
-      return 'Connecting...';
-    case 'ringing':
-      return 'Ringing...';
-    case 'incoming':
-      return 'Incoming call';
-    case 'connected':
-      return 'Connected';
-    case 'reconnecting':
-      return 'Reconnecting...';
-    case 'ended':
-      return 'Call ended';
+    case "initiating":
+      return "Connecting...";
+    case "ringing":
+      return "Ringing...";
+    case "incoming":
+      return "Incoming call";
+    case "connected":
+      return "Connected";
+    case "reconnecting":
+      return "Reconnecting...";
+    case "ended":
+      return "Call ended";
     default:
       return state;
   }
@@ -429,50 +445,120 @@ function getStateText(state: VideoCallState): string {
 // Icons
 function PhoneOffIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M5 3a2 2 0 00-2 2v1c0 8.284 6.716 15 15 15h1a2 2 0 002-2v-3.28a1 1 0 00-.684-.948l-4.493-1.498a1 1 0 00-1.21.502l-1.13 2.257a11.042 11.042 0 01-5.516-5.516l2.257-1.13a1 1 0 00.502-1.21L9.228 3.683A1 1 0 008.279 3H5z" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M16 8l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M5 3a2 2 0 00-2 2v1c0 8.284 6.716 15 15 15h1a2 2 0 002-2v-3.28a1 1 0 00-.684-.948l-4.493-1.498a1 1 0 00-1.21.502l-1.13 2.257a11.042 11.042 0 01-5.516-5.516l2.257-1.13a1 1 0 00.502-1.21L9.228 3.683A1 1 0 008.279 3H5z"
+      />
     </svg>
   );
 }
 
 function VideoIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+      />
     </svg>
   );
 }
 
 function VideoOffIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3l18 18" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M3 3l18 18"
+      />
     </svg>
   );
 }
 
 function MicIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+      />
     </svg>
   );
 }
 
 function MicOffIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"
+      />
     </svg>
   );
 }
 
 function ScreenShareIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+      />
     </svg>
   );
 }

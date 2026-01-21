@@ -21,7 +21,7 @@ export default function ConflictResolver() {
 
   if (conflicts.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-gray-400">
+      <div className="flex flex-col items-center justify-center h-full text-slate-400">
         <svg
           className="w-16 h-16 mb-4"
           fill="currentColor"
@@ -42,26 +42,26 @@ export default function ConflictResolver() {
   return (
     <div className="flex flex-col h-full">
       {/* Header with bulk actions */}
-      <div className="p-4 border-b border-gray-700 flex items-center justify-between">
+      <div className="p-4 border-b border-slate-700 flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold">
             {conflicts.length} Conflict{conflicts.length !== 1 ? 's' : ''} to
             Resolve
           </h2>
-          <p className="text-sm text-gray-400 mt-1">
+          <p className="text-sm text-slate-400 mt-1">
             Files modified on multiple devices need your attention
           </p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => handleResolveAll('local')}
-            className="px-3 py-1.5 text-sm rounded border border-gray-700 hover:bg-gray-700 transition-colors"
+            className="px-3 py-1.5 text-sm rounded border border-slate-700 hover:bg-bg-tertiary transition-colors"
           >
             Keep All Local
           </button>
           <button
             onClick={() => handleResolveAll('remote')}
-            className="px-3 py-1.5 text-sm rounded border border-gray-700 hover:bg-gray-700 transition-colors"
+            className="px-3 py-1.5 text-sm rounded border border-slate-700 hover:bg-bg-tertiary transition-colors"
           >
             Keep All Remote
           </button>
@@ -123,8 +123,8 @@ function ConflictCard({ conflict, onResolve }: ConflictCardProps) {
           <h3 className="font-medium truncate">
             {getFileName(conflict.file_path)}
           </h3>
-          <p className="text-sm text-gray-400 truncate">{conflict.file_path}</p>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-sm text-slate-400 truncate">{conflict.file_path}</p>
+          <p className="text-xs text-slate-500 mt-1">
             In folder: {conflict.folder_path}
           </p>
         </div>
@@ -150,10 +150,10 @@ function ConflictCard({ conflict, onResolve }: ConflictCardProps) {
               Local Version
             </span>
           </div>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-slate-400">
             Modified: {formatDate(conflict.local_modified_at)}
           </p>
-          <p className="text-xs text-gray-500">This device</p>
+          <p className="text-xs text-slate-500">This device</p>
         </div>
 
         {/* Remote version */}
@@ -170,10 +170,10 @@ function ConflictCard({ conflict, onResolve }: ConflictCardProps) {
               Remote Version
             </span>
           </div>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-slate-400">
             Modified: {formatDate(conflict.remote_modified_at)}
           </p>
-          <p className="text-xs text-gray-500">From: {conflict.remote_device}</p>
+          <p className="text-xs text-slate-500">From: {conflict.remote_device}</p>
         </div>
       </div>
 

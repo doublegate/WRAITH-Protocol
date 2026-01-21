@@ -1,8 +1,8 @@
 // Node Store (Zustand)
 
-import { create } from 'zustand';
-import type { NodeStatus } from '../types';
-import * as tauri from '../lib/tauri';
+import { create } from "zustand";
+import type { NodeStatus } from "../types";
+import * as tauri from "../lib/tauri";
 
 interface NodeState {
   status: NodeStatus | null;
@@ -18,7 +18,7 @@ export const useNodeStore = create<NodeState>((set) => ({
   loading: false,
   error: null,
 
-  startNode: async (listenAddr = '0.0.0.0:0') => {
+  startNode: async (listenAddr = "0.0.0.0:0") => {
     set({ loading: true, error: null });
     try {
       await tauri.startNode(listenAddr);

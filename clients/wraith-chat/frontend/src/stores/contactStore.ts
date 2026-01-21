@@ -1,8 +1,8 @@
 // Contact Store (Zustand)
 
-import { create } from 'zustand';
-import type { Contact } from '../types';
-import * as tauri from '../lib/tauri';
+import { create } from "zustand";
+import type { Contact } from "../types";
+import * as tauri from "../lib/tauri";
 
 interface ContactState {
   contacts: Contact[];
@@ -10,7 +10,11 @@ interface ContactState {
   error: string | null;
 
   loadContacts: () => Promise<void>;
-  addContact: (peerId: string, displayName: string | null, identityKey: number[]) => Promise<number>;
+  addContact: (
+    peerId: string,
+    displayName: string | null,
+    identityKey: number[],
+  ) => Promise<number>;
   getContact: (peerId: string) => Promise<Contact | null>;
 }
 
@@ -29,7 +33,11 @@ export const useContactStore = create<ContactState>((set, get) => ({
     }
   },
 
-  addContact: async (peerId: string, displayName: string | null, identityKey: number[]) => {
+  addContact: async (
+    peerId: string,
+    displayName: string | null,
+    identityKey: number[],
+  ) => {
     try {
       const id = await tauri.createContact(peerId, displayName, identityKey);
       await get().loadContacts();

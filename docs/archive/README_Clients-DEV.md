@@ -605,6 +605,7 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 |-----------|--------|-----------|
 | Desktop Framework | Tauri 2.0 | Rust backend, small binary (<20MB), cross-platform, native webview |
 | UI Framework | React 18 + TypeScript | Mature ecosystem, component reusability, type safety |
+| Design System | UI/UX Design Reference | Comprehensive design guide (docs/clients/UI-UX-DESIGN-REFERENCE.md) |
 | State Management | Zustand | Lightweight (<1KB), TypeScript-native, minimal boilerplate |
 | Styling | Tailwind CSS + shadcn/ui | Utility-first, consistent design system, accessibility built-in |
 | Mobile Android | Kotlin + Jetpack Compose | Modern Android development, declarative UI |
@@ -992,7 +993,7 @@ RedOps                                                          [=============]
 7. Group Messaging (Sender Keys protocol)
 8. WRAITH-Sync file synchronization
 
-**v1.7.1: WRAITH-Chat UI Redesign - COMPLETE (2026-01-21):**
+**v1.7.1: WRAITH-Chat UI Redesign & UI/UX Standardization - COMPLETE (2026-01-21):**
 1. Professional header with connection status, peer ID, session stats
 2. Sidebar with search, filters, New Chat/Group buttons
 3. Chat header with voice/video call buttons
@@ -1001,6 +1002,10 @@ RedOps                                                          [=============]
 6. 7-tab Settings modal (Profile, Privacy, Notifications, Appearance, Voice/Video, Security, About)
 7. Video call overlay with quality controls
 8. Group creation wizard with member selection
+9. **UI/UX Design Reference**: Comprehensive 2,400+ line design guide (docs/clients/UI-UX-DESIGN-REFERENCE.md)
+10. **Cross-Client UI Standardization**: Consistent styling across WRAITH-Transfer, WRAITH-Chat, WRAITH-Sync
+11. **JACK/ALSA Audio Fix**: Resolved device enumeration errors in voice calling
+12. **50+ Component Fixes**: Color palette (gray->slate), modal backdrops, accessibility improvements
 
 **Upcoming Work:**
 

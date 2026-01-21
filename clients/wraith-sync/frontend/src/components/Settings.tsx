@@ -84,16 +84,16 @@ export default function Settings() {
   return (
     <div className="flex h-full">
       {/* Sidebar navigation */}
-      <div className="w-64 border-r border-gray-700 p-4">
+      <div className="w-64 border-r border-slate-700 bg-bg-primary p-4">
         <nav className="space-y-1">
           {sections.map((section) => (
             <button
               key={section.id}
               onClick={() => setActiveSection(section.id)}
-              className={`w-full px-4 py-2 text-left rounded transition-colors ${
+              className={`w-full px-4 py-2.5 text-left rounded-lg transition-colors ${
                 activeSection === section.id
                   ? 'bg-wraith-primary text-white'
-                  : 'hover:bg-wraith-dark text-gray-300'
+                  : 'hover:bg-bg-tertiary text-slate-300'
               }`}
             >
               {section.label}
@@ -105,7 +105,7 @@ export default function Settings() {
       {/* Settings content */}
       <div className="flex-1 overflow-y-auto p-6">
         {error && (
-          <div className="mb-4 p-3 bg-red-500/20 border border-red-500 rounded text-sm text-red-400">
+          <div className="mb-4 p-3 bg-error/20 border border-error rounded-lg text-sm text-red-400">
             {error}
           </div>
         )}
@@ -117,7 +117,7 @@ export default function Settings() {
 
             {/* Device Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-slate-300 mb-2">
                 Device Name
               </label>
               <input
@@ -126,16 +126,16 @@ export default function Settings() {
                 onChange={(e) =>
                   updateLocalSettings({ device_name: e.target.value })
                 }
-                className="w-full max-w-md px-3 py-2 bg-wraith-darker border border-gray-700 rounded focus:border-wraith-primary focus:outline-none"
+                className="w-full max-w-md px-3 py-2 bg-bg-primary border border-slate-600 rounded-lg focus:border-wraith-primary focus:outline-none focus:outline-none"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-slate-500 mt-1">
                 This name will be shown to other devices
               </p>
             </div>
 
             {/* Theme */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-slate-300 mb-2">
                 Theme
               </label>
               <select
@@ -145,7 +145,7 @@ export default function Settings() {
                     theme: e.target.value as 'light' | 'dark' | 'system',
                   })
                 }
-                className="w-full max-w-md px-3 py-2 bg-wraith-darker border border-gray-700 rounded focus:border-wraith-primary focus:outline-none"
+                className="w-full max-w-md px-3 py-2 bg-bg-primary border border-slate-600 rounded-lg focus:border-wraith-primary focus:outline-none focus:outline-none"
               >
                 <option value="system">System</option>
                 <option value="dark">Dark</option>
@@ -162,9 +162,9 @@ export default function Settings() {
                 onChange={(e) =>
                   updateLocalSettings({ auto_start: e.target.checked })
                 }
-                className="w-4 h-4 rounded border-gray-700 bg-wraith-darker"
+                className="w-4 h-4 rounded border-slate-700 bg-bg-secondary"
               />
-              <label htmlFor="auto_start" className="text-sm text-gray-300">
+              <label htmlFor="auto_start" className="text-sm text-slate-300">
                 Start syncing automatically when app opens
               </label>
             </div>
@@ -180,9 +180,9 @@ export default function Settings() {
                     notifications_enabled: e.target.checked,
                   })
                 }
-                className="w-4 h-4 rounded border-gray-700 bg-wraith-darker"
+                className="w-4 h-4 rounded border-slate-700 bg-bg-secondary"
               />
-              <label htmlFor="notifications" className="text-sm text-gray-300">
+              <label htmlFor="notifications" className="text-sm text-slate-300">
                 Show desktop notifications
               </label>
             </div>
@@ -190,7 +190,7 @@ export default function Settings() {
             <button
               onClick={handleSave}
               disabled={loading}
-              className="px-4 py-2 bg-wraith-primary hover:bg-wraith-secondary rounded transition-colors disabled:opacity-50"
+              className="px-4 py-2 bg-wraith-primary hover:bg-wraith-secondary rounded-lg transition-colors disabled:opacity-50"
             >
               {loading ? 'Saving...' : 'Save Changes'}
             </button>
@@ -204,7 +204,7 @@ export default function Settings() {
 
             {/* Conflict Strategy */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-slate-300 mb-2">
                 Conflict Resolution
               </label>
               <select
@@ -217,7 +217,7 @@ export default function Settings() {
                       | 'manual',
                   })
                 }
-                className="w-full max-w-md px-3 py-2 bg-wraith-darker border border-gray-700 rounded focus:border-wraith-primary focus:outline-none"
+                className="w-full max-w-md px-3 py-2 bg-bg-primary border border-slate-600 rounded-lg focus:border-wraith-primary focus:outline-none focus:outline-none"
               >
                 <option value="last_writer_wins">
                   Last writer wins (automatic)
@@ -225,7 +225,7 @@ export default function Settings() {
                 <option value="keep_both">Keep both versions</option>
                 <option value="manual">Ask me each time</option>
               </select>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-slate-500 mt-1">
                 How to handle files modified on multiple devices
               </p>
             </div>
@@ -241,9 +241,9 @@ export default function Settings() {
                     enable_delta_sync: e.target.checked,
                   })
                 }
-                className="w-4 h-4 rounded border-gray-700 bg-wraith-darker"
+                className="w-4 h-4 rounded border-slate-700 bg-bg-secondary"
               />
-              <label htmlFor="delta_sync" className="text-sm text-gray-300">
+              <label htmlFor="delta_sync" className="text-sm text-slate-300">
                 Enable delta sync (only transfer changes)
               </label>
             </div>
@@ -251,7 +251,7 @@ export default function Settings() {
             {/* Bandwidth Limits */}
             <div className="grid grid-cols-2 gap-4 max-w-md">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-slate-300 mb-2">
                   Upload Limit (MB/s)
                 </label>
                 <input
@@ -264,12 +264,12 @@ export default function Settings() {
                       upload_limit: parseFloat(e.target.value) * 1024 * 1024,
                     })
                   }
-                  className="w-full px-3 py-2 bg-wraith-darker border border-gray-700 rounded focus:border-wraith-primary focus:outline-none"
+                  className="w-full px-3 py-2 bg-bg-primary border border-slate-600 rounded-lg focus:border-wraith-primary focus:outline-none focus:outline-none"
                   placeholder="0 = unlimited"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-slate-300 mb-2">
                   Download Limit (MB/s)
                 </label>
                 <input
@@ -282,7 +282,7 @@ export default function Settings() {
                       download_limit: parseFloat(e.target.value) * 1024 * 1024,
                     })
                   }
-                  className="w-full px-3 py-2 bg-wraith-darker border border-gray-700 rounded focus:border-wraith-primary focus:outline-none"
+                  className="w-full px-3 py-2 bg-bg-primary border border-slate-600 rounded-lg focus:border-wraith-primary focus:outline-none focus:outline-none"
                   placeholder="0 = unlimited"
                 />
               </div>
@@ -291,7 +291,7 @@ export default function Settings() {
             {/* Version History */}
             <div className="grid grid-cols-2 gap-4 max-w-md">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-slate-300 mb-2">
                   Max Versions to Keep
                 </label>
                 <input
@@ -304,11 +304,11 @@ export default function Settings() {
                       max_versions: parseInt(e.target.value),
                     })
                   }
-                  className="w-full px-3 py-2 bg-wraith-darker border border-gray-700 rounded focus:border-wraith-primary focus:outline-none"
+                  className="w-full px-3 py-2 bg-bg-primary border border-slate-600 rounded-lg focus:border-wraith-primary focus:outline-none focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-slate-300 mb-2">
                   Version Retention (days)
                 </label>
                 <input
@@ -321,14 +321,14 @@ export default function Settings() {
                       version_retention_days: parseInt(e.target.value),
                     })
                   }
-                  className="w-full px-3 py-2 bg-wraith-darker border border-gray-700 rounded focus:border-wraith-primary focus:outline-none"
+                  className="w-full px-3 py-2 bg-bg-primary border border-slate-600 rounded-lg focus:border-wraith-primary focus:outline-none focus:outline-none"
                 />
               </div>
             </div>
 
             {/* Debounce */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-slate-300 mb-2">
                 Debounce Interval (ms)
               </label>
               <input
@@ -342,9 +342,9 @@ export default function Settings() {
                     debounce_ms: parseInt(e.target.value),
                   })
                 }
-                className="w-full max-w-md px-3 py-2 bg-wraith-darker border border-gray-700 rounded focus:border-wraith-primary focus:outline-none"
+                className="w-full max-w-md px-3 py-2 bg-bg-primary border border-slate-600 rounded-lg focus:border-wraith-primary focus:outline-none focus:outline-none"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-slate-500 mt-1">
                 Wait time before syncing after file changes (lower = faster, but
                 more CPU usage)
               </p>
@@ -353,7 +353,7 @@ export default function Settings() {
             <button
               onClick={handleSave}
               disabled={loading}
-              className="px-4 py-2 bg-wraith-primary hover:bg-wraith-secondary rounded transition-colors disabled:opacity-50"
+              className="px-4 py-2 bg-wraith-primary hover:bg-wraith-secondary rounded-lg transition-colors disabled:opacity-50"
             >
               {loading ? 'Saving...' : 'Save Changes'}
             </button>
@@ -366,7 +366,7 @@ export default function Settings() {
             <h2 className="text-xl font-semibold mb-4">Connected Devices</h2>
 
             {devices.length === 0 ? (
-              <div className="text-center text-gray-400 py-8">
+              <div className="text-center text-slate-400 py-8">
                 <p>No devices connected</p>
                 <p className="text-sm mt-1">
                   Other devices will appear here when they connect
@@ -380,14 +380,14 @@ export default function Settings() {
                     className={`p-4 rounded-lg border ${
                       device.is_self
                         ? 'border-wraith-primary bg-wraith-primary/5'
-                        : 'border-gray-700 bg-wraith-dark'
+                        : 'border-slate-700 bg-bg-secondary'
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div
                           className={`p-2 rounded ${
-                            device.is_self ? 'bg-wraith-primary/20' : 'bg-gray-700'
+                            device.is_self ? 'bg-wraith-primary/20' : 'bg-bg-tertiary'
                           }`}
                         >
                           <svg
@@ -411,7 +411,7 @@ export default function Settings() {
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p className="text-xs text-slate-500 mt-1">
                             Last seen: {formatDate(device.last_seen)}
                           </p>
                         </div>
@@ -421,6 +421,7 @@ export default function Settings() {
                           onClick={() => handleRemoveDevice(device.device_id)}
                           className="p-2 rounded hover:bg-red-500/20 text-red-400 transition-colors"
                           title="Remove device"
+                          aria-label="Remove device"
                         >
                           <svg
                             className="w-5 h-5"
@@ -447,7 +448,7 @@ export default function Settings() {
         {activeSection === 'patterns' && (
           <div className="space-y-6">
             <h2 className="text-xl font-semibold mb-4">Ignored Patterns</h2>
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-slate-400">
               Files matching these patterns will not be synced. Use glob syntax
               (e.g., *.tmp, node_modules/*, .git/**)
             </p>
@@ -459,13 +460,13 @@ export default function Settings() {
                 value={newPattern}
                 onChange={(e) => setNewPattern(e.target.value)}
                 placeholder="e.g., *.log, .DS_Store"
-                className="flex-1 px-3 py-2 bg-wraith-darker border border-gray-700 rounded focus:border-wraith-primary focus:outline-none"
+                className="flex-1 px-3 py-2 bg-bg-primary border border-slate-600 rounded-lg focus:border-wraith-primary focus:outline-none focus:outline-none"
                 onKeyDown={(e) => e.key === 'Enter' && handleAddPattern()}
               />
               <button
                 onClick={handleAddPattern}
                 disabled={!newPattern.trim()}
-                className="px-4 py-2 bg-wraith-primary hover:bg-wraith-secondary rounded transition-colors disabled:opacity-50"
+                className="px-4 py-2 bg-wraith-primary hover:bg-wraith-secondary rounded-lg transition-colors disabled:opacity-50"
               >
                 Add
               </button>
@@ -476,14 +477,14 @@ export default function Settings() {
               {globalPatterns.map((pattern, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between px-3 py-2 bg-wraith-dark border border-gray-700 rounded"
+                  className="flex items-center justify-between px-3 py-2 bg-bg-secondary border border-slate-700 rounded"
                 >
-                  <code className="text-sm text-gray-300">{pattern}</code>
+                  <code className="text-sm text-slate-300">{pattern}</code>
                   {/* Note: Remove functionality would need backend support */}
                 </div>
               ))}
               {globalPatterns.length === 0 && (
-                <p className="text-sm text-gray-500 py-2">
+                <p className="text-sm text-slate-500 py-2">
                   No custom patterns defined. Default patterns (.git, node_modules,
                   etc.) are always applied.
                 </p>

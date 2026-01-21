@@ -1,23 +1,23 @@
 @import "tailwindcss";
 
-/* Custom theme overrides */
+/* Custom theme overrides - WRAITH Design System */
 @theme {
-  /* WRAITH brand colors */
-  --color-wraith-primary: #6366f1;
-  --color-wraith-secondary: #8b5cf6;
-  --color-wraith-accent: #ec4899;
-  --color-wraith-dark: #1e1b4b;
-  --color-wraith-darker: #0f0d2e;
+  /* WRAITH brand colors (aligned with design reference) */
+  --color-wraith-primary: #7c3aed;    /* Violet 600 - Primary actions */
+  --color-wraith-secondary: #4f46e5;  /* Indigo 600 - Secondary actions */
+  --color-wraith-accent: #ec4899;     /* Pink 500 - Chat notifications (app-specific) */
+  --color-wraith-dark: #0f172a;       /* Slate 900 - Primary background */
+  --color-wraith-darker: #020617;     /* Slate 950 - Deepest background */
 
-  /* Status colors */
-  --color-success: #22c55e;
-  --color-warning: #f59e0b;
-  --color-error: #ef4444;
+  /* Status colors (standardized) */
+  --color-success: #22c55e;   /* Green 500 - Connected, completed */
+  --color-warning: #f59e0b;   /* Amber 500 - Caution, pending */
+  --color-error: #ef4444;     /* Red 500 - Errors, disconnected */
 
-  /* Background colors for dark theme */
-  --color-bg-primary: #0f0d2e;
-  --color-bg-secondary: #1e1b4b;
-  --color-bg-tertiary: #312e81;
+  /* Background colors for dark theme (aligned with design reference) */
+  --color-bg-primary: #0f172a;    /* Main content area */
+  --color-bg-secondary: #1e293b;  /* Sidebars, headers, cards */
+  --color-bg-tertiary: #334155;   /* Elevated elements, hovers */
 }
 
 /* Base styles */
@@ -37,8 +37,18 @@ body,
 body {
   background-color: var(--color-bg-primary);
   color: #e2e8f0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-    'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    "Oxygen",
+    "Ubuntu",
+    "Cantarell",
+    "Fira Sans",
+    "Droid Sans",
+    "Helvetica Neue",
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -50,7 +60,7 @@ body {
   outline-offset: 2px;
 }
 
-/* Scrollbar Styling */
+/* Scrollbar Styling (aligned with design reference) */
 ::-webkit-scrollbar {
   width: 8px;
 }
@@ -66,4 +76,10 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-wraith-secondary);
+}
+
+/* Focus styles for accessibility (aligned with design reference) */
+:focus-visible {
+  outline: 2px solid #06b6d4; /* Cyan 500 - consistent focus indicator */
+  outline-offset: 2px;
 }

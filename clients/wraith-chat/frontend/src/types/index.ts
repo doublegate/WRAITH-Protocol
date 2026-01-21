@@ -14,7 +14,7 @@ export interface Contact {
 
 export interface Conversation {
   id: number;
-  conv_type: 'direct' | 'group';
+  conv_type: "direct" | "group";
   peer_id?: string;
   group_id?: string;
   display_name?: string;
@@ -31,7 +31,7 @@ export interface Message {
   id: number;
   conversation_id: number;
   sender_peer_id: string;
-  content_type: 'text' | 'media' | 'voice' | 'file';
+  content_type: "text" | "media" | "voice" | "file";
   body?: string;
   media_path?: string;
   media_mime_type?: string;
@@ -41,7 +41,7 @@ export interface Message {
   delivered: boolean;
   read_by_me: boolean;
   expires_at?: number;
-  direction: 'incoming' | 'outgoing';
+  direction: "incoming" | "outgoing";
 }
 
 export interface NodeStatus {
@@ -56,7 +56,7 @@ export interface CallInfo {
   call_id: string;
   peer_id: string;
   state: CallState;
-  direction: 'outgoing' | 'incoming';
+  direction: "outgoing" | "incoming";
   started_at: number;
   connected_at?: number;
   muted: boolean;
@@ -65,13 +65,13 @@ export interface CallInfo {
 }
 
 export type CallState =
-  | 'initiating'
-  | 'ringing'
-  | 'incoming'
-  | 'connected'
-  | 'on_hold'
-  | 'reconnecting'
-  | 'ended';
+  | "initiating"
+  | "ringing"
+  | "incoming"
+  | "connected"
+  | "on_hold"
+  | "reconnecting"
+  | "ended";
 
 export interface CallStats {
   duration_secs: number;
@@ -102,7 +102,7 @@ export interface GroupInfo {
 export interface GroupMember {
   peer_id: string;
   display_name?: string;
-  role: 'admin' | 'member';
+  role: "admin" | "member";
   joined_at: number;
   key_generation: number;
 }

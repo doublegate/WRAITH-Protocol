@@ -1,26 +1,26 @@
 // WRAITH Chat - Main Application (Redesigned)
 
-import { useEffect, useState, useRef } from 'react';
-import { useConversationStore } from './stores/conversationStore';
-import { useContactStore } from './stores/contactStore';
-import { useMessageStore } from './stores/messageStore';
-import { useNodeStore } from './stores/nodeStore';
-import { useCallStore } from './stores/callStore';
-import { useGroupStore } from './stores/groupStore';
+import { useEffect, useState, useRef } from "react";
+import { useConversationStore } from "./stores/conversationStore";
+import { useContactStore } from "./stores/contactStore";
+import { useMessageStore } from "./stores/messageStore";
+import { useNodeStore } from "./stores/nodeStore";
+import { useCallStore } from "./stores/callStore";
+import { useGroupStore } from "./stores/groupStore";
 
 // Components
-import Header from './components/Header';
-import Sidebar from './components/Sidebar';
-import ChatHeader from './components/ChatHeader';
-import MessageBubble, { DateSeparator } from './components/MessageBubble';
-import MessageInput from './components/MessageInput';
-import InfoPanel from './components/InfoPanel';
-import SettingsModal from './components/SettingsModal';
-import NewChatDialog from './components/NewChatDialog';
-import NewGroupDialog from './components/NewGroupDialog';
-import GroupSettings from './components/GroupSettings';
-import VoiceCall from './components/VoiceCall';
-import VideoCallOverlay from './components/VideoCallOverlay';
+import Header from "./components/Header";
+import Sidebar from "./components/Sidebar";
+import ChatHeader from "./components/ChatHeader";
+import MessageBubble, { DateSeparator } from "./components/MessageBubble";
+import MessageInput from "./components/MessageInput";
+import InfoPanel from "./components/InfoPanel";
+import SettingsModal from "./components/SettingsModal";
+import NewChatDialog from "./components/NewChatDialog";
+import NewGroupDialog from "./components/NewGroupDialog";
+import GroupSettings from "./components/GroupSettings";
+import VoiceCall from "./components/VoiceCall";
+import VideoCallOverlay from "./components/VideoCallOverlay";
 
 export default function App() {
   // UI State
@@ -33,7 +33,8 @@ export default function App() {
   const [activeVideoCall, setActiveVideoCall] = useState<string | null>(null);
 
   // Stores
-  const { conversations, selectedConversationId, loadConversations } = useConversationStore();
+  const { conversations, selectedConversationId, loadConversations } =
+    useConversationStore();
   const { loadContacts } = useContactStore();
   const { messages, loadMessages, sendMessage, markAsRead } = useMessageStore();
   const { startNode, refreshStatus, status } = useNodeStore();
@@ -44,8 +45,12 @@ export default function App() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Get selected conversation
-  const selectedConversation = conversations.find((c) => c.id === selectedConversationId);
-  const conversationMessages = selectedConversationId ? messages[selectedConversationId] || [] : [];
+  const selectedConversation = conversations.find(
+    (c) => c.id === selectedConversationId,
+  );
+  const conversationMessages = selectedConversationId
+    ? messages[selectedConversationId] || []
+    : [];
 
   // Initialize app
   useEffect(() => {
@@ -76,18 +81,24 @@ export default function App() {
 
       // If it's a group, load group members
       const conv = conversations.find((c) => c.id === selectedConversationId);
-      if (conv?.conv_type === 'group' && conv.group_id) {
+      if (conv?.conv_type === "group" && conv.group_id) {
         selectGroup(conv.group_id);
       } else {
         selectGroup(null);
       }
     }
-  }, [selectedConversationId, loadMessages, markAsRead, conversations, selectGroup]);
+  }, [
+    selectedConversationId,
+    loadMessages,
+    markAsRead,
+    conversations,
+    selectGroup,
+  ]);
 
   // Scroll to bottom when messages change
   const messageCount = conversationMessages.length;
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messageCount]);
 
   // Handle send message
@@ -96,10 +107,14 @@ export default function App() {
 
     try {
       if (selectedConversation.peer_id) {
-        await sendMessage(selectedConversation.id, selectedConversation.peer_id, text);
+        await sendMessage(
+          selectedConversation.id,
+          selectedConversation.peer_id,
+          text,
+        );
       }
     } catch (error) {
-      console.error('Failed to send message:', error);
+      console.error("Failed to send message:", error);
     }
   };
 
@@ -192,8 +207,8 @@ export default function App() {
                 disabled={!status?.running}
                 placeholder={
                   status?.running
-                    ? 'Type a message...'
-                    : 'Connect to send messages'
+                    ? "Type a message..."
+                    : "Connect to send messages"
                 }
               />
             </>
@@ -208,8 +223,8 @@ export default function App() {
                   Welcome to WRAITH Chat
                 </h2>
                 <p className="text-slate-400 mb-6">
-                  Select a conversation from the sidebar or start a new chat to begin
-                  messaging securely.
+                  Select a conversation from the sidebar or start a new chat to
+                  begin messaging securely.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <button
@@ -236,7 +251,7 @@ export default function App() {
             conversation={selectedConversation}
             onClose={() => setShowInfoPanel(false)}
             onOpenGroupSettings={
-              selectedConversation.conv_type === 'group'
+              selectedConversation.conv_type === "group"
                 ? () => setShowGroupSettings(true)
                 : undefined
             }
@@ -292,17 +307,19 @@ interface MessageGroup {
     id: number;
     conversation_id: number;
     sender_peer_id: string;
-    content_type: 'text' | 'media' | 'voice' | 'file';
+    content_type: "text" | "media" | "voice" | "file";
     body?: string;
     timestamp: number;
     sent: boolean;
     delivered: boolean;
     read_by_me: boolean;
-    direction: 'incoming' | 'outgoing';
+    direction: "incoming" | "outgoing";
   }>;
 }
 
-function groupMessagesByDate(messages: MessageGroup['messages']): MessageGroup[] {
+function groupMessagesByDate(
+  messages: MessageGroup["messages"],
+): MessageGroup[] {
   const groups: MessageGroup[] = [];
   let currentGroup: MessageGroup | null = null;
 
@@ -324,7 +341,12 @@ function groupMessagesByDate(messages: MessageGroup['messages']): MessageGroup[]
 // Icons
 function MessageIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -337,7 +359,12 @@ function MessageIcon({ className }: { className?: string }) {
 
 function ChatIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
       <path
         strokeLinecap="round"
         strokeLinejoin="round"

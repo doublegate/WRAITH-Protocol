@@ -1,47 +1,58 @@
 // WRAITH Chat - Settings Modal Component
 
-import { useState, useEffect } from 'react';
-import { useNodeStore } from '../stores/nodeStore';
-import { useCallStore } from '../stores/callStore';
+import { useState, useEffect } from "react";
+import { useNodeStore } from "../stores/nodeStore";
+import { useCallStore } from "../stores/callStore";
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-type SettingsTab = 'profile' | 'privacy' | 'notifications' | 'appearance' | 'audio-video' | 'security' | 'about';
+type SettingsTab =
+  | "profile"
+  | "privacy"
+  | "notifications"
+  | "appearance"
+  | "audio-video"
+  | "security"
+  | "about";
 
 export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
-  const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
+  const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
   const { status } = useNodeStore();
   const {
     inputDevices,
     outputDevices,
     selectedInputDevice,
     selectedOutputDevice,
+    audioDevicesLoading,
+    audioDevicesError,
     loadAudioDevices,
     setInputDevice,
     setOutputDevice,
   } = useCallStore();
 
   // Settings state
-  const [displayName, setDisplayName] = useState('');
+  const [displayName, setDisplayName] = useState("");
   const [readReceipts, setReadReceipts] = useState(true);
   const [typingIndicators, setTypingIndicators] = useState(true);
   const [notifications, setNotifications] = useState(true);
   const [notificationSound, setNotificationSound] = useState(true);
-  const [theme, setTheme] = useState<'dark' | 'light' | 'system'>('dark');
-  const [videoQuality, setVideoQuality] = useState<'auto' | 'low' | 'medium' | 'high'>('auto');
+  const [theme, setTheme] = useState<"dark" | "light" | "system">("dark");
+  const [videoQuality, setVideoQuality] = useState<
+    "auto" | "low" | "medium" | "high"
+  >("auto");
 
   // Load audio devices when audio-video tab is active
   useEffect(() => {
-    if (isOpen && activeTab === 'audio-video') {
+    if (isOpen && activeTab === "audio-video") {
       loadAudioDevices();
     }
   }, [isOpen, activeTab, loadAudioDevices]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
+    if (e.key === "Escape") {
       onClose();
     }
   };
@@ -49,13 +60,33 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   if (!isOpen) return null;
 
   const tabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
-    { id: 'profile', label: 'Profile', icon: <UserIcon className="w-5 h-5" /> },
-    { id: 'privacy', label: 'Privacy', icon: <ShieldIcon className="w-5 h-5" /> },
-    { id: 'notifications', label: 'Notifications', icon: <BellIcon className="w-5 h-5" /> },
-    { id: 'appearance', label: 'Appearance', icon: <PaletteIcon className="w-5 h-5" /> },
-    { id: 'audio-video', label: 'Voice & Video', icon: <VideoIcon className="w-5 h-5" /> },
-    { id: 'security', label: 'Security', icon: <LockIcon className="w-5 h-5" /> },
-    { id: 'about', label: 'About', icon: <InfoIcon className="w-5 h-5" /> },
+    { id: "profile", label: "Profile", icon: <UserIcon className="w-5 h-5" /> },
+    {
+      id: "privacy",
+      label: "Privacy",
+      icon: <ShieldIcon className="w-5 h-5" />,
+    },
+    {
+      id: "notifications",
+      label: "Notifications",
+      icon: <BellIcon className="w-5 h-5" />,
+    },
+    {
+      id: "appearance",
+      label: "Appearance",
+      icon: <PaletteIcon className="w-5 h-5" />,
+    },
+    {
+      id: "audio-video",
+      label: "Voice & Video",
+      icon: <VideoIcon className="w-5 h-5" />,
+    },
+    {
+      id: "security",
+      label: "Security",
+      icon: <LockIcon className="w-5 h-5" />,
+    },
+    { id: "about", label: "About", icon: <InfoIcon className="w-5 h-5" /> },
   ];
 
   return (
@@ -74,7 +105,10 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         {/* Sidebar */}
         <div className="w-56 bg-bg-primary border-r border-slate-700 flex flex-col">
           <div className="p-4 border-b border-slate-700">
-            <h2 id="settings-title" className="text-lg font-semibold text-white">
+            <h2
+              id="settings-title"
+              className="text-lg font-semibold text-white"
+            >
               Settings
             </h2>
           </div>
@@ -85,8 +119,8 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 onClick={() => setActiveTab(tab.id)}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
                   activeTab === tab.id
-                    ? 'bg-wraith-primary text-white'
-                    : 'text-slate-400 hover:text-white hover:bg-bg-tertiary'
+                    ? "bg-wraith-primary text-white"
+                    : "text-slate-400 hover:text-white hover:bg-bg-tertiary"
                 }`}
               >
                 {tab.icon}
@@ -115,12 +149,12 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           {/* Content Area */}
           <div className="flex-1 overflow-y-auto p-6">
             {/* Profile Tab */}
-            {activeTab === 'profile' && (
+            {activeTab === "profile" && (
               <div className="space-y-6">
                 {/* Avatar */}
                 <div className="flex items-center gap-4">
                   <div className="w-20 h-20 rounded-full bg-gradient-to-br from-wraith-primary to-wraith-secondary flex items-center justify-center text-3xl font-bold text-white">
-                    {displayName ? displayName[0].toUpperCase() : 'U'}
+                    {displayName ? displayName[0].toUpperCase() : "U"}
                   </div>
                   <button className="px-4 py-2 border border-slate-600 rounded-lg text-slate-300 hover:bg-bg-tertiary transition-colors">
                     Change Avatar
@@ -152,12 +186,15 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   <div className="flex gap-2">
                     <input
                       type="text"
-                      value={status?.local_peer_id || 'Not connected'}
+                      value={status?.local_peer_id || "Not connected"}
                       readOnly
                       className="flex-1 bg-bg-primary border border-slate-600 rounded-lg px-4 py-2.5 text-slate-400 font-mono text-sm"
                     />
                     <button
-                      onClick={() => status?.local_peer_id && navigator.clipboard.writeText(status.local_peer_id)}
+                      onClick={() =>
+                        status?.local_peer_id &&
+                        navigator.clipboard.writeText(status.local_peer_id)
+                      }
                       className="px-4 py-2 bg-bg-tertiary hover:bg-slate-600 rounded-lg text-white transition-colors"
                     >
                       Copy
@@ -171,7 +208,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             )}
 
             {/* Privacy Tab */}
-            {activeTab === 'privacy' && (
+            {activeTab === "privacy" && (
               <div className="space-y-6">
                 <ToggleSetting
                   label="Read Receipts"
@@ -186,16 +223,19 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   onChange={setTypingIndicators}
                 />
                 <div className="pt-4 border-t border-slate-700">
-                  <h4 className="text-sm font-medium text-slate-300 mb-4">Blocked Contacts</h4>
+                  <h4 className="text-sm font-medium text-slate-300 mb-4">
+                    Blocked Contacts
+                  </h4>
                   <p className="text-sm text-slate-500">
-                    No blocked contacts. Blocked contacts cannot send you messages or call you.
+                    No blocked contacts. Blocked contacts cannot send you
+                    messages or call you.
                   </p>
                 </div>
               </div>
             )}
 
             {/* Notifications Tab */}
-            {activeTab === 'notifications' && (
+            {activeTab === "notifications" && (
               <div className="space-y-6">
                 <ToggleSetting
                   label="Enable Notifications"
@@ -213,21 +253,21 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             )}
 
             {/* Appearance Tab */}
-            {activeTab === 'appearance' && (
+            {activeTab === "appearance" && (
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-3">
                     Theme
                   </label>
                   <div className="flex gap-3">
-                    {(['dark', 'light', 'system'] as const).map((t) => (
+                    {(["dark", "light", "system"] as const).map((t) => (
                       <button
                         key={t}
                         onClick={() => setTheme(t)}
                         className={`flex-1 px-4 py-3 rounded-lg border transition-colors ${
                           theme === t
-                            ? 'bg-wraith-primary border-wraith-primary text-white'
-                            : 'bg-bg-primary border-slate-600 text-slate-400 hover:border-slate-500'
+                            ? "bg-wraith-primary border-wraith-primary text-white"
+                            : "bg-bg-primary border-slate-600 text-slate-400 hover:border-slate-500"
                         }`}
                       >
                         {t.charAt(0).toUpperCase() + t.slice(1)}
@@ -239,25 +279,76 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             )}
 
             {/* Audio & Video Tab */}
-            {activeTab === 'audio-video' && (
+            {activeTab === "audio-video" && (
               <div className="space-y-6">
+                {/* Loading State */}
+                {audioDevicesLoading && (
+                  <div className="flex items-center gap-3 p-4 bg-bg-primary rounded-lg border border-slate-700">
+                    <div className="w-5 h-5 border-2 border-wraith-primary border-t-transparent rounded-full animate-spin" />
+                    <span className="text-slate-400">
+                      Detecting audio devices...
+                    </span>
+                  </div>
+                )}
+
+                {/* Error State */}
+                {audioDevicesError && (
+                  <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <svg
+                        className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <div>
+                        <p className="text-sm text-red-400">
+                          {audioDevicesError}
+                        </p>
+                        <button
+                          onClick={() => loadAudioDevices()}
+                          className="mt-2 text-xs text-red-300 hover:text-red-200 underline"
+                        >
+                          Try again
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Microphone */}
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">
                     Microphone
                   </label>
                   <select
-                    value={selectedInputDevice || ''}
+                    value={selectedInputDevice || ""}
                     onChange={(e) => setInputDevice(e.target.value || null)}
-                    className="w-full bg-bg-primary border border-slate-600 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-wraith-primary"
+                    disabled={audioDevicesLoading}
+                    className="w-full bg-bg-primary border border-slate-600 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-wraith-primary disabled:opacity-50"
                   >
                     <option value="">System Default</option>
                     {inputDevices.map((device) => (
                       <option key={device.id} value={device.id}>
-                        {device.name} {device.is_default && '(Default)'}
+                        {device.name} {device.is_default && "(Default)"}
                       </option>
                     ))}
                   </select>
+                  {!audioDevicesLoading &&
+                    inputDevices.length === 0 &&
+                    !audioDevicesError && (
+                      <p className="text-xs text-yellow-500 mt-1">
+                        No microphones detected. Please check your audio
+                        settings.
+                      </p>
+                    )}
                 </div>
 
                 {/* Speaker */}
@@ -266,17 +357,25 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     Speaker
                   </label>
                   <select
-                    value={selectedOutputDevice || ''}
+                    value={selectedOutputDevice || ""}
                     onChange={(e) => setOutputDevice(e.target.value || null)}
-                    className="w-full bg-bg-primary border border-slate-600 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-wraith-primary"
+                    disabled={audioDevicesLoading}
+                    className="w-full bg-bg-primary border border-slate-600 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-wraith-primary disabled:opacity-50"
                   >
                     <option value="">System Default</option>
                     {outputDevices.map((device) => (
                       <option key={device.id} value={device.id}>
-                        {device.name} {device.is_default && '(Default)'}
+                        {device.name} {device.is_default && "(Default)"}
                       </option>
                     ))}
                   </select>
+                  {!audioDevicesLoading &&
+                    outputDevices.length === 0 &&
+                    !audioDevicesError && (
+                      <p className="text-xs text-yellow-500 mt-1">
+                        No speakers detected. Please check your audio settings.
+                      </p>
+                    )}
                 </div>
 
                 {/* Video Quality */}
@@ -286,7 +385,9 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   </label>
                   <select
                     value={videoQuality}
-                    onChange={(e) => setVideoQuality(e.target.value as typeof videoQuality)}
+                    onChange={(e) =>
+                      setVideoQuality(e.target.value as typeof videoQuality)
+                    }
                     className="w-full bg-bg-primary border border-slate-600 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-wraith-primary"
                   >
                     <option value="auto">Auto (Recommended)</option>
@@ -302,10 +403,20 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 {/* Test Buttons */}
                 <div className="pt-4 border-t border-slate-700">
                   <div className="flex gap-3">
-                    <button className="px-4 py-2 bg-bg-tertiary hover:bg-slate-600 rounded-lg text-white transition-colors">
+                    <button
+                      disabled={
+                        audioDevicesLoading || inputDevices.length === 0
+                      }
+                      className="px-4 py-2 bg-bg-tertiary hover:bg-slate-600 rounded-lg text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
                       Test Microphone
                     </button>
-                    <button className="px-4 py-2 bg-bg-tertiary hover:bg-slate-600 rounded-lg text-white transition-colors">
+                    <button
+                      disabled={
+                        audioDevicesLoading || outputDevices.length === 0
+                      }
+                      className="px-4 py-2 bg-bg-tertiary hover:bg-slate-600 rounded-lg text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
                       Test Speaker
                     </button>
                   </div>
@@ -314,7 +425,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             )}
 
             {/* Security Tab */}
-            {activeTab === 'security' && (
+            {activeTab === "security" && (
               <div className="space-y-6">
                 {/* Encryption Info */}
                 <div className="p-4 bg-bg-primary rounded-lg border border-slate-700">
@@ -323,19 +434,26 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                       <LockIcon className="w-5 h-5 text-green-500" />
                     </div>
                     <div>
-                      <h4 className="font-medium text-white">End-to-End Encrypted</h4>
-                      <p className="text-sm text-slate-400">All messages are encrypted</p>
+                      <h4 className="font-medium text-white">
+                        End-to-End Encrypted
+                      </h4>
+                      <p className="text-sm text-slate-400">
+                        All messages are encrypted
+                      </p>
                     </div>
                   </div>
                   <p className="text-sm text-slate-400">
-                    WRAITH Chat uses the Signal Protocol with Double Ratchet encryption.
-                    Your messages can only be read by you and the intended recipient.
+                    WRAITH Chat uses the Signal Protocol with Double Ratchet
+                    encryption. Your messages can only be read by you and the
+                    intended recipient.
                   </p>
                 </div>
 
                 {/* Session Info */}
                 <div>
-                  <h4 className="text-sm font-medium text-slate-300 mb-3">Active Sessions</h4>
+                  <h4 className="text-sm font-medium text-slate-300 mb-3">
+                    Active Sessions
+                  </h4>
                   <div className="p-4 bg-bg-primary rounded-lg border border-slate-700">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -367,25 +485,46 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             )}
 
             {/* About Tab */}
-            {activeTab === 'about' && (
+            {activeTab === "about" && (
               <div className="space-y-6">
                 {/* App Info */}
                 <div className="text-center py-6">
                   <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-wraith-primary to-wraith-secondary flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    <svg
+                      className="w-10 h-10 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                      />
                     </svg>
                   </div>
-                  <h3 className="text-xl font-semibold text-white mb-1">WRAITH Chat</h3>
-                  <p className="text-sm text-slate-400">Version 1.6.3</p>
+                  <h3 className="text-xl font-semibold text-white mb-1">
+                    WRAITH Chat
+                  </h3>
+                  <p className="text-sm text-slate-400">Version 1.7.1</p>
                 </div>
 
                 {/* Info Grid */}
                 <div className="grid grid-cols-2 gap-4">
-                  <InfoCard label="Protocol" value="WRAITH Protocol v1.6" />
-                  <InfoCard label="Encryption" value="Double Ratchet + Sender Keys" />
-                  <InfoCard label="Connection" value={status?.running ? 'Connected' : 'Disconnected'} />
-                  <InfoCard label="Sessions" value={String(status?.session_count || 0)} />
+                  <InfoCard label="Protocol" value="WRAITH Protocol v1.7" />
+                  <InfoCard
+                    label="Encryption"
+                    value="Double Ratchet + Sender Keys"
+                  />
+                  <InfoCard
+                    label="Connection"
+                    value={status?.running ? "Connected" : "Disconnected"}
+                  />
+                  <InfoCard
+                    label="Sessions"
+                    value={String(status?.session_count || 0)}
+                  />
                 </div>
 
                 {/* Links */}
@@ -420,7 +559,12 @@ interface ToggleSettingProps {
   onChange: (checked: boolean) => void;
 }
 
-function ToggleSetting({ label, description, checked, onChange }: ToggleSettingProps) {
+function ToggleSetting({
+  label,
+  description,
+  checked,
+  onChange,
+}: ToggleSettingProps) {
   return (
     <div className="flex items-center justify-between">
       <div>
@@ -430,14 +574,14 @@ function ToggleSetting({ label, description, checked, onChange }: ToggleSettingP
       <button
         onClick={() => onChange(!checked)}
         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-          checked ? 'bg-wraith-primary' : 'bg-slate-600'
+          checked ? "bg-wraith-primary" : "bg-slate-600"
         }`}
         role="switch"
         aria-checked={checked}
       >
         <span
           className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-            checked ? 'translate-x-6' : 'translate-x-1'
+            checked ? "translate-x-6" : "translate-x-1"
           }`}
         />
       </button>
@@ -458,80 +602,180 @@ function InfoCard({ label, value }: { label: string; value: string }) {
 // Icons
 function UserIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+      />
     </svg>
   );
 }
 
 function ShieldIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+      />
     </svg>
   );
 }
 
 function BellIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+      />
     </svg>
   );
 }
 
 function PaletteIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
+      />
     </svg>
   );
 }
 
 function VideoIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+      />
     </svg>
   );
 }
 
 function LockIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+      />
     </svg>
   );
 }
 
 function InfoIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
     </svg>
   );
 }
 
 function CloseIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M6 18L18 6M6 6l12 12"
+      />
     </svg>
   );
 }
 
 function DesktopIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+      />
     </svg>
   );
 }
 
 function ExternalLinkIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+      />
     </svg>
   );
 }

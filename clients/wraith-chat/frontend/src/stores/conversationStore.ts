@@ -1,8 +1,8 @@
 // Conversation Store (Zustand)
 
-import { create } from 'zustand';
-import type { Conversation } from '../types';
-import * as tauri from '../lib/tauri';
+import { create } from "zustand";
+import type { Conversation } from "../types";
+import * as tauri from "../lib/tauri";
 
 interface ConversationState {
   conversations: Conversation[];
@@ -16,7 +16,7 @@ interface ConversationState {
     convType: string,
     peerId: string | null,
     groupId: string | null,
-    displayName: string | null
+    displayName: string | null,
   ) => Promise<number>;
 }
 
@@ -44,10 +44,15 @@ export const useConversationStore = create<ConversationState>((set, get) => ({
     convType: string,
     peerId: string | null,
     groupId: string | null,
-    displayName: string | null
+    displayName: string | null,
   ) => {
     try {
-      const id = await tauri.createConversation(convType, peerId, groupId, displayName);
+      const id = await tauri.createConversation(
+        convType,
+        peerId,
+        groupId,
+        displayName,
+      );
       await get().loadConversations();
       return id;
     } catch (error) {

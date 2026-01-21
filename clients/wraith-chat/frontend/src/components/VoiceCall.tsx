@@ -1,12 +1,12 @@
 // Voice Call Component - Sprint 17.5
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from "react";
 import {
   useCallStore,
   formatCallDuration,
   getCallStateText,
   type CallInfo,
-} from '../stores/callStore';
+} from "../stores/callStore";
 
 interface VoiceCallProps {
   /** The peer to call or the active call info */
@@ -53,7 +53,7 @@ export default function VoiceCall({ peerId, onCallEnd }: VoiceCallProps) {
   }, [peerId, activeCall, loading, startCall]);
 
   // Update call duration timer
-  const isConnected = activeCall?.state === 'connected';
+  const isConnected = activeCall?.state === "connected";
   const connectedAt = activeCall?.connected_at;
   useEffect(() => {
     if (!isConnected || !connectedAt) {
@@ -88,7 +88,7 @@ export default function VoiceCall({ peerId, onCallEnd }: VoiceCallProps) {
 
   // Handle call end callback
   useEffect(() => {
-    if (activeCall?.state === 'ended' && onCallEnd) {
+    if (activeCall?.state === "ended" && onCallEnd) {
       onCallEnd();
     }
   }, [activeCall?.state, onCallEnd]);
@@ -135,18 +135,26 @@ export default function VoiceCall({ peerId, onCallEnd }: VoiceCallProps) {
           <h2 className="text-2xl font-semibold">
             {activeCall.peer_id.substring(0, 16)}...
           </h2>
-          <p className="text-gray-400 mt-2">
-            {activeCall.state === 'connected'
+          <p className="text-slate-400 mt-2">
+            {activeCall.state === "connected"
               ? formatCallDuration(callDuration)
               : getCallStateText(activeCall.state)}
           </p>
         </div>
 
         {/* Call Stats (when connected) */}
-        {activeCall.state === 'connected' && (
-          <div className="text-sm text-gray-500 mb-8">
-            <span className="mr-4">Latency: {activeCall.stats.avg_latency_ms.toFixed(0)}ms</span>
-            <span>Quality: {getCallQuality(activeCall.stats.packets_lost, activeCall.stats.packets_received)}</span>
+        {activeCall.state === "connected" && (
+          <div className="text-sm text-slate-500 mb-8">
+            <span className="mr-4">
+              Latency: {activeCall.stats.avg_latency_ms.toFixed(0)}ms
+            </span>
+            <span>
+              Quality:{" "}
+              {getCallQuality(
+                activeCall.stats.packets_lost,
+                activeCall.stats.packets_received,
+              )}
+            </span>
           </div>
         )}
 
@@ -164,10 +172,10 @@ export default function VoiceCall({ peerId, onCallEnd }: VoiceCallProps) {
             onClick={handleToggleMute}
             className={`w-14 h-14 rounded-full flex items-center justify-center transition ${
               activeCall.muted
-                ? 'bg-red-500 text-white'
-                : 'bg-gray-700 text-white hover:bg-gray-600'
+                ? "bg-red-500 text-white"
+                : "bg-slate-700 text-white hover:bg-slate-600"
             }`}
-            title={activeCall.muted ? 'Unmute' : 'Mute'}
+            title={activeCall.muted ? "Unmute" : "Mute"}
           >
             {activeCall.muted ? (
               <MicOffIcon className="w-6 h-6" />
@@ -190,10 +198,10 @@ export default function VoiceCall({ peerId, onCallEnd }: VoiceCallProps) {
             onClick={handleToggleSpeaker}
             className={`w-14 h-14 rounded-full flex items-center justify-center transition ${
               activeCall.speaker_on
-                ? 'bg-wraith-primary text-white'
-                : 'bg-gray-700 text-white hover:bg-gray-600'
+                ? "bg-wraith-primary text-white"
+                : "bg-slate-700 text-white hover:bg-slate-600"
             }`}
-            title={activeCall.speaker_on ? 'Use Earpiece' : 'Use Speaker'}
+            title={activeCall.speaker_on ? "Use Earpiece" : "Use Speaker"}
           >
             {activeCall.speaker_on ? (
               <SpeakerHighIcon className="w-6 h-6" />
@@ -205,7 +213,7 @@ export default function VoiceCall({ peerId, onCallEnd }: VoiceCallProps) {
           {/* Settings Button */}
           <button
             onClick={() => setShowSettings(!showSettings)}
-            className="w-14 h-14 rounded-full bg-gray-700 text-white hover:bg-gray-600 flex items-center justify-center transition"
+            className="w-14 h-14 rounded-full bg-slate-700 text-white hover:bg-slate-600 flex items-center justify-center transition"
             title="Audio Settings"
           >
             <SettingsIcon className="w-6 h-6" />
@@ -219,16 +227,16 @@ export default function VoiceCall({ peerId, onCallEnd }: VoiceCallProps) {
 
             {/* Input Device */}
             <label className="block mb-4">
-              <span className="text-sm text-gray-400">Microphone</span>
+              <span className="text-sm text-slate-400">Microphone</span>
               <select
-                value={selectedInputDevice || ''}
+                value={selectedInputDevice || ""}
                 onChange={(e) => setInputDevice(e.target.value || null)}
-                className="w-full mt-1 p-2 bg-bg-secondaryer border border-gray-600 rounded"
+                className="w-full mt-1 p-2 bg-bg-secondary border border-slate-600 rounded"
               >
                 <option value="">System Default</option>
                 {inputDevices.map((device) => (
                   <option key={device.id} value={device.id}>
-                    {device.name} {device.is_default && '(Default)'}
+                    {device.name} {device.is_default && "(Default)"}
                   </option>
                 ))}
               </select>
@@ -236,16 +244,16 @@ export default function VoiceCall({ peerId, onCallEnd }: VoiceCallProps) {
 
             {/* Output Device */}
             <label className="block">
-              <span className="text-sm text-gray-400">Speaker</span>
+              <span className="text-sm text-slate-400">Speaker</span>
               <select
-                value={selectedOutputDevice || ''}
+                value={selectedOutputDevice || ""}
                 onChange={(e) => setOutputDevice(e.target.value || null)}
-                className="w-full mt-1 p-2 bg-bg-secondaryer border border-gray-600 rounded"
+                className="w-full mt-1 p-2 bg-bg-secondary border border-slate-600 rounded"
               >
                 <option value="">System Default</option>
                 {outputDevices.map((device) => (
                   <option key={device.id} value={device.id}>
-                    {device.name} {device.is_default && '(Default)'}
+                    {device.name} {device.is_default && "(Default)"}
                   </option>
                 ))}
               </select>
@@ -275,9 +283,7 @@ function IncomingCallView({ call, onAnswer, onReject }: IncomingCallViewProps) {
           {call.peer_id.substring(0, 2).toUpperCase()}
         </div>
         <h2 className="text-2xl font-semibold">Incoming Call</h2>
-        <p className="text-gray-400 mt-2">
-          {call.peer_id.substring(0, 16)}...
-        </p>
+        <p className="text-slate-400 mt-2">{call.peer_id.substring(0, 16)}...</p>
       </div>
 
       <div className="flex items-center gap-8">
@@ -323,7 +329,7 @@ export function CallButton({ peerId, onCallStart }: CallButtonProps) {
     <button
       onClick={handleClick}
       disabled={!!activeCall || loading}
-      className="p-2 rounded hover:bg-gray-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+      className="p-2 rounded hover:bg-slate-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
       title="Start Voice Call"
     >
       <PhoneIcon className="w-5 h-5" />
@@ -333,69 +339,149 @@ export function CallButton({ peerId, onCallStart }: CallButtonProps) {
 
 // Helper function to determine call quality
 function getCallQuality(packetsLost: number, packetsReceived: number): string {
-  if (packetsReceived === 0) return 'Unknown';
+  if (packetsReceived === 0) return "Unknown";
   const lossRate = packetsLost / (packetsReceived + packetsLost);
-  if (lossRate < 0.01) return 'Excellent';
-  if (lossRate < 0.05) return 'Good';
-  if (lossRate < 0.1) return 'Fair';
-  return 'Poor';
+  if (lossRate < 0.01) return "Excellent";
+  if (lossRate < 0.05) return "Good";
+  if (lossRate < 0.1) return "Fair";
+  return "Poor";
 }
 
 // Icons (simple SVG components)
 function MicIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+      />
     </svg>
   );
 }
 
 function MicOffIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"
+      />
     </svg>
   );
 }
 
 function PhoneIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+      />
     </svg>
   );
 }
 
 function PhoneOffIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M5 3a2 2 0 00-2 2v1c0 8.284 6.716 15 15 15h1a2 2 0 002-2v-3.28a1 1 0 00-.684-.948l-4.493-1.498a1 1 0 00-1.21.502l-1.13 2.257a11.042 11.042 0 01-5.516-5.516l2.257-1.13a1 1 0 00.502-1.21L9.228 3.683A1 1 0 008.279 3H5z" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M16 8l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M5 3a2 2 0 00-2 2v1c0 8.284 6.716 15 15 15h1a2 2 0 002-2v-3.28a1 1 0 00-.684-.948l-4.493-1.498a1 1 0 00-1.21.502l-1.13 2.257a11.042 11.042 0 01-5.516-5.516l2.257-1.13a1 1 0 00.502-1.21L9.228 3.683A1 1 0 008.279 3H5z"
+      />
     </svg>
   );
 }
 
 function SpeakerIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+      />
     </svg>
   );
 }
 
 function SpeakerHighIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+      />
     </svg>
   );
 }
 
 function SettingsIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+      />
     </svg>
   );
 }

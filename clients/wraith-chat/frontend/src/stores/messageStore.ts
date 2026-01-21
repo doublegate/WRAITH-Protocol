@@ -1,16 +1,24 @@
 // Message Store (Zustand)
 
-import { create } from 'zustand';
-import type { Message } from '../types';
-import * as tauri from '../lib/tauri';
+import { create } from "zustand";
+import type { Message } from "../types";
+import * as tauri from "../lib/tauri";
 
 interface MessageState {
   messages: Record<number, Message[]>; // conversationId -> messages
   loading: boolean;
   error: string | null;
 
-  loadMessages: (conversationId: number, limit?: number, offset?: number) => Promise<void>;
-  sendMessage: (conversationId: number, peerId: string, body: string) => Promise<void>;
+  loadMessages: (
+    conversationId: number,
+    limit?: number,
+    offset?: number,
+  ) => Promise<void>;
+  sendMessage: (
+    conversationId: number,
+    peerId: string,
+    body: string,
+  ) => Promise<void>;
   markAsRead: (conversationId: number) => Promise<void>;
 }
 

@@ -45,17 +45,17 @@ export default function App() {
   ];
 
   return (
-    <div className="flex flex-col h-screen bg-wraith-darker text-white">
+    <div className="flex flex-col h-screen bg-bg-primary text-slate-200">
       {/* Header with status */}
-      <header className="bg-wraith-dark border-b border-gray-700 p-4">
+      <header className="bg-bg-secondary border-b border-slate-700 p-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-wraith-primary">WRAITH Sync</h1>
+          <h1 className="text-2xl font-bold text-white">WRAITH Sync</h1>
           <SyncStatus />
         </div>
       </header>
 
       {/* Tab navigation */}
-      <nav className="bg-wraith-dark border-b border-gray-700">
+      <nav className="bg-bg-secondary border-b border-slate-700">
         <div className="flex">
           {tabs.map((tab) => (
             <button
@@ -64,12 +64,12 @@ export default function App() {
               className={`px-6 py-3 text-sm font-medium transition-colors relative ${
                 activeTab === tab.id
                   ? 'text-wraith-primary border-b-2 border-wraith-primary'
-                  : 'text-gray-400 hover:text-white'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
               {tab.label}
               {tab.badge !== undefined && tab.badge > 0 && (
-                <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-red-500 text-white">
+                <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-error text-white">
                   {tab.badge}
                 </span>
               )}
@@ -87,7 +87,7 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-wraith-dark border-t border-gray-700 px-4 py-2 text-xs text-gray-500">
+      <footer className="bg-bg-secondary border-t border-slate-700 px-4 py-2 text-xs text-slate-500">
         <div className="flex items-center justify-between">
           <span>
             {status

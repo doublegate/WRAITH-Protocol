@@ -1299,7 +1299,7 @@ This major phase delivers three production-ready client applications implementin
 - ✅ Frontend test infrastructure (360 tests across all clients)
 - ✅ CI/CD updated (GitHub Actions: upload-artifact v6, download-artifact v7, cache v5)
 
-**v1.7.1 WRAITH-Chat UI Redesign:**
+**v1.7.1 WRAITH-Chat UI Redesign & UI/UX Standardization:**
 - Professional header with connection status, peer ID display, session stats
 - Sidebar with search, filters (All/Direct/Groups), New Chat/Group buttons
 - Chat header with voice/video call buttons
@@ -1309,6 +1309,10 @@ This major phase delivers three production-ready client applications implementin
 - Video call overlay with quality controls
 - Group creation wizard with member selection
 - Tailwind CSS v4 with @tailwindcss/vite plugin
+- **UI/UX Design Reference**: 2,400+ line design guide (docs/clients/UI-UX-DESIGN-REFERENCE.md)
+- **Cross-Client Standardization**: Consistent styling across Transfer, Chat, Sync
+- **JACK/ALSA Fix**: Resolved audio device enumeration errors in voice calls
+- **50+ Component Fixes**: Color palette (gray->slate), modal backdrops, accessibility
 
 **Upcoming Work:**
 

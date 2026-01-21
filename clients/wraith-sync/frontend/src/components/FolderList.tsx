@@ -46,7 +46,7 @@ export default function FolderList() {
       syncing: { bg: 'bg-blue-500', text: 'Syncing' },
       paused: { bg: 'bg-yellow-500', text: 'Paused' },
       error: { bg: 'bg-red-500', text: 'Error' },
-      offline: { bg: 'bg-gray-500', text: 'Offline' },
+      offline: { bg: 'bg-slate-500', text: 'Offline' },
       idle: { bg: 'bg-green-500', text: 'Synced' },
     };
 
@@ -72,8 +72,8 @@ export default function FolderList() {
   return (
     <div className="flex h-full">
       {/* Folder list */}
-      <div className="w-1/2 border-r border-gray-700 flex flex-col">
-        <div className="p-4 border-b border-gray-700 flex items-center justify-between">
+      <div className="w-1/2 border-r border-slate-700 flex flex-col">
+        <div className="p-4 border-b border-slate-700 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Synced Folders</h2>
           <button
             onClick={handleAddFolder}
@@ -91,7 +91,7 @@ export default function FolderList() {
 
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {folders.length === 0 ? (
-            <div className="text-center text-gray-400 py-8">
+            <div className="text-center text-slate-400 py-8">
               <div className="text-4xl mb-2">...</div>
               <p>No folders synced yet</p>
               <p className="text-sm mt-1">
@@ -106,7 +106,7 @@ export default function FolderList() {
                 className={`p-4 rounded-lg border cursor-pointer transition-colors ${
                   selectedFolderId === folder.id
                     ? 'border-wraith-primary bg-wraith-primary/10'
-                    : 'border-gray-700 hover:border-gray-600 bg-wraith-dark'
+                    : 'border-slate-700 hover:border-slate-600 bg-bg-secondary'
                 }`}
               >
                 <div className="flex items-start justify-between">
@@ -118,10 +118,10 @@ export default function FolderList() {
                       </span>
                       {getStatusBadge(folder)}
                     </div>
-                    <p className="text-sm text-gray-400 truncate mt-1">
+                    <p className="text-sm text-slate-400 truncate mt-1">
                       {folder.local_path}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-slate-500 mt-1">
                       {folder.synced_files} / {folder.total_files} files synced
                       {folder.pending_operations > 0 &&
                         ` - ${folder.pending_operations} pending`}
@@ -137,8 +137,9 @@ export default function FolderList() {
                           pauseFolder(folder.id);
                         }
                       }}
-                      className="p-1.5 rounded hover:bg-gray-700 transition-colors"
+                      className="p-1.5 rounded hover:bg-bg-tertiary transition-colors"
                       title={folder.paused ? 'Resume' : 'Pause'}
+                      aria-label={folder.paused ? 'Resume sync' : 'Pause sync'}
                     >
                       {folder.paused ? (
                         <svg
@@ -171,8 +172,9 @@ export default function FolderList() {
                         e.stopPropagation();
                         forceSyncFolder(folder.id);
                       }}
-                      className="p-1.5 rounded hover:bg-gray-700 transition-colors"
+                      className="p-1.5 rounded hover:bg-bg-tertiary transition-colors"
                       title="Force Sync"
+                      aria-label="Force sync folder"
                     >
                       <svg
                         className="w-4 h-4"
@@ -199,6 +201,7 @@ export default function FolderList() {
                       }}
                       className="p-1.5 rounded hover:bg-red-700 transition-colors text-red-400"
                       title="Remove"
+                      aria-label="Remove folder from sync"
                     >
                       <svg
                         className="w-4 h-4"
@@ -222,7 +225,7 @@ export default function FolderList() {
 
       {/* File list for selected folder */}
       <div className="w-1/2 flex flex-col">
-        <div className="p-4 border-b border-gray-700">
+        <div className="p-4 border-b border-slate-700">
           <h2 className="text-lg font-semibold">
             {selectedFolderId !== null
               ? `Files in ${folders.find((f) => f.id === selectedFolderId)?.local_path.split(/[/\\]/).pop() || 'folder'}`
@@ -232,11 +235,11 @@ export default function FolderList() {
 
         <div className="flex-1 overflow-y-auto p-4">
           {selectedFolderId === null ? (
-            <div className="text-center text-gray-400 py-8">
+            <div className="text-center text-slate-400 py-8">
               <p>Select a folder to view its files</p>
             </div>
           ) : folderFiles.length === 0 ? (
-            <div className="text-center text-gray-400 py-8">
+            <div className="text-center text-slate-400 py-8">
               <p>No files in this folder</p>
             </div>
           ) : (
@@ -244,11 +247,11 @@ export default function FolderList() {
               {folderFiles.map((file) => (
                 <div
                   key={file.relative_path}
-                  className="p-3 rounded border border-gray-700 bg-wraith-dark"
+                  className="p-3 rounded border border-slate-700 bg-bg-secondary"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-gray-400">...</span>
+                      <span className="text-slate-400">...</span>
                       <span className="truncate">{file.relative_path}</span>
                       {file.synced ? (
                         <span className="text-green-400 text-xs">Synced</span>
@@ -256,7 +259,7 @@ export default function FolderList() {
                         <span className="text-yellow-400 text-xs">Pending</span>
                       )}
                     </div>
-                    <div className="text-xs text-gray-500 whitespace-nowrap ml-2">
+                    <div className="text-xs text-slate-500 whitespace-nowrap ml-2">
                       {formatSize(file.size)}
                       {file.versions.length > 0 && (
                         <span className="ml-2">
@@ -273,28 +276,39 @@ export default function FolderList() {
         </div>
       </div>
 
-      {/* Add folder dialog - simplified inline modal */}
+      {/* Add folder dialog - standardized modal */}
       {showAddDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-wraith-dark border border-gray-700 rounded-lg p-6 w-96">
-            <h3 className="text-lg font-semibold mb-4">Add Sync Folder</h3>
+        <div
+          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+          onClick={() => setShowAddDialog(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="add-folder-title"
+        >
+          <div
+            className="bg-bg-secondary rounded-xl border border-slate-700 w-full max-w-md p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 id="add-folder-title" className="text-xl font-semibold text-white mb-4">
+              Add Sync Folder
+            </h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm text-gray-400 mb-1">
+                <label className="block text-sm font-medium text-slate-300 mb-2">
                   Remote Path
                 </label>
                 <input
                   type="text"
                   value={newRemotePath}
                   onChange={(e) => setNewRemotePath(e.target.value)}
-                  className="w-full px-3 py-2 bg-wraith-darker border border-gray-700 rounded focus:border-wraith-primary focus:outline-none"
+                  className="w-full bg-bg-primary border border-slate-600 rounded-lg px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-wraith-primary"
                   placeholder="/my-folder"
                 />
               </div>
-              <div className="flex justify-end gap-2">
+              <div className="flex justify-end gap-3 mt-6">
                 <button
                   onClick={() => setShowAddDialog(false)}
-                  className="px-4 py-2 text-sm rounded border border-gray-700 hover:bg-gray-700 transition-colors"
+                  className="px-4 py-2 text-slate-400 hover:text-white transition-colors"
                 >
                   Cancel
                 </button>
@@ -307,7 +321,7 @@ export default function FolderList() {
                       setShowAddDialog(false);
                     }
                   }}
-                  className="px-4 py-2 text-sm rounded bg-wraith-primary hover:bg-wraith-secondary transition-colors"
+                  className="px-4 py-2 bg-wraith-primary hover:bg-wraith-secondary rounded-lg text-white font-medium transition-colors"
                 >
                   Add Folder
                 </button>

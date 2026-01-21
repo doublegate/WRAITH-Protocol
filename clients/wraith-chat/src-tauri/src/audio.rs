@@ -11,6 +11,53 @@ use nnnoiseless::DenoiseState;
 use std::collections::VecDeque;
 use thiserror::Error;
 
+/// Suppress stderr output during a function call on Linux.
+///
+/// ALSA's libasound library probes various plugins during device enumeration,
+/// including JACK and OSS plugins. When these backends aren't available, they
+/// write error messages directly to stderr (bypassing Rust's logging). This
+/// helper temporarily redirects stderr to /dev/null to suppress these messages.
+///
+/// On non-Linux platforms, this simply executes the closure without redirection.
+#[cfg(target_os = "linux")]
+fn with_suppressed_stderr<T, F: FnOnce() -> T>(f: F) -> T {
+    use std::fs::File;
+    use std::os::unix::io::AsRawFd;
+
+    // Save the current stderr file descriptor
+    let stderr_fd = std::io::stderr().as_raw_fd();
+    let saved_stderr = unsafe { libc::dup(stderr_fd) };
+
+    if saved_stderr != -1 {
+        // Open /dev/null and redirect stderr to it
+        if let Ok(devnull) = File::open("/dev/null") {
+            let devnull_fd = devnull.as_raw_fd();
+            unsafe {
+                libc::dup2(devnull_fd, stderr_fd);
+            }
+        }
+
+        // Execute the function
+        let result = f();
+
+        // Restore stderr
+        unsafe {
+            libc::dup2(saved_stderr, stderr_fd);
+            libc::close(saved_stderr);
+        }
+
+        result
+    } else {
+        // Failed to dup stderr, just run without suppression
+        f()
+    }
+}
+
+#[cfg(not(target_os = "linux"))]
+fn with_suppressed_stderr<T, F: FnOnce() -> T>(f: F) -> T {
+    f()
+}
+
 /// Audio processing errors
 #[derive(Debug, Error)]
 pub enum AudioError {
@@ -440,70 +487,180 @@ impl AudioDeviceManager {
         }
     }
 
-    /// List available input devices
-    pub fn list_input_devices(&self) -> Result<Vec<AudioDevice>, AudioError> {
-        let host = cpal::default_host();
-        let devices = host
-            .input_devices()
-            .map_err(|e| AudioError::DeviceError(format!("Failed to list input devices: {}", e)))?;
+    /// Set up environment variables to suppress spurious audio backend errors.
+    ///
+    /// On Linux, ALSA's plugin system (libasound) probes various backends during
+    /// device enumeration, including JACK and OSS plugins. When these backends
+    /// aren't available, they emit error messages to stderr. This function sets
+    /// environment variables to suppress these harmless warnings.
+    ///
+    /// # Safety
+    /// This function sets environment variables using unsafe blocks. It uses
+    /// `Once` to ensure the variables are only set once, and is typically called
+    /// early in the audio subsystem initialization before any multi-threading
+    /// occurs in the audio code path.
+    #[cfg(target_os = "linux")]
+    fn suppress_audio_backend_errors() {
+        use std::env;
+        use std::sync::Once;
 
-        let mut result = Vec::new();
-        for device in devices {
-            if let Ok(name) = device.name() {
-                result.push(AudioDevice {
-                    id: name.clone(),
-                    name,
-                    is_default: false, // We'll mark this later
-                });
+        static INIT: Once = Once::new();
+        INIT.call_once(|| {
+            // SAFETY: These environment variables are set once during initialization
+            // before any ALSA/JACK threads are spawned. The Once guard ensures
+            // thread-safety for this initialization.
+            unsafe {
+                // Prevent JACK plugin from trying to connect to/start a JACK server
+                if env::var("JACK_NO_START_SERVER").is_err() {
+                    env::set_var("JACK_NO_START_SERVER", "1");
+                }
+
+                // Prevent JACK-related auto-start behavior
+                if env::var("JACK_NO_AUDIO_RESERVATION").is_err() {
+                    env::set_var("JACK_NO_AUDIO_RESERVATION", "1");
+                }
+
+                // Set a very short timeout for JACK connection attempts (in ms)
+                // This minimizes delay when JACK isn't available
+                if env::var("JACK_DEFAULT_SERVER").is_err() {
+                    env::set_var("JACK_DEFAULT_SERVER", "");
+                }
             }
-        }
+        });
+    }
 
-        // Mark default device
-        if let Some(default) = host.default_input_device() {
-            if let Ok(default_name) = default.name() {
-                for device in &mut result {
-                    if device.name == default_name {
-                        device.is_default = true;
-                        break;
+    /// Get the preferred cpal host for this platform.
+    ///
+    /// On Linux, this explicitly selects ALSA to avoid JACK initialization.
+    /// Environment variables are set to suppress ALSA plugin errors from JACK/OSS.
+    fn get_preferred_host() -> cpal::Host {
+        #[cfg(target_os = "linux")]
+        {
+            // Set up environment variables to suppress backend errors
+            Self::suppress_audio_backend_errors();
+
+            // On Linux, use ALSA explicitly to avoid JACK initialization
+            use cpal::HostId;
+
+            // Try to get ALSA host explicitly
+            for host_id in cpal::available_hosts() {
+                if host_id == HostId::Alsa {
+                    if let Ok(host) = cpal::host_from_id(host_id) {
+                        return host;
                     }
                 }
             }
+
+            // Fallback to default host if ALSA isn't available
+            cpal::default_host()
         }
 
-        Ok(result)
+        #[cfg(not(target_os = "linux"))]
+        {
+            cpal::default_host()
+        }
+    }
+
+    /// List available input devices
+    ///
+    /// This function enumerates audio input devices while suppressing spurious
+    /// error messages from unavailable audio backends (like JACK when not running).
+    /// Stderr is temporarily redirected to /dev/null during device enumeration
+    /// to prevent ALSA plugin errors from cluttering the console.
+    pub fn list_input_devices(&self) -> Result<Vec<AudioDevice>, AudioError> {
+        // Wrap the entire enumeration in stderr suppression to catch ALSA plugin errors
+        with_suppressed_stderr(|| {
+            let host = Self::get_preferred_host();
+
+            let devices = match host.input_devices() {
+                Ok(d) => d,
+                Err(e) => {
+                    log::warn!("Failed to enumerate input devices: {}", e);
+                    return Ok(Vec::new());
+                }
+            };
+
+            let mut result = Vec::new();
+            for device in devices {
+                if let Ok(name) = device.name() {
+                    // Filter out virtual/null devices that aren't useful for voice
+                    if !name.to_lowercase().contains("null")
+                        && !name.to_lowercase().contains("dummy")
+                    {
+                        result.push(AudioDevice {
+                            id: name.clone(),
+                            name,
+                            is_default: false, // We'll mark this later
+                        });
+                    }
+                }
+            }
+
+            // Mark default device
+            if let Some(default) = host.default_input_device() {
+                if let Ok(default_name) = default.name() {
+                    for device in &mut result {
+                        if device.name == default_name {
+                            device.is_default = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            Ok(result)
+        })
     }
 
     /// List available output devices
+    ///
+    /// This function enumerates audio output devices while suppressing spurious
+    /// error messages from unavailable audio backends (like JACK when not running).
+    /// Stderr is temporarily redirected to /dev/null during device enumeration
+    /// to prevent ALSA plugin errors from cluttering the console.
     pub fn list_output_devices(&self) -> Result<Vec<AudioDevice>, AudioError> {
-        let host = cpal::default_host();
-        let devices = host.output_devices().map_err(|e| {
-            AudioError::DeviceError(format!("Failed to list output devices: {}", e))
-        })?;
+        // Wrap the entire enumeration in stderr suppression to catch ALSA plugin errors
+        with_suppressed_stderr(|| {
+            let host = Self::get_preferred_host();
 
-        let mut result = Vec::new();
-        for device in devices {
-            if let Ok(name) = device.name() {
-                result.push(AudioDevice {
-                    id: name.clone(),
-                    name,
-                    is_default: false,
-                });
-            }
-        }
+            let devices = match host.output_devices() {
+                Ok(d) => d,
+                Err(e) => {
+                    log::warn!("Failed to enumerate output devices: {}", e);
+                    return Ok(Vec::new());
+                }
+            };
 
-        // Mark default device
-        if let Some(default) = host.default_output_device() {
-            if let Ok(default_name) = default.name() {
-                for device in &mut result {
-                    if device.name == default_name {
-                        device.is_default = true;
-                        break;
+            let mut result = Vec::new();
+            for device in devices {
+                if let Ok(name) = device.name() {
+                    // Filter out virtual/null devices that aren't useful for voice
+                    if !name.to_lowercase().contains("null")
+                        && !name.to_lowercase().contains("dummy")
+                    {
+                        result.push(AudioDevice {
+                            id: name.clone(),
+                            name,
+                            is_default: false,
+                        });
                     }
                 }
             }
-        }
 
-        Ok(result)
+            // Mark default device
+            if let Some(default) = host.default_output_device() {
+                if let Ok(default_name) = default.name() {
+                    for device in &mut result {
+                        if device.name == default_name {
+                            device.is_default = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            Ok(result)
+        })
     }
 
     /// Set the active input device
