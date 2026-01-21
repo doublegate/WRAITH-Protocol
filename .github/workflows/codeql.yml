@@ -23,10 +23,11 @@ jobs:
     name: CodeQL Analysis
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # CodeQL for Rust is experimental. The action intermittently fails with
-    # "repository properties API" errors due to GitHub infrastructure issues.
-    # Continue on error to not block other security checks (cargo-audit provides
-    # primary security coverage). Remove continue-on-error once stable.
+    # KNOWN GITHUB ISSUE: CodeQL v4 fails with "repository properties API" 404 errors.
+    # This is a GitHub platform bug (github/codeql-action#3413), not a configuration issue.
+    # Both v3 and v4 are affected. No user-side workaround exists.
+    # The cargo-audit job below provides primary security coverage.
+    # Remove continue-on-error once GitHub resolves the platform issue.
     continue-on-error: true
     permissions:
       # Required for CodeQL to upload results to GitHub Security tab
@@ -61,10 +62,9 @@ jobs:
             ${{ runner.os }}-cargo-
 
       # Initialize CodeQL tools for scanning
-      # Note: Using v3 due to v4 "repository properties API" errors on this repo.
-      # v3 deprecated Dec 2026, but works more reliably. Monitor for v4 fix.
+      # Using v4 (v3 deprecated Dec 2026). See job-level comment about platform issue.
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
           # Use security-extended queries for better coverage
@@ -85,7 +85,7 @@ jobs:
 
       # Perform CodeQL Analysis
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
           category: "/language:${{ matrix.language }}"
 
