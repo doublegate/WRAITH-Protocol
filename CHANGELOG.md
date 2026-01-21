@@ -7,8 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+No unreleased changes yet.
+
+---
+
+## [1.6.1] - 2026-01-20 - Testing Infrastructure & Documentation
+
 ### Added
-- **Frontend Testing Infrastructure (2025-01-20):**
+- **Frontend Testing Infrastructure:**
   - React frontend test suite with Vitest for wraith-transfer
   - 62 tests covering all UI components (TransferList, NewTransferDialog, SessionPanel, SettingsPanel)
   - Testing Library integration for React component testing

@@ -9,7 +9,7 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
 [![CI Status](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/ci.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml)
 [![Release](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml)
-[![Version](https://img.shields.io/badge/version-1.6.0-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
+[![Version](https://img.shields.io/badge/version-1.6.1-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
 [![Security](https://img.shields.io/badge/security-audited-green.svg)](docs/security/SECURITY_AUDIT_v1.1.0.md)
 [![Rust](https://img.shields.io/badge/rust-1.85%2B-orange.svg)](https://www.rust-lang.org/)
 [![Edition](https://img.shields.io/badge/edition-2024-orange.svg)](https://doc.rust-lang.org/edition-guide/rust-2024/index.html)
@@ -17,7 +17,7 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
 
 ## Current Status
 
-**Version:** 1.6.0 Mobile Clients & WRAITH-Chat | **Development Phase:** Phase 16 Complete
+**Version:** 1.6.1 Testing Infrastructure & Documentation | **Development Phase:** Phase 16 Complete
 
 WRAITH Protocol is production-ready with desktop, mobile, and messaging applications. Phase 16 delivers Android and iOS mobile clients with native UIs (Kotlin/Jetpack Compose, Swift/SwiftUI), plus WRAITH-Chat, a secure E2EE messaging application with Signal Protocol Double Ratchet encryption, SQLCipher encrypted storage, and React 18 frontend. v1.6.0 adds mobile platform support, end-to-end encrypted messaging, and comprehensive client ecosystem expansion.
 
@@ -187,7 +187,7 @@ cargo test --workspace
 
 ## Quick Start
 
-**Note:** WRAITH Protocol v1.6.0 features a complete Node API and protocol implementation with fully integrated CLI commands. The wraith-cli binary provides production-ready command-line access to all protocol features including `ping` for connectivity testing and `config` for runtime configuration.
+**Note:** WRAITH Protocol v1.6.1 features a complete Node API and protocol implementation with fully integrated CLI commands. The wraith-cli binary provides production-ready command-line access to all protocol features including `ping` for connectivity testing and `config` for runtime configuration.
 
 ```bash
 # Generate identity keypair
@@ -714,4 +714,4 @@ WRAITH Protocol builds on the work of many excellent projects and technologies:
 
 **WRAITH Protocol** - *Secure. Fast. Invisible.*
 
-**Status:** v1.6.0 Mobile Clients & WRAITH-Chat (Phase 16 Complete) | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 1,365+ (1,303 Rust + 62 frontend, 100% pass rate) | **Quality:** Production-ready, 0 vulnerabilities, zero warnings, 98/100 quality grade | **Clients:** 4 Tier 1 applications complete (Desktop, Android, iOS, E2EE Chat)
+**Status:** v1.6.1 Testing Infrastructure & Documentation | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 1,365+ (1,303 Rust + 62 frontend, 100% pass rate) | **Quality:** Production-ready, 0 vulnerabilities, zero warnings, 98/100 quality grade | **Clients:** 4 Tier 1 applications complete (Desktop, Android, iOS, E2EE Chat)

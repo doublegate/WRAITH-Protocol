@@ -5,7 +5,7 @@
 This document tracks the development journey of WRAITH Protocol client applications, from planning through implementation and release. Phase 15 delivered WRAITH-Transfer desktop application, and Phase 16 delivered Android/iOS mobile clients plus WRAITH-Chat E2EE messaging.
 
 [![Version](https://img.shields.io/badge/clients-4%20complete-green.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
-[![Protocol](https://img.shields.io/badge/protocol-v1.6.0-blue.svg)](../../README.md)
+[![Protocol](https://img.shields.io/badge/protocol-v1.6.1-blue.svg)](../../README.md)
 [![Clients](https://img.shields.io/badge/clients-6%20planned-orange.svg)](../../to-dos/ROADMAP-clients.md)
 
 ---
