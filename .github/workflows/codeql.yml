@@ -23,14 +23,18 @@ jobs:
     name: CodeQL Analysis
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # CodeQL for Rust is experimental and the action has known issues with
-    # repository properties API. Continue on error to not block other security checks.
+    # CodeQL for Rust is experimental. The action intermittently fails with
+    # "repository properties API" errors due to GitHub infrastructure issues.
+    # Continue on error to not block other security checks (cargo-audit provides
+    # primary security coverage). Remove continue-on-error once stable.
     continue-on-error: true
     permissions:
       # Required for CodeQL to upload results to GitHub Security tab
       actions: read
       contents: read
       security-events: write
+      # Added to help with repository properties API access
+      metadata: read
 
     strategy:
       fail-fast: false
@@ -59,14 +63,14 @@ jobs:
             ${{ runner.os }}-cargo-
 
       # Initialize CodeQL tools for scanning
-      # Note: Using v3 as v4 has repository properties API issues on some repos
-      # TODO: Upgrade to v4 once the init action compatibility issues are resolved
+      # Note: v4 recommended (v3 deprecated Dec 2026). Both versions experience
+      # intermittent "repository properties API" errors - this is a known GitHub
+      # infrastructure issue, not a version-specific bug.
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
           # Use security-extended queries for better coverage
-          # Note: Custom config removed due to init action compatibility issues
           # Justified algorithm usage documented in .github/codeql/codeql-config.yml
           queries: security-extended
 
@@ -84,12 +88,9 @@ jobs:
 
       # Perform CodeQL Analysis
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
           category: "/language:${{ matrix.language }}"
-          # Fail the workflow if high or critical severity issues are found
-          # Commented out by default to avoid breaking builds initially
-          # fail-on: critical,high
 
   # Additional Rust-specific security scanning with cargo-audit
   rust-security:
