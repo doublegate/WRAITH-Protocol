@@ -1,6 +1,6 @@
 {
   "name": "wraith-chat",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "WRAITH-Chat - End-to-End Encrypted Messaging Client",
   "private": true,
   "scripts": {

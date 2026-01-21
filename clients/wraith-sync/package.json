@@ -1,6 +1,6 @@
 {
   "name": "wraith-sync",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "WRAITH-Sync - Encrypted File Synchronization Client",
   "private": true,
   "scripts": {
