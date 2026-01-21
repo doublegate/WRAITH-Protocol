@@ -1,12 +1,12 @@
 # WRAITH Protocol - Client Applications Development History
 
-**Development Timeline:** Phase 15-17 (2026-01-21) - 4 Client Applications Complete with Full Integration
+**Development Timeline:** Phase 15-17 (2026-01-21) - 5 Client Applications Complete with Full Integration
 
-This document tracks the development journey of WRAITH Protocol client applications, from planning through implementation and release. Phase 15 delivered WRAITH-Transfer desktop application, Phase 16 delivered Android/iOS mobile clients plus WRAITH-Chat E2EE messaging, and Phase 17 completes the mobile ecosystem with full protocol integration, voice/video calling, and group messaging.
+This document tracks the development journey of WRAITH Protocol client applications, from planning through implementation and release. Phase 15 delivered WRAITH-Transfer desktop application, Phase 16 delivered Android/iOS mobile clients plus WRAITH-Chat E2EE messaging, and Phase 17 completes the mobile ecosystem with full protocol integration, voice/video calling, group messaging, and WRAITH-Sync for file synchronization.
 
-[![Version](https://img.shields.io/badge/clients-4%20complete-green.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
-[![Protocol](https://img.shields.io/badge/protocol-v1.6.3-blue.svg)](../../README.md)
-[![Clients](https://img.shields.io/badge/clients-6%20planned-orange.svg)](../../to-dos/ROADMAP-clients.md)
+[![Version](https://img.shields.io/badge/clients-5%20complete-green.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
+[![Protocol](https://img.shields.io/badge/protocol-v1.7.0-blue.svg)](../../README.md)
+[![Clients](https://img.shields.io/badge/clients-5%20planned-orange.svg)](../../to-dos/ROADMAP-clients.md)
 
 ---
 
@@ -23,19 +23,19 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 
 **Total Development Scope:**
 - **10 Client Applications** (8 standard + 2 security testing)
-- **1,468 Story Points** total (724 SP delivered + 744 SP remaining)
-- **~40 weeks remaining** (parallel development across tiers)
+- **1,468 Story Points** total (860 SP delivered + 608 SP remaining)
+- **~32 weeks remaining** (parallel development across tiers)
 - **26 development phases** across all clients
 
 **Development Strategy:**
-- **Tier 1:** High-priority core applications (Transfer ✅, Android ✅, iOS ✅, Chat ✅ Complete with full integration)
-- **Tier 2:** Specialized productivity tools (Sync, Share)
+- **Tier 1:** High-priority core applications (Transfer ✅, Android ✅, iOS ✅, Chat ✅, Sync ✅ Complete with full integration)
+- **Tier 2:** Specialized productivity tools (Share)
 - **Tier 3:** Advanced use cases (Stream, Mesh, Publish, Vault)
 - **Security Testing:** Authorized assessment tools (Recon, RedOps)
 
 **Current Status (2026-01-21):**
-- Protocol v1.6.3 complete (all prerequisites available)
-- **Phase 15 - WRAITH-Transfer v1.6.3:** ✅ **COMPLETE** (102 SP)
+- Protocol v1.7.0 complete (all prerequisites available)
+- **Phase 15 - WRAITH-Transfer v1.7.0:** ✅ **COMPLETE** (102 SP)
   - Cross-platform desktop P2P file transfer
   - Tauri 2.0 + React 18 + TypeScript
   - 62 frontend tests with Vitest (100% pass rate)
@@ -43,7 +43,7 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
   - **WRAITH-Android:** Native Kotlin + Jetpack Compose (~60 SP)
   - **WRAITH-iOS:** Native Swift + SwiftUI (~60 SP)
   - **WRAITH-Chat:** E2EE messaging with Double Ratchet (182 SP)
-- **Phase 17 - Full Mobile Integration & Real-Time Comms:** ✅ **COMPLETE** (320 SP)
+- **Phase 17 - Full Mobile Integration & Real-Time Comms + Sync:** ✅ **COMPLETE** (456 SP)
   - **Mobile Protocol Integration:** Android JNI and iOS UniFFI with actual WRAITH protocol
   - **Mobile Secure Storage:** Android Keystore and iOS Keychain integration
   - **Mobile Discovery:** DHT and NAT traversal for mobile networks
@@ -51,22 +51,24 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
   - **Voice Calling:** Opus codec, RNNoise noise suppression, echo cancellation
   - **Video Calling:** VP8/VP9 codecs, adaptive bitrate
   - **Group Messaging:** Sender Keys protocol for O(1) encryption
-- **Development Status:** 4 of 10 Tier 1 clients complete (724 SP delivered, 744 SP remaining)
+  - **WRAITH-Sync:** Desktop file synchronization with delta sync (136 SP)
+- **Development Status:** 5 of 10 clients complete (860 SP delivered, 608 SP remaining)
 - **CI/CD:** GitHub Actions updated (upload-artifact v6, download-artifact v7, cache v5)
-- **Test Coverage:** 233 client tests (6 transfer + 96 android + 93 ios + 38 chat)
+- **Test Coverage:** 250 client tests (6 transfer + 96 android + 93 ios + 38 chat + 17 sync)
 
 ---
 
 ## Client Applications Overview
 
-### Tier 1: Core Applications (High Priority - 724 SP)
+### Tier 1: Core Applications (High Priority - 860 SP)
 
 | # | Client | Description | Platform | Story Points | Status |
 |---|--------|-------------|----------|--------------|--------|
-| 1 | **WRAITH-Transfer** | Direct P2P file transfer with drag-and-drop GUI | Desktop (Linux/macOS/Windows) | 102 | ✅ **Complete (v1.6.3)** |
-| 2 | **WRAITH-Android** | Native Android mobile client with full protocol integration | Android 8.0+ | ~135 | ✅ **Complete (v1.6.3)** |
-| 3 | **WRAITH-iOS** | Native iOS mobile client with full protocol integration | iOS 16.0+ | ~130 | ✅ **Complete (v1.6.3)** |
-| 4 | **WRAITH-Chat** | E2EE messaging with voice/video calling and group messaging | Desktop | 357 | ✅ **Complete (v1.6.3)** |
+| 1 | **WRAITH-Transfer** | Direct P2P file transfer with drag-and-drop GUI | Desktop (Linux/macOS/Windows) | 102 | ✅ **Complete (v1.7.0)** |
+| 2 | **WRAITH-Android** | Native Android mobile client with full protocol integration | Android 8.0+ | ~135 | ✅ **Complete (v1.7.0)** |
+| 3 | **WRAITH-iOS** | Native iOS mobile client with full protocol integration | iOS 16.0+ | ~130 | ✅ **Complete (v1.7.0)** |
+| 4 | **WRAITH-Chat** | E2EE messaging with voice/video calling and group messaging | Desktop | 357 | ✅ **Complete (v1.7.0)** |
+| 5 | **WRAITH-Sync** | Desktop file synchronization with delta sync and conflict resolution | Desktop (Linux/macOS/Windows) | 136 | ✅ **Complete (v1.7.0)** |
 
 **WRAITH Transfer Delivered (2025-12-11):**
 - Tauri 2.0 desktop application with full wraith-core integration
@@ -80,7 +82,7 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 - v1.5.8: Wayland compatibility fix (resolves KDE Plasma 6 crashes)
 - v1.5.9: Tauri 2.0 capability-based permissions (dialog, fs, shell plugins working)
 
-**WRAITH-Android (v1.6.3) - Full Protocol Integration:**
+**WRAITH-Android (v1.7.0) - Full Protocol Integration:**
 - Native Android with Kotlin + Jetpack Compose (Material Design 3)
 - Full WRAITH protocol integration via JNI bindings (replacing placeholders)
 - Android Keystore for hardware-backed secure key storage
@@ -90,7 +92,7 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 - ~3,800 lines (1,200 Rust, 2,400 Kotlin, 200 Gradle)
 - 96 tests covering protocol integration, Keystore, and FCM
 
-**WRAITH-iOS (v1.6.3) - Full Protocol Integration:**
+**WRAITH-iOS (v1.7.0) - Full Protocol Integration:**
 - Native iOS with Swift + SwiftUI (iOS 16.0+)
 - Full WRAITH protocol integration via UniFFI bindings (replacing placeholders)
 - iOS Keychain for Secure Enclave key storage
@@ -100,7 +102,7 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 - ~2,650 lines (750 Rust UniFFI, 1,900 Swift)
 - 93 tests covering protocol integration, Keychain, and APNs
 
-**WRAITH-Chat (v1.6.3) - Voice/Video/Groups:**
+**WRAITH-Chat (v1.7.0) - Voice/Video/Groups:**
 - Signal Protocol Double Ratchet for E2EE messaging
 - SQLCipher encrypted database (AES-256, 64K PBKDF2 iterations)
 - **Voice Calling:** Opus codec (48kHz), RNNoise noise suppression, WebRTC echo cancellation
@@ -110,16 +112,26 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 - ~5,200 lines (2,800 Rust backend, 2,400 TypeScript/React frontend)
 - 38 tests covering messaging, voice, video, and groups
 
+**WRAITH-Sync (v1.7.0) - Desktop File Synchronization:**
+- Delta synchronization with rsync-style rolling checksums
+- Conflict resolution strategies (LastWriterWins, KeepBoth, Manual)
+- Version history with configurable retention (30 days default, 10 versions)
+- SQLite metadata database for file tracking
+- File system watcher with debounced events
+- Glob pattern support for include/exclude rules
+- 8 IPC commands (add/remove folder, start/stop sync, resolve conflict, get history)
+- ~6,500 lines (4,400 Rust backend, 2,100 TypeScript/React frontend)
+- 17 tests covering sync engine, delta algorithm, and database
+
 ---
 
-### Tier 2: Specialized Applications (Medium Priority - 259 SP)
+### Tier 2: Specialized Applications (Medium Priority - 123 SP)
 
 | # | Client | Description | Platform | Story Points | Status |
 |---|--------|-------------|----------|--------------|--------|
-| 3 | **WRAITH-Sync** | Decentralized backup synchronization (Dropbox alternative) | Desktop + CLI | 136 | Planned |
-| 4 | **WRAITH-Share** | Distributed anonymous file sharing (BitTorrent-like) | Desktop + Web UI | 123 | Planned |
+| 6 | **WRAITH-Share** | Distributed anonymous file sharing (BitTorrent-like) | Desktop + Web UI | 123 | Planned |
 
-**Timeline:** Planned Q2-Q3 2026 (20 weeks parallel development)
+**Timeline:** Planned Q2-Q3 2026 (12 weeks development)
 **Prerequisites:** Protocol Phase 5 (Discovery) - ✅ Complete
 
 ---

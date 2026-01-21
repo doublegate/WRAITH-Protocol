@@ -11,11 +11,20 @@ No unreleased changes yet.
 
 ---
 
-## [1.6.3] - 2026-01-21 - Phase 17 Complete: Full Mobile Integration & Real-Time Communications
+## [1.7.0] - 2026-01-21 - Phase 17 Complete: Full Mobile Integration, Real-Time Communications & WRAITH-Sync
 
-### Phase 17 - Mobile Protocol Integration, Push Notifications, Voice/Video Calling, Group Messaging
+### Phase 17 - Mobile Protocol Integration, Push Notifications, Voice/Video Calling, Group Messaging, WRAITH-Sync
 
-This release completes the mobile ecosystem by replacing placeholder implementations with actual WRAITH protocol bindings, adding secure native storage, push notifications, encrypted voice/video calling, and efficient group messaging using the Sender Keys protocol.
+This major release completes the mobile ecosystem by replacing placeholder implementations with actual WRAITH protocol bindings, adding secure native storage, push notifications, encrypted voice/video calling, efficient group messaging using the Sender Keys protocol, and introduces WRAITH-Sync for desktop file synchronization.
+
+### Highlights
+
+- **5 Production-Ready Client Applications**: Transfer, Chat, Android, iOS, Sync
+- **1,695+ Tests Passing**: 100% pass rate across all crates and clients
+- **Full Mobile Protocol Integration**: Android JNI and iOS UniFFI with actual WRAITH protocol
+- **Voice/Video Calling**: Opus/VP8/VP9 codecs with noise suppression and echo cancellation
+- **Group Messaging**: Sender Keys protocol for O(1) encryption efficiency
+- **WRAITH-Sync**: Desktop file synchronization with delta sync and conflict resolution
 
 ### Added
 
@@ -145,24 +154,52 @@ This release completes the mobile ecosystem by replacing placeholder implementat
   - Group messaging across platforms
   - 130 new interoperability tests
 
+#### WRAITH-Sync Client (17 new tests)
+- **Desktop File Synchronization Application (Tauri 2.0 + React 18):**
+  - Delta synchronization with rsync-style rolling checksums
+  - Conflict resolution strategies (LastWriterWins, KeepBoth, Manual)
+  - Version history with configurable retention (30 days default, 10 versions)
+  - SQLite metadata database for file tracking
+  - File system watcher with debounced events
+  - Glob pattern support for include/exclude rules
+- **Rust Backend (~4,400 lines):**
+  - delta.rs: Rolling checksum algorithm with BLAKE3 strong hashing
+  - sync_engine.rs: Core sync logic with conflict detection
+  - database.rs: SQLite persistence for metadata and history
+  - watcher.rs: Cross-platform file system monitoring
+  - commands.rs: 8 Tauri IPC commands
+- **React Frontend (~2,100 lines):**
+  - Zustand stores for sync state management
+  - Folder configuration UI with add/remove
+  - Sync status display with progress indicators
+  - Conflict resolution dialog
+- **IPC Commands:**
+  - add_sync_folder, remove_sync_folder, list_sync_folders
+  - start_sync, stop_sync, get_sync_status
+  - resolve_conflict, get_file_history
+
 ### Changed
-- Updated all crate versions to 1.6.3
+- Updated all crate versions to 1.7.0
 - Android client expanded from ~2,800 to ~3,800 lines (96 tests)
 - iOS client expanded from ~1,650 to ~2,650 lines (93 tests)
 - WRAITH-Chat expanded from ~2,650 to ~5,200 lines (49 IPC commands, 38 tests)
-- Total client application code: ~11,650 lines (was ~7,100)
-- Total tests: 1,695 passing (was ~1,630)
+- Added WRAITH-Sync client: ~6,500 lines (4,400 Rust, 2,100 TypeScript)
+- Total client application code: ~18,150 lines (was ~11,650)
+- Total tests: 1,712 passing (was 1,695)
+- 5 production-ready client applications (was 4)
 - Dependencies increased to 295 audited packages
 
 ### Technical Details
-- **Test Count**: 1,695 tests passing (16 ignored) - 100% pass rate
-- **Code Volume**: ~68,000 lines of Rust + ~12,000 lines in clients
+- **Test Count**: 1,712 tests passing (16 ignored) - 100% pass rate
+- **Code Volume**: ~68,000 lines of Rust + ~18,000 lines in clients
 - **New Dependencies**:
   - opus (Opus codec bindings)
   - rnnoise (RNNoise noise suppression)
   - vpx-sys (VP8/VP9 codec bindings)
   - firebase-admin (FCM integration)
   - apns2 (APNs integration)
+  - notify (File system watching)
+  - globset (Glob pattern matching)
 - **Zero clippy warnings** with -D warnings flag
 - **All quality gates passing** (fmt, clippy, test)
 - **Technical debt ratio**: 3.5% (reduced from 3.8%)
@@ -172,6 +209,7 @@ This release completes the mobile ecosystem by replacing placeholder implementat
 - Keystore/Keychain integration requires device security (PIN/biometric)
 - Voice/video calling requires microphone/camera permissions
 - Push notifications require FCM/APNs configuration
+- WRAITH-Sync requires SQLite for metadata storage
 
 ---
 

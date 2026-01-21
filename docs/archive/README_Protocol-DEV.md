@@ -2,9 +2,9 @@
 
 **Development Timeline:** Phase 1 (2024) through Phase 17 (2026-01-21)
 
-This document captures the complete development journey of WRAITH Protocol from inception through version 1.6.3, including detailed phase accomplishments, sprint summaries, and implementation milestones.
+This document captures the complete development journey of WRAITH Protocol from inception through version 1.7.0, including detailed phase accomplishments, sprint summaries, and implementation milestones.
 
-[![Version](https://img.shields.io/badge/version-1.6.3-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
+[![Version](https://img.shields.io/badge/version-1.7.0-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
 [![Security](https://img.shields.io/badge/security-audited-green.svg)](../security/DPI_EVASION_REPORT.md)
 [![Rust](https://img.shields.io/badge/rust-1.85%2B-orange.svg)](https://www.rust-lang.org/)
 
@@ -20,20 +20,20 @@ For the current production README, see [../../README.md](../../README.md).
 
 ## Development Metrics Summary
 
-**Total Development Effort:** 2,257 story points delivered across 17 phases
+**Total Development Effort:** 2,577 story points delivered across 17 phases
 
 **Project Metrics (2026-01-21):**
-- **Code Volume:** ~68,000 lines of Rust code across protocol crates + ~12,000 lines in client applications (Kotlin/Swift/TypeScript)
-- **Test Coverage:** 1,695 tests passing (16 ignored) - 100% pass rate
+- **Code Volume:** ~68,000 lines of Rust code across protocol crates + ~18,000 lines in client applications (Kotlin/Swift/TypeScript)
+- **Test Coverage:** 1,712 tests passing (16 ignored) - 100% pass rate
 - **Documentation:** 120+ markdown files, ~72,000+ lines of comprehensive documentation
 - **Dependencies:** 295 audited packages (zero vulnerabilities via cargo-audit)
 - **Security:** Grade A+ (EXCELLENT) - zero vulnerabilities, 100% unsafe documentation, comprehensive audits
-- **Client Applications:** 4 production-ready Tier 1 applications with full protocol integration, voice/video calling, group messaging
+- **Client Applications:** 5 production-ready Tier 1 applications with full protocol integration, voice/video calling, group messaging, file synchronization
 - **CI/CD:** GitHub Actions updated (upload-artifact v6, download-artifact v7, cache v5)
 
 **Quality Metrics:**
 - **Quality Grade:** 98/100 (Production-ready)
-- **Test Coverage:** 1,695 tests passing (16 ignored) - 100% pass rate
+- **Test Coverage:** 1,712 tests passing (16 ignored) - 100% pass rate
   - 414 wraith-core - frame parsing (SIMD), sessions, streams, BBR, migration, ring buffers, Node API
   - 179 wraith-crypto - Ed25519, X25519+Elligator2, AEAD, Noise_XX, Double Ratchet (+ test vectors + zeroization)
   - 44 wraith-files - chunking, reassembly, BLAKE3 tree hashing, io_uring I/O
@@ -45,6 +45,7 @@ For the current production README, see [../../README.md](../../README.md).
   - 323 integration tests - end-to-end flows, multi-peer transfers, cross-crate integration, property tests
   - 6 wraith-transfer backend - Desktop application (Tauri IPC commands)
   - 38 wraith-chat backend - E2EE messaging + voice/video/groups (49 IPC commands)
+  - 17 wraith-sync backend - Desktop file synchronization (delta sync, conflict resolution)
   - 96 wraith-android tests - Mobile protocol integration, Keystore, FCM
   - 93 wraith-ios tests - Mobile protocol integration, Keychain, APNs
   - 62 wraith-transfer frontend - React UI component tests (Vitest)
