@@ -33,7 +33,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["deb", "rpm", "appimage"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -43,7 +43,12 @@
     ],
     "category": "Utility",
     "shortDescription": "Decentralized file synchronization",
-    "longDescription": "WRAITH Sync is a cross-platform desktop application for secure, private file synchronization using the WRAITH Protocol. Sync folders across unlimited devices with end-to-end encryption, delta sync, and conflict resolution."
+    "longDescription": "WRAITH Sync is a cross-platform desktop application for secure, private file synchronization using the WRAITH Protocol. Sync folders across unlimited devices with end-to-end encryption, delta sync, and conflict resolution.",
+    "linux": {
+      "appimage": {
+        "bundleMediaFramework": false
+      }
+    }
   },
   "plugins": {}
 }

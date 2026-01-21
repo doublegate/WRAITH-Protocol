@@ -28,7 +28,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["deb", "rpm", "appimage"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -38,7 +38,12 @@
     ],
     "category": "Utility",
     "shortDescription": "Secure peer-to-peer file transfer",
-    "longDescription": "WRAITH Transfer is a cross-platform desktop application for secure, private file transfers using the WRAITH Protocol."
+    "longDescription": "WRAITH Transfer is a cross-platform desktop application for secure, private file transfers using the WRAITH Protocol.",
+    "linux": {
+      "appimage": {
+        "bundleMediaFramework": false
+      }
+    }
   },
   "plugins": {}
 }

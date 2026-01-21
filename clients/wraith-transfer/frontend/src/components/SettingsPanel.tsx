@@ -1,6 +1,6 @@
 // WRAITH Transfer - Settings Panel Component
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { useSettingsStore, type Theme } from '../stores/settingsStore';
 
@@ -24,17 +24,23 @@ export function SettingsPanel({ isOpen, onClose }: Props) {
     resetToDefaults,
   } = useSettingsStore();
 
-  const [localDownloadDir, setLocalDownloadDir] = useState(downloadDir);
-  const [localMaxTransfers, setLocalMaxTransfers] = useState(maxConcurrentTransfers);
-  const [localPort, setLocalPort] = useState(port);
+  // Use controlled state that syncs with props when dialog opens
+  // We use a key pattern by tracking the open state to reset local values
+  const [localDownloadDir, setLocalDownloadDir] = useState('');
+  const [localMaxTransfers, setLocalMaxTransfers] = useState(3);
+  const [localPort, setLocalPort] = useState(8337);
+  const [initialized, setInitialized] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      setLocalDownloadDir(downloadDir);
-      setLocalMaxTransfers(maxConcurrentTransfers);
-      setLocalPort(port);
-    }
-  }, [isOpen, downloadDir, maxConcurrentTransfers, port]);
+  // Sync local state when dialog opens (using key pattern instead of effect setState)
+  if (isOpen && !initialized) {
+    setLocalDownloadDir(downloadDir);
+    setLocalMaxTransfers(maxConcurrentTransfers);
+    setLocalPort(port);
+    setInitialized(true);
+  }
+  if (!isOpen && initialized) {
+    setInitialized(false);
+  }
 
   const handleSelectDirectory = async () => {
     try {

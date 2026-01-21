@@ -1,6 +1,6 @@
 // WRAITH Transfer - Transfer List Component
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTransferStore } from '../stores/transferStore';
 import type { TransferInfo } from '../types';
 
@@ -37,24 +37,23 @@ function TransferItem({ transfer }: { transfer: TransferInfo }) {
   const { cancelTransfer } = useTransferStore();
   const progressPercent = Math.round(transfer.progress * 100);
 
-  // Track previous state for speed calculation
+  // Track previous state for speed calculation using state for time initialization
   const prevBytesRef = useRef(transfer.transferred_bytes);
-  const prevTimeRef = useRef(Date.now());
-  const speedRef = useRef(0);
+  const [prevTime, setPrevTime] = useState(() => Date.now());
+  const [speed, setSpeed] = useState(0);
 
   useEffect(() => {
     const now = Date.now();
-    const timeDiff = (now - prevTimeRef.current) / 1000; // seconds
+    const timeDiff = (now - prevTime) / 1000; // seconds
 
     if (timeDiff >= 1.0 && transfer.status === 'in_progress') {
       const bytesDiff = transfer.transferred_bytes - prevBytesRef.current;
-      speedRef.current = bytesDiff / timeDiff;
+      setSpeed(bytesDiff / timeDiff);
       prevBytesRef.current = transfer.transferred_bytes;
-      prevTimeRef.current = now;
+      setPrevTime(now);
     }
-  }, [transfer.transferred_bytes, transfer.status]);
+  }, [transfer.transferred_bytes, transfer.status, prevTime]);
 
-  const speed = speedRef.current;
   const remainingBytes = transfer.total_bytes - transfer.transferred_bytes;
   const eta = speed > 0 ? remainingBytes / speed : 0;
 

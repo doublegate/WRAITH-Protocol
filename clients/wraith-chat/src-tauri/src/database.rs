@@ -12,7 +12,10 @@ pub struct DatabaseKeyMismatchError;
 
 impl std::fmt::Display for DatabaseKeyMismatchError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Database exists but cannot be decrypted with the current key")
+        write!(
+            f,
+            "Database exists but cannot be decrypted with the current key"
+        )
     }
 }
 

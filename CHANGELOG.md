@@ -7,7 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-No unreleased changes yet.
+### Added
+- **VMware/AppImage Conflict Troubleshooting Guide:**
+  - New documentation at `docs/troubleshooting/appimage-vmware-conflict.md`
+  - Documents FuseBlk and vmwgfx_dri.so compatibility issues
+  - Provides workarounds for running AppImage builds in VMware virtual machines
+
+### Changed
+- **AppImage Added to Default Build Targets:**
+  - All Tauri desktop clients now include AppImage in default bundle targets
+  - Updated `tauri.conf.json` for wraith-chat, wraith-transfer, and wraith-sync
+  - Configured `bundleMediaFramework: false` for Linux AppImage builds
+  - Build targets now explicit: `["deb", "rpm", "appimage"]` instead of `"all"`
+
+### Fixed
+- **React Compiler Purity Warnings:**
+  - Fixed `Date.now()` calls in render functions (SessionPanel.tsx, TransferList.tsx)
+  - Fixed setState in effects pattern in SettingsPanel.tsx
+  - Updated ESLint config to allow export * in test utility files
+  - Zero lint warnings in wraith-transfer frontend
 
 ---
 

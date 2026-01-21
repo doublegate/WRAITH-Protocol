@@ -130,7 +130,9 @@ fn setup_app<R: Runtime>(app: &mut tauri::App<R>) -> Result<(), Box<dyn std::err
         Ok(db) => db,
         Err(e) => {
             // Check if this is a key mismatch error
-            if e.downcast_ref::<database::DatabaseKeyMismatchError>().is_some() {
+            if e.downcast_ref::<database::DatabaseKeyMismatchError>()
+                .is_some()
+            {
                 log::warn!(
                     "Database key mismatch detected. The encryption key has changed since the database was created."
                 );

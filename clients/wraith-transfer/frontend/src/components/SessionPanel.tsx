@@ -1,5 +1,6 @@
 // WRAITH Transfer - Session Panel Component
 
+import { useState, useEffect } from 'react';
 import { useSessionStore } from '../stores/sessionStore';
 import type { SessionInfo } from '../types';
 
@@ -13,6 +14,18 @@ function formatBytes(bytes: number): string {
 
 function SessionItem({ session }: { session: SessionInfo }) {
   const { closeSession } = useSessionStore();
+  const [duration, setDuration] = useState(0);
+
+  // Calculate connection duration with interval
+  useEffect(() => {
+    const updateDuration = () => {
+      const now = Math.floor(Date.now() / 1000);
+      setDuration(now - session.established_at);
+    };
+    updateDuration();
+    const interval = setInterval(updateDuration, 1000);
+    return () => clearInterval(interval);
+  }, [session.established_at]);
 
   const connectionStatus = session.connection_status || 'connected';
   const statusColors: Record<string, string> = {
@@ -28,10 +41,6 @@ function SessionItem({ session }: { session: SessionInfo }) {
     disconnecting: 'bg-orange-500 animate-pulse',
     failed: 'bg-red-500',
   };
-
-  // Calculate connection duration
-  const now = Math.floor(Date.now() / 1000);
-  const duration = now - session.established_at;
   const formatDuration = (seconds: number): string => {
     if (seconds < 60) return `${seconds}s`;
     if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
