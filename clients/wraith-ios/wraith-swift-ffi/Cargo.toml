@@ -1,6 +1,6 @@
 [package]
 name = "wraith-swift-ffi"
-version = "1.6.2"
+version = "1.6.3"
 edition = "2024"
 rust-version = "1.85"
 
@@ -32,12 +32,21 @@ log = "0.4"
 # Hex encoding
 hex = "0.4"
 
+# Cryptographic RNG
+rand_core = { version = "0.6", features = ["getrandom"] }
+
 # WRAITH Protocol
 wraith-core = { path = "../../../crates/wraith-core" }
 wraith-crypto = { path = "../../../crates/wraith-crypto" }
 wraith-transport = { path = "../../../crates/wraith-transport" }
 wraith-discovery = { path = "../../../crates/wraith-discovery" }
 wraith-files = { path = "../../../crates/wraith-files" }
+
+# iOS Security framework (for Keychain on iOS)
+[target.'cfg(target_os = "ios")'.dependencies]
+security-framework = "2.11"
+security-framework-sys = "2.11"
+core-foundation = "0.9"
 
 [build-dependencies]
 uniffi = { version = "0.25", features = ["build"] }

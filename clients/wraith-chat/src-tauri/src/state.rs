@@ -2,6 +2,9 @@
 
 use crate::crypto::DoubleRatchet;
 use crate::database::Database;
+use crate::group::GroupSessionManager;
+use crate::video_call::VideoCallManager;
+use crate::voice_call::VoiceCallManager;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -164,16 +167,32 @@ pub struct AppState {
 
     /// WRAITH protocol node
     pub node: Arc<Mutex<WraithNode>>,
+
+    /// Voice call manager (Sprint 17.5)
+    pub voice_calls: Arc<VoiceCallManager>,
+
+    /// Video call manager (Sprint 17.6)
+    pub video_calls: Arc<VideoCallManager>,
+
+    /// Group session manager (Sprint 17.7)
+    pub group_sessions: Arc<Mutex<GroupSessionManager>>,
 }
 
 impl AppState {
     /// Create new application state
     pub fn new(db: Database) -> Self {
+        let voice_calls = Arc::new(VoiceCallManager::new());
+        // Create video call manager that uses the same voice manager
+        let video_calls = Arc::new(VideoCallManager::with_voice_manager(voice_calls.clone()));
+
         Self {
             db: Mutex::new(db),
             ratchets: Mutex::new(HashMap::new()),
             local_peer_id: Mutex::new(String::new()),
             node: Arc::new(Mutex::new(WraithNode::new())),
+            voice_calls,
+            video_calls,
+            group_sessions: Arc::new(Mutex::new(GroupSessionManager::new())),
         }
     }
 }

@@ -8,7 +8,8 @@ use std::path::Path;
 
 /// Database connection manager
 pub struct Database {
-    conn: Connection,
+    /// The underlying SQLCipher connection
+    pub conn: Connection,
 }
 
 impl Database {

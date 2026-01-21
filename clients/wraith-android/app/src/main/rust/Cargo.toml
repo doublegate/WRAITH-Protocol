@@ -1,6 +1,6 @@
 [package]
 name = "wraith-android"
-version = "1.6.2"
+version = "1.6.3"
 edition = "2024"
 rust-version = "1.85"
 
@@ -31,12 +31,15 @@ android_logger = "0.14"
 thiserror = "2"
 anyhow = "1.0"
 
+# Cryptographic RNG
+rand_core = { version = "0.6", features = ["getrandom"] }
+
 # WRAITH Protocol (relative paths to workspace)
-wraith-core = { path = "../../../../../crates/wraith-core" }
-wraith-crypto = { path = "../../../../../crates/wraith-crypto" }
-wraith-transport = { path = "../../../../../crates/wraith-transport" }
-wraith-discovery = { path = "../../../../../crates/wraith-discovery" }
-wraith-files = { path = "../../../../../crates/wraith-files" }
+wraith-core = { path = "../../../../../../crates/wraith-core" }
+wraith-crypto = { path = "../../../../../../crates/wraith-crypto" }
+wraith-transport = { path = "../../../../../../crates/wraith-transport" }
+wraith-discovery = { path = "../../../../../../crates/wraith-discovery" }
+wraith-files = { path = "../../../../../../crates/wraith-files" }
 
 [features]
 android = []

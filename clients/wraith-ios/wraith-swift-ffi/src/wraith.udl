@@ -1,38 +1,26 @@
 // UniFFI Interface Definition for WRAITH iOS
+//
+// This defines the interface between Rust and Swift.
+// UniFFI generates Swift bindings automatically from this definition.
+
 namespace wraith {
+    [Throws=WraithError]
     WraithNode create_node(string listen_addr, NodeConfig config);
 };
 
 // Node configuration
 dictionary NodeConfig {
+    string listen_addr;
     u32 max_sessions;
     u32 max_transfers;
-    u32 buffer_size;
 };
 
 // Session information
 dictionary SessionInfo {
     string session_id;
     string peer_id;
+    string peer_addr;
     boolean connected;
-};
-
-// Transfer information
-dictionary TransferInfo {
-    string transfer_id;
-    string peer_id;
-    string file_path;
-    u64 file_size;
-    u64 bytes_transferred;
-    TransferStatus status;
-};
-
-// Node status
-dictionary NodeStatus {
-    boolean running;
-    string local_peer_id;
-    u32 session_count;
-    u32 active_transfers;
 };
 
 // Transfer status enum
@@ -45,28 +33,44 @@ enum TransferStatus {
     "Cancelled",
 };
 
-// Main WRAITH node interface
-interface WraithNode {
-    constructor(NodeConfig config);
+// Transfer information
+dictionary TransferInfo {
+    string transfer_id;
+    string peer_id;
+    string file_path;
+    u64 file_size;
+    u64 bytes_transferred;
+    TransferStatus status;
+};
 
-    [Throws=WraithError]
-    void start(string listen_addr);
+// Transfer progress
+dictionary TransferProgress {
+    string transfer_id;
+    u64 total_bytes;
+    u64 bytes_transferred;
+    f64 progress_percent;
+    f64 speed_bytes_per_sec;
+    u64 eta_seconds;
+    boolean is_complete;
+};
 
-    [Throws=WraithError]
-    void shutdown();
+// Node status
+dictionary NodeStatus {
+    boolean running;
+    string local_peer_id;
+    u32 session_count;
+    u32 active_transfers;
+};
 
-    [Throws=WraithError]
-    SessionInfo establish_session(string peer_id);
-
-    [Throws=WraithError]
-    TransferInfo send_file(string peer_id, string file_path);
-
-    [Throws=WraithError]
-    NodeStatus get_status();
-
-    boolean is_running();
-
-    string local_peer_id();
+// Session statistics
+dictionary SessionStats {
+    string peer_id;
+    u64 bytes_sent;
+    u64 bytes_received;
+    u64 packets_sent;
+    u64 packets_received;
+    u64 rtt_us;
+    f64 loss_rate;
 };
 
 // Error types
@@ -79,4 +83,41 @@ enum WraithError {
     "InvalidPeerId",
     "InvalidFilePath",
     "Other",
+};
+
+// Main WRAITH node interface
+interface WraithNode {
+    [Throws=WraithError]
+    constructor(NodeConfig config);
+
+    [Throws=WraithError]
+    void start(string listen_addr);
+
+    [Throws=WraithError]
+    void shutdown();
+
+    [Throws=WraithError]
+    SessionInfo establish_session(string peer_id, string peer_addr);
+
+    [Throws=WraithError]
+    void close_session(string peer_id);
+
+    [Throws=WraithError]
+    TransferInfo send_file(string peer_id, string file_path);
+
+    [Throws=WraithError]
+    TransferProgress get_transfer_progress(string transfer_id);
+
+    [Throws=WraithError]
+    void cancel_transfer(string transfer_id);
+
+    [Throws=WraithError]
+    SessionStats get_session_stats(string peer_id);
+
+    [Throws=WraithError]
+    NodeStatus get_status();
+
+    boolean is_running();
+
+    string local_peer_id();
 };

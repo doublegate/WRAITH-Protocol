@@ -23,4 +23,6 @@ pub enum Error {
     Other(String),
 }
 
+// Note: This type alias is reserved for future use when full error handling is implemented
+#[allow(dead_code)]
 pub type Result<T> = std::result::Result<T, Error>;

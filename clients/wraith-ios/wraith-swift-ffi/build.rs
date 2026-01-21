@@ -1,6 +1,8 @@
 // Build script for UniFFI scaffolding generation
+// Using proc-macro approach, so minimal build script needed
 
 fn main() {
-    // Generate UniFFI scaffolding
-    uniffi::generate_scaffolding("src/wraith.udl").unwrap();
+    // UniFFI proc macros handle scaffolding generation
+    // This file can be kept minimal or used for additional build steps
+    println!("cargo:rerun-if-changed=src/lib.rs");
 }

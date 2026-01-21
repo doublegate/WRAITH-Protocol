@@ -1,6 +1,6 @@
 [package]
 name = "wraith-chat"
-version = "1.6.2"
+version = "1.6.3"
 description = "WRAITH-Chat - Secure E2E Encrypted Messaging"
 authors = ["WRAITH Protocol Contributors"]
 edition = "2024"
@@ -60,9 +60,25 @@ env_logger = "0.11"
 hex = "0.4"
 base64 = "0.22"
 chrono = "0.4"
+uuid = { version = "1", features = ["v4"] }
 
 # Secure key storage (cross-platform keyring)
 keyring = "3"
+
+# Voice Calling (Sprint 17.5)
+audiopus = "0.3.0-rc.0"
+cpal = "0.15"
+ringbuf = "0.4"
+webrtc-vad = "0.2"
+
+# RNNoise for noise suppression
+nnnoiseless = "0.5"
+
+# Video Calling (Sprint 17.6)
+# Note: The video module provides a codec abstraction layer.
+# For production use with actual VP8/VP9 encoding, install libvpx and enable:
+# vpx = "0.3"  # Requires libvpx system library
+# For now, video encoding/decoding is simulated for testing and development.
 
 [features]
 default = ["custom-protocol"]

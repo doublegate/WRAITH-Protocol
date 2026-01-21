@@ -1,7 +1,5 @@
 // Error types for WRAITH iOS FFI
 
-use std::fmt;
-
 /// Result type alias
 pub type Result<T> = std::result::Result<T, WraithError>;
 

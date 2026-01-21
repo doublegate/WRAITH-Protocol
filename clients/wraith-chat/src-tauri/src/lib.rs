@@ -3,11 +3,18 @@
 // This application provides secure messaging using the WRAITH protocol with Double Ratchet
 // encryption (Signal Protocol) for end-to-end encrypted communications.
 
+pub mod audio;
 pub mod commands;
 pub mod crypto;
 pub mod database;
+pub mod group;
+#[cfg(test)]
+mod integration_tests;
 pub mod secure_storage;
 pub mod state;
+pub mod video;
+pub mod video_call;
+pub mod voice_call;
 
 use std::sync::Arc;
 use tauri::{Manager, Runtime};
@@ -26,22 +33,69 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            // Contact commands
             commands::create_contact,
             commands::get_contact,
             commands::list_contacts,
+            // Conversation commands
             commands::create_conversation,
             commands::get_conversation,
             commands::list_conversations,
+            // Message commands
             commands::send_message,
             commands::receive_message,
             commands::get_messages,
             commands::mark_as_read,
+            // Node commands
             commands::start_node,
             commands::stop_node,
             commands::get_node_status,
             commands::get_peer_id,
+            // Session commands
             commands::establish_session,
             commands::init_receiving_session,
+            // Voice call commands (Sprint 17.5)
+            commands::start_call,
+            commands::answer_call,
+            commands::reject_call,
+            commands::end_call,
+            commands::toggle_mute,
+            commands::toggle_speaker,
+            commands::get_call_info,
+            commands::get_active_calls,
+            commands::list_audio_input_devices,
+            commands::list_audio_output_devices,
+            commands::set_audio_input_device,
+            commands::set_audio_output_device,
+            // Group messaging commands (Sprint 17.7)
+            commands::create_group,
+            commands::get_group_info,
+            commands::update_group_settings,
+            commands::add_group_member,
+            commands::remove_group_member,
+            commands::leave_group,
+            commands::promote_to_admin,
+            commands::demote_from_admin,
+            commands::send_group_message,
+            commands::get_group_members,
+            commands::rotate_group_keys,
+            // Video call commands (Sprint 17.6)
+            commands::start_video_call,
+            commands::answer_video_call,
+            commands::end_video_call,
+            commands::enable_video,
+            commands::disable_video,
+            commands::switch_video_source,
+            commands::switch_camera,
+            commands::toggle_video_mute,
+            commands::get_video_call_info,
+            commands::get_active_video_calls,
+            commands::list_cameras,
+            commands::list_screen_sources,
+            commands::select_camera,
+            commands::select_screen_source,
+            commands::set_video_quality,
+            commands::request_keyframe,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

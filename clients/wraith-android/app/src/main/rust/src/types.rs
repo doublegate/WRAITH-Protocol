@@ -1,4 +1,9 @@
 // Type definitions for WRAITH Android
+//
+// Note: These types are reserved for future use when mobile FFI integration is complete.
+// They will be used in structured responses to the Kotlin layer.
+
+#![allow(dead_code)]
 
 use serde::{Deserialize, Serialize};
 
