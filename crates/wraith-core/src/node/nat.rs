@@ -408,12 +408,35 @@ impl Node {
             peer.peer_id
         );
 
-        // TODO(Sprint 13.3): Implement actual signaling-based candidate exchange
-        // - Add signaling message types (CANDIDATE_OFFER, CANDIDATE_ANSWER)
-        // - Use DHT STORE/GET or relay messaging for signaling
-        // - Add encryption for signaling messages
-        // - Handle concurrent candidate gathering and exchange
-        // - Implement ICE candidate filtering and validation
+        // NOTE: Full signaling-based candidate exchange is deferred.
+        //
+        // Current implementation uses discovery-based candidate retrieval, which works
+        // for most NAT scenarios (cone NAT, restricted cone NAT) where peer addresses
+        // are available through DHT discovery.
+        //
+        // Full ICE signaling would be needed for:
+        // - Symmetric NAT traversal (where port mapping changes per destination)
+        // - TURN relay fallback when direct connectivity fails
+        // - Multi-homed hosts with complex routing
+        //
+        // Future implementation requirements:
+        // 1. Define signaling message types:
+        //    - CANDIDATE_OFFER: Local candidates with SDP-like attributes
+        //    - CANDIDATE_ANSWER: Response with remote candidates
+        //    - CANDIDATE_ERROR: Signaling failure notification
+        // 2. Signaling transport options:
+        //    - DHT STORE/GET with encrypted payloads (peer_id as key)
+        //    - Relay-mediated message forwarding (for symmetric NAT)
+        // 3. ICE-style candidate processing:
+        //    - Concurrent gathering (STUN/TURN probes) with timeout
+        //    - Trickle ICE for progressive candidate discovery
+        //    - Candidate priority negotiation (local > srflx > relay)
+        // 4. Security considerations:
+        //    - Encrypt signaling with peer's public key
+        //    - Validate candidate addresses against spoofing
+        //
+        // See: RFC 8445 (ICE), RFC 8838 (Trickle ICE)
+        // See: to-dos/technical-debt/TECH-DEBT-v1.5.0.md TM-001
 
         Ok(remote_candidates)
     }

@@ -33,16 +33,18 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 - **Tier 3:** Advanced use cases (Stream, Mesh, Publish, Vault)
 - **Security Testing:** Authorized assessment tools (Recon, RedOps)
 
-**Current Status (2025-12-11):**
+**Current Status (2025-01-20):**
 - Protocol v1.6.0 complete (all prerequisites available)
 - **Phase 15 - WRAITH-Transfer v1.6.0:** ✅ **COMPLETE** (102 SP)
   - Cross-platform desktop P2P file transfer
   - Tauri 2.0 + React 18 + TypeScript
+  - 62 frontend tests with Vitest (100% pass rate)
 - **Phase 16 - Mobile & Chat v1.6.0:** ✅ **COMPLETE** (302 SP)
   - **WRAITH-Android:** Native Kotlin + Jetpack Compose (~60 SP)
   - **WRAITH-iOS:** Native Swift + SwiftUI (~60 SP)
   - **WRAITH-Chat:** E2EE messaging with Double Ratchet (182 SP)
-- **Development Status:** 4 of 10 clients complete (35% delivered, 744 SP remaining)
+- **Development Status:** 4 of 10 Tier 1 clients complete (404 SP delivered, 744 SP remaining)
+- **CI/CD:** GitHub Actions updated (upload-artifact v6, download-artifact v7, cache v5)
 
 ---
 
@@ -180,9 +182,10 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 - ✅ Full file transfer operations via intuitive GUI
 - ✅ Real-time status monitoring and progress tracking
 - ✅ FFI layer (wraith-ffi) for future language bindings
-- ✅ 1,382 total tests passing (1,367 active, 16 ignored)
+- ✅ 1,365+ total tests (1,303 Rust + 62 frontend Vitest tests)
 - ✅ Zero clippy warnings, zero TypeScript errors
 - ✅ CI/CD pipeline with Tauri system dependencies
+- ✅ Frontend test infrastructure with Testing Library
 
 ---
 
@@ -331,8 +334,10 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 
 | Client | Spec | Design | Core | UI | Tests | Docs | Release |
 |--------|------|--------|------|----|----|------|---------|
-| Transfer | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Chat | ✅ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| Transfer | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ v1.6.0 |
+| Chat | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ v1.6.0 |
+| Android | ✅ | ✅ | ✅ | ✅ | ⬜ | ✅ | ✅ v1.6.0 |
+| iOS | ✅ | ✅ | ✅ | ✅ | ⬜ | ✅ | ✅ v1.6.0 |
 | Sync | ✅ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | Share | ✅ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | Stream | ✅ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -719,20 +724,26 @@ RedOps                                                          [=============]
 
 ## Current Status & Next Steps
 
-**Protocol Status (2025-12-11):**
-- ✅ All 15 protocol development phases complete (1,635 SP delivered)
-- ✅ 1,613 tests passing - 100% pass rate
+**Protocol Status (2025-01-20):**
+- ✅ All 16 protocol development phases complete (1,937 SP delivered)
+- ✅ 1,365+ tests passing (1,303 Rust + 62 frontend) - 100% pass rate
 - ✅ Zero vulnerabilities, zero clippy warnings
 - ✅ Grade A+ quality (98/100)
-- ✅ Production-ready architecture with v1.5.9 release
+- ✅ Production-ready architecture with v1.6.0 release
+- ✅ CI/CD updated (GitHub Actions: upload-artifact v6, download-artifact v7, cache v5)
 
 **Client Development Status:**
 - ✅ Comprehensive planning complete (roadmap, specifications)
 - ✅ All client specifications documented (10 clients × 3-6 docs each)
-- ✅ **WRAITH Transfer v1.5.9 complete** (102 SP delivered, Phase 15)
+- ✅ **All 4 Tier 1 clients complete** (404 SP delivered, Phases 15-16)
+  - WRAITH-Transfer: Desktop P2P file transfer (Tauri 2.0 + React 18)
+  - WRAITH-Android: Native Kotlin + Jetpack Compose
+  - WRAITH-iOS: Native Swift + SwiftUI
+  - WRAITH-Chat: E2EE messaging with Double Ratchet
+- ✅ Frontend test infrastructure (62 Vitest tests)
 - ✅ Wayland compatibility fix (KDE Plasma 6 crash resolved)
 - ✅ Tauri 2.0 capability-based permissions (plugin initialization fix)
-- ⬜ 9 remaining clients awaiting Phase 16+ development
+- ⬜ 6 Tier 2/3 clients awaiting future development
 
 **Completed Work:**
 
@@ -801,6 +812,6 @@ RedOps                                                          [=============]
 
 **WRAITH Protocol Client Applications Development History** - *From Planning to Production*
 
-**Status:** Phase 15 Complete (WRAITH Transfer v1.5.8) | **Total Scope:** 10 clients, 1,028 SP | **Delivered:** 102 SP (10%) | **Remaining:** 926 SP (9 clients) | **Prerequisites:** Protocol v1.5.8 ✅ Complete | **Next:** Phase 16 (Mobile Clients)
+**Status:** Phases 15-16 Complete (All 4 Tier 1 Clients) | **Total Scope:** 10 clients, 1,148 SP | **Delivered:** 404 SP (35%) | **Remaining:** 744 SP (6 clients) | **Prerequisites:** Protocol v1.6.0 ✅ Complete | **Next:** Tier 2 Clients (WRAITH-Sync, WRAITH-Share)
 
-*Last Updated: 2025-12-09*
+*Last Updated: 2025-01-20*

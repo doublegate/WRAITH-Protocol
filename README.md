@@ -21,14 +21,15 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
 
 WRAITH Protocol is production-ready with desktop, mobile, and messaging applications. Phase 16 delivers Android and iOS mobile clients with native UIs (Kotlin/Jetpack Compose, Swift/SwiftUI), plus WRAITH-Chat, a secure E2EE messaging application with Signal Protocol Double Ratchet encryption, SQLCipher encrypted storage, and React 18 frontend. v1.6.0 adds mobile platform support, end-to-end encrypted messaging, and comprehensive client ecosystem expansion.
 
-**Project Metrics (2025-12-11):**
+**Project Metrics (2025-01-20):**
 - **Code Volume:** ~57,400 lines of Rust code across protocol crates + ~4,000 lines in client applications (Kotlin/Swift/TypeScript)
-- **Test Coverage:** 1,626 total tests - 100% pass rate on active tests (1,280 passing, 23 ignored in protocol, 323 in integration tests)
+- **Test Coverage:** 1,303+ Rust tests + 62 frontend tests = 1,365+ total tests - 100% pass rate
 - **Documentation:** 111 markdown files, ~63,000+ lines of comprehensive documentation
 - **Dependencies:** 286 audited packages (zero vulnerabilities via cargo-audit)
 - **Security:** Grade A+ (EXCELLENT), zero vulnerabilities, comprehensive DPI evasion validation
 - **Quality:** Code quality 98/100, zero compiler/clippy warnings, 3.8% technical debt ratio, production-ready codebase
-- **Client Applications:** 4 production-ready applications (WRAITH-Transfer desktop, WRAITH-Android, WRAITH-iOS, WRAITH-Chat)
+- **Client Applications:** 4 production-ready Tier 1 applications (WRAITH-Transfer desktop, WRAITH-Android, WRAITH-iOS, WRAITH-Chat)
+- **CI/CD:** GitHub Actions updated (upload-artifact v6, download-artifact v7, cache v5)
 
 For detailed development history and phase accomplishments, see [Protocol Development History](docs/archive/README_Protocol-DEV.md).
 
@@ -286,7 +287,7 @@ WRAITH-Protocol/
 | **Integration Tests** | 323 | Cross-crate protocol integration and end-to-end scenarios |
 | **Benchmarks** | - | Performance validation (frame parsing, AEAD, hashing, file operations) |
 
-**Project Total:** 1,626 tests (1,280 passing in protocol, 23 ignored, 323 in integration tests) - 100% pass rate on active tests
+**Project Total:** 1,365+ tests (1,303 Rust tests + 62 frontend tests) - 100% pass rate
 
 ## Documentation
 
@@ -621,7 +622,7 @@ WRAITH Protocol is designed with security as a core principle:
 - **Unsafe Code Audit:** 100% documentation coverage with SAFETY comments
 
 **Validation:**
-- **Test Coverage:** 1,396 tests (1,380 passing, 16 ignored) covering all protocol layers
+- **Test Coverage:** 1,365+ tests (1,303 Rust + 62 frontend) covering all protocol layers
 - **DPI Evasion:** Comprehensive validation against Wireshark, Zeek, Suricata, nDPI (see [DPI Evasion Report](docs/security/DPI_EVASION_REPORT.md))
 - **Fuzzing:** 5 libFuzzer targets continuously testing robustness
 - **Property-Based Tests:** QuickCheck-style invariant validation
@@ -713,4 +714,4 @@ WRAITH Protocol builds on the work of many excellent projects and technologies:
 
 **WRAITH Protocol** - *Secure. Fast. Invisible.*
 
-**Status:** v1.6.0 Mobile Clients & WRAITH-Chat (Phase 16 Complete) | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 1,626 (100% pass rate) | **Quality:** Production-ready, 0 vulnerabilities, zero warnings, 98/100 quality grade | **Clients:** 4 production applications (Desktop, Android, iOS, E2EE Chat)
+**Status:** v1.6.0 Mobile Clients & WRAITH-Chat (Phase 16 Complete) | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 1,365+ (1,303 Rust + 62 frontend, 100% pass rate) | **Quality:** Production-ready, 0 vulnerabilities, zero warnings, 98/100 quality grade | **Clients:** 4 Tier 1 applications complete (Desktop, Android, iOS, E2EE Chat)

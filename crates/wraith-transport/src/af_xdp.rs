@@ -521,9 +521,36 @@ impl AfXdpSocket {
             ));
         }
 
-        // TODO: Set socket options (UMEM, rings, etc.)
-        // This requires platform-specific socket option constants
-        // which would be defined in a separate xdp_sys module
+        // NOTE: Socket option configuration is deferred to future implementation.
+        //
+        // Full AF_XDP socket setup requires:
+        // 1. Register UMEM with XDP_UMEM_REG setsockopt
+        // 2. Configure RX/TX rings with XDP_RX_RING/XDP_TX_RING setsockopt
+        // 3. Bind socket to interface with sockaddr_xdp
+        // 4. Set fill/completion ring addresses
+        //
+        // Required Linux kernel headers (if_xdp.h):
+        // - SOL_XDP (level 283)
+        // - XDP_UMEM_REG (4): Register UMEM region
+        // - XDP_UMEM_FILL_RING (5): Set fill ring params
+        // - XDP_UMEM_COMPLETION_RING (6): Set completion ring params
+        // - XDP_RX_RING (1): Configure RX ring
+        // - XDP_TX_RING (2): Configure TX ring
+        //
+        // Bind requires sockaddr_xdp structure:
+        // - sxdp_family: AF_XDP (44)
+        // - sxdp_ifindex: Interface index from if_nametoindex()
+        // - sxdp_queue_id: Hardware queue ID
+        // - sxdp_flags: XDP_COPY (1<<1), XDP_ZEROCOPY (1<<2), etc.
+        // - sxdp_shared_umem_fd: For shared UMEM between sockets
+        //
+        // Implementation deferred because:
+        // - Requires Linux 5.3+ testing environment with XDP-capable NIC
+        // - wraith-xdp eBPF crate (excluded from workspace) needs parallel development
+        // - Current UDP transport provides functional baseline for all platforms
+        //
+        // See: https://docs.kernel.org/networking/af_xdp.html
+        // See: to-dos/technical-debt/TECH-DEBT-v1.5.0.md TH-006
 
         Ok(Self {
             fd,

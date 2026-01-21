@@ -22,17 +22,18 @@ For the current production README, see [../../README.md](../../README.md).
 
 **Total Development Effort:** 1,937 story points delivered across 16 phases
 
-**Project Metrics (2025-12-11):**
+**Project Metrics (2025-01-20):**
 - **Code Volume:** ~57,400 lines of Rust code across protocol crates + ~4,000 lines in client applications (Kotlin/Swift/TypeScript)
-- **Test Coverage:** 1,626 total tests - 100% pass rate on active tests (1,280 passing in protocol, 23 ignored, 323 in integration tests)
+- **Test Coverage:** 1,365+ total tests (1,303 Rust + 62 frontend) - 100% pass rate
 - **Documentation:** 111 markdown files, ~63,000+ lines of comprehensive documentation
 - **Dependencies:** 286 audited packages (zero vulnerabilities via cargo-audit)
 - **Security:** Grade A+ (EXCELLENT) - zero vulnerabilities, 100% unsafe documentation, comprehensive audits
-- **Client Applications:** 4 production-ready applications (WRAITH-Transfer desktop, WRAITH-Android, WRAITH-iOS, WRAITH-Chat)
+- **Client Applications:** 4 production-ready Tier 1 applications (WRAITH-Transfer desktop, WRAITH-Android, WRAITH-iOS, WRAITH-Chat)
+- **CI/CD:** GitHub Actions updated (upload-artifact v6, download-artifact v7, cache v5)
 
 **Quality Metrics:**
 - **Quality Grade:** 98/100 (Production-ready)
-- **Test Coverage:** 1,626 total tests - 100% pass rate on active tests
+- **Test Coverage:** 1,365+ total tests (1,303 Rust + 62 frontend) - 100% pass rate
   - 420 wraith-core - frame parsing (SIMD), sessions, streams, BBR, migration, ring buffers, Node API
   - 179 wraith-crypto - Ed25519, X25519+Elligator2, AEAD, Noise_XX, Double Ratchet
   - 44 wraith-files - chunking, reassembly, BLAKE3 tree hashing, io_uring I/O
@@ -42,7 +43,8 @@ For the current production README, see [../../README.md](../../README.md).
   - 87 wraith-cli - CLI interface with ping/config commands, Node API integration
   - 111 wraith-ffi - Foreign function interface (C-compatible API, JNI bindings)
   - 323 integration tests - end-to-end flows, multi-peer transfers, cross-crate integration
-  - 6 wraith-transfer - Desktop application (Tauri IPC commands)
+  - 6 wraith-transfer backend - Desktop application (Tauri IPC commands)
+  - 62 wraith-transfer frontend - React UI component tests (Vitest)
   - 3 wraith-chat - E2EE messaging (Double Ratchet encrypt/decrypt, out-of-order, serialization)
 - **Security Vulnerabilities:** Zero (286 dependencies scanned with cargo-audit, CodeQL verified)
 - **Clippy Warnings:** Zero (strict `-D warnings` enforcement)
@@ -1083,12 +1085,12 @@ This major phase delivers three production-ready client applications implementin
 
 ## Current Status & Next Steps
 
-**Version 1.6.0 Status (2025-12-11):**
+**Version 1.6.0 Status (2025-01-20):**
 - ✅ All 16 development phases complete (1,937 SP delivered)
-- ✅ 1,626 tests - 100% pass rate on active tests (1,280 passing in protocol, 23 ignored, 323 integration tests)
+- ✅ 1,365+ tests (1,303 Rust + 62 frontend) - 100% pass rate
 - ✅ Zero vulnerabilities, zero warnings
 - ✅ Code quality: 98/100 (production-ready)
-- ✅ 4 production client applications deployed (WRAITH-Transfer, Android, iOS, WRAITH-Chat)
+- ✅ 4 production Tier 1 client applications deployed (WRAITH-Transfer, Android, iOS, WRAITH-Chat)
 - ✅ Technical debt ratio: 3.8% (healthy range)
 - ✅ 100% unsafe block documentation coverage
 - ✅ Production-ready with comprehensive security audits (Grade A+)
@@ -1103,6 +1105,8 @@ This major phase delivers three production-ready client applications implementin
 - ✅ WRAITH Transfer desktop application (Tauri 2.0 + React 18)
 - ✅ FFI bindings for C/C++ integration (wraith-ffi crate)
 - ✅ Cross-platform desktop application (Windows, macOS, Linux X11/Wayland)
+- ✅ Frontend test infrastructure (62 Vitest tests for React components)
+- ✅ CI/CD updated (GitHub Actions: upload-artifact v6, download-artifact v7, cache v5)
 
 **Upcoming Work:**
 
@@ -1140,6 +1144,6 @@ See [../../to-dos/ROADMAP.md](../../to-dos/ROADMAP.md) for detailed future plann
 
 ---
 
-**WRAITH Protocol Development History** - *From Foundation to Production (Phases 1-15)*
+**WRAITH Protocol Development History** - *From Foundation to Production (Phases 1-16)*
 
-**Development Period:** 2024 - 2025-12-09 | **Total Effort:** 1,635 story points delivered across 15 phases | **Quality:** Production-ready (98/100), 1,396 tests (100% pass rate), 0 vulnerabilities, Grade A+ security
+**Development Period:** 2024 - 2025-01-20 | **Total Effort:** 1,937 story points delivered across 16 phases | **Quality:** Production-ready (98/100), 1,365+ tests (1,303 Rust + 62 frontend, 100% pass rate), 0 vulnerabilities, Grade A+ security

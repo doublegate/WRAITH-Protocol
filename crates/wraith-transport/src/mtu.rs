@@ -453,9 +453,19 @@ mod tests {
         assert_eq!(DEFAULT_MTU, 1280);
     }
 
-    // Integration test - requires network access
+    // Integration test - requires network access and may have timing/platform issues
+    //
+    // This test spawns a UDP echo server and performs MTU discovery against localhost.
+    // It is ignored by default because:
+    // 1. Requires available port 9999 (may conflict with other services)
+    // 2. Uses thread::sleep for timing synchronization (flaky under load)
+    // 3. Server thread has no clean shutdown mechanism (may leak on failure)
+    // 4. Platform-specific socket behavior (DF bit handling varies)
+    //
+    // To run manually: cargo test -p wraith-transport -- --ignored test_mtu_discovery
+    // Core MTU logic is validated by unit tests above.
     #[test]
-    #[ignore]
+    #[ignore = "integration test: requires network access and port 9999 available"]
     fn test_mtu_discovery_localhost() {
         let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
         let mut discovery = MtuDiscovery::with_limits(576, 1500);
