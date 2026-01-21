@@ -436,7 +436,7 @@ impl Node {
         //    - Validate candidate addresses against spoofing
         //
         // See: RFC 8445 (ICE), RFC 8838 (Trickle ICE)
-        // See: to-dos/technical-debt/TECH-DEBT-v1.5.0.md TM-001
+        // See: to-dos/technical-debt/TECH-DEBT-v1.6.1.md TM-001-DEFERRED
 
         Ok(remote_candidates)
     }

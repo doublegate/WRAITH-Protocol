@@ -550,7 +550,7 @@ impl AfXdpSocket {
         // - Current UDP transport provides functional baseline for all platforms
         //
         // See: https://docs.kernel.org/networking/af_xdp.html
-        // See: to-dos/technical-debt/TECH-DEBT-v1.5.0.md TH-006
+        // See: to-dos/technical-debt/TECH-DEBT-v1.6.1.md TH-006-DEFERRED
 
         Ok(Self {
             fd,
