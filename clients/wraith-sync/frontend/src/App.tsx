@@ -35,7 +35,7 @@ export default function App() {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [refreshStatus, loadFolders, loadConflicts, loadSettings, loadDevices]);
 
   const tabs: { id: TabId; label: string; badge?: number }[] = [
     { id: 'folders', label: 'Folders' },

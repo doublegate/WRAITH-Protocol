@@ -22,13 +22,13 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
 WRAITH Protocol is production-ready with desktop, mobile, and messaging applications featuring full protocol integration, real-time voice/video calling, and advanced group messaging. Phase 17 completes the mobile ecosystem with actual WRAITH protocol bindings (replacing placeholders), secure native storage (Android Keystore, iOS Keychain), push notifications (FCM/APNs), encrypted voice/video calls (Opus/VP8/VP9), and Sender Keys group messaging for efficient multi-party encryption.
 
 **Project Metrics (2026-01-21):**
-- **Code Volume:** ~68,000 lines of Rust code across protocol crates + ~12,000 lines in client applications (Kotlin/Swift/TypeScript)
+- **Code Volume:** ~72,400 lines of Rust code across protocol crates + ~14,100 lines in client applications (Kotlin/Swift/TypeScript)
 - **Test Coverage:** 1,695 tests passing (16 ignored) - 100% pass rate
 - **Documentation:** 120+ markdown files, ~72,000+ lines of comprehensive documentation
 - **Dependencies:** 295 audited packages (zero vulnerabilities via cargo-audit)
 - **Security:** Grade A+ (EXCELLENT), zero vulnerabilities, comprehensive DPI evasion validation
 - **Quality:** Code quality 98/100, zero compiler/clippy warnings, 3.5% technical debt ratio, production-ready codebase
-- **Client Applications:** 4 production-ready Tier 1 applications with full protocol integration
+- **Client Applications:** 5 production-ready applications (4 Tier 1 + 1 Tier 2) with full protocol integration
 - **CI/CD:** GitHub Actions updated (upload-artifact v6, download-artifact v7, cache v5)
 
 **Phase 17 Highlights:**
@@ -260,7 +260,8 @@ WRAITH-Protocol/
 │   ├── wraith-transfer/        # Desktop file transfer (Tauri 2.0 + React 18)
 │   ├── wraith-android/         # Android mobile client (Kotlin + Jetpack Compose)
 │   ├── wraith-ios/             # iOS mobile client (Swift + SwiftUI)
-│   └── wraith-chat/            # E2EE messaging (Tauri 2.0 + React 18 + SQLCipher)
+│   ├── wraith-chat/            # E2EE messaging (Tauri 2.0 + React 18 + SQLCipher)
+│   └── wraith-sync/            # File synchronization (Tauri 2.0 + React 18)
 ├── docs/                        # Comprehensive documentation
 │   ├── archive/                # Archived documentation and development history
 │   ├── architecture/           # Protocol design (5 docs)
@@ -285,28 +286,29 @@ WRAITH-Protocol/
 
 | Crate | Description | Tests | Status |
 |-------|-------------|-------|--------|
-| **wraith-core** | Frame parsing (SIMD), sessions, congestion control, ring buffers, Node API | 420 | ✅ Complete |
-| **wraith-crypto** | Ed25519, X25519+Elligator2, AEAD, Noise_XX, Double Ratchet | 179 | ✅ Complete |
-| **wraith-discovery** | Kademlia DHT, STUN, ICE, relay infrastructure | 292 | ✅ Complete |
-| **wraith-transport** | AF_XDP, io_uring, UDP sockets, worker pools, NUMA-aware allocation | 174 | ✅ Complete |
-| **wraith-obfuscation** | Padding (5 modes), timing (5 distributions), protocol mimicry (TLS/WS/DoH) | 167 | ✅ Complete |
-| **wraith-files** | File chunking, BLAKE3 tree hashing, reassembly with io_uring | 44 | ✅ Complete |
-| **wraith-cli** | Command-line interface with full Node API integration | 87 | ✅ Complete |
-| **wraith-ffi** | Foreign function interface (C-compatible API, JNI bindings) | 111 | ✅ Complete |
+| **wraith-core** | Frame parsing (SIMD), sessions, congestion control, ring buffers, Node API | 414 | ✅ Complete |
+| **wraith-crypto** | Ed25519, X25519+Elligator2, AEAD, Noise_XX, Double Ratchet | 127 | ✅ Complete |
+| **wraith-transport** | AF_XDP, io_uring, UDP sockets, worker pools, NUMA-aware allocation | 130 | ✅ Complete |
+| **wraith-obfuscation** | Padding (5 modes), timing (5 distributions), protocol mimicry (TLS/WS/DoH) | 111 | ✅ Complete |
+| **wraith-discovery** | Kademlia DHT, STUN, ICE, relay infrastructure | 231 | ✅ Complete |
+| **wraith-files** | File chunking, BLAKE3 tree hashing, reassembly with io_uring | 34 | ✅ Complete |
+| **wraith-cli** | Command-line interface with full Node API integration | 8 | ✅ Complete |
+| **wraith-ffi** | Foreign function interface (C-compatible API, JNI bindings) | 6 | ✅ Complete |
 | **wraith-xdp** | eBPF/XDP programs (requires eBPF toolchain, excluded from default build) | 0 | 📋 Planned |
 
-**Total Protocol:** 1,474 tests across 8 active crates
+**Total Protocol:** 1,061 tests across 8 active crates
 
 ### Client Applications
 
 | Application | Description | Platform | Tests | Status |
 |-------------|-------------|----------|-------|--------|
-| **wraith-transfer** | P2P file transfer with drag-and-drop GUI (Tauri 2.0 + React 18 + TypeScript) | Desktop | 6 | ✅ v1.5.0 |
+| **wraith-transfer** | P2P file transfer with drag-and-drop GUI (Tauri 2.0 + React 18 + TypeScript) | Desktop | 68 | ✅ v1.7.0 |
 | **wraith-android** | Mobile client with full protocol integration (Kotlin + Jetpack Compose + JNI) | Android | 96 | ✅ v1.7.0 |
-| **wraith-ios** | Mobile client with full protocol integration (Swift + SwiftUI + UniFFI) | iOS | 93 | ✅ v1.7.0 |
-| **wraith-chat** | E2EE messaging with voice/video/groups (Tauri 2.0 + React 18 + SQLCipher) | Desktop | 38 | ✅ v1.7.0 |
+| **wraith-ios** | Mobile client with full protocol integration (Swift + SwiftUI + UniFFI) | iOS | 103 | ✅ v1.7.0 |
+| **wraith-chat** | E2EE messaging with voice/video/groups (Tauri 2.0 + React 18 + SQLCipher) | Desktop | 76 | ✅ v1.7.0 |
+| **wraith-sync** | Decentralized file sync with delta transfers and version history (Tauri 2.0 + React 18) | Desktop | 17 | ✅ v1.7.0 |
 
-**Total Clients:** 233 tests, 4 production applications (~11,650 lines: 4,750 Rust, 2,400 Kotlin, 1,900 Swift, 2,600 TypeScript/React)
+**Total Clients:** 360 tests, 5 production applications (~14,100 lines: TypeScript/Kotlin/Swift)
 
 ### Integration Tests & Benchmarks
 
@@ -315,7 +317,7 @@ WRAITH-Protocol/
 | **Integration Tests** | 323 | Cross-crate protocol integration and end-to-end scenarios |
 | **Benchmarks** | - | Performance validation (frame parsing, AEAD, hashing, file operations) |
 
-**Project Total:** 1,679+ tests (1,617 Rust tests + 62 frontend tests) - 100% pass rate
+**Project Total:** 1,695+ tests (16 ignored) - 100% pass rate
 
 ## Documentation
 
@@ -397,7 +399,7 @@ WRAITH Protocol powers a comprehensive ecosystem of secure applications across 3
 
 | Client | Description | Status | Story Points |
 |--------|-------------|--------|--------------|
-| **WRAITH-Sync** | Decentralized backup synchronization (Dropbox alternative) | Planned | 136 |
+| **WRAITH-Sync** | Decentralized backup synchronization with delta sync and version history | ✅ **Complete (v1.7.0)** | 136 |
 | **WRAITH-Share** | Distributed anonymous file sharing (BitTorrent-like) | Planned | 123 |
 
 ### Tier 3: Advanced Applications (Lower Priority)
@@ -416,7 +418,7 @@ WRAITH Protocol powers a comprehensive ecosystem of secure applications across 3
 | **WRAITH-Recon** | Network reconnaissance & data exfiltration assessment | Planned | 55 |
 | **WRAITH-RedOps** | Red team operations platform with C2 infrastructure | Planned | 89 |
 
-**Total Ecosystem:** 10 clients, ~1,148 story points (4 complete, 6 planned)
+**Total Ecosystem:** 10 clients, ~1,148 story points (5 complete, 5 planned)
 
 **Security Testing Notice:** WRAITH-Recon and WRAITH-RedOps require signed authorization and governance compliance. See [Security Testing Parameters](ref-docs/WRAITH-Security-Testing-Parameters-v1.0.md) for authorized use requirements.
 
@@ -563,11 +565,11 @@ See [ROADMAP.md](to-dos/ROADMAP.md) and [Protocol Development History](docs/arch
   - ✅ WRAITH-Android (Android mobile client with full protocol integration - v1.7.0)
   - ✅ WRAITH-iOS (iOS mobile client with full protocol integration - v1.7.0)
   - ✅ WRAITH-Chat (E2EE messaging with voice/video/groups - v1.7.0)
-- **Tier 2 (Planned):** WRAITH-Sync (backup sync), WRAITH-Share (distributed sharing)
+- **Tier 2:** ✅ WRAITH-Sync (file synchronization - v1.7.0), WRAITH-Share (distributed sharing - planned)
 - **Tier 3 (Planned):** WRAITH-Stream, WRAITH-Mesh, WRAITH-Publish, WRAITH-Vault
 - **Security Testing (Planned):** WRAITH-Recon, WRAITH-RedOps (authorized use only)
 
-**Status:** 4 of 10 clients complete (404 SP delivered, 804 SP remaining)
+**Status:** 5 of 10 clients complete (540 SP delivered, 668 SP remaining)
 
 See [Client Roadmap](to-dos/ROADMAP-clients.md) for detailed planning.
 
@@ -659,7 +661,7 @@ WRAITH Protocol is designed with security as a core principle:
 - **Unsafe Code Audit:** 100% documentation coverage with SAFETY comments
 
 **Validation:**
-- **Test Coverage:** 1,679+ tests (1,617 Rust + 62 frontend) covering all protocol layers
+- **Test Coverage:** 1,695+ tests (16 ignored) covering all protocol layers
 - **DPI Evasion:** Comprehensive validation against Wireshark, Zeek, Suricata, nDPI (see [DPI Evasion Report](docs/security/DPI_EVASION_REPORT.md))
 - **Fuzzing:** 5 libFuzzer targets continuously testing robustness
 - **Property-Based Tests:** QuickCheck-style invariant validation
@@ -751,6 +753,6 @@ WRAITH Protocol builds on the work of many excellent projects and technologies:
 
 **WRAITH Protocol** - *Secure. Fast. Invisible.*
 
-**Status:** v1.7.0 Phase 17 Complete + WRAITH-Sync | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 1,695+ (100% pass rate) | **Quality:** Production-ready, 0 vulnerabilities, zero warnings, 98/100 quality grade | **Clients:** 5 applications with full protocol integration, voice/video calling, group messaging, and file synchronization
+**Status:** v1.7.0 Phase 17 Complete + WRAITH-Sync | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 1,695 passing (16 ignored) | **Quality:** Production-ready, 0 vulnerabilities, zero warnings, 98/100 quality grade | **Clients:** 5 applications with full protocol integration, voice/video calling, group messaging, and file synchronization
 
 *Last Updated: 2026-01-21*

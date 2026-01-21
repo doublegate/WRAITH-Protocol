@@ -21,7 +21,7 @@ export default function App() {
       await loadConversations();
       await loadContacts();
     })();
-  }, []);
+  }, [startNode, loadConversations, loadContacts]);
 
   return (
     <div className="flex h-screen bg-wraith-darker text-white">

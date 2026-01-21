@@ -38,7 +38,7 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 - **Phase 15 - WRAITH-Transfer v1.7.0:** ✅ **COMPLETE** (102 SP)
   - Cross-platform desktop P2P file transfer
   - Tauri 2.0 + React 18 + TypeScript
-  - 62 frontend tests with Vitest (100% pass rate)
+  - 68 tests with Vitest (100% pass rate)
 - **Phase 16 - Mobile & Chat v1.6.0:** ✅ **COMPLETE** (302 SP)
   - **WRAITH-Android:** Native Kotlin + Jetpack Compose (~60 SP)
   - **WRAITH-iOS:** Native Swift + SwiftUI (~60 SP)
@@ -54,7 +54,7 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
   - **WRAITH-Sync:** Desktop file synchronization with delta sync (136 SP)
 - **Development Status:** 5 of 10 clients complete (860 SP delivered, 608 SP remaining)
 - **CI/CD:** GitHub Actions updated (upload-artifact v6, download-artifact v7, cache v5)
-- **Test Coverage:** 250 client tests (6 transfer + 96 android + 93 ios + 38 chat + 17 sync)
+- **Test Coverage:** 360 client tests (68 transfer + 96 android + 103 ios + 76 chat + 17 sync)
 
 ---
 
@@ -100,7 +100,7 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 - NAT traversal with cellular/WiFi handoff support
 - Apple Push Notification Service (APNs) for push notifications
 - ~2,650 lines (750 Rust UniFFI, 1,900 Swift)
-- 93 tests covering protocol integration, Keychain, and APNs
+- 103 tests covering protocol integration, Keychain, and APNs
 
 **WRAITH-Chat (v1.7.0) - Voice/Video/Groups:**
 - Signal Protocol Double Ratchet for E2EE messaging
@@ -110,7 +110,7 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 - **Group Messaging:** Sender Keys protocol for O(1) encryption efficiency
 - 49 IPC commands total (10 messaging + 16 voice + 16 video + 11 group)
 - ~5,200 lines (2,800 Rust backend, 2,400 TypeScript/React frontend)
-- 38 tests covering messaging, voice, video, and groups
+- 76 tests covering messaging, voice, video, and groups
 
 **WRAITH-Sync (v1.7.0) - Desktop File Synchronization:**
 - Delta synchronization with rsync-style rolling checksums

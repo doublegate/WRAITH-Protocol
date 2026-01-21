@@ -19,6 +19,7 @@ export default function Settings() {
     error,
   } = useConfigStore();
 
+  // Use settings as initial value when available, allowing local edits
   const [localSettings, setLocalSettings] = useState<AppSettings | null>(null);
   const [newPattern, setNewPattern] = useState('');
   const [activeSection, setActiveSection] = useState<
@@ -29,13 +30,15 @@ export default function Settings() {
     loadSettings();
     loadDevices();
     loadIgnoredPatterns();
-  }, []);
+  }, [loadSettings, loadDevices, loadIgnoredPatterns]);
 
+  // Initialize local settings when store settings first load
+  const settingsInitialized = localSettings !== null;
   useEffect(() => {
-    if (settings) {
+    if (settings && !settingsInitialized) {
       setLocalSettings(settings);
     }
-  }, [settings]);
+  }, [settings, settingsInitialized]);
 
   const handleSave = async () => {
     if (localSettings) {

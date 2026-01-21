@@ -131,9 +131,11 @@ export default function FolderList() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        folder.paused
-                          ? resumeFolder(folder.id)
-                          : pauseFolder(folder.id);
+                        if (folder.paused) {
+                          resumeFolder(folder.id);
+                        } else {
+                          pauseFolder(folder.id);
+                        }
                       }}
                       className="p-1.5 rounded hover:bg-gray-700 transition-colors"
                       title={folder.paused ? 'Resume' : 'Pause'}

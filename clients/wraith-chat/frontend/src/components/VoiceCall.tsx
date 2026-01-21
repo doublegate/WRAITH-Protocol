@@ -53,21 +53,27 @@ export default function VoiceCall({ peerId, onCallEnd }: VoiceCallProps) {
   }, [peerId, activeCall, loading, startCall]);
 
   // Update call duration timer
+  const isConnected = activeCall?.state === 'connected';
+  const connectedAt = activeCall?.connected_at;
   useEffect(() => {
-    if (!activeCall || activeCall.state !== 'connected') {
-      setCallDuration(0);
+    if (!isConnected || !connectedAt) {
       return;
     }
 
-    const interval = setInterval(() => {
-      if (activeCall.connected_at) {
-        const now = Math.floor(Date.now() / 1000);
-        setCallDuration(now - activeCall.connected_at);
-      }
-    }, 1000);
+    // Update duration immediately and then every second
+    const updateDuration = () => {
+      const now = Math.floor(Date.now() / 1000);
+      setCallDuration(now - connectedAt);
+    };
+    updateDuration();
 
-    return () => clearInterval(interval);
-  }, [activeCall]);
+    const interval = setInterval(updateDuration, 1000);
+
+    return () => {
+      clearInterval(interval);
+      setCallDuration(0);
+    };
+  }, [isConnected, connectedAt]);
 
   // Refresh call info periodically
   useEffect(() => {

@@ -22,11 +22,13 @@ export default function ChatView({ conversationId }: ChatViewProps) {
   useEffect(() => {
     loadMessages(conversationId);
     markAsRead(conversationId);
-  }, [conversationId]);
+  }, [conversationId, loadMessages, markAsRead]);
 
+  // Scroll to bottom when messages change
+  const messageCount = conversationMessages.length;
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [conversationMessages]);
+  }, [messageCount]);
 
   const handleSend = async () => {
     if (!inputText.trim() || !conversation?.peer_id) return;

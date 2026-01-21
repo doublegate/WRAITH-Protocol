@@ -23,8 +23,8 @@ For the current production README, see [../../README.md](../../README.md).
 **Total Development Effort:** 2,577 story points delivered across 17 phases
 
 **Project Metrics (2026-01-21):**
-- **Code Volume:** ~68,000 lines of Rust code across protocol crates + ~18,000 lines in client applications (Kotlin/Swift/TypeScript)
-- **Test Coverage:** 1,712 tests passing (16 ignored) - 100% pass rate
+- **Code Volume:** ~72,400 lines of Rust code across protocol crates + ~14,100 lines in client applications (Kotlin/Swift/TypeScript)
+- **Test Coverage:** 1,695 tests passing (16 ignored) - 100% pass rate
 - **Documentation:** 120+ markdown files, ~72,000+ lines of comprehensive documentation
 - **Dependencies:** 295 audited packages (zero vulnerabilities via cargo-audit)
 - **Security:** Grade A+ (EXCELLENT) - zero vulnerabilities, 100% unsafe documentation, comprehensive audits
@@ -33,22 +33,20 @@ For the current production README, see [../../README.md](../../README.md).
 
 **Quality Metrics:**
 - **Quality Grade:** 98/100 (Production-ready)
-- **Test Coverage:** 1,712 tests passing (16 ignored) - 100% pass rate
+- **Test Coverage:** 1,695 tests passing (16 ignored) - 100% pass rate
   - 414 wraith-core - frame parsing (SIMD), sessions, streams, BBR, migration, ring buffers, Node API
-  - 179 wraith-crypto - Ed25519, X25519+Elligator2, AEAD, Noise_XX, Double Ratchet (+ test vectors + zeroization)
-  - 44 wraith-files - chunking, reassembly, BLAKE3 tree hashing, io_uring I/O
-  - 167 wraith-obfuscation - padding modes (5), timing distributions (5), protocol mimicry (TLS/WS/DoH)
-  - 292 wraith-discovery - Kademlia DHT, STUN with DNS resolution, ICE signaling, relay infrastructure
-  - 174 wraith-transport - AF_XDP socket config, io_uring, UDP, worker pools, NUMA-aware allocation
-  - 87 wraith-cli - CLI interface with ping/config commands, Node API integration
-  - 111 wraith-ffi - Foreign function interface (C-compatible API, JNI bindings)
-  - 323 integration tests - end-to-end flows, multi-peer transfers, cross-crate integration, property tests
-  - 6 wraith-transfer backend - Desktop application (Tauri IPC commands)
-  - 38 wraith-chat backend - E2EE messaging + voice/video/groups (49 IPC commands)
-  - 17 wraith-sync backend - Desktop file synchronization (delta sync, conflict resolution)
-  - 96 wraith-android tests - Mobile protocol integration, Keystore, FCM
-  - 93 wraith-ios tests - Mobile protocol integration, Keychain, APNs
-  - 62 wraith-transfer frontend - React UI component tests (Vitest)
+  - 127 wraith-crypto - Ed25519, X25519+Elligator2, AEAD, Noise_XX, Double Ratchet (+ test vectors + zeroization)
+  - 34 wraith-files - chunking, reassembly, BLAKE3 tree hashing, io_uring I/O
+  - 111 wraith-obfuscation - padding modes (5), timing distributions (5), protocol mimicry (TLS/WS/DoH)
+  - 231 wraith-discovery - Kademlia DHT, STUN with DNS resolution, ICE signaling, relay infrastructure
+  - 130 wraith-transport - AF_XDP socket config, io_uring, UDP, worker pools, NUMA-aware allocation
+  - 8 wraith-cli - CLI interface with ping/config commands, Node API integration
+  - 6 wraith-ffi - Foreign function interface (C-compatible API, JNI bindings)
+  - 68 wraith-transfer - Desktop file transfer (Tauri IPC commands + React UI tests)
+  - 76 wraith-chat - E2EE messaging + voice/video/groups (49 IPC commands)
+  - 17 wraith-sync - Desktop file synchronization (delta sync, conflict resolution)
+  - 96 wraith-android - Mobile protocol integration, Keystore, FCM
+  - 103 wraith-ios - Mobile protocol integration, Keychain, APNs
 - **Security Vulnerabilities:** Zero (295 dependencies scanned with cargo-audit, CodeQL verified)
 - **Clippy Warnings:** Zero (strict `-D warnings` enforcement)
 - **Compiler Warnings:** Zero
