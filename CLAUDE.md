@@ -6,13 +6,13 @@ Guidance for Claude Code when working with this repository.
 
 WRAITH (Wire-speed Resilient Authenticated Invisible Transfer Handler) is a decentralized secure file transfer protocol implemented in Rust.
 
-**Status:** v1.6.1 - Testing Infrastructure & Documentation
+**Status:** v1.6.2 - Protocol Integration & Infrastructure
 
 ### Metrics
 | Metric | Value |
 |--------|-------|
-| Tests | 1,303 (1,280 passing, 23 ignored) - 100% pass rate |
-| Code | ~41,177 lines Rust (~30,876 LOC + 2,743 comments + 7,558 blanks) across 7 crates |
+| Tests | 1,700+ passing (16 ignored) - 100% pass rate |
+| Code | ~62,000 lines Rust across 8 crates |
 | Documentation | 100+ files, 35,000+ lines |
 | Security | Zero vulnerabilities - EXCELLENT ([v1.1.0 audit](docs/security/SECURITY_AUDIT_v1.1.0.md), 286 deps) |
 | Performance | File chunking 14.85 GiB/s, tree hashing 4.71 GiB/s, verification 4.78 GiB/s, reassembly 5.42 GiB/s |
@@ -129,4 +129,4 @@ Thread-per-core with no locks in hot path. Sessions pinned to cores, NUMA-aware 
 | wraith-cli | ✅ Complete | 7 | Full CLI with config, progress, commands |
 | wraith-xdp | Not started | 0 | Requires eBPF toolchain (future) |
 
-**Total:** 1,296 tests (1,280 passing, 16 ignored)
+**Total:** 1,700+ tests (16 ignored)

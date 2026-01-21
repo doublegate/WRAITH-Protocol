@@ -11,6 +11,53 @@ No unreleased changes yet.
 
 ---
 
+## [1.6.2] - 2026-01-21 - Protocol Integration & Infrastructure
+
+### Added
+- **WRAITH-Chat Protocol Integration (TD-007 to TD-011)**
+  - WraithNode wrapper in chat state with full Node lifecycle management
+  - Secure key storage using platform-native keyring (Linux libsecret, macOS Keychain, Windows Credential Manager)
+  - Double Ratchet key exchange integrated with X25519 from WRAITH protocol
+  - Message sending via WRAITH protocol streams with encryption
+  - Real peer ID from node.node_id() replacing placeholders
+
+- **AF_XDP Socket Options (TH-006)**
+  - Full Linux AF_XDP socket configuration for kernel bypass networking
+  - XDP socket option constants (SOL_XDP, XDP_RX_RING, XDP_TX_RING, etc.)
+  - C-compatible structures (XdpUmemReg, SockaddrXdp, XdpDesc)
+  - xdp_config helper module with get_ifindex(), register_umem(), configure_ring(), bind_socket()
+  - Gated behind #[cfg(target_os = "linux")] for cross-platform compatibility
+
+- **NAT Candidate Exchange (TM-001)**
+  - New signaling.rs module implementing DHT-based ICE signaling
+  - SignalingMessage enum with Offer, Answer, and CandidateUpdate variants
+  - CandidatePair with RFC 8445 priority calculation
+  - ConnectivityChecker implementing STUN-based connectivity verification
+  - NatSignaling coordinator with gather_candidates(), create_offer/answer()
+  - Full RFC 8445 connectivity check implementation
+
+- **DNS-based STUN Resolution (TD-001)**
+  - StunDnsResolver with async DNS resolution and 5-minute TTL caching
+  - Fallback to hardcoded IPs when DNS resolution fails
+  - Integration with hickory-resolver for robust DNS handling
+
+### Fixed
+- **iOS UniFFI Safety (TD-006)**: Replaced all unwrap() calls with proper Result error handling
+- **Mobile Client Verification**: Confirmed TD-002 to TD-005, TD-012, TD-013 already implemented
+
+### Changed
+- Updated all crate versions to 1.6.2
+- Added base64 dependency to wraith-discovery for signaling serialization
+- Added keyring dependency to wraith-chat for secure credential storage
+
+### Technical Details
+- **Test Count**: 1,700+ tests passing (16 ignored)
+- **Code Volume**: ~62,000 lines of Rust
+- **Zero clippy warnings** with -D warnings flag
+- **All quality gates passing**
+
+---
+
 ## [1.6.1] - 2026-01-20 - Testing Infrastructure & Documentation
 
 ### Added
