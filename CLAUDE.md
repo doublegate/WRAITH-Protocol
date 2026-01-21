@@ -11,8 +11,8 @@ WRAITH (Wire-speed Resilient Authenticated Invisible Transfer Handler) is a dece
 ### Metrics
 | Metric | Value |
 |--------|-------|
-| Tests | 1,700+ passing (16 ignored) - 100% pass rate |
-| Code | ~62,000 lines Rust across 8 crates |
+| Tests | 1,630 passing (16 ignored) - 100% pass rate |
+| Code | ~44,300 lines Rust (~58,900 total with comments/blanks) across 8 crates |
 | Documentation | 100+ files, 35,000+ lines |
 | Security | Zero vulnerabilities - EXCELLENT ([v1.1.0 audit](docs/security/SECURITY_AUDIT_v1.1.0.md), 286 deps) |
 | Performance | File chunking 14.85 GiB/s, tree hashing 4.71 GiB/s, verification 4.78 GiB/s, reassembly 5.42 GiB/s |
@@ -120,13 +120,14 @@ Thread-per-core with no locks in hot path. Sessions pinned to cores, NUMA-aware 
 
 | Crate | Status | Tests | Features |
 |-------|--------|-------|----------|
-| wraith-core | ✅ Complete | 406 | Frame (SIMD), Session, Stream, BBR, Migration, Node API |
-| wraith-crypto | ✅ Complete | 128 | Ed25519, X25519+Elligator2, AEAD, Noise_XX, Ratchet |
-| wraith-transport | ✅ Complete | 88 | AF_XDP, io_uring, UDP, worker pools, NUMA-aware |
+| wraith-core | ✅ Complete | 414 | Frame (SIMD), Session, Stream, BBR, Migration, Node API |
+| wraith-crypto | ✅ Complete | 127 | Ed25519, X25519+Elligator2, AEAD, Noise_XX, Ratchet |
+| wraith-transport | ✅ Complete | 139 | AF_XDP, io_uring, UDP, worker pools, NUMA-aware |
 | wraith-obfuscation | ✅ Complete | 130 | Padding (5), Timing (5), Mimicry (TLS/WebSocket/DoH) |
-| wraith-discovery | ✅ Complete | 154 | Kademlia DHT, STUN, ICE, relay |
+| wraith-discovery | ✅ Complete | 231 | Kademlia DHT, STUN, ICE, relay |
 | wraith-files | ✅ Complete | 34 | io_uring I/O, chunking, tree hashing, reassembly |
-| wraith-cli | ✅ Complete | 7 | Full CLI with config, progress, commands |
+| wraith-cli | ✅ Complete | 87 | Full CLI with config, progress, commands |
+| wraith-ffi | ✅ Complete | 111 | C-compatible API, FFI-safe types |
 | wraith-xdp | Not started | 0 | Requires eBPF toolchain (future) |
 
-**Total:** 1,700+ tests (16 ignored)
+**Total:** 1,630 tests passing (16 ignored)
