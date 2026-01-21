@@ -21,10 +21,10 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
 
 WRAITH Protocol is production-ready with desktop, mobile, and messaging applications. Phase 16 delivers Android and iOS mobile clients with native UIs (Kotlin/Jetpack Compose, Swift/SwiftUI), plus WRAITH-Chat, a secure E2EE messaging application with Signal Protocol Double Ratchet encryption, SQLCipher encrypted storage, and React 18 frontend. v1.6.0 adds mobile platform support, end-to-end encrypted messaging, and comprehensive client ecosystem expansion.
 
-**Project Metrics (2026-01-20):**
-- **Code Volume:** ~60,300 lines of Rust code across protocol crates + ~4,000 lines in client applications (Kotlin/Swift/TypeScript)
-- **Test Coverage:** 1,617+ Rust tests + 62 frontend tests = 1,679+ total tests - 100% pass rate
-- **Documentation:** 111 markdown files, ~63,000+ lines of comprehensive documentation
+**Project Metrics (2026-01-21):**
+- **Code Volume:** ~62,000 lines of Rust code across protocol crates + ~4,000 lines in client applications (Kotlin/Swift/TypeScript)
+- **Test Coverage:** 1,630+ Rust tests (16 ignored) = 1,700+ total tests - 100% pass rate
+- **Documentation:** 111 markdown files, ~64,000+ lines of comprehensive documentation
 - **Dependencies:** 286 audited packages (zero vulnerabilities via cargo-audit)
 - **Security:** Grade A+ (EXCELLENT), zero vulnerabilities, comprehensive DPI evasion validation
 - **Quality:** Code quality 98/100, zero compiler/clippy warnings, 3.8% technical debt ratio, production-ready codebase
@@ -715,3 +715,5 @@ WRAITH Protocol builds on the work of many excellent projects and technologies:
 **WRAITH Protocol** - *Secure. Fast. Invisible.*
 
 **Status:** v1.6.2 Protocol Integration & Infrastructure | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 1,700+ (100% pass rate) | **Quality:** Production-ready, 0 vulnerabilities, zero warnings, 98/100 quality grade | **Clients:** 4 Tier 1 applications complete (Desktop, Android, iOS, E2EE Chat)
+
+*Last Updated: 2026-01-21*

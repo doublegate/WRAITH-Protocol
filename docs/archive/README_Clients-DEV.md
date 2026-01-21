@@ -5,7 +5,7 @@
 This document tracks the development journey of WRAITH Protocol client applications, from planning through implementation and release. Phase 15 delivered WRAITH-Transfer desktop application, and Phase 16 delivered Android/iOS mobile clients plus WRAITH-Chat E2EE messaging.
 
 [![Version](https://img.shields.io/badge/clients-4%20complete-green.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
-[![Protocol](https://img.shields.io/badge/protocol-v1.6.1-blue.svg)](../../README.md)
+[![Protocol](https://img.shields.io/badge/protocol-v1.6.2-blue.svg)](../../README.md)
 [![Clients](https://img.shields.io/badge/clients-6%20planned-orange.svg)](../../to-dos/ROADMAP-clients.md)
 
 ---
@@ -33,16 +33,19 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 - **Tier 3:** Advanced use cases (Stream, Mesh, Publish, Vault)
 - **Security Testing:** Authorized assessment tools (Recon, RedOps)
 
-**Current Status (2026-01-20):**
-- Protocol v1.6.1 complete (all prerequisites available)
-- **Phase 15 - WRAITH-Transfer v1.6.1:** ✅ **COMPLETE** (102 SP)
+**Current Status (2026-01-21):**
+- Protocol v1.6.2 complete (all prerequisites available)
+- **Phase 15 - WRAITH-Transfer v1.6.2:** ✅ **COMPLETE** (102 SP)
   - Cross-platform desktop P2P file transfer
   - Tauri 2.0 + React 18 + TypeScript
   - 62 frontend tests with Vitest (100% pass rate)
-- **Phase 16 - Mobile & Chat v1.6.1:** ✅ **COMPLETE** (302 SP)
+- **Phase 16 - Mobile & Chat v1.6.2:** ✅ **COMPLETE** (302 SP)
   - **WRAITH-Android:** Native Kotlin + Jetpack Compose (~60 SP)
   - **WRAITH-iOS:** Native Swift + SwiftUI (~60 SP) - proper error handling
   - **WRAITH-Chat:** E2EE messaging with Double Ratchet (182 SP)
+    - Full WRAITH protocol integration (TD-007 to TD-011)
+    - Secure key storage with platform-native keyring
+    - Real peer identity from node.node_id()
 - **Development Status:** 4 of 10 Tier 1 clients complete (404 SP delivered, 744 SP remaining)
 - **CI/CD:** GitHub Actions updated (upload-artifact v6, download-artifact v7, cache v5)
 - **Tech Debt:** TD-006 (iOS UniFFI unwrap safety) remediated
@@ -187,6 +190,43 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 - ✅ Zero clippy warnings, zero TypeScript errors
 - ✅ CI/CD pipeline with Tauri system dependencies
 - ✅ Frontend test infrastructure with Testing Library
+
+---
+
+### v1.6.2: Protocol Integration & Infrastructure (2026-01-21)
+
+**Focus:** Complete WRAITH protocol integration for WRAITH-Chat client
+
+**Key Accomplishments:**
+
+**WRAITH-Chat Protocol Integration (TD-007 to TD-011):**
+- **WraithNode Integration:** Full Node wrapper in chat state with lifecycle management
+  - start_node() properly initializes WRAITH protocol
+  - Real peer identity from node.node_id()
+  - Session management for peer connections
+- **Secure Key Storage:** Platform-native keyring integration
+  - Linux: libsecret (D-Bus Secret Service)
+  - macOS: Keychain
+  - Windows: Credential Manager
+  - Secure storage of identity keys and ratchet state
+- **Double Ratchet Key Exchange:** Integrated with X25519 from WRAITH protocol
+  - Keys derived from WRAITH crypto primitives
+  - Session establishment uses WRAITH handshake
+- **Message Transmission:** Via WRAITH protocol streams with encryption
+  - Messages sent over encrypted WRAITH sessions
+  - Full traffic obfuscation applied
+- **Chat Tests Updated:** 6 passing tests for backend functionality
+
+**Mobile Client Verification:**
+- **iOS UniFFI Safety (TD-006):** All unwrap() calls replaced with proper Result error handling
+- **Android JNI (TD-002 to TD-005):** Confirmed implemented in Phase 16
+- **Error Handling (TD-012, TD-013):** Proper error propagation across FFI boundary
+
+**Quality Metrics:**
+- All client tests passing
+- Zero TypeScript errors in frontends
+- Tauri 2.0 capability-based permissions working
+- Cross-platform builds verified
 
 ---
 
@@ -725,12 +765,17 @@ RedOps                                                          [=============]
 
 ## Current Status & Next Steps
 
-**Protocol Status (2025-01-20):**
+**Protocol Status (2026-01-21):**
 - ✅ All 16 protocol development phases complete (1,937 SP delivered)
-- ✅ 1,365+ tests passing (1,303 Rust + 62 frontend) - 100% pass rate
+- ✅ 1,700+ tests passing (1,630 Rust + 62 frontend) - 100% pass rate
 - ✅ Zero vulnerabilities, zero clippy warnings
 - ✅ Grade A+ quality (98/100)
-- ✅ Production-ready architecture with v1.6.0 release
+- ✅ Production-ready architecture with v1.6.2 release
+- ✅ Full WRAITH protocol integration in WRAITH-Chat
+- ✅ Secure key storage with platform-native keyring
+- ✅ AF_XDP socket configuration for kernel bypass
+- ✅ ICE signaling with RFC 8445 connectivity checks
+- ✅ DNS-based STUN resolution with caching
 - ✅ CI/CD updated (GitHub Actions: upload-artifact v6, download-artifact v7, cache v5)
 
 **Client Development Status:**
@@ -813,6 +858,6 @@ RedOps                                                          [=============]
 
 **WRAITH Protocol Client Applications Development History** - *From Planning to Production*
 
-**Status:** Phases 15-16 Complete (All 4 Tier 1 Clients) | **Total Scope:** 10 clients, 1,148 SP | **Delivered:** 404 SP (35%) | **Remaining:** 744 SP (6 clients) | **Prerequisites:** Protocol v1.6.0 ✅ Complete | **Next:** Tier 2 Clients (WRAITH-Sync, WRAITH-Share)
+**Status:** Phases 15-16 Complete (All 4 Tier 1 Clients) | **Total Scope:** 10 clients, 1,148 SP | **Delivered:** 404 SP (35%) | **Remaining:** 744 SP (6 clients) | **Prerequisites:** Protocol v1.6.2 ✅ Complete | **Next:** Tier 2 Clients (WRAITH-Sync, WRAITH-Share)
 
-*Last Updated: 2025-01-20*
+*Last Updated: 2026-01-21*
