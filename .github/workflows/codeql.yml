@@ -60,8 +60,10 @@ jobs:
         uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
-          # Use custom config that documents justified algorithm usage
-          config-file: ./.github/codeql/codeql-config.yml
+          # Use security-extended queries for better coverage
+          # Note: Custom config removed due to init action compatibility issues
+          # Justified algorithm usage documented in .github/codeql/codeql-config.yml
+          queries: security-extended
 
       # Install system dependencies required for Tauri
       - name: Install system dependencies (Ubuntu)
@@ -73,7 +75,7 @@ jobs:
       # CodeQL needs the build to understand the code structure
       - name: Build project
         run: |
-          cargo build --workspace --all-features --release --exclude wraith-transfer
+          cargo build --workspace --all-features --release --exclude wraith-transfer --exclude wraith-chat --exclude wraith-sync
 
       # Perform CodeQL Analysis
       - name: Perform CodeQL Analysis

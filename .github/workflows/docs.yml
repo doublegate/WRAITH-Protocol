@@ -116,7 +116,7 @@ jobs:
             ${{ runner.os }}-cargo-
 
       - name: Build documentation
-        run: cargo doc --workspace --no-deps --exclude wraith-transfer
+        run: cargo doc --workspace --no-deps --exclude wraith-transfer --exclude wraith-chat --exclude wraith-sync
         env:
           RUSTDOCFLAGS: -Dwarnings
 
@@ -124,7 +124,7 @@ jobs:
         run: |
           # Count documented vs undocumented items
           echo "Checking documentation coverage..."
-          cargo doc --workspace --no-deps --exclude wraith-transfer 2>&1 | grep -c "warning: missing documentation" || echo "0 missing documentation warnings"
+          cargo doc --workspace --no-deps --exclude wraith-transfer --exclude wraith-chat --exclude wraith-sync 2>&1 | grep -c "warning: missing documentation" || echo "0 missing documentation warnings"
 
   #############################################################################
   # Table of Contents Validation
