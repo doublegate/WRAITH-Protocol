@@ -3,6 +3,7 @@
 // This library provides Swift bindings for the WRAITH protocol using UniFFI.
 // UniFFI automatically generates Swift code from the .udl interface definition.
 
+use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::{Arc, Mutex};
 use tokio::runtime::Runtime;
 use wraith_core::node::{Node as CoreNode, NodeConfig as CoreNodeConfig};
@@ -16,14 +17,40 @@ use error::{WraithError, Result};
 /// Global Tokio runtime for async operations
 static RUNTIME: Mutex<Option<Runtime>> = Mutex::new(None);
 
+/// Global counter for active transfers
+static ACTIVE_TRANSFERS: AtomicU32 = AtomicU32::new(0);
+
+/// Increment active transfer count
+fn increment_transfers() {
+    ACTIVE_TRANSFERS.fetch_add(1, Ordering::SeqCst);
+}
+
+/// Decrement active transfer count
+#[allow(dead_code)]
+fn decrement_transfers() {
+    ACTIVE_TRANSFERS.fetch_sub(1, Ordering::SeqCst);
+}
+
+/// Get current active transfer count
+fn get_active_transfers() -> u32 {
+    ACTIVE_TRANSFERS.load(Ordering::SeqCst)
+}
+
 /// Initialize the global runtime
-fn get_or_create_runtime() -> Arc<Runtime> {
-    let mut rt_lock = RUNTIME.lock().unwrap();
+fn get_or_create_runtime() -> std::result::Result<Arc<Runtime>, WraithError> {
+    let mut rt_lock = RUNTIME.lock().map_err(|e| WraithError::InitializationFailed {
+        message: format!("Failed to acquire runtime lock: {}", e),
+    })?;
     if rt_lock.is_none() {
-        let rt = Runtime::new().expect("Failed to create Tokio runtime");
+        let rt = Runtime::new().map_err(|e| WraithError::InitializationFailed {
+            message: format!("Failed to create Tokio runtime: {}", e),
+        })?;
         *rt_lock = Some(rt);
     }
-    Arc::new(rt_lock.as_ref().unwrap().handle().clone().into())
+    let handle = rt_lock.as_ref().ok_or(WraithError::InitializationFailed {
+        message: "Runtime not initialized".to_string(),
+    })?.handle().clone();
+    Ok(Arc::new(handle.into()))
 }
 
 /// Node configuration
@@ -104,13 +131,13 @@ pub struct WraithNode {
 impl WraithNode {
     /// Create a new WRAITH node with the given configuration
     #[uniffi::constructor]
-    pub fn new(config: NodeConfig) -> Self {
-        let runtime = get_or_create_runtime();
+    pub fn new(_config: NodeConfig) -> Result<Self> {
+        let runtime = get_or_create_runtime()?;
 
-        Self {
+        Ok(Self {
             inner: Arc::new(Mutex::new(None)),
             runtime,
-        }
+        })
     }
 
     /// Start the WRAITH node
@@ -136,7 +163,9 @@ impl WraithNode {
                 })
         })?;
 
-        let mut inner = self.inner.lock().unwrap();
+        let mut inner = self.inner.lock().map_err(|e| WraithError::Other {
+            message: format!("Failed to acquire node lock: {}", e),
+        })?;
         *inner = Some(Arc::new(node));
 
         Ok(())
@@ -144,7 +173,9 @@ impl WraithNode {
 
     /// Shutdown the WRAITH node
     pub fn shutdown(&self) -> Result<()> {
-        let mut inner = self.inner.lock().unwrap();
+        let mut inner = self.inner.lock().map_err(|e| WraithError::Other {
+            message: format!("Failed to acquire node lock: {}", e),
+        })?;
         if let Some(node) = inner.take() {
             self.runtime.block_on(async {
                 node.shutdown().await
@@ -158,7 +189,9 @@ impl WraithNode {
 
     /// Establish a session with a remote peer
     pub fn establish_session(&self, peer_id: String) -> Result<SessionInfo> {
-        let inner = self.inner.lock().unwrap();
+        let inner = self.inner.lock().map_err(|e| WraithError::Other {
+            message: format!("Failed to acquire node lock: {}", e),
+        })?;
         let node = inner.as_ref()
             .ok_or(WraithError::NotStarted {
                 message: "Node not started".to_string(),
@@ -190,7 +223,9 @@ impl WraithNode {
 
     /// Send a file to a peer
     pub fn send_file(&self, peer_id: String, file_path: String) -> Result<TransferInfo> {
-        let inner = self.inner.lock().unwrap();
+        let inner = self.inner.lock().map_err(|e| WraithError::Other {
+            message: format!("Failed to acquire node lock: {}", e),
+        })?;
         let node = inner.as_ref()
             .ok_or(WraithError::NotStarted {
                 message: "Node not started".to_string(),
@@ -209,7 +244,10 @@ impl WraithNode {
         use std::path::Path;
         use wraith_files::{FileTransfer, TransferConfig};
 
-        let transfer_id = self.runtime.block_on(async {
+        // Track transfer start
+        increment_transfers();
+
+        let transfer_id = match self.runtime.block_on(async {
             let config = TransferConfig::default();
             let transfer = FileTransfer::new(config);
 
@@ -221,13 +259,24 @@ impl WraithNode {
                 .map_err(|e| WraithError::TransferFailed {
                     message: e.to_string(),
                 })
-        })?;
+        }) {
+            Ok(id) => id,
+            Err(e) => {
+                decrement_transfers(); // Decrement on failure
+                return Err(e);
+            }
+        };
+
+        // Get actual file size from filesystem
+        let file_size = std::fs::metadata(&file_path)
+            .map(|m| m.len())
+            .unwrap_or(0);
 
         Ok(TransferInfo {
             transfer_id: hex::encode(transfer_id),
             peer_id: hex::encode(peer_id_array),
             file_path,
-            file_size: 0,  // TODO: Get actual file size
+            file_size,
             bytes_transferred: 0,
             status: TransferStatus::Sending,
         })
@@ -235,7 +284,9 @@ impl WraithNode {
 
     /// Get the current node status
     pub fn get_status(&self) -> Result<NodeStatus> {
-        let inner = self.inner.lock().unwrap();
+        let inner = self.inner.lock().map_err(|e| WraithError::Other {
+            message: format!("Failed to acquire node lock: {}", e),
+        })?;
         let node = inner.as_ref()
             .ok_or(WraithError::NotStarted {
                 message: "Node not started".to_string(),
@@ -243,21 +294,27 @@ impl WraithNode {
 
         Ok(NodeStatus {
             running: node.is_running(),
-            local_peer_id: hex::encode(node.local_peer_id()),
-            session_count: node.session_count() as u32,
-            active_transfers: 0,  // TODO: Track transfers
+            local_peer_id: hex::encode(node.node_id()),
+            session_count: node.active_route_count() as u32,
+            active_transfers: get_active_transfers(),
         })
     }
 
     /// Check if the node is running
     pub fn is_running(&self) -> bool {
-        let inner = self.inner.lock().unwrap();
-        inner.as_ref().map(|n| n.is_running()).unwrap_or(false)
+        let inner = match self.inner.lock() {
+            Ok(guard) => guard,
+            Err(_) => return false,
+        };
+        inner.as_ref().is_some_and(|n| n.is_running())
     }
 
     /// Get the local peer ID
     pub fn local_peer_id(&self) -> String {
-        let inner = self.inner.lock().unwrap();
+        let inner = match self.inner.lock() {
+            Ok(guard) => guard,
+            Err(_) => return String::new(),
+        };
         inner.as_ref()
             .map(|n| hex::encode(n.local_peer_id()))
             .unwrap_or_default()
@@ -266,10 +323,8 @@ impl WraithNode {
 
 /// Create a new WRAITH node (convenience function)
 #[uniffi::export]
-pub fn create_node(listen_addr: String, config: NodeConfig) -> Arc<WraithNode> {
-    let node = WraithNode::new(config);
-    if let Err(e) = node.start(listen_addr) {
-        log::error!("Failed to start node: {:?}", e);
-    }
-    Arc::new(node)
+pub fn create_node(listen_addr: String, config: NodeConfig) -> Result<Arc<WraithNode>> {
+    let node = WraithNode::new(config)?;
+    node.start(listen_addr)?;
+    Ok(Arc::new(node))
 }

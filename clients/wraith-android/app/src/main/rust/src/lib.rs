@@ -6,6 +6,7 @@
 use jni::objects::{JClass, JObject, JString};
 use jni::sys::{jbyteArray, jint, jlong, jstring};
 use jni::JNIEnv;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use tokio::runtime::Runtime;
 use wraith_core::node::{Node, NodeConfig};
@@ -21,6 +22,24 @@ static RUNTIME: Mutex<Option<Runtime>> = Mutex::new(None);
 
 /// Global node instance
 static NODE: Mutex<Option<Arc<Node>>> = Mutex::new(None);
+
+/// Global counter for active transfers
+static ACTIVE_TRANSFERS: AtomicUsize = AtomicUsize::new(0);
+
+/// Increment active transfer count
+fn increment_transfers() {
+    ACTIVE_TRANSFERS.fetch_add(1, Ordering::SeqCst);
+}
+
+/// Decrement active transfer count
+fn decrement_transfers() {
+    ACTIVE_TRANSFERS.fetch_sub(1, Ordering::SeqCst);
+}
+
+/// Get current active transfer count
+fn get_active_transfers() -> usize {
+    ACTIVE_TRANSFERS.load(Ordering::SeqCst)
+}
 
 /// Initialize the WRAITH node
 ///
@@ -45,7 +64,13 @@ pub unsafe extern "C" fn Java_com_wraith_android_WraithNative_initNode(
 
     // Initialize runtime if not already done
     {
-        let mut rt_lock = RUNTIME.lock().unwrap();
+        let mut rt_lock = match RUNTIME.lock() {
+            Ok(guard) => guard,
+            Err(e) => {
+                log::error!("Failed to acquire runtime lock: {}", e);
+                return -1;
+            }
+        };
         if rt_lock.is_none() {
             match Runtime::new() {
                 Ok(rt) => *rt_lock = Some(rt),
@@ -83,8 +108,20 @@ pub unsafe extern "C" fn Java_com_wraith_android_WraithNative_initNode(
     };
 
     // Create node
-    let rt = RUNTIME.lock().unwrap();
-    let rt = rt.as_ref().unwrap();
+    let rt = match RUNTIME.lock() {
+        Ok(guard) => guard,
+        Err(e) => {
+            log::error!("Failed to acquire runtime lock: {}", e);
+            return -1;
+        }
+    };
+    let rt = match rt.as_ref() {
+        Some(rt) => rt,
+        None => {
+            log::error!("Runtime not initialized");
+            return -1;
+        }
+    };
 
     let node = match rt.block_on(async { Node::new(config).await }) {
         Ok(n) => Arc::new(n),
@@ -110,7 +147,13 @@ pub unsafe extern "C" fn Java_com_wraith_android_WraithNative_initNode(
 
     // Store node globally
     {
-        let mut node_lock = NODE.lock().unwrap();
+        let mut node_lock = match NODE.lock() {
+            Ok(guard) => guard,
+            Err(e) => {
+                log::error!("Failed to acquire node lock: {}", e);
+                return -1;
+            }
+        };
         *node_lock = Some(node.clone());
     }
 
@@ -135,18 +178,18 @@ pub unsafe extern "C" fn Java_com_wraith_android_WraithNative_shutdownNode(
 
     let node = Arc::from_raw(handle as *const Node);
 
-    let rt = RUNTIME.lock().unwrap();
-    if let Some(rt) = rt.as_ref() {
-        rt.block_on(async {
-            if let Err(e) = node.shutdown().await {
-                log::error!("Error during node shutdown: {}", e);
-            }
-        });
+    if let Ok(rt) = RUNTIME.lock() {
+        if let Some(rt) = rt.as_ref() {
+            rt.block_on(async {
+                if let Err(e) = node.stop().await {
+                    log::error!("Error during node shutdown: {}", e);
+                }
+            });
+        }
     }
 
     // Clear global node
-    {
-        let mut node_lock = NODE.lock().unwrap();
+    if let Ok(mut node_lock) = NODE.lock() {
         *node_lock = None;
     }
 }
@@ -180,8 +223,20 @@ pub unsafe extern "C" fn Java_com_wraith_android_WraithNative_establishSession(
         }
     };
 
-    let rt = RUNTIME.lock().unwrap();
-    let rt = rt.as_ref().unwrap();
+    let rt = match RUNTIME.lock() {
+        Ok(guard) => guard,
+        Err(e) => {
+            log::error!("Failed to acquire runtime lock: {}", e);
+            return std::ptr::null_mut();
+        }
+    };
+    let rt = match rt.as_ref() {
+        Some(rt) => rt,
+        None => {
+            log::error!("Runtime not initialized");
+            return std::ptr::null_mut();
+        }
+    };
 
     let session_info = match rt.block_on(async {
         // Convert peer_id string to PeerId type
@@ -251,8 +306,23 @@ pub unsafe extern "C" fn Java_com_wraith_android_WraithNative_sendFile(
         Err(_) => return std::ptr::null_mut(),
     };
 
-    let rt = RUNTIME.lock().unwrap();
-    let rt = rt.as_ref().unwrap();
+    let rt = match RUNTIME.lock() {
+        Ok(guard) => guard,
+        Err(e) => {
+            log::error!("Failed to acquire runtime lock: {}", e);
+            return std::ptr::null_mut();
+        }
+    };
+    let rt = match rt.as_ref() {
+        Some(rt) => rt,
+        None => {
+            log::error!("Runtime not initialized");
+            return std::ptr::null_mut();
+        }
+    };
+
+    // Track transfer start
+    increment_transfers();
 
     let transfer_info = match rt.block_on(async {
         use std::path::Path;
@@ -283,6 +353,7 @@ pub unsafe extern "C" fn Java_com_wraith_android_WraithNative_sendFile(
         Ok(info) => info,
         Err(e) => {
             log::error!("Failed to send file: {}", e);
+            decrement_transfers(); // Decrement on failure
             return std::ptr::null_mut();
         }
     };
@@ -313,9 +384,9 @@ pub unsafe extern "C" fn Java_com_wraith_android_WraithNative_getNodeStatus(
 
     let status = serde_json::json!({
         "running": node.is_running(),
-        "localPeerId": hex::encode(node.local_peer_id()),
-        "sessionCount": node.session_count(),
-        "activeTransfers": 0,  // TODO: Track transfers
+        "localPeerId": hex::encode(node.node_id()),
+        "sessionCount": node.active_route_count(),
+        "activeTransfers": get_active_transfers(),
     });
 
     match env.new_string(status.to_string()) {

@@ -185,10 +185,18 @@ impl DoubleRatchet {
         // Update receiving public key
         self.dh_receiving_public = Some(remote_public.to_vec());
 
-        // Perform DH
-        let remote_pub = PublicKey::from(<[u8; 32]>::try_from(remote_public).unwrap());
-        let our_secret =
-            StaticSecret::from(<[u8; 32]>::try_from(&self.dh_sending_secret[..]).unwrap());
+        // Perform DH - convert slices to fixed-size arrays
+        let remote_pub_array: [u8; 32] = remote_public
+            .try_into()
+            .map_err(|_| CryptoError::InvalidKeyLength)?;
+        let remote_pub = PublicKey::from(remote_pub_array);
+
+        let our_secret_array: [u8; 32] = self
+            .dh_sending_secret
+            .as_slice()
+            .try_into()
+            .map_err(|_| CryptoError::InvalidKeyLength)?;
+        let our_secret = StaticSecret::from(our_secret_array);
         let dh_output = our_secret.diffie_hellman(&remote_pub);
 
         // KDF to derive new root key and receiving chain key
@@ -267,6 +275,12 @@ impl DoubleRatchet {
 
     /// Skip message keys for out-of-order handling
     fn skip_message_keys(&mut self, until: u32) -> Result<(), CryptoError> {
+        // Get the receiving DH public key (required for key ID generation)
+        let dh_recv_pub = self
+            .dh_receiving_public
+            .as_ref()
+            .ok_or(CryptoError::NoReceivingChain)?;
+
         if let Some(receiving_chain_key) = &self.receiving_chain_key {
             let mut temp_chain_key = receiving_chain_key.clone();
 
@@ -281,10 +295,7 @@ impl DoubleRatchet {
                 let message_key = okm[32..].to_vec();
 
                 // Store skipped key
-                let key_id = self.key_id(
-                    self.dh_receiving_public.as_ref().unwrap(),
-                    self.receiving_chain_index,
-                );
+                let key_id = self.key_id(dh_recv_pub, self.receiving_chain_index);
                 self.skipped_keys.insert(key_id, message_key);
 
                 self.receiving_chain_index += 1;

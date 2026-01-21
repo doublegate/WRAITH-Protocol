@@ -21,9 +21,9 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
 
 WRAITH Protocol is production-ready with desktop, mobile, and messaging applications. Phase 16 delivers Android and iOS mobile clients with native UIs (Kotlin/Jetpack Compose, Swift/SwiftUI), plus WRAITH-Chat, a secure E2EE messaging application with Signal Protocol Double Ratchet encryption, SQLCipher encrypted storage, and React 18 frontend. v1.6.0 adds mobile platform support, end-to-end encrypted messaging, and comprehensive client ecosystem expansion.
 
-**Project Metrics (2025-01-20):**
-- **Code Volume:** ~57,400 lines of Rust code across protocol crates + ~4,000 lines in client applications (Kotlin/Swift/TypeScript)
-- **Test Coverage:** 1,303+ Rust tests + 62 frontend tests = 1,365+ total tests - 100% pass rate
+**Project Metrics (2026-01-20):**
+- **Code Volume:** ~60,300 lines of Rust code across protocol crates + ~4,000 lines in client applications (Kotlin/Swift/TypeScript)
+- **Test Coverage:** 1,617+ Rust tests + 62 frontend tests = 1,679+ total tests - 100% pass rate
 - **Documentation:** 111 markdown files, ~63,000+ lines of comprehensive documentation
 - **Dependencies:** 286 audited packages (zero vulnerabilities via cargo-audit)
 - **Security:** Grade A+ (EXCELLENT), zero vulnerabilities, comprehensive DPI evasion validation
@@ -287,7 +287,7 @@ WRAITH-Protocol/
 | **Integration Tests** | 323 | Cross-crate protocol integration and end-to-end scenarios |
 | **Benchmarks** | - | Performance validation (frame parsing, AEAD, hashing, file operations) |
 
-**Project Total:** 1,365+ tests (1,303 Rust tests + 62 frontend tests) - 100% pass rate
+**Project Total:** 1,679+ tests (1,617 Rust tests + 62 frontend tests) - 100% pass rate
 
 ## Documentation
 
@@ -622,7 +622,7 @@ WRAITH Protocol is designed with security as a core principle:
 - **Unsafe Code Audit:** 100% documentation coverage with SAFETY comments
 
 **Validation:**
-- **Test Coverage:** 1,365+ tests (1,303 Rust + 62 frontend) covering all protocol layers
+- **Test Coverage:** 1,679+ tests (1,617 Rust + 62 frontend) covering all protocol layers
 - **DPI Evasion:** Comprehensive validation against Wireshark, Zeek, Suricata, nDPI (see [DPI Evasion Report](docs/security/DPI_EVASION_REPORT.md))
 - **Fuzzing:** 5 libFuzzer targets continuously testing robustness
 - **Property-Based Tests:** QuickCheck-style invariant validation
@@ -714,4 +714,4 @@ WRAITH Protocol builds on the work of many excellent projects and technologies:
 
 **WRAITH Protocol** - *Secure. Fast. Invisible.*
 
-**Status:** v1.6.1 Testing Infrastructure & Documentation | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 1,365+ (1,303 Rust + 62 frontend, 100% pass rate) | **Quality:** Production-ready, 0 vulnerabilities, zero warnings, 98/100 quality grade | **Clients:** 4 Tier 1 applications complete (Desktop, Android, iOS, E2EE Chat)
+**Status:** v1.6.1 Testing Infrastructure & Documentation | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 1,679+ (1,617 Rust + 62 frontend, 100% pass rate) | **Quality:** Production-ready, 0 vulnerabilities, zero warnings, 98/100 quality grade | **Clients:** 4 Tier 1 applications complete (Desktop, Android, iOS, E2EE Chat)

@@ -223,12 +223,12 @@ async fn test_discovery_config_stun_servers() {
     let addr: SocketAddr = "127.0.0.1:10008".parse().unwrap();
     let mut config = DiscoveryConfig::new(node_id, addr);
 
-    // Default STUN servers
-    assert_eq!(config.stun_servers.len(), 2);
+    // Default STUN servers (5 fallback IPs from well-known providers)
+    assert_eq!(config.stun_servers.len(), 5);
 
     // Add custom STUN server
     config.add_stun_server("1.2.3.4:3478".parse().unwrap());
-    assert_eq!(config.stun_servers.len(), 3);
+    assert_eq!(config.stun_servers.len(), 6);
 }
 
 #[tokio::test]

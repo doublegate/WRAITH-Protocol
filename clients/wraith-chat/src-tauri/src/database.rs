@@ -289,6 +289,16 @@ impl Database {
         Ok(conversations)
     }
 
+    /// Count active (non-archived) conversations
+    pub fn count_conversations(&self) -> Result<usize> {
+        let count: i64 = self.conn.query_row(
+            "SELECT COUNT(*) FROM conversations WHERE archived = 0",
+            [],
+            |row| row.get(0),
+        )?;
+        Ok(count as usize)
+    }
+
     // MARK: - Message Operations
 
     pub fn insert_message(&self, msg: &Message) -> Result<i64> {

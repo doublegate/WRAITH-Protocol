@@ -33,18 +33,19 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 - **Tier 3:** Advanced use cases (Stream, Mesh, Publish, Vault)
 - **Security Testing:** Authorized assessment tools (Recon, RedOps)
 
-**Current Status (2025-01-20):**
-- Protocol v1.6.0 complete (all prerequisites available)
-- **Phase 15 - WRAITH-Transfer v1.6.0:** ✅ **COMPLETE** (102 SP)
+**Current Status (2026-01-20):**
+- Protocol v1.6.1 complete (all prerequisites available)
+- **Phase 15 - WRAITH-Transfer v1.6.1:** ✅ **COMPLETE** (102 SP)
   - Cross-platform desktop P2P file transfer
   - Tauri 2.0 + React 18 + TypeScript
   - 62 frontend tests with Vitest (100% pass rate)
-- **Phase 16 - Mobile & Chat v1.6.0:** ✅ **COMPLETE** (302 SP)
+- **Phase 16 - Mobile & Chat v1.6.1:** ✅ **COMPLETE** (302 SP)
   - **WRAITH-Android:** Native Kotlin + Jetpack Compose (~60 SP)
-  - **WRAITH-iOS:** Native Swift + SwiftUI (~60 SP)
+  - **WRAITH-iOS:** Native Swift + SwiftUI (~60 SP) - proper error handling
   - **WRAITH-Chat:** E2EE messaging with Double Ratchet (182 SP)
 - **Development Status:** 4 of 10 Tier 1 clients complete (404 SP delivered, 744 SP remaining)
 - **CI/CD:** GitHub Actions updated (upload-artifact v6, download-artifact v7, cache v5)
+- **Tech Debt:** TD-006 (iOS UniFFI unwrap safety) remediated
 
 ---
 
@@ -182,7 +183,7 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 - ✅ Full file transfer operations via intuitive GUI
 - ✅ Real-time status monitoring and progress tracking
 - ✅ FFI layer (wraith-ffi) for future language bindings
-- ✅ 1,365+ total tests (1,303 Rust + 62 frontend Vitest tests)
+- ✅ 1,679+ total tests (1,617 Rust + 62 frontend Vitest tests)
 - ✅ Zero clippy warnings, zero TypeScript errors
 - ✅ CI/CD pipeline with Tauri system dependencies
 - ✅ Frontend test infrastructure with Testing Library

@@ -42,12 +42,14 @@
 //! # }
 //! ```
 
+pub mod dns;
 pub mod hole_punch;
 pub mod ice;
 pub mod stun;
 pub mod types;
 
 // Re-exports
+pub use dns::{DnsError, StunDnsResolver, StunServerSpec, default_stun_servers, fallback_stun_ips};
 pub use hole_punch::{HolePuncher, PunchError};
 pub use ice::{Candidate, CandidateType, IceCandidate, IceGatherer};
 pub use stun::{

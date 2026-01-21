@@ -22,9 +22,9 @@ For the current production README, see [../../README.md](../../README.md).
 
 **Total Development Effort:** 1,937 story points delivered across 16 phases
 
-**Project Metrics (2025-01-20):**
-- **Code Volume:** ~57,400 lines of Rust code across protocol crates + ~4,000 lines in client applications (Kotlin/Swift/TypeScript)
-- **Test Coverage:** 1,365+ total tests (1,303 Rust + 62 frontend) - 100% pass rate
+**Project Metrics (2026-01-20):**
+- **Code Volume:** ~60,300 lines of Rust code across protocol crates + ~4,000 lines in client applications (Kotlin/Swift/TypeScript)
+- **Test Coverage:** 1,679+ total tests (1,617 Rust + 62 frontend) - 100% pass rate
 - **Documentation:** 111 markdown files, ~63,000+ lines of comprehensive documentation
 - **Dependencies:** 286 audited packages (zero vulnerabilities via cargo-audit)
 - **Security:** Grade A+ (EXCELLENT) - zero vulnerabilities, 100% unsafe documentation, comprehensive audits
@@ -33,7 +33,7 @@ For the current production README, see [../../README.md](../../README.md).
 
 **Quality Metrics:**
 - **Quality Grade:** 98/100 (Production-ready)
-- **Test Coverage:** 1,365+ total tests (1,303 Rust + 62 frontend) - 100% pass rate
+- **Test Coverage:** 1,679+ total tests (1,617 Rust + 62 frontend) - 100% pass rate
   - 420 wraith-core - frame parsing (SIMD), sessions, streams, BBR, migration, ring buffers, Node API
   - 179 wraith-crypto - Ed25519, X25519+Elligator2, AEAD, Noise_XX, Double Ratchet
   - 44 wraith-files - chunking, reassembly, BLAKE3 tree hashing, io_uring I/O

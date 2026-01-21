@@ -270,11 +270,19 @@ pub async fn start_node(
 pub async fn get_node_status(state: State<'_, Arc<AppState>>) -> Result<NodeStatus, String> {
     let peer_id = state.local_peer_id.lock().await;
 
+    // Get session count from active ratchets (cryptographic sessions)
+    let ratchets = state.ratchets.lock().await;
+    let session_count = ratchets.len();
+
+    // Get conversation count from database
+    let db = state.db.lock().await;
+    let active_conversations = db.count_conversations().unwrap_or(0);
+
     Ok(NodeStatus {
         running: !peer_id.is_empty(),
         local_peer_id: peer_id.clone(),
-        session_count: 0,        // TODO: Get from node
-        active_conversations: 0, // TODO: Get from database
+        session_count,
+        active_conversations,
     })
 }
 

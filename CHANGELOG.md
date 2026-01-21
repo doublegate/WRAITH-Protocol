@@ -19,22 +19,34 @@ No unreleased changes yet.
   - 62 tests covering all UI components (TransferList, NewTransferDialog, SessionPanel, SettingsPanel)
   - Testing Library integration for React component testing
   - 100% pass rate on frontend tests
+- **DNS-based STUN Resolution (TD-001):**
+  - New `dns.rs` module with `StunDnsResolver` in wraith-discovery
+  - DNS caching with 5-minute TTL for efficient resolution
+  - Fallback to hardcoded IP addresses when DNS fails
+  - Integration with hickory-resolver for async DNS queries
 
 ### Changed
 - **Dependencies:**
   - Updated rusqlite from 0.32 to 0.38 (SQLCipher 4.10.0, SQLite 3.51.1, wasm32 support)
   - Updated markdownlint-cli2-action from 21 to 22 (markdownlint v0.40.0)
+  - Added hickory-resolver for DNS-based STUN server resolution
 - **CI/CD GitHub Actions:**
   - Updated actions/upload-artifact from 5 to 6 (PR #41)
   - Updated actions/download-artifact from 6 to 7 (PR #40)
   - Updated actions/cache from 4 to 5 (PR #39)
+
+### Fixed
+- **Tech Debt Remediation:**
+  - TD-001: DNS-based STUN resolution with hickory-resolver (caching, fallback)
+  - TD-006: iOS UniFFI unwrap() calls replaced with proper error handling
+  - Verified TD-002 through TD-005, TD-012, TD-013 already fixed in previous releases
 
 ### Documentation
 - **Technical Debt Documentation:**
   - Comprehensive technical debt analysis for AF_XDP implementation
   - NAT signaling protocol enhancement documentation
   - Audit and documentation of all 23 ignored tests with justifications
-  - Updated project metrics with accurate test counts (1,303 Rust + 62 frontend)
+  - Updated project metrics with accurate test counts (1,617 Rust + 62 frontend)
 
 ---
 

@@ -45,8 +45,9 @@ pub use manager::{
     PeerConnection, RelayInfo,
 };
 pub use nat::{
-    Candidate, CandidateType, HolePuncher, IceGatherer, NatDetector, NatError, NatType, PunchError,
-    StunClient, StunError,
+    Candidate, CandidateType, DnsError, HolePuncher, IceGatherer, NatDetector, NatError, NatType,
+    PunchError, StunClient, StunDnsResolver, StunError, StunServerSpec, default_stun_servers,
+    fallback_stun_ips,
 };
 
 /// Peer endpoint information

@@ -4,23 +4,13 @@
 //! to provide seamless peer discovery and connection establishment.
 
 use crate::dht::{DhtNode, NodeId};
-use crate::nat::{Candidate, HolePuncher, IceGatherer, NatDetector, NatType};
+use crate::nat::{Candidate, HolePuncher, IceGatherer, NatDetector, NatType, fallback_stun_ips};
 use crate::relay::client::{RelayClient, RelayClientState};
-use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4};
+use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
 use thiserror::Error;
 use tokio::sync::RwLock;
-
-/// Default STUN server 1 (Google Public STUN - stun.l.google.com:19302)
-/// TODO: Implement DNS resolution instead of hardcoded IP
-const DEFAULT_STUN_SERVER_1: SocketAddr =
-    SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::new(74, 125, 250, 129), 19302));
-
-/// Default STUN server 2 (Google Public STUN - stun1.l.google.com:19302)
-/// TODO: Implement DNS resolution instead of hardcoded IP
-const DEFAULT_STUN_SERVER_2: SocketAddr =
-    SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::new(74, 125, 250, 130), 19302));
 
 /// Discovery manager errors
 #[derive(Debug, Error)]
@@ -88,13 +78,19 @@ pub struct RelayInfo {
 
 impl DiscoveryConfig {
     /// Create a new discovery configuration
+    ///
+    /// Uses default STUN server IPs (fallback IPs from well-known STUN providers).
+    /// For DNS-based STUN resolution, use `add_stun_server()` with resolved addresses.
     #[must_use]
     pub fn new(node_id: NodeId, listen_addr: SocketAddr) -> Self {
+        // Use fallback STUN IPs from the dns module
+        let default_stun_servers = fallback_stun_ips();
+
         Self {
             node_id,
             listen_addr,
             bootstrap_nodes: Vec::new(),
-            stun_servers: vec![DEFAULT_STUN_SERVER_1, DEFAULT_STUN_SERVER_2],
+            stun_servers: default_stun_servers,
             relay_servers: Vec::new(),
             nat_detection_enabled: true,
             relay_enabled: true,
@@ -515,7 +511,7 @@ mod tests {
         config.add_stun_server("1.1.1.1:3478".parse().unwrap());
 
         assert_eq!(config.bootstrap_nodes.len(), 1);
-        assert_eq!(config.stun_servers.len(), 3); // 2 default + 1 added
+        assert_eq!(config.stun_servers.len(), 6); // 5 default + 1 added
     }
 
     #[test]
@@ -704,7 +700,7 @@ mod tests {
         for i in 0..3 {
             config.add_stun_server(format!("10.0.0.{}:3478", i + 1).parse().unwrap());
         }
-        assert_eq!(config.stun_servers.len(), 5); // 2 default + 3 added
+        assert_eq!(config.stun_servers.len(), 8); // 5 default + 3 added
 
         // Add multiple relay servers
         for i in 0..3 {

@@ -22,5 +22,8 @@ hmac = "0.12"
 sha1 = "0.10"
 md-5 = "0.10"
 
+# DNS resolution for STUN servers
+hickory-resolver = "0.25"
+
 [dev-dependencies]
 proptest = { workspace = true }

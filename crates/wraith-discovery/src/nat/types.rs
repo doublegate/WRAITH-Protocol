@@ -3,6 +3,7 @@
 //! This module implements NAT type detection using STUN-like probing to classify
 //! NAT devices into categories that determine the best traversal strategy.
 
+use super::dns::{StunDnsResolver, StunServerSpec, fallback_stun_ips};
 use super::stun::StunClient;
 use std::net::{IpAddr, SocketAddr};
 
@@ -103,7 +104,8 @@ impl NatDetector {
     /// Create a new NAT detector with default STUN servers
     ///
     /// Uses multiple public STUN servers from different providers for redundancy.
-    /// IPs are hardcoded for reliability (DNS may be blocked/filtered).
+    /// Uses fallback IPs for reliability (DNS may be blocked/filtered).
+    /// For DNS-based resolution, use `with_dns_resolution()` instead.
     ///
     /// Providers included:
     /// - Cloudflare (stun.cloudflare.com:3478)
@@ -112,37 +114,10 @@ impl NatDetector {
     /// - Google (stun.l.google.com:19302)
     ///
     /// Different ports (3478, 443, 19302) increase chance of bypassing firewalls.
-    ///
-    /// TODO: Implement DNS-based STUN server resolution as fallback
     #[must_use]
     pub fn new() -> Self {
         Self {
-            stun_servers: vec![
-                // Cloudflare STUN (port 3478 - standard STUN port)
-                // stun.cloudflare.com:3478
-                "162.159.207.0:3478"
-                    .parse()
-                    .expect("valid STUN server address"),
-                // Twilio STUN (port 3478)
-                // global.stun.twilio.com:3478
-                "34.203.251.210:3478"
-                    .parse()
-                    .expect("valid STUN server address"),
-                // Nextcloud STUN (port 443 - HTTPS port, often allowed through firewalls)
-                // stun.nextcloud.com:443
-                "159.69.191.124:443"
-                    .parse()
-                    .expect("valid STUN server address"),
-                // Google Public STUN servers (port 19302)
-                // stun.l.google.com:19302
-                "74.125.250.129:19302"
-                    .parse()
-                    .expect("valid STUN server address"),
-                // stun1.l.google.com:19302
-                "74.125.250.130:19302"
-                    .parse()
-                    .expect("valid STUN server address"),
-            ],
+            stun_servers: fallback_stun_ips(),
         }
     }
 
@@ -152,6 +127,45 @@ impl NatDetector {
         Self {
             stun_servers: servers,
         }
+    }
+
+    /// Create a NAT detector with DNS resolution for STUN servers
+    ///
+    /// Resolves STUN server hostnames using DNS, with fallback to hardcoded IPs
+    /// if DNS resolution fails. This is preferred when DNS is available, as it
+    /// allows STUN servers to update their IPs without requiring client updates.
+    ///
+    /// # Errors
+    ///
+    /// Returns error if DNS resolver initialization fails
+    pub async fn with_dns_resolution(specs: &[StunServerSpec]) -> Result<Self, NatError> {
+        let resolver = StunDnsResolver::new()
+            .await
+            .map_err(|e| NatError::Io(std::io::Error::other(e.to_string())))?;
+
+        let mut resolved_servers = resolver.resolve_many(specs).await;
+
+        // If DNS resolution failed for all servers, use fallback IPs
+        if resolved_servers.is_empty() {
+            resolved_servers = fallback_stun_ips();
+        }
+
+        Ok(Self {
+            stun_servers: resolved_servers,
+        })
+    }
+
+    /// Create a NAT detector with default STUN servers using DNS resolution
+    ///
+    /// Attempts DNS resolution for well-known STUN servers, falling back to
+    /// hardcoded IPs if DNS is unavailable.
+    ///
+    /// # Errors
+    ///
+    /// Returns error if DNS resolver initialization fails
+    pub async fn with_default_dns_resolution() -> Result<Self, NatError> {
+        let specs = super::dns::default_stun_servers();
+        Self::with_dns_resolution(&specs).await
     }
 
     /// Detect NAT type using STUN probing

@@ -4,6 +4,9 @@ version = "1.0.0"
 edition = "2024"
 rust-version = "1.85"
 
+# This is an independent package, not part of the main workspace
+[workspace]
+
 [lib]
 crate-type = ["staticlib", "cdylib"]
 name = "wraith_swift"
@@ -25,6 +28,9 @@ anyhow = "1.0"
 
 # Logging
 log = "0.4"
+
+# Hex encoding
+hex = "0.4"
 
 # WRAITH Protocol
 wraith-core = { path = "../../../crates/wraith-core" }
