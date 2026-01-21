@@ -125,7 +125,44 @@ fn setup_app<R: Runtime>(app: &mut tauri::App<R>) -> Result<(), Box<dyn std::err
 
     log::info!("Opening database at: {:?}", db_path);
 
-    let db = database::Database::open(db_path, &password)?;
+    // Try to open the database, handling key mismatch errors
+    let db = match database::Database::open(&db_path, &password) {
+        Ok(db) => db,
+        Err(e) => {
+            // Check if this is a key mismatch error
+            if e.downcast_ref::<database::DatabaseKeyMismatchError>().is_some() {
+                log::warn!(
+                    "Database key mismatch detected. The encryption key has changed since the database was created."
+                );
+
+                // Backup the old database with a timestamp to avoid overwriting previous backups
+                let timestamp = chrono::Utc::now().format("%Y%m%d_%H%M%S");
+                let backup_filename = format!("wraith_chat.db.backup.{}", timestamp);
+                let backup_path = app_dir.join(&backup_filename);
+
+                if let Err(backup_err) = std::fs::rename(&db_path, &backup_path) {
+                    log::error!("Failed to backup old database: {}", backup_err);
+                    return Err(Box::new(std::io::Error::other(format!(
+                        "Database key mismatch and failed to backup: {}. \
+                        Please manually remove the database at {:?}",
+                        backup_err, db_path
+                    ))));
+                }
+
+                log::info!(
+                    "Old database backed up to {:?}. Creating new database with current key.",
+                    backup_path
+                );
+
+                // Try to open a fresh database
+                database::Database::open(&db_path, &password)?
+            } else {
+                // Other errors should be propagated
+                return Err(e.into());
+            }
+        }
+    };
+
     let state = Arc::new(state::AppState::new(db));
 
     app.manage(state);

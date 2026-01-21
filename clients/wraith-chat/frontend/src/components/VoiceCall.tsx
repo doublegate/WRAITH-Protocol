@@ -1,12 +1,11 @@
 // Voice Call Component - Sprint 17.5
 
-import React, { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   useCallStore,
   formatCallDuration,
   getCallStateText,
   type CallInfo,
-  type CallState,
 } from '../stores/callStore';
 
 interface VoiceCallProps {

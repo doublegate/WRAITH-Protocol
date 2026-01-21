@@ -45,20 +45,5 @@
     "shortDescription": "Decentralized file synchronization",
     "longDescription": "WRAITH Sync is a cross-platform desktop application for secure, private file synchronization using the WRAITH Protocol. Sync folders across unlimited devices with end-to-end encryption, delta sync, and conflict resolution."
   },
-  "plugins": {
-    "dialog": {},
-    "fs": {
-      "scope": ["$HOME/*", "$HOME/**", "$APPDATA/*", "$APPDATA/**"]
-    },
-    "shell": {
-      "open": true
-    },
-    "log": {
-      "targets": ["stdout", "logfile"],
-      "maxFileSize": 5242880
-    },
-    "notification": {
-      "all": true
-    }
-  }
+  "plugins": {}
 }

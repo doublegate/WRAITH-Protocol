@@ -1,8 +1,7 @@
 // Main App Component
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useConversationStore } from './stores/conversationStore';
-import { useMessageStore } from './stores/messageStore';
 import { useContactStore } from './stores/contactStore';
 import { useNodeStore } from './stores/nodeStore';
 import ConversationList from './components/ConversationList';

@@ -1,6 +1,6 @@
 // Group Settings Component - Sprint 17.7
 
-import React, { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import {
   useGroupStore,
   formatMemberCount,

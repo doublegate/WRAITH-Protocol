@@ -1,10 +1,22 @@
 // SQLCipher Database for Encrypted Message Storage
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use chrono::Utc;
 use rusqlite::{Connection, OptionalExtension, params};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
+
+/// Error indicating the database exists but cannot be decrypted with the given key
+#[derive(Debug)]
+pub struct DatabaseKeyMismatchError;
+
+impl std::fmt::Display for DatabaseKeyMismatchError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Database exists but cannot be decrypted with the current key")
+    }
+}
+
+impl std::error::Error for DatabaseKeyMismatchError {}
 
 /// Database connection manager
 pub struct Database {
@@ -14,8 +26,14 @@ pub struct Database {
 
 impl Database {
     /// Open or create encrypted database
+    ///
+    /// Returns `DatabaseKeyMismatchError` if the database exists but the key is wrong.
+    /// The caller can handle this by backing up and recreating the database.
     pub fn open<P: AsRef<Path>>(path: P, password: &str) -> Result<Self> {
-        let conn = Connection::open(path)?;
+        let path_ref = path.as_ref();
+        let db_exists = path_ref.exists();
+
+        let conn = Connection::open(path_ref)?;
 
         // Set SQLCipher encryption key
         conn.pragma_update(None, "key", password)?;
@@ -25,6 +43,28 @@ impl Database {
         conn.pragma_update(None, "kdf_iter", 64000)?;
         conn.pragma_update(None, "cipher_hmac_algorithm", "HMAC_SHA512")?;
         conn.pragma_update(None, "cipher_kdf_algorithm", "PBKDF2_HMAC_SHA512")?;
+
+        // Verify the key works by attempting a simple query
+        // This will fail with "file is not a database" if the key is wrong
+        if db_exists {
+            match conn.query_row("SELECT count(*) FROM sqlite_master", [], |_| Ok(())) {
+                Ok(_) => {
+                    log::debug!("Database key verified successfully");
+                }
+                Err(e) => {
+                    let error_msg = e.to_string();
+                    if error_msg.contains("file is not a database")
+                        || error_msg.contains("not a database")
+                        || error_msg.contains("hmac check failed")
+                    {
+                        log::error!("Database key mismatch: existing database cannot be decrypted");
+                        bail!(DatabaseKeyMismatchError);
+                    }
+                    // Other errors should be propagated normally
+                    return Err(e).context("Failed to verify database key");
+                }
+            }
+        }
 
         let db = Self { conn };
         db.create_tables()?;

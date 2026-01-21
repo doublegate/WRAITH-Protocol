@@ -16,12 +16,12 @@ path = "src/main.rs"
 
 [dependencies]
 # Tauri 2.0
-tauri = "2.0"
-tauri-plugin-dialog = "2.0"
-tauri-plugin-fs = "2.0"
-tauri-plugin-shell = "2.0"
-tauri-plugin-log = "2.0"
-tauri-plugin-notification = "2.0"
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-shell = "2"
+tauri-plugin-log = "2"
+tauri-plugin-notification = "2"
 
 # WRAITH Protocol
 wraith-core = { path = "../../../crates/wraith-core" }
@@ -63,7 +63,9 @@ chrono = "0.4"
 uuid = { version = "1", features = ["v4"] }
 
 # Secure key storage (cross-platform keyring)
-keyring = "3"
+# sync-secret-service: Uses D-Bus Secret Service API (libsecret/GNOME Keyring)
+# crypto-rust: Pure Rust crypto for secret encryption over D-Bus
+keyring = { version = "3", features = ["sync-secret-service", "crypto-rust"] }
 
 # Voice Calling (Sprint 17.5)
 audiopus = "0.3.0-rc.0"
@@ -85,4 +87,4 @@ default = ["custom-protocol"]
 custom-protocol = ["tauri/custom-protocol"]
 
 [build-dependencies]
-tauri-build = { version = "2.0", features = [] }
+tauri-build = { version = "2", features = [] }

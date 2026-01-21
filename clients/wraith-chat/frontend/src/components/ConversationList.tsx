@@ -1,6 +1,5 @@
 // Conversation List Component
 
-import React from 'react';
 import { useConversationStore } from '../stores/conversationStore';
 import { formatDistanceToNow } from 'date-fns';
 

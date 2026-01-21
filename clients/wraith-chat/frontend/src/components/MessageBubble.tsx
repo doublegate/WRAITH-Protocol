@@ -1,6 +1,5 @@
 // Message Bubble Component
 
-import React from 'react';
 import type { Message } from '../types';
 import { format } from 'date-fns';
 
