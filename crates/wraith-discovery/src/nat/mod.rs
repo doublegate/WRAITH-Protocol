@@ -45,6 +45,7 @@
 pub mod dns;
 pub mod hole_punch;
 pub mod ice;
+pub mod signaling;
 pub mod stun;
 pub mod types;
 
@@ -52,6 +53,10 @@ pub mod types;
 pub use dns::{DnsError, StunDnsResolver, StunServerSpec, default_stun_servers, fallback_stun_ips};
 pub use hole_punch::{HolePuncher, PunchError};
 pub use ice::{Candidate, CandidateType, IceCandidate, IceGatherer};
+pub use signaling::{
+    CandidatePair, ConnectivityChecker, NatSignaling, PairState, SerializableCandidate,
+    SignalingError, SignalingMessage,
+};
 pub use stun::{
     StunAttribute, StunAuthentication, StunClient, StunError, StunMessage, StunMessageClass,
     StunMessageType, StunRateLimiter,

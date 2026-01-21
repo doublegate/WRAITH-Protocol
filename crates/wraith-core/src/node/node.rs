@@ -975,6 +975,60 @@ impl Node {
         getrandom(&mut id).expect("Failed to generate transfer ID");
         id
     }
+
+    /// Send raw data to a peer
+    ///
+    /// This method establishes a session if needed, then sends the data as a DATA frame
+    /// on stream 0. This is useful for sending small messages like chat messages.
+    ///
+    /// # Arguments
+    ///
+    /// * `peer_id` - The peer ID (32-byte Ed25519 public key)
+    /// * `data` - The data to send (will be encrypted)
+    ///
+    /// # Returns
+    ///
+    /// `Ok(())` if the data was sent successfully.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - The session cannot be established
+    /// - Frame building fails
+    /// - Encryption fails
+    /// - The transport layer fails to send
+    pub async fn send_data(&self, peer_id: &PeerId, data: &[u8]) -> Result<()> {
+        use crate::FRAME_HEADER_SIZE;
+        use crate::frame::{FrameBuilder, FrameType};
+
+        // Get or establish session
+        let connection = self.get_or_establish_session(peer_id).await?;
+
+        // Build data frame
+        let frame = FrameBuilder::new()
+            .frame_type(FrameType::Data)
+            .stream_id(0) // Use stream 0 for generic data/chat messages
+            .sequence(0)
+            .payload(data)
+            .build(FRAME_HEADER_SIZE + data.len())
+            .map_err(|e| NodeError::Other(format!("Failed to build frame: {e:?}").into()))?;
+
+        // Encrypt and send
+        let encrypted = connection.encrypt_frame(&frame).await?;
+        let transport = self.get_transport().await?;
+        transport
+            .send_to(&encrypted, connection.peer_addr())
+            .await
+            .map_err(|e| NodeError::Transport(format!("Failed to send data: {e}").into()))?;
+
+        tracing::debug!(
+            "Sent {} bytes data to peer {:?}",
+            data.len(),
+            hex::encode(&peer_id[..8])
+        );
+
+        Ok(())
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

@@ -405,6 +405,24 @@ impl Database {
         Ok(())
     }
 
+    /// Mark a specific message as sent
+    pub fn mark_message_sent(&self, message_id: i64) -> Result<()> {
+        self.conn.execute(
+            "UPDATE messages SET sent = 1 WHERE id = ?1",
+            params![message_id],
+        )?;
+        Ok(())
+    }
+
+    /// Mark a specific message as delivered
+    pub fn mark_message_delivered(&self, message_id: i64) -> Result<()> {
+        self.conn.execute(
+            "UPDATE messages SET delivered = 1 WHERE id = ?1",
+            params![message_id],
+        )?;
+        Ok(())
+    }
+
     // MARK: - Ratchet State Operations
 
     pub fn save_ratchet_state(&self, peer_id: &str, state_json: &str) -> Result<()> {

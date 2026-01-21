@@ -54,6 +54,283 @@ use thiserror::Error;
 const XDP_PACKET_HEADROOM: usize = 256;
 const XDP_UMEM_MIN_CHUNK_SIZE: usize = 2048;
 
+// XDP socket option constants (from linux/if_xdp.h)
+// These are Linux-specific and require kernel 5.3+
+
+/// SOL_XDP socket option level
+#[cfg(target_os = "linux")]
+const SOL_XDP: c_int = 283;
+
+/// XDP_RX_RING socket option - configure RX ring
+#[cfg(target_os = "linux")]
+const XDP_RX_RING: c_int = 1;
+
+/// XDP_TX_RING socket option - configure TX ring
+#[cfg(target_os = "linux")]
+const XDP_TX_RING: c_int = 2;
+
+/// XDP_UMEM_REG socket option - register UMEM
+#[cfg(target_os = "linux")]
+const XDP_UMEM_REG: c_int = 3;
+
+/// XDP_UMEM_FILL_RING socket option - configure fill ring
+#[cfg(target_os = "linux")]
+const XDP_UMEM_FILL_RING: c_int = 4;
+
+/// XDP_UMEM_COMPLETION_RING socket option - configure completion ring
+#[cfg(target_os = "linux")]
+const XDP_UMEM_COMPLETION_RING: c_int = 5;
+
+/// XDP_COPY bind flag - force copy mode
+#[cfg(target_os = "linux")]
+pub const XDP_COPY: u16 = 1 << 1;
+
+/// XDP_ZEROCOPY bind flag - force zero-copy mode
+#[cfg(target_os = "linux")]
+pub const XDP_ZEROCOPY: u16 = 1 << 2;
+
+/// XDP_USE_NEED_WAKEUP bind flag - enable need_wakeup optimization
+#[cfg(target_os = "linux")]
+pub const XDP_USE_NEED_WAKEUP: u16 = 1 << 3;
+
+/// UMEM registration structure (matches struct xdp_umem_reg in linux/if_xdp.h)
+#[cfg(target_os = "linux")]
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+struct XdpUmemReg {
+    /// Start address of UMEM
+    addr: u64,
+    /// Length of UMEM in bytes
+    len: u64,
+    /// Size of each chunk/frame
+    chunk_size: u32,
+    /// Headroom before packet data
+    headroom: u32,
+    /// Flags (currently unused, set to 0)
+    flags: u32,
+}
+
+/// Ring offset structure (matches struct xdp_ring_offset in linux/if_xdp.h)
+/// Used for mmap-based ring buffer access (future implementation)
+#[cfg(target_os = "linux")]
+#[repr(C)]
+#[derive(Debug, Clone, Copy, Default)]
+#[allow(dead_code)]
+struct XdpRingOffset {
+    producer: u64,
+    consumer: u64,
+    desc: u64,
+    flags: u64,
+}
+
+/// Ring offsets for mmap (matches struct xdp_mmap_offsets in linux/if_xdp.h)
+/// Used for mmap-based ring buffer access (future implementation)
+#[cfg(target_os = "linux")]
+#[repr(C)]
+#[derive(Debug, Clone, Copy, Default)]
+#[allow(dead_code)]
+struct XdpMmapOffsets {
+    rx: XdpRingOffset,
+    tx: XdpRingOffset,
+    fr: XdpRingOffset, // fill ring
+    cr: XdpRingOffset, // completion ring
+}
+
+/// sockaddr_xdp structure (matches struct sockaddr_xdp in linux/if_xdp.h)
+#[cfg(target_os = "linux")]
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+struct SockaddrXdp {
+    /// Address family (AF_XDP = 44)
+    sxdp_family: u16,
+    /// Flags (XDP_COPY, XDP_ZEROCOPY, etc.)
+    sxdp_flags: u16,
+    /// Interface index
+    sxdp_ifindex: u32,
+    /// Queue ID
+    sxdp_queue_id: u32,
+    /// Shared UMEM file descriptor (0 if not sharing)
+    sxdp_shared_umem_fd: u32,
+}
+
+/// XDP_MMAP_OFFSETS socket option - get mmap offsets
+/// Used for mmap-based ring buffer access (future implementation)
+#[cfg(target_os = "linux")]
+#[allow(dead_code)]
+const XDP_MMAP_OFFSETS: c_int = 1;
+
+/// XDP descriptor structure (matches struct xdp_desc in linux/if_xdp.h)
+#[cfg(target_os = "linux")]
+#[repr(C)]
+#[derive(Debug, Clone, Copy, Default)]
+pub struct XdpDesc {
+    /// Address in UMEM
+    pub addr: u64,
+    /// Packet length
+    pub len: u32,
+    /// Options (reserved)
+    pub options: u32,
+}
+
+/// Helper functions for AF_XDP socket configuration (Linux 5.3+)
+#[cfg(target_os = "linux")]
+mod xdp_config {
+    use super::*;
+    use std::ffi::CString;
+
+    /// Get interface index from name
+    pub fn get_ifindex(ifname: &str) -> Result<u32, AfXdpError> {
+        let name = CString::new(ifname)
+            .map_err(|e| AfXdpError::InvalidConfig(format!("Invalid interface name: {}", e)))?;
+
+        // SAFETY: if_nametoindex is a standard POSIX function that takes a null-terminated
+        // C string and returns the interface index. The CString ensures proper null termination.
+        let idx = unsafe { libc::if_nametoindex(name.as_ptr()) };
+
+        if idx == 0 {
+            return Err(AfXdpError::SocketBind(format!(
+                "Interface '{}' not found",
+                ifname
+            )));
+        }
+
+        Ok(idx)
+    }
+
+    /// Register UMEM with the XDP socket
+    pub fn register_umem(fd: c_int, umem: &Umem) -> Result<(), AfXdpError> {
+        let reg = XdpUmemReg {
+            addr: umem.buffer() as u64,
+            len: umem.size() as u64,
+            chunk_size: umem.frame_size() as u32,
+            headroom: XDP_PACKET_HEADROOM as u32,
+            flags: 0,
+        };
+
+        // SAFETY: setsockopt is a standard POSIX syscall. We pass a valid file descriptor
+        // obtained from socket(), SOL_XDP as the level, XDP_UMEM_REG as the option name,
+        // and a pointer to the XdpUmemReg structure with its size. The kernel validates
+        // all parameters and returns -1 on error.
+        let ret = unsafe {
+            libc::setsockopt(
+                fd,
+                SOL_XDP,
+                XDP_UMEM_REG,
+                &reg as *const XdpUmemReg as *const c_void,
+                std::mem::size_of::<XdpUmemReg>() as libc::socklen_t,
+            )
+        };
+
+        if ret < 0 {
+            return Err(AfXdpError::UmemCreation(format!(
+                "Failed to register UMEM: {}",
+                Error::last_os_error()
+            )));
+        }
+
+        Ok(())
+    }
+
+    /// Configure ring size for a socket option
+    pub fn configure_ring(
+        fd: c_int,
+        option: c_int,
+        size: u32,
+        ring_name: &str,
+    ) -> Result<(), AfXdpError> {
+        // SAFETY: setsockopt is a standard POSIX syscall. We pass a valid file descriptor,
+        // SOL_XDP level, the ring option (XDP_RX_RING, XDP_TX_RING, etc.), and a pointer
+        // to the ring size value.
+        let ret = unsafe {
+            libc::setsockopt(
+                fd,
+                SOL_XDP,
+                option,
+                &size as *const u32 as *const c_void,
+                std::mem::size_of::<u32>() as libc::socklen_t,
+            )
+        };
+
+        if ret < 0 {
+            return Err(AfXdpError::RingBufferError(format!(
+                "Failed to configure {} ring: {}",
+                ring_name,
+                Error::last_os_error()
+            )));
+        }
+
+        Ok(())
+    }
+
+    /// Bind socket to interface and queue
+    pub fn bind_socket(
+        fd: c_int,
+        ifindex: u32,
+        queue_id: u32,
+        flags: u16,
+    ) -> Result<(), AfXdpError> {
+        let addr = SockaddrXdp {
+            sxdp_family: libc::AF_XDP as u16,
+            sxdp_flags: flags,
+            sxdp_ifindex: ifindex,
+            sxdp_queue_id: queue_id,
+            sxdp_shared_umem_fd: 0, // No shared UMEM
+        };
+
+        // SAFETY: bind is a standard POSIX syscall. We pass a valid file descriptor
+        // obtained from socket(), a pointer to sockaddr_xdp cast to sockaddr,
+        // and the size of the structure. The kernel validates all parameters.
+        let ret = unsafe {
+            libc::bind(
+                fd,
+                &addr as *const SockaddrXdp as *const libc::sockaddr,
+                std::mem::size_of::<SockaddrXdp>() as libc::socklen_t,
+            )
+        };
+
+        if ret < 0 {
+            return Err(AfXdpError::SocketBind(format!(
+                "Failed to bind socket to interface index {} queue {}: {}",
+                ifindex,
+                queue_id,
+                Error::last_os_error()
+            )));
+        }
+
+        Ok(())
+    }
+
+    /// Get mmap offsets for ring buffers
+    /// Used for mmap-based ring buffer access (future implementation)
+    #[allow(dead_code)]
+    pub fn get_mmap_offsets(fd: c_int) -> Result<XdpMmapOffsets, AfXdpError> {
+        let mut offsets = XdpMmapOffsets::default();
+        let mut optlen = std::mem::size_of::<XdpMmapOffsets>() as libc::socklen_t;
+
+        // SAFETY: getsockopt is a standard POSIX syscall. We pass a valid file descriptor,
+        // SOL_XDP level, XDP_MMAP_OFFSETS option, a pointer to receive the offsets,
+        // and a pointer to the buffer size.
+        let ret = unsafe {
+            libc::getsockopt(
+                fd,
+                SOL_XDP,
+                XDP_MMAP_OFFSETS,
+                &mut offsets as *mut XdpMmapOffsets as *mut c_void,
+                &mut optlen,
+            )
+        };
+
+        if ret < 0 {
+            return Err(AfXdpError::RingBufferError(format!(
+                "Failed to get mmap offsets: {}",
+                Error::last_os_error()
+            )));
+        }
+
+        Ok(offsets)
+    }
+}
+
 /// AF_XDP errors
 #[derive(Debug, Error)]
 pub enum AfXdpError {
@@ -367,7 +644,7 @@ impl SocketConfig {
 /// Used for fill, completion, RX, and TX rings.
 pub struct RingBuffer {
     /// Ring size (must be power of 2)
-    size: u32,
+    pub(crate) size: u32,
 
     /// Producer index
     producer: std::sync::atomic::AtomicU32,
@@ -503,9 +780,16 @@ impl AfXdpSocket {
     /// * `queue_id` - Queue ID to attach to
     /// * `umem` - Shared UMEM region
     /// * `config` - Socket configuration
+    ///
+    /// # Requirements
+    ///
+    /// * Linux kernel 5.3+ with AF_XDP support
+    /// * XDP program loaded on the network interface
+    /// * Sufficient locked memory limit (ulimit -l)
+    /// * CAP_NET_RAW or root privileges
     pub fn new(
         ifname: &str,
-        _queue_id: u32,
+        queue_id: u32,
         umem: Arc<Umem>,
         config: SocketConfig,
     ) -> Result<Self, AfXdpError> {
@@ -521,36 +805,70 @@ impl AfXdpSocket {
             ));
         }
 
-        // NOTE: Socket option configuration is deferred to future implementation.
-        //
-        // Full AF_XDP socket setup requires:
-        // 1. Register UMEM with XDP_UMEM_REG setsockopt
-        // 2. Configure RX/TX rings with XDP_RX_RING/XDP_TX_RING setsockopt
-        // 3. Bind socket to interface with sockaddr_xdp
-        // 4. Set fill/completion ring addresses
-        //
-        // Required Linux kernel headers (if_xdp.h):
-        // - SOL_XDP (level 283)
-        // - XDP_UMEM_REG (4): Register UMEM region
-        // - XDP_UMEM_FILL_RING (5): Set fill ring params
-        // - XDP_UMEM_COMPLETION_RING (6): Set completion ring params
-        // - XDP_RX_RING (1): Configure RX ring
-        // - XDP_TX_RING (2): Configure TX ring
-        //
-        // Bind requires sockaddr_xdp structure:
-        // - sxdp_family: AF_XDP (44)
-        // - sxdp_ifindex: Interface index from if_nametoindex()
-        // - sxdp_queue_id: Hardware queue ID
-        // - sxdp_flags: XDP_COPY (1<<1), XDP_ZEROCOPY (1<<2), etc.
-        // - sxdp_shared_umem_fd: For shared UMEM between sockets
-        //
-        // Implementation deferred because:
-        // - Requires Linux 5.3+ testing environment with XDP-capable NIC
-        // - wraith-xdp eBPF crate (excluded from workspace) needs parallel development
-        // - Current UDP transport provides functional baseline for all platforms
-        //
-        // See: https://docs.kernel.org/networking/af_xdp.html
-        // See: to-dos/technical-debt/TECH-DEBT-v1.6.1.md TH-006-DEFERRED
+        // Configure AF_XDP socket (Linux 5.3+ required)
+        // Implementation uses setsockopt/getsockopt with SOL_XDP options
+        #[cfg(target_os = "linux")]
+        {
+            // Helper closure to clean up socket on error
+            let close_fd_on_error = || {
+                // SAFETY: close() is a standard POSIX syscall with valid fd
+                unsafe {
+                    libc::close(fd);
+                }
+            };
+
+            // Step 1: Register UMEM with the socket
+            // This tells the kernel about our shared memory region for packet buffers
+            xdp_config::register_umem(fd, &umem).inspect_err(|_| close_fd_on_error())?;
+
+            // Step 2: Configure fill ring (userspace -> kernel buffer addresses for RX)
+            xdp_config::configure_ring(fd, XDP_UMEM_FILL_RING, umem.fill_ring().size, "fill")
+                .inspect_err(|_| close_fd_on_error())?;
+
+            // Step 3: Configure completion ring (kernel -> userspace TX completion notifications)
+            xdp_config::configure_ring(
+                fd,
+                XDP_UMEM_COMPLETION_RING,
+                umem.comp_ring().size,
+                "completion",
+            )
+            .inspect_err(|_| close_fd_on_error())?;
+
+            // Step 4: Configure RX ring
+            xdp_config::configure_ring(fd, XDP_RX_RING, config.rx_ring_size, "RX")
+                .inspect_err(|_| close_fd_on_error())?;
+
+            // Step 5: Configure TX ring
+            xdp_config::configure_ring(fd, XDP_TX_RING, config.tx_ring_size, "TX")
+                .inspect_err(|_| close_fd_on_error())?;
+
+            // Step 6: Get interface index
+            let ifindex = xdp_config::get_ifindex(ifname).inspect_err(|_| close_fd_on_error())?;
+
+            // Step 7: Bind socket to interface and queue
+            // Use config.bind_flags which may include XDP_COPY, XDP_ZEROCOPY, XDP_USE_NEED_WAKEUP
+            xdp_config::bind_socket(fd, ifindex, queue_id, config.bind_flags)
+                .inspect_err(|_| close_fd_on_error())?;
+
+            // Note: In a complete implementation, we would also:
+            // - Get mmap offsets with xdp_config::get_mmap_offsets(fd)
+            // - mmap the fill, completion, RX, and TX rings
+            // - Initialize ring pointers from the mmap'd memory
+            //
+            // This is deferred because it requires careful memory management
+            // and testing on a system with proper XDP support
+        }
+
+        #[cfg(not(target_os = "linux"))]
+        {
+            // AF_XDP is Linux-only; clean up and return error
+            unsafe {
+                libc::close(fd);
+            }
+            return Err(AfXdpError::SocketCreation(
+                "AF_XDP is only supported on Linux 5.3+".to_string(),
+            ));
+        }
 
         Ok(Self {
             fd,

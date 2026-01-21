@@ -62,3 +62,4 @@ criterion/
 fuzz/artifacts/
 fuzz/corpus/
 fuzz/target/
+clients/wraith-ios/wraith-swift-ffi/target/
