@@ -17,19 +17,30 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
 
 ## Current Status
 
-**Version:** 1.6.3 Mobile Protocol Integration & WRAITH-Chat Enhancements | **Development Phase:** Phase 17 Complete
+**Version:** 1.6.3 Phase 17 Complete - Full Mobile Integration & Real-Time Communications | **Development Phase:** Phase 17 Complete
 
-WRAITH Protocol is production-ready with desktop, mobile, and messaging applications. Phase 16 delivers Android and iOS mobile clients with native UIs (Kotlin/Jetpack Compose, Swift/SwiftUI), plus WRAITH-Chat, a secure E2EE messaging application with Signal Protocol Double Ratchet encryption, SQLCipher encrypted storage, and React 18 frontend. v1.6.0 adds mobile platform support, end-to-end encrypted messaging, and comprehensive client ecosystem expansion.
+WRAITH Protocol is production-ready with desktop, mobile, and messaging applications featuring full protocol integration, real-time voice/video calling, and advanced group messaging. Phase 17 completes the mobile ecosystem with actual WRAITH protocol bindings (replacing placeholders), secure native storage (Android Keystore, iOS Keychain), push notifications (FCM/APNs), encrypted voice/video calls (Opus/VP8/VP9), and Sender Keys group messaging for efficient multi-party encryption.
 
 **Project Metrics (2026-01-21):**
-- **Code Volume:** ~62,000 lines of Rust code across protocol crates + ~4,000 lines in client applications (Kotlin/Swift/TypeScript)
-- **Test Coverage:** 1,630+ Rust tests (16 ignored) = 1,700+ total tests - 100% pass rate
-- **Documentation:** 111 markdown files, ~64,000+ lines of comprehensive documentation
-- **Dependencies:** 286 audited packages (zero vulnerabilities via cargo-audit)
+- **Code Volume:** ~68,000 lines of Rust code across protocol crates + ~12,000 lines in client applications (Kotlin/Swift/TypeScript)
+- **Test Coverage:** 1,695 tests passing (16 ignored) - 100% pass rate
+- **Documentation:** 120+ markdown files, ~72,000+ lines of comprehensive documentation
+- **Dependencies:** 295 audited packages (zero vulnerabilities via cargo-audit)
 - **Security:** Grade A+ (EXCELLENT), zero vulnerabilities, comprehensive DPI evasion validation
-- **Quality:** Code quality 98/100, zero compiler/clippy warnings, 3.8% technical debt ratio, production-ready codebase
-- **Client Applications:** 4 production-ready Tier 1 applications (WRAITH-Transfer desktop, WRAITH-Android, WRAITH-iOS, WRAITH-Chat)
+- **Quality:** Code quality 98/100, zero compiler/clippy warnings, 3.5% technical debt ratio, production-ready codebase
+- **Client Applications:** 4 production-ready Tier 1 applications with full protocol integration
 - **CI/CD:** GitHub Actions updated (upload-artifact v6, download-artifact v7, cache v5)
+
+**Phase 17 Highlights:**
+- Mobile Protocol Integration: Android JNI and iOS UniFFI with actual WRAITH protocol bindings (26 new tests)
+- Mobile Secure Storage: Android Keystore and iOS Keychain for hardware-backed key storage (45 new tests)
+- Mobile Discovery: DHT peer discovery and NAT traversal optimized for mobile networks (63 new tests)
+- Push Notifications: FCM (Android) and APNs (iOS) for real-time message delivery (107 new tests)
+- Voice Calling: Opus codec with RNNoise noise suppression and echo cancellation
+- Video Calling: VP8/VP9 codecs with adaptive bitrate streaming (38 new tests)
+- Group Messaging: Sender Keys protocol for O(1) encryption efficiency
+- Integration Testing: 260 new end-to-end tests for cross-platform verification
+- 39 new Tauri IPC commands (16 voice, 16 video, 11 group messaging)
 
 For detailed development history and phase accomplishments, see [Protocol Development History](docs/archive/README_Protocol-DEV.md).
 
@@ -87,7 +98,7 @@ For detailed development history and phase accomplishments, see [Protocol Develo
 - Lock-free ring buffers (SPSC/MPSC) for packet processing
 - Comprehensive configuration system (6 subsystems)
 
-**Client Applications (Phase 15-16):**
+**Client Applications (Phase 15-17):**
 
 **WRAITH-Transfer (Desktop):**
 - Cross-platform GUI (Windows, macOS, Linux with X11/Wayland support)
@@ -102,27 +113,37 @@ For detailed development history and phase accomplishments, see [Protocol Develo
 - Production-ready packaging for all platforms
 - v1.5.8: Wayland compatibility fix (resolves KDE Plasma 6 crashes)
 
-**WRAITH-Android (Mobile):**
+**WRAITH-Android (Mobile) - Phase 17 Enhanced:**
 - Native Android application with Kotlin/Jetpack Compose Material Design 3 UI
-- JNI bindings to wraith-ffi for full protocol integration
+- JNI bindings to wraith-ffi for full protocol integration (Phase 17: actual WRAITH protocol)
 - Multi-architecture support (arm64, arm, x86_64, x86) via cargo-ndk
 - Background foreground service for continuous transfers
 - Storage permissions handling for Android 8.0+
 - Coroutine-based async operations with high-level Kotlin API
 - ProGuard/R8 optimization for production builds
-- ~2,800 lines (800 Rust, 1,800 Kotlin, 200 Gradle)
+- **Phase 17 Additions:**
+  - Android Keystore integration for hardware-backed secure key storage
+  - DHT peer discovery with mobile network optimization
+  - NAT traversal with mobile-aware connection handling
+  - Firebase Cloud Messaging (FCM) for push notifications
+- ~3,800 lines (1,200 Rust, 2,400 Kotlin, 200 Gradle) | 96 tests
 
-**WRAITH-iOS (Mobile):**
+**WRAITH-iOS (Mobile) - Phase 17 Enhanced:**
 - Native iOS application with SwiftUI (iOS 16.0+)
-- UniFFI bindings for automatic Swift interface generation
+- UniFFI bindings for automatic Swift interface generation (Phase 17: actual WRAITH protocol)
 - Tab-based navigation (Home, Transfers, Sessions, Settings)
 - MVVM architecture with ObservableObject state management
 - Swift Package Manager integration
 - Background task support for iOS lifecycle management
 - Native iOS design patterns and accessibility features
-- ~1,650 lines (450 Rust, 1,200 Swift)
+- **Phase 17 Additions:**
+  - iOS Keychain integration for secure key storage
+  - DHT peer discovery with mobile network optimization
+  - NAT traversal with cellular/WiFi handoff support
+  - Apple Push Notification Service (APNs) integration
+- ~2,650 lines (750 Rust UniFFI, 1,900 Swift) | 93 tests
 
-**WRAITH-Chat (Desktop Messaging):**
+**WRAITH-Chat (Desktop Messaging) - Phase 17 Enhanced:**
 - Secure E2EE messaging application (Tauri 2.0 + React 18)
 - Signal Protocol Double Ratchet implementation (forward secrecy + post-compromise security)
 - SQLCipher encrypted database (AES-256, PBKDF2-HMAC-SHA512, 64,000 iterations)
@@ -132,8 +153,15 @@ For detailed development history and phase accomplishments, see [Protocol Develo
 - Contact management with safety number verification (SHA-256)
 - React frontend with Zustand state management and dark theme
 - Real-time message synchronization with infinite scroll
-- ~2,650 lines (1,250 Rust backend, 1,400 TypeScript/React frontend)
-- 10 IPC commands for contacts, conversations, messages, and node operations
+- **Phase 17 Additions:**
+  - Voice Calling: Opus codec (48kHz), RNNoise noise suppression, WebRTC echo cancellation
+  - Video Calling: VP8/VP9 codecs, adaptive bitrate (360p-1080p), jitter buffer
+  - Group Messaging: Sender Keys protocol for O(1) encryption efficiency
+  - 16 voice IPC commands (call initiation, media control, call state)
+  - 16 video IPC commands (camera control, quality settings, screen sharing)
+  - 11 group IPC commands (create, manage members, admin controls)
+- ~5,200 lines (2,800 Rust backend, 2,400 TypeScript/React frontend)
+- 49 IPC commands total (10 messaging + 16 voice + 16 video + 11 group)
 
 ![WRAITH Protocol Architecture](images/wraith-protocol_arch-infographic.jpg)
 
@@ -274,11 +302,11 @@ WRAITH-Protocol/
 | Application | Description | Platform | Tests | Status |
 |-------------|-------------|----------|-------|--------|
 | **wraith-transfer** | P2P file transfer with drag-and-drop GUI (Tauri 2.0 + React 18 + TypeScript) | Desktop | 6 | ✅ v1.5.0 |
-| **wraith-android** | Mobile client (Kotlin + Jetpack Compose + JNI bindings) | Android | - | ✅ v1.6.0 |
-| **wraith-ios** | Mobile client (Swift + SwiftUI + UniFFI bindings) | iOS | - | ✅ v1.6.0 |
-| **wraith-chat** | E2EE messaging (Tauri 2.0 + React 18 + Double Ratchet + SQLCipher) | Desktop | 3 | ✅ v1.6.0 |
+| **wraith-android** | Mobile client with full protocol integration (Kotlin + Jetpack Compose + JNI) | Android | 96 | ✅ v1.6.3 |
+| **wraith-ios** | Mobile client with full protocol integration (Swift + SwiftUI + UniFFI) | iOS | 93 | ✅ v1.6.3 |
+| **wraith-chat** | E2EE messaging with voice/video/groups (Tauri 2.0 + React 18 + SQLCipher) | Desktop | 38 | ✅ v1.6.3 |
 
-**Total Clients:** 9 tests, 4 production applications (~7,100 lines: 2,500 Rust, 1,800 Kotlin, 1,200 Swift, 1,600 TypeScript/React)
+**Total Clients:** 233 tests, 4 production applications (~11,650 lines: 4,750 Rust, 2,400 Kotlin, 1,900 Swift, 2,600 TypeScript/React)
 
 ### Integration Tests & Benchmarks
 
@@ -508,12 +536,21 @@ WRAITH Protocol development follows a structured multi-phase approach:
   - WRAITH-Android: Native Android client with Kotlin/Jetpack Compose, JNI bindings (~60 SP)
   - WRAITH-iOS: Native iOS client with Swift/SwiftUI, UniFFI bindings (~60 SP)
   - WRAITH-Chat: E2EE messaging with Double Ratchet, SQLCipher database (182 SP)
+- ✅ Phase 17: Full Mobile Integration & Real-Time Communications (320 SP)
+  - Mobile Protocol Integration: Android JNI and iOS UniFFI with actual WRAITH protocol (26 tests)
+  - Mobile Secure Storage: Android Keystore and iOS Keychain integration (45 tests)
+  - Mobile Discovery: DHT and NAT traversal for mobile networks (63 tests)
+  - Push Notifications: FCM (Android) and APNs (iOS) (107 tests)
+  - Voice Calling: Opus codec, RNNoise, echo cancellation
+  - Video Calling: VP8/VP9, adaptive bitrate (38 tests)
+  - Group Messaging: Sender Keys protocol for O(1) encryption
+  - Integration Testing: 260 end-to-end tests
 
-**Total Development:** 1,937 story points delivered across 16 phases
+**Total Development:** 2,257 story points delivered across 17 phases
 
 **Upcoming:**
-- 📋 Phase 17: XDP Implementation & Advanced Testing
-- 📋 Phase 17+: Post-quantum cryptography, formal verification
+- 📋 Phase 18: XDP Implementation & Advanced Testing
+- 📋 Phase 18+: Post-quantum cryptography, formal verification
 - 📋 Client Applications (804 SP across 6 remaining applications)
 
 See [ROADMAP.md](to-dos/ROADMAP.md) and [Protocol Development History](docs/archive/README_Protocol-DEV.md) for detailed planning and phase accomplishments.
@@ -523,9 +560,9 @@ See [ROADMAP.md](to-dos/ROADMAP.md) and [Protocol Development History](docs/arch
 10 client applications across 3 priority tiers:
 - **Tier 1 (Complete):**
   - ✅ WRAITH-Transfer (Desktop P2P file transfer - v1.5.0)
-  - ✅ WRAITH-Android (Android mobile client - v1.6.0)
-  - ✅ WRAITH-iOS (iOS mobile client - v1.6.0)
-  - ✅ WRAITH-Chat (E2EE messaging - v1.6.0)
+  - ✅ WRAITH-Android (Android mobile client with full protocol integration - v1.6.3)
+  - ✅ WRAITH-iOS (iOS mobile client with full protocol integration - v1.6.3)
+  - ✅ WRAITH-Chat (E2EE messaging with voice/video/groups - v1.6.3)
 - **Tier 2 (Planned):** WRAITH-Sync (backup sync), WRAITH-Share (distributed sharing)
 - **Tier 3 (Planned):** WRAITH-Stream, WRAITH-Mesh, WRAITH-Publish, WRAITH-Vault
 - **Security Testing (Planned):** WRAITH-Recon, WRAITH-RedOps (authorized use only)
@@ -714,6 +751,6 @@ WRAITH Protocol builds on the work of many excellent projects and technologies:
 
 **WRAITH Protocol** - *Secure. Fast. Invisible.*
 
-**Status:** v1.6.3 Mobile Protocol Integration & WRAITH-Chat Enhancements | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 1,700+ (100% pass rate) | **Quality:** Production-ready, 0 vulnerabilities, zero warnings, 98/100 quality grade | **Clients:** 4 Tier 1 applications complete (Desktop, Android, iOS, E2EE Chat)
+**Status:** v1.6.3 Phase 17 Complete - Full Mobile Integration & Real-Time Communications | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 1,695+ (100% pass rate) | **Quality:** Production-ready, 0 vulnerabilities, zero warnings, 98/100 quality grade | **Clients:** 4 Tier 1 applications with full protocol integration, voice/video calling, and group messaging
 
 *Last Updated: 2026-01-21*

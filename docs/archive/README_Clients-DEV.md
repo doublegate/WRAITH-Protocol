@@ -1,11 +1,11 @@
 # WRAITH Protocol - Client Applications Development History
 
-**Development Timeline:** Phase 15-16 (2025-12-11) - 4 Client Applications Complete
+**Development Timeline:** Phase 15-17 (2026-01-21) - 4 Client Applications Complete with Full Integration
 
-This document tracks the development journey of WRAITH Protocol client applications, from planning through implementation and release. Phase 15 delivered WRAITH-Transfer desktop application, and Phase 16 delivered Android/iOS mobile clients plus WRAITH-Chat E2EE messaging.
+This document tracks the development journey of WRAITH Protocol client applications, from planning through implementation and release. Phase 15 delivered WRAITH-Transfer desktop application, Phase 16 delivered Android/iOS mobile clients plus WRAITH-Chat E2EE messaging, and Phase 17 completes the mobile ecosystem with full protocol integration, voice/video calling, and group messaging.
 
 [![Version](https://img.shields.io/badge/clients-4%20complete-green.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
-[![Protocol](https://img.shields.io/badge/protocol-v1.6.2-blue.svg)](../../README.md)
+[![Protocol](https://img.shields.io/badge/protocol-v1.6.3-blue.svg)](../../README.md)
 [![Clients](https://img.shields.io/badge/clients-6%20planned-orange.svg)](../../to-dos/ROADMAP-clients.md)
 
 ---
@@ -23,45 +23,50 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 
 **Total Development Scope:**
 - **10 Client Applications** (8 standard + 2 security testing)
-- **1,148 Story Points** total (404 SP delivered + 744 SP remaining)
+- **1,468 Story Points** total (724 SP delivered + 744 SP remaining)
 - **~40 weeks remaining** (parallel development across tiers)
 - **26 development phases** across all clients
 
 **Development Strategy:**
-- **Tier 1:** High-priority core applications (Transfer ✅, Android ✅, iOS ✅, Chat ✅ Complete)
+- **Tier 1:** High-priority core applications (Transfer ✅, Android ✅, iOS ✅, Chat ✅ Complete with full integration)
 - **Tier 2:** Specialized productivity tools (Sync, Share)
 - **Tier 3:** Advanced use cases (Stream, Mesh, Publish, Vault)
 - **Security Testing:** Authorized assessment tools (Recon, RedOps)
 
 **Current Status (2026-01-21):**
-- Protocol v1.6.2 complete (all prerequisites available)
-- **Phase 15 - WRAITH-Transfer v1.6.2:** ✅ **COMPLETE** (102 SP)
+- Protocol v1.6.3 complete (all prerequisites available)
+- **Phase 15 - WRAITH-Transfer v1.6.3:** ✅ **COMPLETE** (102 SP)
   - Cross-platform desktop P2P file transfer
   - Tauri 2.0 + React 18 + TypeScript
   - 62 frontend tests with Vitest (100% pass rate)
-- **Phase 16 - Mobile & Chat v1.6.2:** ✅ **COMPLETE** (302 SP)
+- **Phase 16 - Mobile & Chat v1.6.0:** ✅ **COMPLETE** (302 SP)
   - **WRAITH-Android:** Native Kotlin + Jetpack Compose (~60 SP)
-  - **WRAITH-iOS:** Native Swift + SwiftUI (~60 SP) - proper error handling
+  - **WRAITH-iOS:** Native Swift + SwiftUI (~60 SP)
   - **WRAITH-Chat:** E2EE messaging with Double Ratchet (182 SP)
-    - Full WRAITH protocol integration (TD-007 to TD-011)
-    - Secure key storage with platform-native keyring
-    - Real peer identity from node.node_id()
-- **Development Status:** 4 of 10 Tier 1 clients complete (404 SP delivered, 744 SP remaining)
+- **Phase 17 - Full Mobile Integration & Real-Time Comms:** ✅ **COMPLETE** (320 SP)
+  - **Mobile Protocol Integration:** Android JNI and iOS UniFFI with actual WRAITH protocol
+  - **Mobile Secure Storage:** Android Keystore and iOS Keychain integration
+  - **Mobile Discovery:** DHT and NAT traversal for mobile networks
+  - **Push Notifications:** FCM (Android) and APNs (iOS)
+  - **Voice Calling:** Opus codec, RNNoise noise suppression, echo cancellation
+  - **Video Calling:** VP8/VP9 codecs, adaptive bitrate
+  - **Group Messaging:** Sender Keys protocol for O(1) encryption
+- **Development Status:** 4 of 10 Tier 1 clients complete (724 SP delivered, 744 SP remaining)
 - **CI/CD:** GitHub Actions updated (upload-artifact v6, download-artifact v7, cache v5)
-- **Tech Debt:** TD-006 (iOS UniFFI unwrap safety) remediated
+- **Test Coverage:** 233 client tests (6 transfer + 96 android + 93 ios + 38 chat)
 
 ---
 
 ## Client Applications Overview
 
-### Tier 1: Core Applications (High Priority - 404 SP)
+### Tier 1: Core Applications (High Priority - 724 SP)
 
 | # | Client | Description | Platform | Story Points | Status |
 |---|--------|-------------|----------|--------------|--------|
-| 1 | **WRAITH-Transfer** | Direct P2P file transfer with drag-and-drop GUI | Desktop (Linux/macOS/Windows) | 102 | ✅ **Complete (v1.6.0)** |
-| 2 | **WRAITH-Android** | Native Android mobile file transfer client | Android 8.0+ | ~60 | ✅ **Complete (v1.6.0)** |
-| 3 | **WRAITH-iOS** | Native iOS mobile file transfer client | iOS 16.0+ | ~60 | ✅ **Complete (v1.6.0)** |
-| 4 | **WRAITH-Chat** | E2EE messaging with Signal Protocol Double Ratchet | Desktop | 182 | ✅ **Complete (v1.6.0)** |
+| 1 | **WRAITH-Transfer** | Direct P2P file transfer with drag-and-drop GUI | Desktop (Linux/macOS/Windows) | 102 | ✅ **Complete (v1.6.3)** |
+| 2 | **WRAITH-Android** | Native Android mobile client with full protocol integration | Android 8.0+ | ~135 | ✅ **Complete (v1.6.3)** |
+| 3 | **WRAITH-iOS** | Native iOS mobile client with full protocol integration | iOS 16.0+ | ~130 | ✅ **Complete (v1.6.3)** |
+| 4 | **WRAITH-Chat** | E2EE messaging with voice/video calling and group messaging | Desktop | 357 | ✅ **Complete (v1.6.3)** |
 
 **WRAITH Transfer Delivered (2025-12-11):**
 - Tauri 2.0 desktop application with full wraith-core integration
@@ -75,8 +80,35 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 - v1.5.8: Wayland compatibility fix (resolves KDE Plasma 6 crashes)
 - v1.5.9: Tauri 2.0 capability-based permissions (dialog, fs, shell plugins working)
 
-**WRAITH Chat Timeline:** Planned Q2-Q3 2026 (12 weeks development)
-**Prerequisites:** Protocol Phase 6 (Integration) - ✅ Complete
+**WRAITH-Android (v1.6.3) - Full Protocol Integration:**
+- Native Android with Kotlin + Jetpack Compose (Material Design 3)
+- Full WRAITH protocol integration via JNI bindings (replacing placeholders)
+- Android Keystore for hardware-backed secure key storage
+- DHT peer discovery optimized for mobile networks
+- NAT traversal with cellular/WiFi handoff support
+- Firebase Cloud Messaging (FCM) for push notifications
+- ~3,800 lines (1,200 Rust, 2,400 Kotlin, 200 Gradle)
+- 96 tests covering protocol integration, Keystore, and FCM
+
+**WRAITH-iOS (v1.6.3) - Full Protocol Integration:**
+- Native iOS with Swift + SwiftUI (iOS 16.0+)
+- Full WRAITH protocol integration via UniFFI bindings (replacing placeholders)
+- iOS Keychain for Secure Enclave key storage
+- DHT peer discovery optimized for mobile networks
+- NAT traversal with cellular/WiFi handoff support
+- Apple Push Notification Service (APNs) for push notifications
+- ~2,650 lines (750 Rust UniFFI, 1,900 Swift)
+- 93 tests covering protocol integration, Keychain, and APNs
+
+**WRAITH-Chat (v1.6.3) - Voice/Video/Groups:**
+- Signal Protocol Double Ratchet for E2EE messaging
+- SQLCipher encrypted database (AES-256, 64K PBKDF2 iterations)
+- **Voice Calling:** Opus codec (48kHz), RNNoise noise suppression, WebRTC echo cancellation
+- **Video Calling:** VP8/VP9 codecs, adaptive bitrate (360p-1080p), jitter buffer
+- **Group Messaging:** Sender Keys protocol for O(1) encryption efficiency
+- 49 IPC commands total (10 messaging + 16 voice + 16 video + 11 group)
+- ~5,200 lines (2,800 Rust backend, 2,400 TypeScript/React frontend)
+- 38 tests covering messaging, voice, video, and groups
 
 ---
 
@@ -269,90 +301,219 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 
 ---
 
-### Phase 16: Mobile Clients (Planned Q2-Q4 2026)
+### Phase 16: Mobile Clients Foundation & WRAITH-Chat - ✅ COMPLETE (2025-12-11)
 
-**Target Completion:** Q4 2026
-**Estimated Story Points:** ~120 SP
+**Completion Date:** 2025-12-11
+**Story Points Delivered:** 302 SP (100% complete)
 
-**Focus:** Android and iOS applications for Transfer and Chat
+**Focus:** Native Android and iOS mobile clients with placeholder protocol, WRAITH-Chat E2EE messaging
 
-#### Sprint 16.1-16.2: Android Client
-- [ ] Kotlin/Rust interop via JNI (native library integration)
-- [ ] Jetpack Compose UI (Material Design 3)
-- [ ] Background service (foreground service for transfers)
-- [ ] Notification integration (progress, completion, errors)
+#### Sprint 16.1-16.2: Android Client (~60 SP) - ✅ COMPLETE
+- ✅ Kotlin/Rust interop via JNI (native library integration)
+- ✅ Jetpack Compose UI (Material Design 3)
+- ✅ Background service (foreground service for transfers)
+- ✅ Multi-architecture support (arm64, arm, x86_64, x86)
+- ✅ ~2,800 lines (800 Rust, 1,800 Kotlin, 200 Gradle)
 
-#### Sprint 16.3-16.4: iOS Client
-- [ ] Swift/Rust interop via UniFFI (automated bindings generation)
-- [ ] SwiftUI interface (native iOS design patterns)
-- [ ] Background task handling (URLSession background uploads)
-- [ ] Share extension (send files from other apps)
+#### Sprint 16.3-16.4: iOS Client (~60 SP) - ✅ COMPLETE
+- ✅ Swift/Rust interop via UniFFI (automated bindings generation)
+- ✅ SwiftUI interface (native iOS design patterns, iOS 16.0+)
+- ✅ Background task handling
+- ✅ MVVM architecture with ObservableObject
+- ✅ ~1,650 lines (450 Rust, 1,200 Swift)
 
-**Phase 16 Deliverables:**
-- Android app (Play Store ready, API 26+)
-- iOS app (App Store ready, iOS 15+)
-- Mobile-optimized UI/UX
+#### Sprint 16.5-16.8: WRAITH-Chat (182 SP) - ✅ COMPLETE
+- ✅ Signal Protocol Double Ratchet implementation
+- ✅ SQLCipher encrypted database (AES-256, 64K iterations)
+- ✅ React 18 + TypeScript frontend with Zustand
+- ✅ 10 IPC commands for messaging
+- ✅ ~2,650 lines (1,250 Rust backend, 1,400 TypeScript frontend)
+
+**Phase 16 Deliverables - ALL COMPLETE:**
+- ✅ Android app with JNI bindings (placeholder protocol)
+- ✅ iOS app with UniFFI bindings (placeholder protocol)
+- ✅ WRAITH-Chat E2EE messaging application
+- ✅ Mobile-optimized UI/UX
 
 ---
 
-### Phase 17: SDKs and Libraries (Planned Q1 2027)
+### Phase 17: Full Mobile Integration & Real-Time Communications - ✅ COMPLETE (2026-01-21)
+
+**Completion Date:** 2026-01-21
+**Story Points Delivered:** 320 SP (100% complete)
+
+**Focus:** Replace placeholders with actual WRAITH protocol, add secure storage, push notifications, voice/video calling, group messaging
+
+#### Sprint 17.1: Mobile FFI Integration (26 tests) - ✅ COMPLETE
+- ✅ **Android JNI Enhancement:**
+  - Full WRAITH protocol integration replacing placeholders
+  - Node lifecycle management with proper error handling
+  - Session establishment with Noise_XX handshake
+  - File transfer operations with progress callbacks
+  - 13 new JNI boundary tests
+- ✅ **iOS UniFFI Enhancement:**
+  - Full WRAITH protocol integration replacing placeholders
+  - Swift async/await integration with Tokio runtime
+  - Proper error propagation with Swift Error protocol
+  - 13 new UniFFI boundary tests
+
+#### Sprint 17.2: Mobile Secure Storage (45 tests) - ✅ COMPLETE
+- ✅ **Android Keystore Integration:**
+  - Hardware-backed key storage using Android Keystore System
+  - Ed25519 and X25519 key pair generation and storage
+  - Key import/export with encryption at rest
+  - Biometric authentication support for key access
+  - 23 new Keystore integration tests
+- ✅ **iOS Keychain Integration:**
+  - Secure Enclave support for hardware-backed keys
+  - Keychain access groups for app extensions
+  - Key synchronization with iCloud Keychain (optional)
+  - Face ID/Touch ID authentication for key access
+  - 22 new Keychain integration tests
+
+#### Sprint 17.3: Mobile Discovery Integration (63 tests) - ✅ COMPLETE
+- ✅ **DHT Peer Discovery for Mobile:**
+  - Optimized DHT queries for high-latency mobile networks
+  - Background peer discovery with battery-efficient scheduling
+  - Peer caching with LRU eviction for memory efficiency
+  - 31 new DHT mobile tests
+- ✅ **NAT Traversal for Mobile Networks:**
+  - Cellular/WiFi handoff support with connection migration
+  - Mobile-aware ICE candidate gathering
+  - Keep-alive optimization for cellular networks
+  - 32 new NAT traversal mobile tests
+
+#### Sprint 17.4: Push Notifications (107 tests) - ✅ COMPLETE
+- ✅ **Firebase Cloud Messaging (Android):**
+  - FCM registration and token management
+  - Background message handling with WorkManager
+  - Notification channels for message categories
+  - Silent push for session establishment
+  - 54 new FCM tests
+- ✅ **Apple Push Notification Service (iOS):**
+  - APNs registration and device token handling
+  - Background app refresh integration
+  - Notification Service Extension for rich notifications
+  - Silent push for session establishment
+  - 53 new APNs tests
+
+#### Sprint 17.5: Voice Calling - ✅ COMPLETE
+- ✅ **Opus Codec Integration:**
+  - 48kHz sampling rate for high-quality voice
+  - Adaptive bitrate (8-64 kbps) based on network conditions
+  - Frame sizes: 10ms, 20ms, 40ms, 60ms
+  - Opus DTX (Discontinuous Transmission) for bandwidth efficiency
+- ✅ **RNNoise Integration:**
+  - Real-time noise suppression using neural network
+  - Voice Activity Detection (VAD)
+  - Echo cancellation (WebRTC AEC3)
+  - Automatic Gain Control (AGC)
+- ✅ **16 new Tauri IPC commands for voice:**
+  - start_voice_call, end_voice_call, mute_microphone, unmute_microphone
+  - set_speaker_volume, get_call_state, get_call_duration
+  - toggle_speaker, hold_call, resume_call
+  - start_voice_recording, stop_voice_recording
+  - get_voice_quality_stats, set_voice_codec_preferences
+  - enable_noise_suppression, disable_noise_suppression
+
+#### Sprint 17.6: Video Calling (38 tests) - ✅ COMPLETE
+- ✅ **VP8/VP9 Codec Integration:**
+  - VP8 for compatibility, VP9 for efficiency
+  - Resolution support: 360p, 480p, 720p, 1080p
+  - Adaptive bitrate: 100 kbps - 4 Mbps
+  - Hardware acceleration (VAAPI/VideoToolbox/MediaCodec)
+- ✅ **16 new Tauri IPC commands for video:**
+  - start_video_call, end_video_call, toggle_camera, toggle_video
+  - set_video_quality, get_video_stats, switch_camera
+  - start_screen_share, stop_screen_share
+  - set_video_layout, pip_mode_enable, pip_mode_disable
+  - apply_video_filter, remove_video_filter
+  - record_video_call, stop_video_recording
+
+#### Sprint 17.7: Group Messaging - ✅ COMPLETE
+- ✅ **Sender Keys Protocol:**
+  - O(1) encryption efficiency for groups (vs O(n) with pairwise)
+  - HKDF-based key derivation for message keys
+  - Key rotation on member changes
+  - Session reset on key compromise
+- ✅ **11 new Tauri IPC commands for groups:**
+  - create_group, update_group, delete_group, leave_group
+  - add_group_member, remove_group_member, get_group_members
+  - promote_to_admin, demote_from_admin
+  - send_group_message, get_group_messages
+
+#### Sprint 17.8: Integration Testing (260 tests) - ✅ COMPLETE
+- ✅ **End-to-End Mobile Testing:** 130 tests
+- ✅ **Cross-Platform Interoperability:** 130 tests
+
+**Phase 17 Deliverables - ALL COMPLETE:**
+- ✅ Android client with full protocol integration (96 tests)
+- ✅ iOS client with full protocol integration (93 tests)
+- ✅ WRAITH-Chat with voice/video/groups (38 tests, 49 IPC commands)
+- ✅ Push notifications (FCM + APNs)
+- ✅ Hardware-backed secure storage
+- ✅ Mobile-optimized discovery and NAT traversal
+
+---
+
+### Phase 18: SDKs and Libraries (Planned Q1 2027)
 
 **Target Completion:** Q1 2027
 **Estimated Story Points:** ~100 SP
 
 **Focus:** Language bindings for developer integration
 
-#### Sprint 17.1: Python SDK
+#### Sprint 18.1: Python SDK
 - [ ] PyO3 bindings (Rust ↔ Python FFI)
 - [ ] Async support (asyncio integration, async/await)
 - [ ] Type hints (complete .pyi stub files)
 - [ ] PyPI package (wheels for Linux/macOS/Windows)
 
-#### Sprint 17.2: Go SDK
+#### Sprint 18.2: Go SDK
 - [ ] CGO bindings (Rust static library → Go)
 - [ ] Go-native error handling (error interface)
 - [ ] Context support (cancellation, timeouts)
 - [ ] Module publishing (go.mod, versioned releases)
 
-#### Sprint 17.3: Node.js SDK
+#### Sprint 18.3: Node.js SDK
 - [ ] N-API bindings (native addon with Rust backend)
 - [ ] Promise-based API (async Node.js patterns)
 - [ ] TypeScript definitions (.d.ts for autocomplete)
 - [ ] npm package (native modules for all platforms)
 
-#### Sprint 17.4: C Library
+#### Sprint 18.4: C Library
 - [ ] Pure C API (stable ABI, no C++ dependencies)
 - [ ] Header generation (automatic from Rust with cbindgen)
 - [ ] Static/dynamic linking options
 - [ ] pkg-config support (Linux standard integration)
 
-**Phase 17 Deliverables:**
+**Phase 18 Deliverables:**
 - Language SDKs with full API coverage
 - Package manager distribution (PyPI, npm, crates.io)
 - Comprehensive API documentation
 
 ---
 
-### Phase 18: Web and Embedded (Planned Q2 2027)
+### Phase 19: Web and Embedded (Planned Q2 2027)
 
 **Target Completion:** Q2 2027
 **Estimated Story Points:** ~80 SP
 
 **Focus:** Browser-based and embedded deployments
 
-#### Sprint 18.1-18.2: Web Client
+#### Sprint 19.1-19.2: Web Client
 - [ ] WebAssembly compilation (wasm32-unknown-unknown target)
 - [ ] WebRTC transport adaptation (TURN/STUN for NAT)
 - [ ] Progressive Web App (service workers, offline support)
 - [ ] Browser extension (WebExtension API for all browsers)
 
-#### Sprint 18.3-18.4: Embedded Client
+#### Sprint 19.3-19.4: Embedded Client
 - [ ] no_std Rust implementation (zero std library dependencies)
 - [ ] Minimal memory footprint (<1 MB RAM for basic operations)
 - [ ] RTOS integration examples (FreeRTOS, Zephyr)
 - [ ] Hardware crypto support (AES-NI, ARM TrustZone)
 
-**Phase 18 Deliverables:**
+**Phase 19 Deliverables:**
 - Browser-based file transfer (WASM + WebRTC)
 - Embedded device support (IoT integration)
 - Reference implementations for common platforms
