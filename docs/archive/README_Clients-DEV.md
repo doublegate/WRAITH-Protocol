@@ -5,7 +5,7 @@
 This document tracks the development journey of WRAITH Protocol client applications, from planning through implementation and release. Phase 15 delivered WRAITH-Transfer desktop application, Phase 16 delivered Android/iOS mobile clients plus WRAITH-Chat E2EE messaging, and Phase 17 completes the mobile ecosystem with full protocol integration, voice/video calling, group messaging, and WRAITH-Sync for file synchronization.
 
 [![Version](https://img.shields.io/badge/clients-5%20complete-green.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
-[![Protocol](https://img.shields.io/badge/protocol-v1.7.0-blue.svg)](../../README.md)
+[![Protocol](https://img.shields.io/badge/protocol-v1.7.1-blue.svg)](../../README.md)
 [![Clients](https://img.shields.io/badge/clients-5%20planned-orange.svg)](../../to-dos/ROADMAP-clients.md)
 
 ---
@@ -939,12 +939,12 @@ RedOps                                                          [=============]
 ## Current Status & Next Steps
 
 **Protocol Status (2026-01-21):**
-- ✅ All 16 protocol development phases complete (1,937 SP delivered)
-- ✅ 1,700+ tests passing (1,630 Rust + 62 frontend) - 100% pass rate
+- ✅ All 17 protocol development phases complete (2,257 SP delivered)
+- ✅ 1,712+ tests passing (1,352 Rust + 360 client) - 100% pass rate
 - ✅ Zero vulnerabilities, zero clippy warnings
 - ✅ Grade A+ quality (98/100)
-- ✅ Production-ready architecture with v1.6.2 release
-- ✅ Full WRAITH protocol integration in WRAITH-Chat
+- ✅ Production-ready architecture with v1.7.1 release
+- ✅ Full WRAITH protocol integration in all clients
 - ✅ Secure key storage with platform-native keyring
 - ✅ AF_XDP socket configuration for kernel bypass
 - ✅ ICE signaling with RFC 8445 connectivity checks
@@ -953,40 +953,74 @@ RedOps                                                          [=============]
 
 **Client Development Status:**
 - ✅ Comprehensive planning complete (roadmap, specifications)
-- ✅ All client specifications documented (10 clients × 3-6 docs each)
-- ✅ **All 4 Tier 1 clients complete** (404 SP delivered, Phases 15-16)
-  - WRAITH-Transfer: Desktop P2P file transfer (Tauri 2.0 + React 18)
-  - WRAITH-Android: Native Kotlin + Jetpack Compose
-  - WRAITH-iOS: Native Swift + SwiftUI
-  - WRAITH-Chat: E2EE messaging with Double Ratchet
-- ✅ Frontend test infrastructure (62 Vitest tests)
+- ✅ All client specifications documented (10 clients x 3-6 docs each)
+- ✅ **All 4 Tier 1 clients complete** (540 SP delivered, Phases 15-17)
+  - WRAITH-Transfer: Desktop P2P file transfer (Tauri 2.0 + React 18) - 68 tests
+  - WRAITH-Android: Native Kotlin + Jetpack Compose (JNI, Keystore, FCM) - 96 tests
+  - WRAITH-iOS: Native Swift + SwiftUI (UniFFI, Keychain, APNs) - 103 tests
+  - WRAITH-Chat: E2EE messaging with voice/video/groups and comprehensive UI redesign - 76 tests
+- ✅ **WRAITH-Sync complete** (Tier 2 client) - 17 tests
+  - Delta synchronization with rsync-style rolling checksums
+  - Conflict resolution (LastWriterWins, KeepBoth, Manual)
+  - Version history and restore functionality
+- ✅ Frontend test infrastructure (360 tests across all clients)
 - ✅ Wayland compatibility fix (KDE Plasma 6 crash resolved)
 - ✅ Tauri 2.0 capability-based permissions (plugin initialization fix)
-- ⬜ 6 Tier 2/3 clients awaiting future development
+- ✅ WRAITH-Chat UI redesign (v1.7.1)
+- ⬜ 5 Tier 2/3 clients awaiting future development
 
 **Completed Work:**
 
-**Phase 15: Reference Client Foundation - ✅ COMPLETE (2025-12-09):**
-1. ✅ FFI layer for wraith-core (C ABI bindings - wraith-ffi crate)
-2. ✅ Tauri 2.0 desktop shell (IPC, window management)
-3. ✅ React UI foundation (components, state, theme)
-4. ✅ Transfer UI (file picker, progress, queue)
+**Phase 15: Reference Client Foundation - COMPLETE (2025-12-09):**
+1. FFI layer for wraith-core (C ABI bindings - wraith-ffi crate)
+2. Tauri 2.0 desktop shell (IPC, window management)
+3. React UI foundation (components, state, theme)
+4. Transfer UI (file picker, progress, queue)
+
+**Phase 16: Mobile Clients & WRAITH-Chat - COMPLETE (2025-12-11):**
+1. Android client (Kotlin + Jetpack Compose + JNI)
+2. iOS client (Swift + SwiftUI + UniFFI)
+3. WRAITH-Chat E2EE messaging (Double Ratchet, SQLCipher)
+
+**Phase 17: Full Mobile Integration & Real-Time Comms + Sync - COMPLETE (2026-01-21):**
+1. Mobile FFI Integration (Android JNI, iOS UniFFI with actual WRAITH protocol)
+2. Mobile Secure Storage (Android Keystore, iOS Keychain)
+3. Mobile Discovery (DHT, NAT traversal for mobile networks)
+4. Push Notifications (FCM, APNs)
+5. Voice Calling (Opus, RNNoise, echo cancellation)
+6. Video Calling (VP8/VP9, adaptive bitrate)
+7. Group Messaging (Sender Keys protocol)
+8. WRAITH-Sync file synchronization
+
+**v1.7.1: WRAITH-Chat UI Redesign - COMPLETE (2026-01-21):**
+1. Professional header with connection status, peer ID, session stats
+2. Sidebar with search, filters, New Chat/Group buttons
+3. Chat header with voice/video call buttons
+4. Message bubbles with read receipts, date separators, context menus
+5. Info panel for contact/group details, encryption info
+6. 7-tab Settings modal (Profile, Privacy, Notifications, Appearance, Voice/Video, Security, About)
+7. Video call overlay with quality controls
+8. Group creation wizard with member selection
 
 **Upcoming Work:**
 
-**Phase 16: Mobile Clients (Planned Q2-Q4 2026):**
-1. Android client (Kotlin + Jetpack Compose)
-2. iOS client (Swift + SwiftUI)
+**Tier 2 Remaining:**
+1. WRAITH-Share: Distributed anonymous file sharing (123 SP)
 
-**Tier 1 Remaining (Q2-Q3 2026):**
-1. WRAITH-Chat beta (1-on-1 messaging, group chat)
+**Tier 3 (Planned):**
+1. WRAITH-Stream: Secure media streaming (71 SP)
+2. WRAITH-Mesh: IoT mesh networking (60 SP)
+3. WRAITH-Publish: Censorship-resistant publishing (76 SP)
+4. WRAITH-Vault: Distributed secret storage (94 SP)
+
+**Security Testing (Authorized Use Only):**
+1. WRAITH-Recon: Network reconnaissance (55 SP)
+2. WRAITH-RedOps: Red team operations (89 SP)
 
 **Next Steps:**
-1. Review Phase 15 deliverables (WRAITH Transfer v1.5.8)
-2. Begin Phase 16 sprint planning (mobile clients)
-3. Set up shared component development (wraith-contacts, wraith-gui-common)
-4. Configure cross-client CI/CD pipeline
-5. Begin WRAITH-Chat design sprints
+1. Begin WRAITH-Share development planning
+2. Continue Tier 3 client specifications
+3. Expand cross-client test infrastructure
 
 ---
 
@@ -1010,8 +1044,8 @@ RedOps                                                          [=============]
 
 ### Ecosystem Metrics
 
-- [ ] All Tier 1 clients released (Transfer, Chat)
-- [ ] 50%+ Tier 2 clients released (Sync or Share)
+- [x] All Tier 1 clients released (Transfer, Android, iOS, Chat)
+- [x] 50%+ Tier 2 clients released (Sync complete, Share planned)
 - [ ] 25%+ Tier 3 clients released (at least 2 of 4)
 - [ ] Security testing clients released (with governance compliance)
 
@@ -1031,6 +1065,6 @@ RedOps                                                          [=============]
 
 **WRAITH Protocol Client Applications Development History** - *From Planning to Production*
 
-**Status:** Phases 15-16 Complete (All 4 Tier 1 Clients) | **Total Scope:** 10 clients, 1,148 SP | **Delivered:** 404 SP (35%) | **Remaining:** 744 SP (6 clients) | **Prerequisites:** Protocol v1.6.2 ✅ Complete | **Next:** Tier 2 Clients (WRAITH-Sync, WRAITH-Share)
+**Status:** Phases 15-17 Complete (All 4 Tier 1 + 1 Tier 2) | **Total Scope:** 10 clients, 1,148 SP | **Delivered:** 860 SP (75%) | **Remaining:** 608 SP (5 clients) | **Prerequisites:** Protocol v1.7.1 Complete | **Next:** WRAITH-Share
 
 *Last Updated: 2026-01-21*

@@ -51,7 +51,7 @@ export default function ChatView({ conversationId }: ChatViewProps) {
   return (
     <div className="flex-1 flex flex-col">
       {/* Header */}
-      <div className="p-4 border-b border-gray-700 bg-wraith-dark">
+      <div className="p-4 border-b border-gray-700 bg-bg-secondary">
         <h2 className="text-xl font-semibold">
           {conversation?.display_name || 'Unknown'}
         </h2>
@@ -78,14 +78,14 @@ export default function ChatView({ conversationId }: ChatViewProps) {
       </div>
 
       {/* Input */}
-      <div className="p-4 border-t border-gray-700 bg-wraith-dark">
+      <div className="p-4 border-t border-gray-700 bg-bg-secondary">
         <div className="flex gap-2">
           <textarea
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Type a message..."
-            className="flex-1 p-3 rounded-lg bg-wraith-darker border border-gray-600 focus:border-wraith-primary focus:outline-none resize-none"
+            className="flex-1 p-3 rounded-lg bg-bg-primary border border-gray-600 focus:border-wraith-primary focus:outline-none resize-none"
             rows={1}
             maxLength={10000}
           />

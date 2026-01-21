@@ -11,6 +11,103 @@ _No changes yet._
 
 ---
 
+## [1.7.1] - 2026-01-21 - WRAITH-Chat UI Redesign
+
+### WRAITH-Chat Comprehensive UI Redesign
+
+This release delivers a major UI overhaul for WRAITH-Chat, transforming it into a professional-grade messaging application with enhanced visual design, improved user experience, and comprehensive feature controls.
+
+### Highlights
+
+- **Professional Header**: Connection status indicator, peer ID display with copy button, session statistics
+- **Sidebar Navigation**: Search functionality, conversation filters (All/Direct/Groups), New Chat/Group buttons
+- **Enhanced Chat Experience**: Voice/video call buttons, improved message bubbles with read receipts, date separators
+- **Info Panel**: Collapsible contact/group details, encryption verification, member lists
+- **7-Tab Settings Modal**: Profile, Privacy, Notifications, Appearance, Voice/Video, Security, About
+- **Video Call Overlay**: Quality controls, layout options, recording functionality
+- **Group Creation Wizard**: Step-by-step group setup with member selection
+
+### Added
+
+#### Header Component
+- Connection status indicator (Connected/Connecting/Disconnected) with color-coded badge
+- Peer ID display with truncation and one-click copy functionality
+- Session statistics showing active sessions and transfers count
+- Settings button with gear icon for quick access
+
+#### Sidebar Component
+- Search bar for filtering conversations by name or content
+- Filter tabs: All Conversations, Direct Messages, Groups
+- "New Chat" button for starting direct conversations
+- "New Group" button launching group creation wizard
+- Conversation list with unread message count badges
+- Online/offline status indicators for contacts
+
+#### Chat Header
+- Contact/group name and avatar display
+- Voice call button with phone icon
+- Video call button with camera icon
+- More options menu (mute, block, clear history)
+
+#### Message Bubbles
+- Distinct styling for sent vs received messages
+- Read receipts with checkmark indicators (sent, delivered, read)
+- Timestamp display with relative time formatting
+- Date separators between messages on different days
+- Context menu on right-click (copy, reply, delete, forward)
+
+#### Info Panel
+- Collapsible panel toggled by info button in chat header
+- Contact details: avatar, name, peer ID, safety number
+- Encryption status with verification badge
+- Group details: member count, description, creation date
+- Member list for groups with admin badges
+- Shared media gallery preview
+
+#### Settings Modal (7 Tabs)
+- **Profile**: Display name, avatar upload, status message
+- **Privacy**: Read receipts toggle, typing indicators, profile visibility
+- **Notifications**: Sound toggles, desktop notifications, message preview
+- **Appearance**: Theme selection (Light/Dark/System), font size, chat density
+- **Voice/Video**: Microphone/camera selection, noise suppression toggle, echo cancellation
+- **Security**: Session list with device info, password change, 2FA setup
+- **About**: Version info, license, links to documentation and support
+
+#### Video Call Overlay
+- Full-screen video display with participant grid
+- Quality indicator showing resolution and bitrate
+- Layout toggle (grid, spotlight, sidebar)
+- Controls: mute audio, toggle video, share screen, end call
+- Recording button with indicator
+- Participant list with mute status
+
+#### Group Creation Wizard
+- Step 1: Group name and optional avatar
+- Step 2: Member selection from contacts list with search
+- Step 3: Privacy settings (public/private, join approval)
+- Step 4: Review and create confirmation
+
+### Changed
+- Tailwind CSS upgraded to v4 with @tailwindcss/vite plugin
+- Zustand stores expanded for voice, video, and group state management
+- Frontend code expanded from ~1,800 to ~3,200 lines
+- Improved dark theme with consistent color palette
+- Enhanced accessibility with ARIA labels and keyboard navigation
+
+### Fixed
+- Tauri build configuration for wraith-chat client
+- Vite plugin compatibility with Tailwind CSS v4
+- ESLint configuration for strict TypeScript checks
+- React lint warnings for unused variables
+
+### Technical Details
+- **Frontend Lines**: ~3,200 (was ~1,800)
+- **New Components**: 8 major UI components
+- **Zustand Stores**: 6 stores (node, conversation, message, contact, voice, video)
+- **Dependencies Updated**: Tailwind CSS v4.0, @tailwindcss/vite 4.0
+
+---
+
 ## [1.7.0] - 2026-01-21 - Phase 17 Complete: Full Mobile Integration, Real-Time Communications & WRAITH-Sync
 
 ### Phase 17 - Mobile Protocol Integration, Push Notifications, Voice/Video Calling, Group Messaging, WRAITH-Sync

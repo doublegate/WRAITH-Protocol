@@ -136,7 +136,7 @@ export default function GroupSettings({ groupId, onClose }: GroupSettingsProps) 
   if (!groupInfo) {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-wraith-dark p-8 rounded-lg">
+        <div className="bg-bg-secondary p-8 rounded-lg">
           <p>Loading group...</p>
         </div>
       </div>
@@ -145,7 +145,7 @@ export default function GroupSettings({ groupId, onClose }: GroupSettingsProps) 
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-wraith-dark w-full max-w-2xl max-h-[90vh] rounded-lg overflow-hidden flex flex-col">
+      <div className="bg-bg-secondary w-full max-w-2xl max-h-[90vh] rounded-lg overflow-hidden flex flex-col">
         {/* Header */}
         <div className="p-4 border-b border-gray-700 flex items-center justify-between">
           <h2 className="text-xl font-semibold">Group Settings</h2>
@@ -209,7 +209,7 @@ export default function GroupSettings({ groupId, onClose }: GroupSettingsProps) 
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   disabled={!groupInfo.am_i_admin}
-                  className="w-full p-3 bg-wraith-darker border border-gray-600 rounded focus:border-wraith-primary focus:outline-none disabled:opacity-50"
+                  className="w-full p-3 bg-bg-primary border border-gray-600 rounded focus:border-wraith-primary focus:outline-none disabled:opacity-50"
                 />
               </div>
 
@@ -221,7 +221,7 @@ export default function GroupSettings({ groupId, onClose }: GroupSettingsProps) 
                   onChange={(e) => setEditDescription(e.target.value)}
                   disabled={!groupInfo.am_i_admin}
                   rows={3}
-                  className="w-full p-3 bg-wraith-darker border border-gray-600 rounded focus:border-wraith-primary focus:outline-none resize-none disabled:opacity-50"
+                  className="w-full p-3 bg-bg-primary border border-gray-600 rounded focus:border-wraith-primary focus:outline-none resize-none disabled:opacity-50"
                 />
               </div>
 
@@ -251,7 +251,7 @@ export default function GroupSettings({ groupId, onClose }: GroupSettingsProps) 
             <div className="space-y-6">
               {/* Add Member */}
               {groupInfo.am_i_admin && (
-                <div className="p-4 bg-wraith-darker rounded">
+                <div className="p-4 bg-bg-primary rounded">
                   <h3 className="font-semibold mb-3">Add Member</h3>
                   <div className="space-y-3">
                     <input
@@ -259,14 +259,14 @@ export default function GroupSettings({ groupId, onClose }: GroupSettingsProps) 
                       value={newMemberPeerId}
                       onChange={(e) => setNewMemberPeerId(e.target.value)}
                       placeholder="Peer ID"
-                      className="w-full p-2 bg-wraith-dark border border-gray-600 rounded focus:border-wraith-primary focus:outline-none font-mono text-sm"
+                      className="w-full p-2 bg-bg-secondary border border-gray-600 rounded focus:border-wraith-primary focus:outline-none font-mono text-sm"
                     />
                     <input
                       type="text"
                       value={newMemberName}
                       onChange={(e) => setNewMemberName(e.target.value)}
                       placeholder="Display Name (optional)"
-                      className="w-full p-2 bg-wraith-dark border border-gray-600 rounded focus:border-wraith-primary focus:outline-none"
+                      className="w-full p-2 bg-bg-secondary border border-gray-600 rounded focus:border-wraith-primary focus:outline-none"
                     />
                     <button
                       onClick={handleAddMember}
@@ -288,7 +288,7 @@ export default function GroupSettings({ groupId, onClose }: GroupSettingsProps) 
                   {currentGroupMembers.map((member) => (
                     <div
                       key={member.peer_id}
-                      className="p-3 bg-wraith-darker rounded flex items-center justify-between"
+                      className="p-3 bg-bg-primary rounded flex items-center justify-between"
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center">
@@ -353,7 +353,7 @@ export default function GroupSettings({ groupId, onClose }: GroupSettingsProps) 
           {activeTab === 'security' && (
             <div className="space-y-6">
               {/* Encryption Info */}
-              <div className="p-4 bg-wraith-darker rounded">
+              <div className="p-4 bg-bg-primary rounded">
                 <h3 className="font-semibold mb-2">End-to-End Encryption</h3>
                 <p className="text-sm text-gray-400">
                   All messages in this group are encrypted using the Sender Keys protocol.
@@ -363,7 +363,7 @@ export default function GroupSettings({ groupId, onClose }: GroupSettingsProps) 
 
               {/* Key Rotation */}
               {groupInfo.am_i_admin && (
-                <div className="p-4 bg-wraith-darker rounded">
+                <div className="p-4 bg-bg-primary rounded">
                   <h3 className="font-semibold mb-2">Key Rotation</h3>
                   <p className="text-sm text-gray-400 mb-4">
                     Keys are automatically rotated every 7 days. You can manually rotate keys
@@ -380,7 +380,7 @@ export default function GroupSettings({ groupId, onClose }: GroupSettingsProps) 
               )}
 
               {/* Group ID */}
-              <div className="p-4 bg-wraith-darker rounded">
+              <div className="p-4 bg-bg-primary rounded">
                 <h3 className="font-semibold mb-2">Group ID</h3>
                 <p className="text-sm font-mono text-gray-400 break-all">
                   {groupInfo.group_id}
@@ -451,7 +451,7 @@ export function CreateGroupDialog({ onClose, onCreated }: CreateGroupDialogProps
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-wraith-dark w-full max-w-md p-6 rounded-lg">
+      <div className="bg-bg-secondary w-full max-w-md p-6 rounded-lg">
         <h2 className="text-xl font-semibold mb-4">Create New Group</h2>
 
         {error && (
@@ -469,7 +469,7 @@ export function CreateGroupDialog({ onClose, onCreated }: CreateGroupDialogProps
           onChange={(e) => setName(e.target.value)}
           placeholder="Group Name"
           autoFocus
-          className="w-full p-3 bg-wraith-darker border border-gray-600 rounded focus:border-wraith-primary focus:outline-none mb-4"
+          className="w-full p-3 bg-bg-primary border border-gray-600 rounded focus:border-wraith-primary focus:outline-none mb-4"
         />
 
         <div className="flex justify-end gap-3">

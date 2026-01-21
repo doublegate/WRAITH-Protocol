@@ -20,7 +20,7 @@ export default function ConversationList() {
             <button
               key={conv.id}
               onClick={() => selectConversation(conv.id)}
-              className={`w-full p-4 flex items-start hover:bg-wraith-darker transition ${
+              className={`w-full p-4 flex items-start hover:bg-bg-primary transition ${
                 selectedConversationId === conv.id
                   ? 'bg-wraith-primary/20 border-l-4 border-wraith-primary'
                   : 'border-l-4 border-transparent'

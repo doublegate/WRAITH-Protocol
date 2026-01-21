@@ -4,7 +4,7 @@
 
 This document captures the complete development journey of WRAITH Protocol from inception through version 1.7.0, including detailed phase accomplishments, sprint summaries, and implementation milestones.
 
-[![Version](https://img.shields.io/badge/version-1.7.0-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
+[![Version](https://img.shields.io/badge/version-1.7.1-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
 [![Security](https://img.shields.io/badge/security-audited-green.svg)](../security/DPI_EVASION_REPORT.md)
 [![Rust](https://img.shields.io/badge/rust-1.85%2B-orange.svg)](https://www.rust-lang.org/)
 
@@ -1272,13 +1272,13 @@ This major phase delivers three production-ready client applications implementin
 
 ## Current Status & Next Steps
 
-**Version 1.6.2 Status (2026-01-21):**
-- ✅ All 16 development phases complete (1,937 SP delivered)
-- ✅ 1,700+ tests (1,630 Rust + 62 frontend) - 100% pass rate
+**Version 1.7.1 Status (2026-01-21):**
+- ✅ All 17 development phases complete (2,257 SP delivered)
+- ✅ 1,712+ tests (1,352 Rust + 360 client) - 100% pass rate
 - ✅ Zero vulnerabilities, zero warnings
 - ✅ Code quality: 98/100 (production-ready)
-- ✅ 4 production Tier 1 client applications deployed (WRAITH-Transfer, Android, iOS, WRAITH-Chat)
-- ✅ Technical debt ratio: 3.8% (healthy range)
+- ✅ 5 production client applications deployed (WRAITH-Transfer, Android, iOS, WRAITH-Chat, WRAITH-Sync)
+- ✅ Technical debt ratio: 3.5% (healthy range)
 - ✅ 100% unsafe block documentation coverage
 - ✅ Production-ready with comprehensive security audits (Grade A+)
 - ✅ Full Node API integration (PING/PONG, PATH_CHALLENGE/RESPONSE, chunk transfer)
@@ -1290,30 +1290,41 @@ This major phase delivers three production-ready client applications implementin
 - ✅ Secure key storage with platform-native keyring integration
 - ✅ Lock-free data structures (DashMap, AtomicU64)
 - ✅ Zero-allocation error handling (Cow<'static, str>)
-- ✅ Complete documentation (111 markdown files, ~64,000+ lines)
+- ✅ Complete documentation (120+ markdown files, ~72,000+ lines)
 - ✅ WRAITH Transfer desktop application (Tauri 2.0 + React 18)
-- ✅ WRAITH Chat with full WRAITH protocol integration
+- ✅ WRAITH Chat with comprehensive UI redesign
+- ✅ WRAITH-Sync file synchronization with delta transfers
 - ✅ FFI bindings for C/C++ integration (wraith-ffi crate)
 - ✅ Cross-platform desktop application (Windows, macOS, Linux X11/Wayland)
-- ✅ Frontend test infrastructure (62 Vitest tests for React components)
+- ✅ Frontend test infrastructure (360 tests across all clients)
 - ✅ CI/CD updated (GitHub Actions: upload-artifact v6, download-artifact v7, cache v5)
+
+**v1.7.1 WRAITH-Chat UI Redesign:**
+- Professional header with connection status, peer ID display, session stats
+- Sidebar with search, filters (All/Direct/Groups), New Chat/Group buttons
+- Chat header with voice/video call buttons
+- Message bubbles with read receipts, date separators, context menus
+- Collapsible info panel for contact/group details, encryption info
+- 7-tab Settings modal (Profile, Privacy, Notifications, Appearance, Voice/Video, Security, About)
+- Video call overlay with quality controls
+- Group creation wizard with member selection
+- Tailwind CSS v4 with @tailwindcss/vite plugin
 
 **Upcoming Work:**
 
-**Phase 16: XDP Implementation & Advanced Testing:**
+**Phase 18: XDP Implementation & Advanced Testing:**
 - Complete XDP/eBPF programs for in-kernel packet filtering
 - Advanced feature test integration (13 deferred tests)
 - File transfer pipeline completion
 - Multi-peer coordinator end-to-end testing
 
-**Phase 17+: Future Enhancements:**
+**Phase 18+: Future Enhancements:**
 - Post-quantum cryptography preparation
 - Formal verification of critical paths
 - Additional client applications and tooling
 
-**Client Applications (1,028 SP):**
-- Tier 1: WRAITH-Transfer (102 SP), WRAITH-Chat (162 SP)
-- Tier 2: WRAITH-Sync (136 SP), WRAITH-Share (123 SP)
+**Client Applications (Remaining 608 SP):**
+- Tier 2: WRAITH-Share (123 SP)
 - Tier 3: WRAITH-Stream (71 SP), WRAITH-Mesh (60 SP), WRAITH-Publish (76 SP), WRAITH-Vault (94 SP)
 - Security Testing: WRAITH-Recon (55 SP), WRAITH-RedOps (89 SP)
 
@@ -1334,8 +1345,8 @@ See [../../to-dos/ROADMAP.md](../../to-dos/ROADMAP.md) for detailed future plann
 
 ---
 
-**WRAITH Protocol Development History** - *From Foundation to Production (Phases 1-16)*
+**WRAITH Protocol Development History** - *From Foundation to Production (Phases 1-17)*
 
-**Development Period:** 2024 - 2026-01-21 | **Total Effort:** 1,937 story points delivered across 16 phases | **Quality:** Production-ready (98/100), 1,700+ tests (1,630 Rust + 62 frontend, 100% pass rate), 0 vulnerabilities, Grade A+ security
+**Development Period:** 2024 - 2026-01-21 | **Total Effort:** 2,257 story points delivered across 17 phases | **Quality:** Production-ready (98/100), 1,712+ tests (100% pass rate), 0 vulnerabilities, Grade A+ security | **Clients:** 5 production applications
 
 *Last Updated: 2026-01-21*

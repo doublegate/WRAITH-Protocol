@@ -1,6 +1,6 @@
 // Settings Component - Application configuration
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useConfigStore } from '../stores/configStore';
 import type { AppSettings } from '../types';
 
@@ -19,8 +19,8 @@ export default function Settings() {
     error,
   } = useConfigStore();
 
-  // Use settings as initial value when available, allowing local edits
-  const [localSettings, setLocalSettings] = useState<AppSettings | null>(null);
+  // Track local edits as a diff from settings
+  const [localEdits, setLocalEdits] = useState<Partial<AppSettings>>({});
   const [newPattern, setNewPattern] = useState('');
   const [activeSection, setActiveSection] = useState<
     'general' | 'sync' | 'devices' | 'patterns'
@@ -32,13 +32,16 @@ export default function Settings() {
     loadIgnoredPatterns();
   }, [loadSettings, loadDevices, loadIgnoredPatterns]);
 
-  // Initialize local settings when store settings first load
-  const settingsInitialized = localSettings !== null;
-  useEffect(() => {
-    if (settings && !settingsInitialized) {
-      setLocalSettings(settings);
-    }
-  }, [settings, settingsInitialized]);
+  // Merge store settings with local edits
+  const localSettings = useMemo(() => {
+    if (!settings) return null;
+    return { ...settings, ...localEdits };
+  }, [settings, localEdits]);
+
+  // Helper to update local edits
+  const updateLocalSettings = (updates: Partial<AppSettings>) => {
+    setLocalEdits((prev) => ({ ...prev, ...updates }));
+  };
 
   const handleSave = async () => {
     if (localSettings) {
@@ -121,7 +124,7 @@ export default function Settings() {
                 type="text"
                 value={localSettings.device_name}
                 onChange={(e) =>
-                  setLocalSettings({ ...localSettings, device_name: e.target.value })
+                  updateLocalSettings({ device_name: e.target.value })
                 }
                 className="w-full max-w-md px-3 py-2 bg-wraith-darker border border-gray-700 rounded focus:border-wraith-primary focus:outline-none"
               />
@@ -138,8 +141,7 @@ export default function Settings() {
               <select
                 value={localSettings.theme}
                 onChange={(e) =>
-                  setLocalSettings({
-                    ...localSettings,
+                  updateLocalSettings({
                     theme: e.target.value as 'light' | 'dark' | 'system',
                   })
                 }
@@ -158,7 +160,7 @@ export default function Settings() {
                 id="auto_start"
                 checked={localSettings.auto_start}
                 onChange={(e) =>
-                  setLocalSettings({ ...localSettings, auto_start: e.target.checked })
+                  updateLocalSettings({ auto_start: e.target.checked })
                 }
                 className="w-4 h-4 rounded border-gray-700 bg-wraith-darker"
               />
@@ -174,8 +176,7 @@ export default function Settings() {
                 id="notifications"
                 checked={localSettings.notifications_enabled}
                 onChange={(e) =>
-                  setLocalSettings({
-                    ...localSettings,
+                  updateLocalSettings({
                     notifications_enabled: e.target.checked,
                   })
                 }
@@ -209,8 +210,7 @@ export default function Settings() {
               <select
                 value={localSettings.conflict_strategy}
                 onChange={(e) =>
-                  setLocalSettings({
-                    ...localSettings,
+                  updateLocalSettings({
                     conflict_strategy: e.target.value as
                       | 'last_writer_wins'
                       | 'keep_both'
@@ -237,8 +237,7 @@ export default function Settings() {
                 id="delta_sync"
                 checked={localSettings.enable_delta_sync}
                 onChange={(e) =>
-                  setLocalSettings({
-                    ...localSettings,
+                  updateLocalSettings({
                     enable_delta_sync: e.target.checked,
                   })
                 }
@@ -261,8 +260,7 @@ export default function Settings() {
                   step="0.1"
                   value={localSettings.upload_limit / (1024 * 1024)}
                   onChange={(e) =>
-                    setLocalSettings({
-                      ...localSettings,
+                    updateLocalSettings({
                       upload_limit: parseFloat(e.target.value) * 1024 * 1024,
                     })
                   }
@@ -280,8 +278,7 @@ export default function Settings() {
                   step="0.1"
                   value={localSettings.download_limit / (1024 * 1024)}
                   onChange={(e) =>
-                    setLocalSettings({
-                      ...localSettings,
+                    updateLocalSettings({
                       download_limit: parseFloat(e.target.value) * 1024 * 1024,
                     })
                   }
@@ -303,8 +300,7 @@ export default function Settings() {
                   max="100"
                   value={localSettings.max_versions}
                   onChange={(e) =>
-                    setLocalSettings({
-                      ...localSettings,
+                    updateLocalSettings({
                       max_versions: parseInt(e.target.value),
                     })
                   }
@@ -321,8 +317,7 @@ export default function Settings() {
                   max="365"
                   value={localSettings.version_retention_days}
                   onChange={(e) =>
-                    setLocalSettings({
-                      ...localSettings,
+                    updateLocalSettings({
                       version_retention_days: parseInt(e.target.value),
                     })
                   }
@@ -343,8 +338,7 @@ export default function Settings() {
                 step="50"
                 value={localSettings.debounce_ms}
                 onChange={(e) =>
-                  setLocalSettings({
-                    ...localSettings,
+                  updateLocalSettings({
                     debounce_ms: parseInt(e.target.value),
                   })
                 }

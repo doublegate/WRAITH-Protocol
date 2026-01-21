@@ -1,7 +1,26 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
+/* Custom theme overrides */
+@theme {
+  /* WRAITH brand colors */
+  --color-wraith-primary: #6366f1;
+  --color-wraith-secondary: #8b5cf6;
+  --color-wraith-accent: #ec4899;
+  --color-wraith-dark: #1e1b4b;
+  --color-wraith-darker: #0f0d2e;
+
+  /* Status colors */
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+
+  /* Background colors for dark theme */
+  --color-bg-primary: #0f0d2e;
+  --color-bg-secondary: #1e1b4b;
+  --color-bg-tertiary: #312e81;
+}
+
+/* Base styles */
 * {
   margin: 0;
   padding: 0;
@@ -16,11 +35,19 @@ body,
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+  background-color: var(--color-bg-primary);
+  color: #e2e8f0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Focus styles for accessibility */
+:focus-visible {
+  outline: 2px solid var(--color-wraith-accent);
+  outline-offset: 2px;
 }
 
 /* Scrollbar Styling */
@@ -29,14 +56,14 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #1e1b4b;
+  background: var(--color-bg-secondary);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #6366f1;
+  background: var(--color-wraith-primary);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #8b5cf6;
+  background: var(--color-wraith-secondary);
 }

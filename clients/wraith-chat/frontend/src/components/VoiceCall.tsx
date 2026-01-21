@@ -126,7 +126,7 @@ export default function VoiceCall({ peerId, onCallEnd }: VoiceCallProps) {
   // Render active call UI
   if (activeCall) {
     return (
-      <div className="fixed inset-0 bg-wraith-darker/95 flex flex-col items-center justify-center z-50">
+      <div className="fixed inset-0 bg-bg-primary/95 flex flex-col items-center justify-center z-50">
         {/* Caller Info */}
         <div className="text-center mb-8">
           <div className="w-24 h-24 rounded-full bg-wraith-primary flex items-center justify-center text-4xl font-bold mx-auto mb-4">
@@ -214,7 +214,7 @@ export default function VoiceCall({ peerId, onCallEnd }: VoiceCallProps) {
 
         {/* Audio Settings Panel */}
         {showSettings && (
-          <div className="mt-8 bg-wraith-dark p-6 rounded-lg w-80">
+          <div className="mt-8 bg-bg-secondary p-6 rounded-lg w-80">
             <h3 className="font-semibold mb-4">Audio Settings</h3>
 
             {/* Input Device */}
@@ -223,7 +223,7 @@ export default function VoiceCall({ peerId, onCallEnd }: VoiceCallProps) {
               <select
                 value={selectedInputDevice || ''}
                 onChange={(e) => setInputDevice(e.target.value || null)}
-                className="w-full mt-1 p-2 bg-wraith-darker border border-gray-600 rounded"
+                className="w-full mt-1 p-2 bg-bg-secondaryer border border-gray-600 rounded"
               >
                 <option value="">System Default</option>
                 {inputDevices.map((device) => (
@@ -240,7 +240,7 @@ export default function VoiceCall({ peerId, onCallEnd }: VoiceCallProps) {
               <select
                 value={selectedOutputDevice || ''}
                 onChange={(e) => setOutputDevice(e.target.value || null)}
-                className="w-full mt-1 p-2 bg-wraith-darker border border-gray-600 rounded"
+                className="w-full mt-1 p-2 bg-bg-secondaryer border border-gray-600 rounded"
               >
                 <option value="">System Default</option>
                 {outputDevices.map((device) => (
@@ -269,7 +269,7 @@ interface IncomingCallViewProps {
 
 function IncomingCallView({ call, onAnswer, onReject }: IncomingCallViewProps) {
   return (
-    <div className="fixed inset-0 bg-wraith-darker/95 flex flex-col items-center justify-center z-50">
+    <div className="fixed inset-0 bg-bg-primary/95 flex flex-col items-center justify-center z-50">
       <div className="text-center mb-8 animate-pulse">
         <div className="w-24 h-24 rounded-full bg-wraith-primary flex items-center justify-center text-4xl font-bold mx-auto mb-4">
           {call.peer_id.substring(0, 2).toUpperCase()}

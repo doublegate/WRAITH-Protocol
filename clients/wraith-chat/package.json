@@ -1,0 +1,16 @@
+{
+  "name": "wraith-chat",
+  "version": "1.7.0",
+  "description": "WRAITH-Chat - End-to-End Encrypted Messaging Client",
+  "private": true,
+  "scripts": {
+    "dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0"
+  }
+}
