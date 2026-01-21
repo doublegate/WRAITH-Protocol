@@ -33,8 +33,6 @@ jobs:
       actions: read
       contents: read
       security-events: write
-      # Added to help with repository properties API access
-      metadata: read
 
     strategy:
       fail-fast: false
