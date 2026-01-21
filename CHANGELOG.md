@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-*No unreleased changes*
+### Changed
+- **Dependencies:**
+  - Updated rusqlite from 0.32 to 0.38 (SQLCipher 4.10.0, SQLite 3.51.1, wasm32 support)
+  - Updated markdownlint-cli2-action from 21 to 22 (markdownlint v0.40.0)
 
 ---
 
