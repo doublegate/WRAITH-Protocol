@@ -5,20 +5,15 @@
 
 #![cfg(test)]
 
-use std::time::Duration;
-
 use crate::group::{
-    GroupEncryptedMessage, GroupError, GroupInfo, GroupMember, GroupRole, GroupSession,
-    GroupSessionManager, KEY_ROTATION_DAYS, MAX_GROUP_MEMBERS, SenderKeyDistribution,
-    SenderKeyState,
+    GroupEncryptedMessage, GroupError, GroupRole, GroupSession, GroupSessionManager,
+    KEY_ROTATION_DAYS, MAX_GROUP_MEMBERS, SenderKeyDistribution, SenderKeyState,
 };
 use crate::video_call::{
-    VideoCallError, VideoCallInfo, VideoCallManager, VideoCallSignal, VideoCallStats,
-    VideoCodecConfig, VideoPacket, VideoSource,
+    VideoCallManager, VideoCallSignal, VideoCallStats, VideoCodecConfig, VideoPacket, VideoSource,
 };
 use crate::voice_call::{
-    CallDirection, CallInfo, CallSignal, CallState, CallStats, CodecConfig, VoiceCallError,
-    VoiceCallManager, VoicePacket,
+    CallDirection, CallSignal, CallState, CallStats, CodecConfig, VoiceCallManager, VoicePacket,
 };
 
 // ============================================================================
@@ -794,7 +789,8 @@ fn test_concurrent_group_operations() {
 /// Test call state transitions
 #[tokio::test]
 async fn test_call_state_transitions() {
-    let manager = VoiceCallManager::new();
+    // VoiceCallManager is available but we're testing state serialization
+    let _manager = VoiceCallManager::new();
 
     // Verify all state transitions
     assert_eq!(CallState::Initiating.to_string(), "initiating");

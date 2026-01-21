@@ -67,7 +67,7 @@ jobs:
       - name: Install system dependencies (Ubuntu)
         run: |
           sudo apt-get update
-          sudo apt-get install -y libglib2.0-dev libwebkit2gtk-4.1-dev librsvg2-dev patchelf libgtk-3-dev libayatana-appindicator3-dev libsqlcipher-dev
+          sudo apt-get install -y libglib2.0-dev libwebkit2gtk-4.1-dev librsvg2-dev patchelf libgtk-3-dev libayatana-appindicator3-dev libsqlcipher-dev libasound2-dev
 
       # Build the project (required for compiled languages like Rust)
       # CodeQL needs the build to understand the code structure
