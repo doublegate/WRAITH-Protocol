@@ -9,7 +9,7 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
 [![CI Status](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/ci.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml)
 [![Release](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml)
-[![Version](https://img.shields.io/badge/version-1.7.1-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
+[![Version](https://img.shields.io/badge/version-1.7.2-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
 [![Security](https://img.shields.io/badge/security-audited-green.svg)](docs/security/SECURITY_AUDIT_v1.1.0.md)
 [![Rust](https://img.shields.io/badge/rust-1.85%2B-orange.svg)](https://www.rust-lang.org/)
 [![Edition](https://img.shields.io/badge/edition-2024-orange.svg)](https://doc.rust-lang.org/edition-guide/rust-2024/index.html)
@@ -17,9 +17,9 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
 
 ## Current Status
 
-**Version:** 1.7.1 WRAITH-Chat UI Redesign & UI/UX Standardization | **Development Phase:** Phase 17 Complete
+**Version:** 1.7.2 UI/UX Design System & Cross-Client Standardization | **Development Phase:** Phase 17 Complete
 
-WRAITH Protocol is production-ready with desktop, mobile, and messaging applications featuring full protocol integration, real-time voice/video calling, and advanced group messaging. Phase 17 completes the mobile ecosystem with actual WRAITH protocol bindings (replacing placeholders), secure native storage (Android Keystore, iOS Keychain), push notifications (FCM/APNs), encrypted voice/video calls (Opus/VP8/VP9), and Sender Keys group messaging for efficient multi-party encryption. Version 1.7.1 adds a comprehensive UI redesign for WRAITH-Chat with professional header, sidebar navigation, enhanced message bubbles, 7-tab settings modal, video call overlay, and group creation wizard. Additionally, v1.7.1 standardizes UI/UX across all WRAITH desktop clients (Transfer, Chat, Sync) with consistent color palette (slate tones), modal styling, accessibility improvements, and a new comprehensive UI/UX Design Reference document.
+WRAITH Protocol is production-ready with desktop, mobile, and messaging applications featuring full protocol integration, real-time voice/video calling, and advanced group messaging. Phase 17 completes the mobile ecosystem with actual WRAITH protocol bindings (replacing placeholders), secure native storage (Android Keystore, iOS Keychain), push notifications (FCM/APNs), encrypted voice/video calls (Opus/VP8/VP9), and Sender Keys group messaging for efficient multi-party encryption. Version 1.7.2 introduces a comprehensive UI/UX Design System with a 2,400+ line design reference document, standardizes visual design across all WRAITH desktop clients (Transfer, Chat, Sync), and includes 50+ accessibility improvements with WCAG 2.1 AA compliance enhancements.
 
 **Project Metrics (2026-01-21):**
 - **Code Volume:** ~72,400 lines of Rust code across protocol crates + ~14,100 lines in client applications (Kotlin/Swift/TypeScript)
@@ -31,20 +31,15 @@ WRAITH Protocol is production-ready with desktop, mobile, and messaging applicat
 - **Client Applications:** 5 production-ready applications (4 Tier 1 + 1 Tier 2) with full protocol integration
 - **CI/CD:** GitHub Actions updated (upload-artifact v6, download-artifact v7, cache v5)
 
-**v1.7.1 Highlights (WRAITH-Chat UI Redesign & UI/UX Standardization):**
-- Professional Header: Connection status indicator, peer ID display, session statistics
-- Sidebar Navigation: Search, conversation filters (All/Direct/Groups), New Chat/Group buttons
-- Enhanced Chat: Voice/video call buttons, message bubbles with read receipts, date separators
-- Info Panel: Collapsible contact/group details, encryption verification, member lists
-- 7-Tab Settings Modal: Profile, Privacy, Notifications, Appearance, Voice/Video, Security, About
-- Video Call Overlay: Quality controls, layout options, recording functionality
-- Group Creation Wizard: Step-by-step group setup with member selection
-- Tailwind CSS v4: Upgraded with @tailwindcss/vite plugin
-- Frontend expanded from ~1,800 to ~3,200 lines with 8 new UI components
-- **UI/UX Design Reference**: New 2,400+ line design guide (docs/clients/UI-UX-DESIGN-REFERENCE.md)
-- **UI/UX Standardization**: Consistent styling across WRAITH-Transfer, WRAITH-Chat, WRAITH-Sync
-- **Accessibility**: 50+ component fixes including ARIA attributes, focus states, and color contrast
+**v1.7.2 Highlights (UI/UX Design System & Cross-Client Standardization):**
+- **UI/UX Design Reference**: New 2,400+ line comprehensive design guide (docs/clients/UI-UX-DESIGN-REFERENCE.md)
+- **Cross-Client Standardization**: Unified visual design across WRAITH-Transfer, WRAITH-Chat, WRAITH-Sync
+- **Color System**: Standardized palette (Primary #7c3aed, Secondary #4f46e5, Accent #06b6d4, Slate tones)
+- **Component Library**: Consistent buttons, inputs, modals, cards across all clients
+- **Accessibility**: WCAG 2.1 AA compliance with ARIA attributes, focus states, keyboard navigation
+- **50+ Component Fixes**: Modal backdrops, color standardization (gray->slate), typography hierarchy
 - **JACK/ALSA Fix**: Resolved audio device enumeration errors in WRAITH-Chat voice calls
+- **TypeScript Fix**: Fixed Vitest config import in WRAITH-Transfer
 
 **Phase 17 Highlights:**
 - Mobile Protocol Integration: Android JNI and iOS UniFFI with actual WRAITH protocol bindings (26 new tests)
@@ -769,6 +764,6 @@ WRAITH Protocol builds on the work of many excellent projects and technologies:
 
 **WRAITH Protocol** - *Secure. Fast. Invisible.*
 
-**Status:** v1.7.1 WRAITH-Chat UI Redesign | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 1,712 passing (16 ignored) | **Quality:** Production-ready, 0 vulnerabilities, zero warnings, 98/100 quality grade | **Clients:** 5 applications with full protocol integration, voice/video calling, group messaging, file synchronization, and professional UI redesign
+**Status:** v1.7.2 UI/UX Design System | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 1,695 passing (16 ignored) | **Quality:** Production-ready, 0 vulnerabilities, zero warnings, 98/100 quality grade | **Clients:** 5 applications with full protocol integration, voice/video calling, group messaging, file synchronization, and unified UI/UX design system
 
 *Last Updated: 2026-01-21*

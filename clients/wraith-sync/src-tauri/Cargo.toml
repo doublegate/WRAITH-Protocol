@@ -1,6 +1,6 @@
 [package]
 name = "wraith-sync"
-version = "1.7.1"
+version = "1.7.2"
 description = "WRAITH-Sync - Decentralized File Synchronization"
 authors = ["WRAITH Protocol Contributors"]
 license = "MIT OR Apache-2.0"
