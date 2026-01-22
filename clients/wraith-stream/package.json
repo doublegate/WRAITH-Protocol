@@ -1,0 +1,18 @@
+{
+  "name": "wraith-stream",
+  "version": "1.7.2",
+  "private": true,
+  "description": "WRAITH Stream - Encrypted Peer-to-Peer Media Streaming",
+  "author": "WRAITH Protocol Team",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "tauri:icon": "tauri icon"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.2.0"
+  }
+}

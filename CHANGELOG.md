@@ -11,6 +11,165 @@ _No changes yet._
 
 ---
 
+## [1.8.5] - 2026-01-22 - Phase 21 Complete: WRAITH-Stream Secure Media Streaming
+
+### Phase 21 - Secure Media Streaming Application
+
+This release delivers Phase 21 (WRAITH-Stream), a comprehensive secure media streaming application with AV1/VP9/H.264 codec support, adaptive bitrate streaming, live broadcasting, encrypted segment storage, and full video-on-demand playback capabilities.
+
+### Highlights
+
+- **7 Production-Ready Client Applications**: Transfer, Chat, Android, iOS, Sync, Share, Stream
+- **1,739+ Tests Passing**: 100% pass rate across all crates and clients
+- **WRAITH-Stream Complete**: New Tier 2 secure media streaming application
+- **Multi-Codec Transcoding**: AV1, VP9, VP8, H.264 video; Opus, AAC, MP3 audio
+- **Adaptive Bitrate**: HLS-style segmented streaming with dynamic quality selection
+- **Live Broadcasting**: Real-time streaming with low-latency delivery
+- **Encrypted Segments**: ChaCha20-Poly1305 segment encryption with per-stream keys
+- **Stream Discovery**: Category browsing, trending streams, full-text search
+
+### Added
+
+#### Phase 21: WRAITH-Stream Application
+
+##### Backend Architecture (`clients/wraith-stream/src-tauri/src/`)
+- **Tauri 2.0 Backend**: Complete Rust backend with 10+ modules (~3,500 lines)
+- **State Management** (`state.rs`): Application state with identity persistence and transcode progress
+- **Database Layer** (`database.rs`): SQLite with FTS5 for streams, segments, subtitles, quality variants
+- **Error Handling** (`error.rs`): Unified error types with user-friendly messages
+- **IPC Commands** (`commands.rs`): 20+ Tauri commands for all streaming operations
+
+##### Transcoding System
+- **Transcoder Engine** (`transcoder.rs`): FFmpeg-based transcoding pipeline
+  - Quality profiles: 360p, 480p, 720p, 1080p, 4K presets
+  - Video codecs: AV1, VP9, VP8, H.264 with configurable bitrates
+  - Audio codecs: Opus (recommended), AAC, MP3 with sample rate control
+  - Progress tracking with time-based percentage calculation
+  - Configurable segment duration for adaptive streaming
+- **Segment Storage** (`segment_storage.rs`): Encrypted segment management
+  - ChaCha20-Poly1305 AEAD encryption per segment
+  - BLAKE3-based key derivation for per-stream keys
+  - Nonce generation with segment index incorporation
+  - Segment upload/download with integrity verification
+
+##### Streaming Features
+- **Stream Manager** (`stream_manager.rs`): Stream lifecycle management
+  - Create, update, delete streams with metadata
+  - Quality variant management (add/remove/list qualities)
+  - Segment retrieval with range queries
+  - Status tracking (uploading, transcoding, ready, live)
+- **Player Module** (`player.rs`): Playback control
+  - Stream loading with quality selection
+  - Segment buffering with decrypt-on-demand
+  - Seek support with segment recalculation
+  - Playback state management (play/pause/stop)
+- **Discovery System** (`discovery.rs`): Stream discovery
+  - Category-based browsing with predefined categories
+  - Trending streams algorithm (views + recency weighted)
+  - Full-text search across titles and descriptions
+
+##### Subtitle System
+- **Subtitle Parser** (`subtitles.rs`): Multi-format subtitle support
+  - SRT (SubRip) format parsing with timestamp extraction
+  - VTT (WebVTT) format parsing with cue settings
+  - Subtitle timing synchronization with video segments
+  - Conversion between SRT and VTT formats
+
+##### Frontend Components (`clients/wraith-stream/frontend/src/`)
+- **React 18 + TypeScript**: Modern frontend with strict typing (~3,200 lines)
+- **Video Player** (`components/VideoPlayer.tsx`): Custom player with:
+  - Full-screen support with keyboard shortcuts
+  - Volume control with mute toggle
+  - Progress bar with seek functionality
+  - Quality selector overlay
+  - Play/pause with spacebar, arrow keys for seeking
+- **Quality Selector** (`components/QualitySelector.tsx`): Dynamic quality selection
+- **Upload Panel** (`components/UploadPanel.tsx`): Stream upload with:
+  - Drag-and-drop file selection
+  - Metadata form (title, description, category, tags)
+  - Visibility options (public/unlisted/private)
+  - Progress tracking during upload
+- **Stream Grid** (`components/StreamGrid.tsx`): Stream listing display
+- **Stream Card** (`components/StreamCard.tsx`): Individual stream preview
+- **My Streams** (`components/MyStreams.tsx`): User's stream management
+- **Settings Modal** (`components/SettingsModal.tsx`): App configuration
+- **Header/Sidebar** (`components/Header.tsx`, `Sidebar.tsx`): Navigation
+
+##### State Management
+- **Zustand Stores**: 3 dedicated stores for state management
+  - `streamStore`: Stream listing, upload, search state
+  - `playerStore`: Video playback state, quality, buffering
+  - `appStore`: Application identity, settings, categories
+
+##### Styling
+- **Tailwind CSS**: WRAITH design system with dark theme
+- **CSS Variables**: Brand colors (#FF5722 primary, #4A148C secondary)
+- **Responsive Design**: Desktop-optimized with custom scrollbars
+
+### Changed
+
+- **Test Count**: Increased from 1,712 to 1,739 tests (+27)
+- **Code Volume**: Increased from ~80,000 to ~83,500 lines Rust, ~22,000 to ~26,000 lines client code
+- **Client Count**: 7 production applications (was 6)
+- **Story Points Delivered**: 2,531 total (was 2,460)
+
+### Technical Details
+
+#### Phase 21 Statistics
+- **Backend Modules**: 10+ Rust modules (~3,500 lines)
+- **Frontend Components**: 9+ React components (~3,200 lines)
+- **Zustand Stores**: 3 stores (~550 lines)
+- **Total Phase 21**: ~7,250 lines
+- **Tests**: 27 passing
+
+#### File Manifest
+
+##### New Files (Phase 21 - WRAITH-Stream)
+```
+clients/wraith-stream/
+├── src-tauri/
+│   ├── src/
+│   │   ├── lib.rs
+│   │   ├── main.rs
+│   │   ├── commands.rs
+│   │   ├── state.rs
+│   │   ├── error.rs
+│   │   ├── database.rs
+│   │   ├── stream_manager.rs
+│   │   ├── transcoder.rs
+│   │   ├── player.rs
+│   │   ├── segment_storage.rs
+│   │   ├── discovery.rs
+│   │   └── subtitles.rs
+│   ├── Cargo.toml
+│   └── tauri.conf.json
+├── frontend/
+│   ├── src/
+│   │   ├── App.tsx
+│   │   ├── main.tsx
+│   │   ├── index.css
+│   │   ├── types/index.ts
+│   │   ├── stores/
+│   │   │   ├── appStore.ts
+│   │   │   ├── streamStore.ts
+│   │   │   └── playerStore.ts
+│   │   └── components/
+│   │       ├── Header.tsx
+│   │       ├── Sidebar.tsx
+│   │       ├── VideoPlayer.tsx
+│   │       ├── QualitySelector.tsx
+│   │       ├── StreamGrid.tsx
+│   │       ├── StreamCard.tsx
+│   │       ├── UploadPanel.tsx
+│   │       ├── MyStreams.tsx
+│   │       └── SettingsModal.tsx
+│   ├── package.json
+│   └── vite.config.ts
+└── package.json
+```
+
+---
+
 ## [1.8.0] - 2026-01-22 - Phases 18-20 Complete: Chat Protocol Wire-Up, DNS STUN Resolution & WRAITH-Share
 
 ### Phases 18-20 - Chat Protocol Integration, Discovery Enhancements & Distributed File Sharing
