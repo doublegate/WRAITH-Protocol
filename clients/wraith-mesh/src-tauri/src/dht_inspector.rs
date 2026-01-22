@@ -126,7 +126,12 @@ impl DhtInspector {
                     let peer_id = format!("{:032x}", rand_u128());
                     peers.push(BucketPeer {
                         id: peer_id.clone(),
-                        address: format!("192.168.{}.{}:{}", i % 256, j + 1, 8000 + rand_range(0, 1000)),
+                        address: format!(
+                            "192.168.{}.{}:{}",
+                            i % 256,
+                            j + 1,
+                            8000 + rand_range(0, 1000)
+                        ),
                         last_seen: chrono::Utc::now().timestamp() - rand_range(0, 900) as i64,
                         rtt_ms: Some(rand_range(10, 200)),
                         is_alive: rand_range(0, 10) > 1,
@@ -262,7 +267,11 @@ impl DhtInspector {
         let bytes1 = bytes1.map_err(|e| MeshError::Dht(format!("Invalid hex ID: {}", e)))?;
         let bytes2 = bytes2.map_err(|e| MeshError::Dht(format!("Invalid hex ID: {}", e)))?;
 
-        let xor: Vec<u8> = bytes1.iter().zip(bytes2.iter()).map(|(a, b)| a ^ b).collect();
+        let xor: Vec<u8> = bytes1
+            .iter()
+            .zip(bytes2.iter())
+            .map(|(a, b)| a ^ b)
+            .collect();
 
         Ok(hex::encode(xor))
     }
@@ -275,7 +284,8 @@ fn rand_u128() -> u128 {
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap()
         .as_nanos();
-    seed.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407)
+    seed.wrapping_mul(6364136223846793005)
+        .wrapping_add(1442695040888963407)
 }
 
 fn rand_range(min: u64, max: u64) -> u64 {

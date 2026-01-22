@@ -4,7 +4,7 @@
 //! and diagnostic results.
 
 use crate::error::{MeshError, MeshResult};
-use rusqlite::{params, Connection};
+use rusqlite::{Connection, params};
 use std::path::Path;
 use std::sync::Mutex;
 
@@ -26,7 +26,10 @@ impl Database {
 
     /// Initialize database schema
     fn init_schema(&self) -> MeshResult<()> {
-        let conn = self.conn.lock().map_err(|e| MeshError::Database(e.to_string()))?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| MeshError::Database(e.to_string()))?;
 
         conn.execute_batch(
             r#"
@@ -92,7 +95,10 @@ impl Database {
         peer_type: &str,
         connected_at: i64,
     ) -> MeshResult<i64> {
-        let conn = self.conn.lock().map_err(|e| MeshError::Database(e.to_string()))?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| MeshError::Database(e.to_string()))?;
 
         conn.execute(
             "INSERT INTO connection_history (peer_id, peer_label, peer_type, connected_at)
@@ -112,7 +118,10 @@ impl Database {
         avg_bandwidth_mbps: Option<f64>,
         packet_loss: Option<f64>,
     ) -> MeshResult<()> {
-        let conn = self.conn.lock().map_err(|e| MeshError::Database(e.to_string()))?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| MeshError::Database(e.to_string()))?;
 
         conn.execute(
             "UPDATE connection_history
@@ -140,7 +149,10 @@ impl Database {
         total_bandwidth_mbps: Option<f64>,
         packet_loss_rate: Option<f64>,
     ) -> MeshResult<()> {
-        let conn = self.conn.lock().map_err(|e| MeshError::Database(e.to_string()))?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| MeshError::Database(e.to_string()))?;
 
         conn.execute(
             "INSERT INTO network_metrics (timestamp, connected_peers, dht_nodes, avg_latency_ms, total_bandwidth_mbps, packet_loss_rate)
@@ -160,7 +172,10 @@ impl Database {
 
     /// Get recent metrics (last N entries)
     pub fn get_recent_metrics(&self, limit: i64) -> MeshResult<Vec<NetworkMetricsRow>> {
-        let conn = self.conn.lock().map_err(|e| MeshError::Database(e.to_string()))?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| MeshError::Database(e.to_string()))?;
 
         let mut stmt = conn.prepare(
             "SELECT timestamp, connected_peers, dht_nodes, avg_latency_ms, total_bandwidth_mbps, packet_loss_rate
@@ -194,12 +209,21 @@ impl Database {
         duration_ms: i64,
         success: bool,
     ) -> MeshResult<()> {
-        let conn = self.conn.lock().map_err(|e| MeshError::Database(e.to_string()))?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| MeshError::Database(e.to_string()))?;
 
         conn.execute(
             "INSERT INTO dht_lookups (lookup_key, timestamp, hop_count, duration_ms, success)
              VALUES (?1, ?2, ?3, ?4, ?5)",
-            params![lookup_key, timestamp, hop_count, duration_ms, success as i64],
+            params![
+                lookup_key,
+                timestamp,
+                hop_count,
+                duration_ms,
+                success as i64
+            ],
         )?;
 
         Ok(())
@@ -213,7 +237,10 @@ impl Database {
         timestamp: i64,
         result_json: &str,
     ) -> MeshResult<()> {
-        let conn = self.conn.lock().map_err(|e| MeshError::Database(e.to_string()))?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| MeshError::Database(e.to_string()))?;
 
         conn.execute(
             "INSERT INTO diagnostics (diagnostic_type, peer_id, timestamp, result_json)

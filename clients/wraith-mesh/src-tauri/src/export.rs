@@ -19,7 +19,10 @@ pub enum ExportFormat {
 }
 
 /// Export network topology data
-pub fn export_network_snapshot(snapshot: &NetworkSnapshot, format: ExportFormat) -> MeshResult<String> {
+pub fn export_network_snapshot(
+    snapshot: &NetworkSnapshot,
+    format: ExportFormat,
+) -> MeshResult<String> {
     info!("Exporting network snapshot as {:?}", format);
 
     match format {
@@ -75,7 +78,9 @@ fn export_csv(snapshot: &NetworkSnapshot) -> MeshResult<String> {
 
     // DHT stats section
     csv.push_str("# DHT_STATS\n");
-    csv.push_str("total_nodes,routing_table_size,stored_keys,lookup_count_1h,avg_lookup_latency_ms\n");
+    csv.push_str(
+        "total_nodes,routing_table_size,stored_keys,lookup_count_1h,avg_lookup_latency_ms\n",
+    );
     csv.push_str(&format!(
         "{},{},{},{},{:.2}\n",
         snapshot.dht_stats.total_nodes,

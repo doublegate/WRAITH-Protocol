@@ -3,14 +3,12 @@
 //! Defines all commands exposed to the frontend for network monitoring,
 //! DHT inspection, diagnostics, and data export.
 
-use crate::dht_inspector::{
-    DhtInspector, LookupHop, LookupResult, RoutingBucket, StoredKey,
-};
+use crate::dht_inspector::{DhtInspector, LookupHop, LookupResult, RoutingBucket, StoredKey};
 use crate::diagnostics::{
     BandwidthResult, Diagnostics, HealthReport, NatDetectionResult, PingResult,
 };
 use crate::error::MeshError;
-use crate::export::{export_metrics_history, export_network_snapshot, ExportFormat};
+use crate::export::{ExportFormat, export_metrics_history, export_network_snapshot};
 use crate::network_monitor::{MetricsEntry, NetworkMonitor, NetworkSnapshot, PeerType};
 use crate::state::AppState;
 use std::sync::Arc;
@@ -39,7 +37,9 @@ pub fn get_metrics_history(
     managers: State<'_, Managers>,
     limit: Option<usize>,
 ) -> Vec<MetricsEntry> {
-    managers.network_monitor.get_metrics_history(limit.unwrap_or(60))
+    managers
+        .network_monitor
+        .get_metrics_history(limit.unwrap_or(60))
 }
 
 /// Initialize demo network for testing
@@ -50,10 +50,7 @@ pub fn initialize_demo_network(managers: State<'_, Managers>) -> Result<(), Mesh
 
 /// Add a peer to the network (for testing)
 #[tauri::command]
-pub fn add_peer(
-    managers: State<'_, Managers>,
-    peer_type: String,
-) -> Result<String, MeshError> {
+pub fn add_peer(managers: State<'_, Managers>, peer_type: String) -> Result<String, MeshError> {
     let pt = match peer_type.to_lowercase().as_str() {
         "direct" => PeerType::Direct,
         "relay" => PeerType::Relay,
@@ -87,7 +84,10 @@ pub fn lookup_key(managers: State<'_, Managers>, key: String) -> Result<LookupRe
 
 /// Trace a DHT lookup path
 #[tauri::command]
-pub fn trace_lookup(managers: State<'_, Managers>, key: String) -> Result<Vec<LookupHop>, MeshError> {
+pub fn trace_lookup(
+    managers: State<'_, Managers>,
+    key: String,
+) -> Result<Vec<LookupHop>, MeshError> {
     managers.dht_inspector.trace_lookup(&key)
 }
 
@@ -118,7 +118,10 @@ pub async fn ping_peer(
     peer_id: String,
     count: Option<u32>,
 ) -> Result<PingResult, MeshError> {
-    managers.diagnostics.ping(&peer_id, count.unwrap_or(5)).await
+    managers
+        .diagnostics
+        .ping(&peer_id, count.unwrap_or(5))
+        .await
 }
 
 /// Run a bandwidth test
@@ -153,10 +156,7 @@ pub async fn detect_nat_type(
 
 /// Export network snapshot
 #[tauri::command]
-pub fn export_snapshot(
-    managers: State<'_, Managers>,
-    format: String,
-) -> Result<String, MeshError> {
+pub fn export_snapshot(managers: State<'_, Managers>, format: String) -> Result<String, MeshError> {
     let snapshot = managers.network_monitor.get_snapshot();
     let fmt = match format.to_lowercase().as_str() {
         "json" => ExportFormat::Json,
@@ -172,7 +172,9 @@ pub fn export_metrics(
     managers: State<'_, Managers>,
     limit: Option<usize>,
 ) -> Result<String, MeshError> {
-    let history = managers.network_monitor.get_metrics_history(limit.unwrap_or(3600));
+    let history = managers
+        .network_monitor
+        .get_metrics_history(limit.unwrap_or(3600));
     export_metrics_history(&history)
 }
 

@@ -11,6 +11,170 @@ _No changes yet._
 
 ---
 
+## [1.9.5] - 2026-01-22 - Phase 23 Complete: WRAITH-Publish Decentralized Content Publishing
+
+### Phase 23 - Decentralized Content Publishing Platform
+
+This release delivers Phase 23 (WRAITH-Publish), a comprehensive decentralized content publishing platform with Ed25519 content signatures, markdown-to-HTML rendering, RSS/Atom feed generation, DHT-based content distribution, and full-text search capabilities.
+
+### Highlights
+
+- **9 Production-Ready Client Applications**: Transfer, Chat, Android, iOS, Sync, Share, Stream, Mesh, Publish
+- **1,816+ Tests Passing**: 100% pass rate across all crates and clients
+- **WRAITH-Publish Complete**: New Tier 3 decentralized content publishing platform
+- **Ed25519 Signatures**: Cryptographic author verification for published content
+- **Markdown Rendering**: Full CommonMark + GFM extensions
+- **RSS Feed Generation**: Auto-generated RSS 2.0 with filtering options
+- **DHT Distribution**: Content-addressed storage with replication tracking
+- **Full-Text Search**: SQLite FTS5 for article discovery
+
+### Added
+
+#### Phase 23: WRAITH-Publish Application
+
+##### Backend Architecture (`clients/wraith-publish/src-tauri/src/`)
+- **Tauri 2.0 Backend**: Complete Rust backend with 10+ modules (~4,000 lines)
+- **State Management** (`state.rs`): Application state with identity persistence
+- **Database Layer** (`database.rs`): SQLite for articles with full-text search
+- **Error Handling** (`error.rs`): Unified error types with user-friendly messages
+- **IPC Commands** (`commands.rs`): 20+ Tauri commands for all operations
+
+##### Content Management
+- **Content Module** (`content.rs`): Article lifecycle management
+  - Draft creation and editing
+  - Publishing with Ed25519 signatures
+  - Archive and restore functionality
+  - Version tracking
+- **Markdown Processor** (`markdown.rs`): Content rendering
+  - CommonMark compliant parsing
+  - GFM extensions (tables, strikethrough, task lists)
+  - Title and excerpt extraction
+  - Heading enumeration
+  - Word count and reading time calculation
+
+##### Cryptographic Signatures
+- **Signatures Module** (`signatures.rs`): Content verification
+  - Ed25519 keypair generation
+  - Content signing with author identity
+  - Signature verification
+  - CID (Content ID) generation with BLAKE3
+  - Tamper detection
+
+##### RSS Feed Generation
+- **RSS Module** (`rss.rs`): Feed generation
+  - RSS 2.0 format with proper namespaces
+  - Full content or excerpt modes
+  - Author filtering
+  - Tag-based filtering
+  - RFC 2822 timestamp formatting
+
+##### DHT Storage and Distribution
+- **Storage Module** (`storage.rs`): Decentralized storage
+  - Content-addressed storage (CID-based)
+  - Size validation and limits
+  - Pinning for permanent storage
+  - Storage statistics
+- **Propagation Module** (`propagation.rs`): Content distribution
+  - Replication tracking
+  - Propagation status monitoring
+  - Failure handling
+  - Active propagation listing
+
+##### Content Reading
+- **Reader Module** (`reader.rs`): Content retrieval
+  - DHT content fetching
+  - Local caching
+  - Search functionality
+  - Offline reading support
+- **Publisher Module** (`publisher.rs`): Publishing workflow
+  - Content publishing to DHT
+  - Unpublishing support
+  - Published article listing
+
+##### Frontend Components (`clients/wraith-publish/frontend/src/`)
+- **React 18 + TypeScript**: Modern frontend with strict typing (~3,000 lines)
+- **Editor Component**: Markdown editing with preview
+- **Article List**: Draft and published article management
+- **Feed Viewer**: RSS feed preview and configuration
+- **Search Interface**: Full-text search with results display
+- **Propagation Monitor**: Real-time distribution tracking
+
+##### State Management
+- **Zustand Stores**: 3 dedicated stores
+  - `articleStore`: Articles, drafts, published content
+  - `feedStore`: RSS configuration and preview
+  - `propagationStore`: Distribution status
+
+##### Styling
+- **Tailwind CSS**: WRAITH design system with dark theme
+- **Markdown Preview**: Styled content rendering
+
+### Changed
+
+- **Test Count**: Increased from 1,760 to 1,816 tests (+56)
+- **Code Volume**: Increased from ~86,500 to ~90,000 lines Rust, ~29,500 to ~32,500 lines client code
+- **Client Count**: 9 production applications (was 8)
+- **Story Points Delivered**: 2,667 total (was 2,591)
+
+### Technical Details
+
+#### Phase 23 Statistics
+- **Backend Modules**: 10+ Rust modules (~4,000 lines)
+- **Frontend Components**: 6+ React components (~3,000 lines)
+- **Zustand Stores**: 3 stores (~400 lines)
+- **Total Phase 23**: ~7,400 lines
+- **Tests**: 56 passing
+
+#### File Manifest
+
+##### New Files (Phase 23 - WRAITH-Publish)
+```
+clients/wraith-publish/
+├── src-tauri/
+│   ├── src/
+│   │   ├── lib.rs
+│   │   ├── main.rs
+│   │   ├── commands.rs
+│   │   ├── state.rs
+│   │   ├── error.rs
+│   │   ├── database.rs
+│   │   ├── content.rs
+│   │   ├── markdown.rs
+│   │   ├── signatures.rs
+│   │   ├── rss.rs
+│   │   ├── storage.rs
+│   │   ├── propagation.rs
+│   │   ├── reader.rs
+│   │   └── publisher.rs
+│   ├── Cargo.toml
+│   └── tauri.conf.json
+├── frontend/
+│   ├── src/
+│   │   ├── App.tsx
+│   │   ├── main.tsx
+│   │   ├── index.css
+│   │   ├── types/index.ts
+│   │   ├── stores/
+│   │   │   ├── articleStore.ts
+│   │   │   ├── feedStore.ts
+│   │   │   └── propagationStore.ts
+│   │   └── components/
+│   │       ├── Editor.tsx
+│   │       ├── ArticleList.tsx
+│   │       ├── FeedViewer.tsx
+│   │       ├── SearchInterface.tsx
+│   │       ├── PropagationMonitor.tsx
+│   │       └── Header.tsx
+│   ├── index.html
+│   ├── package.json
+│   ├── tsconfig.json
+│   ├── vite.config.ts
+│   └── tailwind.config.js
+└── README.md
+```
+
+---
+
 ## [1.9.0] - 2026-01-22 - Phase 22 Complete: WRAITH-Mesh IoT Mesh Networking
 
 ### Phase 22 - IoT Mesh Network Visualization and Diagnostics

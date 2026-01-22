@@ -171,7 +171,11 @@ impl Diagnostics {
 
     /// Ping a peer to measure latency
     pub async fn ping(&self, peer_id: &str, count: u32) -> MeshResult<PingResult> {
-        info!("Pinging peer {} with {} packets", &peer_id[..8.min(peer_id.len())], count);
+        info!(
+            "Pinging peer {} with {} packets",
+            &peer_id[..8.min(peer_id.len())],
+            count
+        );
 
         // Simulate ping (in real implementation, send actual packets)
         let mut rtts = Vec::with_capacity(count as usize);
@@ -244,7 +248,10 @@ impl Diagnostics {
 
     /// Test bandwidth to a peer
     pub async fn bandwidth_test(&self, peer_id: &str) -> MeshResult<BandwidthResult> {
-        info!("Running bandwidth test to peer {}", &peer_id[..8.min(peer_id.len())]);
+        info!(
+            "Running bandwidth test to peer {}",
+            &peer_id[..8.min(peer_id.len())]
+        );
 
         let start = std::time::Instant::now();
 
@@ -274,7 +281,10 @@ impl Diagnostics {
 
     /// Check connection health to a peer
     pub async fn check_connection_health(&self, peer_id: &str) -> MeshResult<HealthReport> {
-        info!("Checking connection health for peer {}", &peer_id[..8.min(peer_id.len())]);
+        info!(
+            "Checking connection health for peer {}",
+            &peer_id[..8.min(peer_id.len())]
+        );
 
         // Run ping to get latency metrics
         let ping_result = self.ping(peer_id, 10).await?;
@@ -386,7 +396,10 @@ impl Diagnostics {
 
         let hole_punch_possible = matches!(
             nat_type,
-            NatType::Open | NatType::FullCone | NatType::RestrictedCone | NatType::PortRestrictedCone
+            NatType::Open
+                | NatType::FullCone
+                | NatType::RestrictedCone
+                | NatType::PortRestrictedCone
         );
 
         let recommendation = match nat_type {
@@ -395,9 +408,7 @@ impl Diagnostics {
             NatType::RestrictedCone | NatType::PortRestrictedCone => {
                 "Hole punching should work in most cases".to_string()
             }
-            NatType::Symmetric => {
-                "May need relay server for connections".to_string()
-            }
+            NatType::Symmetric => "May need relay server for connections".to_string(),
             NatType::Unknown => "Could not determine NAT type".to_string(),
         };
 
@@ -435,7 +446,8 @@ fn rand_u128() -> u128 {
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap()
         .as_nanos();
-    seed.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407)
+    seed.wrapping_mul(6364136223846793005)
+        .wrapping_add(1442695040888963407)
 }
 
 fn rand_range(min: u64, max: u64) -> u64 {

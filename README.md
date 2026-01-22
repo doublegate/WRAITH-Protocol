@@ -9,7 +9,7 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
 [![CI Status](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/ci.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml)
 [![Release](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml)
-[![Version](https://img.shields.io/badge/version-1.9.0-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
+[![Version](https://img.shields.io/badge/version-1.9.5-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
 [![Security](https://img.shields.io/badge/security-audited-green.svg)](docs/security/SECURITY_AUDIT_v1.1.0.md)
 [![Rust](https://img.shields.io/badge/rust-1.85%2B-orange.svg)](https://www.rust-lang.org/)
 [![Edition](https://img.shields.io/badge/edition-2024-orange.svg)](https://doc.rust-lang.org/edition-guide/rust-2024/index.html)
@@ -17,43 +17,43 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
 
 ## Current Status
 
-**Version:** 1.9.0 Phase 22 Complete | **Development Phase:** Phase 22 Complete
+**Version:** 1.9.5 Phase 23 Complete | **Development Phase:** Phase 23 Complete
 
-WRAITH Protocol is production-ready with 8 desktop/mobile applications featuring full protocol integration, real-time voice/video calling, advanced group messaging, distributed anonymous file sharing, secure media streaming, and IoT mesh networking. Version 1.9.0 delivers Phase 22 (WRAITH-Mesh), a comprehensive network topology visualization and mesh diagnostics application with D3.js force-directed graphs, DHT routing table inspection, and network health monitoring.
+WRAITH Protocol is production-ready with 9 desktop/mobile applications featuring full protocol integration, real-time voice/video calling, advanced group messaging, distributed anonymous file sharing, secure media streaming, IoT mesh networking, and censorship-resistant content publishing. Version 1.9.5 delivers Phase 23 (WRAITH-Publish), a decentralized content publishing platform with Ed25519 content signatures, markdown-to-HTML rendering, RSS/Atom feed generation, and DHT-based content distribution.
 
 **Project Metrics (2026-01-22):**
-- **Code Volume:** ~80,000 lines of Rust code across protocol crates + ~22,000 lines in client applications (Kotlin/Swift/TypeScript)
-- **Test Coverage:** 1,712 tests passing (16 ignored) - 100% pass rate
-- **Documentation:** 130+ markdown files, ~85,000+ lines of comprehensive documentation
+- **Code Volume:** ~83,000 lines of Rust code across protocol crates + ~25,000 lines in client applications (Kotlin/Swift/TypeScript)
+- **Test Coverage:** 1,816 tests passing (16 ignored) - 100% pass rate
+- **Documentation:** 130+ markdown files, ~88,000+ lines of comprehensive documentation
 - **Dependencies:** 295 audited packages (zero vulnerabilities via cargo-audit)
 - **Security:** Grade A+ (EXCELLENT), zero vulnerabilities, comprehensive DPI evasion validation
 - **Quality:** Code quality 98/100, zero compiler/clippy warnings, 3.5% technical debt ratio, production-ready codebase
-- **Client Applications:** 8 production-ready applications (4 Tier 1 + 3 Tier 2 + 1 Tier 3) with full protocol integration
+- **Client Applications:** 9 production-ready applications (4 Tier 1 + 3 Tier 2 + 2 Tier 3) with full protocol integration
 - **CI/CD:** GitHub Actions updated (upload-artifact v6, download-artifact v7, cache v5)
 
-**v1.9.0 Highlights (Phase 22 Complete):**
-- **WRAITH-Mesh Complete**: New Tier 3 IoT mesh networking application (Phase 22)
-- **Network Topology Visualization**: D3.js force-directed graph with peer connections
-- **DHT Routing Table Inspection**: K-bucket visualization with node details
-- **Network Diagnostics**: Ping, bandwidth test, NAT detection, health checks
-- **Metrics History**: Time-series graphs for latency, bandwidth, packet loss
-- **Data Export**: JSON and CSV export for network snapshots
-- **Peer Management**: Direct, relay, and DHT peer type tracking
-- **Health Monitoring**: Real-time network health score calculation
-- **Statistics Dashboard**: Comprehensive metrics with historical trending
+**v1.9.5 Highlights (Phase 23 Complete):**
+- **WRAITH-Publish Complete**: New Tier 3 decentralized content publishing platform (Phase 23)
+- **Ed25519 Content Signatures**: Cryptographic author verification for all published content
+- **Markdown Rendering**: Full CommonMark + GFM extensions (tables, strikethrough, task lists)
+- **RSS/Atom Feeds**: Auto-generated RSS 2.0 feeds with author/tag filtering
+- **DHT Content Distribution**: Decentralized storage with configurable replication
+- **SQLite Article Database**: Full-text search, drafts, published, archived states
+- **Content Propagation**: Real-time tracking of content replication across network
+- **Reader Mode**: Cached content retrieval with offline reading support
+- **Image Optimization**: Embedded image storage with size validation
 
-**Phase 22 Highlights (WRAITH-Mesh):**
-- **Network Topology**: D3.js force-directed graph visualization of mesh network
-- **Peer Information**: Real-time peer status, latency, bandwidth, packet loss
-- **DHT Inspection**: K-bucket routing table visualization with node details
-- **Diagnostics Suite**: Ping test, bandwidth measurement, NAT detection, health check
-- **Metrics History**: Time-series data collection and charting (1h, 6h, 24h, 7d)
-- **Data Export**: Network snapshots exportable as JSON or CSV
-- **Health Score**: Automated network health calculation based on peer metrics
-- **Statistics Dashboard**: Live statistics with peer counts, bandwidth totals, latency averages
-- **SQLite Database**: Persistent storage for connection history and metrics
+**Phase 23 Highlights (WRAITH-Publish):**
+- **Content Management**: Draft creation, editing, publishing workflow
+- **Markdown Editor**: GFM syntax support with live preview
+- **Author Signatures**: Ed25519 signing with verification and author lookup
+- **Feed Generation**: RSS 2.0 with full content or excerpt modes
+- **DHT Storage**: Content addressing with CID-based retrieval
+- **Propagation Tracking**: Monitor content spread across network nodes
+- **Full-Text Search**: SQLite FTS5 for article discovery
+- **Archive/Restore**: Content lifecycle management
+- **Image Storage**: Base64 encoding with size limits
 - **Tauri 2.0 Desktop**: React 18 + TypeScript frontend with Zustand state management
-- **21 Tests**: Comprehensive test coverage across all modules
+- **56 Tests**: Comprehensive test coverage across all modules
 
 For detailed development history and phase accomplishments, see [Protocol Development History](docs/archive/README_Protocol-DEV.md).
 
@@ -275,7 +275,8 @@ WRAITH-Protocol/
 │   ├── wraith-ios/             # iOS mobile client (Swift + SwiftUI)
 │   ├── wraith-chat/            # E2EE messaging (Tauri 2.0 + React 18 + SQLCipher)
 │   ├── wraith-sync/            # File synchronization (Tauri 2.0 + React 18)
-│   └── wraith-share/           # Distributed file sharing (Tauri 2.0 + React 18)
+│   ├── wraith-share/           # Distributed file sharing (Tauri 2.0 + React 18)
+│   └── wraith-publish/         # Decentralized content publishing (Tauri 2.0 + React 18)
 ├── docs/                        # Comprehensive documentation
 │   ├── archive/                # Archived documentation and development history
 │   ├── architecture/           # Protocol design (5 docs)
@@ -324,8 +325,9 @@ WRAITH-Protocol/
 | **wraith-share** | Distributed anonymous file sharing with swarm transfers and link sharing (Tauri 2.0 + React 18) | Desktop | 24 | ✅ v1.8.0 |
 | **wraith-stream** | Secure media streaming with AV1/VP9/H.264, adaptive bitrate, live/VOD (Tauri 2.0 + React 18) | Desktop | 27 | ✅ v1.8.5 |
 | **wraith-mesh** | IoT mesh networking with topology visualization, DHT inspection, diagnostics (Tauri 2.0 + React 18) | Desktop | 21 | ✅ v1.9.0 |
+| **wraith-publish** | Decentralized content publishing with Ed25519 signatures, RSS feeds, DHT distribution (Tauri 2.0 + React 18) | Desktop | 56 | ✅ v1.9.5 |
 
-**Total Clients:** 432 tests, 8 production applications (~29,500 lines: TypeScript/Kotlin/Swift)
+**Total Clients:** 488 tests, 9 production applications (~32,500 lines: TypeScript/Kotlin/Swift)
 
 ### Integration Tests & Benchmarks
 
@@ -334,7 +336,7 @@ WRAITH-Protocol/
 | **Integration Tests** | 323 | Cross-crate protocol integration and end-to-end scenarios |
 | **Benchmarks** | - | Performance validation (frame parsing, AEAD, hashing, file operations) |
 
-**Project Total:** 1,760+ tests (16 ignored) - 100% pass rate
+**Project Total:** 1,816+ tests (16 ignored) - 100% pass rate
 
 ## Documentation
 

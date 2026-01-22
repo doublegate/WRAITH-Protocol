@@ -350,8 +350,8 @@ impl NetworkMonitor {
             0.0
         };
 
-        let health_score = (1.0 - (avg_latency / 500.0).min(0.5) - (avg_loss * 10.0).min(0.5))
-            .clamp(0.0, 1.0);
+        let health_score =
+            (1.0 - (avg_latency / 500.0).min(0.5) - (avg_loss * 10.0).min(0.5)).clamp(0.0, 1.0);
 
         let snapshot = NetworkSnapshot {
             timestamp: now,
@@ -411,7 +411,9 @@ impl NetworkMonitor {
             PeerType::Direct => format!("Direct-{}", &id[..4]),
             PeerType::Relay => format!("Relay-{}", &id[..4]),
             PeerType::Indirect => format!("DHT-{}", &id[..8]),
-            PeerType::SelfNode => return Err(MeshError::Network("Cannot add self node".to_string())),
+            PeerType::SelfNode => {
+                return Err(MeshError::Network("Cannot add self node".to_string()));
+            }
         };
 
         let peer = SimulatedPeer {
