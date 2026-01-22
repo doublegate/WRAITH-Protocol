@@ -9,7 +9,7 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
 [![CI Status](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/ci.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml)
 [![Release](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml)
-[![Version](https://img.shields.io/badge/version-1.8.5-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
+[![Version](https://img.shields.io/badge/version-1.9.0-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
 [![Security](https://img.shields.io/badge/security-audited-green.svg)](docs/security/SECURITY_AUDIT_v1.1.0.md)
 [![Rust](https://img.shields.io/badge/rust-1.85%2B-orange.svg)](https://www.rust-lang.org/)
 [![Edition](https://img.shields.io/badge/edition-2024-orange.svg)](https://doc.rust-lang.org/edition-guide/rust-2024/index.html)
@@ -17,9 +17,9 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
 
 ## Current Status
 
-**Version:** 1.8.5 Phase 21 Complete | **Development Phase:** Phase 21 Complete
+**Version:** 1.9.0 Phase 22 Complete | **Development Phase:** Phase 22 Complete
 
-WRAITH Protocol is production-ready with 7 desktop/mobile applications featuring full protocol integration, real-time voice/video calling, advanced group messaging, distributed anonymous file sharing, and secure media streaming. Version 1.8.5 delivers Phase 21 (WRAITH-Stream), a comprehensive secure media streaming application with AV1/VP9/H.264 codec support, adaptive bitrate streaming, live broadcasting, and encrypted segment storage.
+WRAITH Protocol is production-ready with 8 desktop/mobile applications featuring full protocol integration, real-time voice/video calling, advanced group messaging, distributed anonymous file sharing, secure media streaming, and IoT mesh networking. Version 1.9.0 delivers Phase 22 (WRAITH-Mesh), a comprehensive network topology visualization and mesh diagnostics application with D3.js force-directed graphs, DHT routing table inspection, and network health monitoring.
 
 **Project Metrics (2026-01-22):**
 - **Code Volume:** ~80,000 lines of Rust code across protocol crates + ~22,000 lines in client applications (Kotlin/Swift/TypeScript)
@@ -28,32 +28,32 @@ WRAITH Protocol is production-ready with 7 desktop/mobile applications featuring
 - **Dependencies:** 295 audited packages (zero vulnerabilities via cargo-audit)
 - **Security:** Grade A+ (EXCELLENT), zero vulnerabilities, comprehensive DPI evasion validation
 - **Quality:** Code quality 98/100, zero compiler/clippy warnings, 3.5% technical debt ratio, production-ready codebase
-- **Client Applications:** 7 production-ready applications (4 Tier 1 + 3 Tier 2) with full protocol integration
+- **Client Applications:** 8 production-ready applications (4 Tier 1 + 3 Tier 2 + 1 Tier 3) with full protocol integration
 - **CI/CD:** GitHub Actions updated (upload-artifact v6, download-artifact v7, cache v5)
 
-**v1.8.5 Highlights (Phase 21 Complete):**
-- **WRAITH-Stream Complete**: New Tier 2 secure media streaming application (Phase 21)
-- **Adaptive Bitrate Streaming**: HLS-style segments with automatic quality selection
-- **Multi-Codec Support**: AV1, VP9, VP8, H.264 video codecs with Opus/AAC audio
-- **Live Broadcasting**: Real-time streaming with low-latency delivery
-- **VOD Support**: Video-on-demand with seeking and playback controls
-- **Encrypted Segments**: ChaCha20-Poly1305 segment encryption with per-stream keys
-- **Transcoding Engine**: FFmpeg-based transcoding with quality profiles (360p-4K)
-- **Subtitle Support**: SRT/VTT subtitle parsing and synchronization
-- **Discovery System**: Stream discovery with categories, trending, and search
+**v1.9.0 Highlights (Phase 22 Complete):**
+- **WRAITH-Mesh Complete**: New Tier 3 IoT mesh networking application (Phase 22)
+- **Network Topology Visualization**: D3.js force-directed graph with peer connections
+- **DHT Routing Table Inspection**: K-bucket visualization with node details
+- **Network Diagnostics**: Ping, bandwidth test, NAT detection, health checks
+- **Metrics History**: Time-series graphs for latency, bandwidth, packet loss
+- **Data Export**: JSON and CSV export for network snapshots
+- **Peer Management**: Direct, relay, and DHT peer type tracking
+- **Health Monitoring**: Real-time network health score calculation
+- **Statistics Dashboard**: Comprehensive metrics with historical trending
 
-**Phase 21 Highlights (WRAITH-Stream):**
-- **Secure Media Streaming**: End-to-end encrypted streaming over WRAITH protocol
-- **Adaptive Bitrate**: HLS-style segmented streaming with dynamic quality selection
-- **Multi-Codec Transcoding**: Support for AV1, VP9, VP8, H.264 video and Opus, AAC, MP3 audio
-- **Live + VOD**: Both real-time broadcasting and video-on-demand playback
-- **Encrypted Storage**: ChaCha20-Poly1305 encrypted segments with BLAKE3 key derivation
-- **Quality Profiles**: 360p, 480p, 720p, 1080p, 4K transcoding presets
-- **Stream Discovery**: Category browsing, trending streams, full-text search
-- **Subtitle System**: SRT and VTT subtitle parsing with cue synchronization
-- **Player Controls**: Custom video player with keyboard shortcuts and quality selection
+**Phase 22 Highlights (WRAITH-Mesh):**
+- **Network Topology**: D3.js force-directed graph visualization of mesh network
+- **Peer Information**: Real-time peer status, latency, bandwidth, packet loss
+- **DHT Inspection**: K-bucket routing table visualization with node details
+- **Diagnostics Suite**: Ping test, bandwidth measurement, NAT detection, health check
+- **Metrics History**: Time-series data collection and charting (1h, 6h, 24h, 7d)
+- **Data Export**: Network snapshots exportable as JSON or CSV
+- **Health Score**: Automated network health calculation based on peer metrics
+- **Statistics Dashboard**: Live statistics with peer counts, bandwidth totals, latency averages
+- **SQLite Database**: Persistent storage for connection history and metrics
 - **Tauri 2.0 Desktop**: React 18 + TypeScript frontend with Zustand state management
-- **27 Tests**: Comprehensive test coverage across all modules
+- **21 Tests**: Comprehensive test coverage across all modules
 
 For detailed development history and phase accomplishments, see [Protocol Development History](docs/archive/README_Protocol-DEV.md).
 
@@ -323,8 +323,9 @@ WRAITH-Protocol/
 | **wraith-sync** | Decentralized file sync with delta transfers and version history (Tauri 2.0 + React 18) | Desktop | 17 | ✅ v1.7.0 |
 | **wraith-share** | Distributed anonymous file sharing with swarm transfers and link sharing (Tauri 2.0 + React 18) | Desktop | 24 | ✅ v1.8.0 |
 | **wraith-stream** | Secure media streaming with AV1/VP9/H.264, adaptive bitrate, live/VOD (Tauri 2.0 + React 18) | Desktop | 27 | ✅ v1.8.5 |
+| **wraith-mesh** | IoT mesh networking with topology visualization, DHT inspection, diagnostics (Tauri 2.0 + React 18) | Desktop | 21 | ✅ v1.9.0 |
 
-**Total Clients:** 411 tests, 7 production applications (~26,000 lines: TypeScript/Kotlin/Swift)
+**Total Clients:** 432 tests, 8 production applications (~29,500 lines: TypeScript/Kotlin/Swift)
 
 ### Integration Tests & Benchmarks
 
@@ -333,7 +334,7 @@ WRAITH-Protocol/
 | **Integration Tests** | 323 | Cross-crate protocol integration and end-to-end scenarios |
 | **Benchmarks** | - | Performance validation (frame parsing, AEAD, hashing, file operations) |
 
-**Project Total:** 1,739+ tests (16 ignored) - 100% pass rate
+**Project Total:** 1,760+ tests (16 ignored) - 100% pass rate
 
 ## Documentation
 
@@ -424,7 +425,7 @@ WRAITH Protocol powers a comprehensive ecosystem of secure applications across 3
 
 | Client | Description | Status | Story Points |
 |--------|-------------|--------|--------------|
-| **WRAITH-Mesh** | IoT mesh networking for decentralized device communication | Planned | 60 |
+| **WRAITH-Mesh** | IoT mesh networking with topology visualization and diagnostics | ✅ **Complete (v1.9.0)** | 60 |
 | **WRAITH-Publish** | Censorship-resistant publishing platform (blogs, wikis) | Planned | 76 |
 | **WRAITH-Vault** | Distributed secret storage using Shamir Secret Sharing | Planned | 94 |
 
@@ -435,7 +436,7 @@ WRAITH Protocol powers a comprehensive ecosystem of secure applications across 3
 | **WRAITH-Recon** | Network reconnaissance & data exfiltration assessment | Planned | 55 |
 | **WRAITH-RedOps** | Red team operations platform with C2 infrastructure | Planned | 89 |
 
-**Total Ecosystem:** 10 clients, ~1,148 story points (7 complete, 3 planned)
+**Total Ecosystem:** 10 clients, ~1,148 story points (8 complete, 2 planned)
 
 **Security Testing Notice:** WRAITH-Recon and WRAITH-RedOps require signed authorization and governance compliance. See [Security Testing Parameters](ref-docs/WRAITH-Security-Testing-Parameters-v1.0.md) for authorized use requirements.
 
@@ -577,10 +578,9 @@ WRAITH Protocol development follows a structured multi-phase approach:
   - Swarm-based multi-peer transfers
   - Link-based sharing with access control
 
-**Total Development:** 2,531 story points delivered across 21 phases
+**Total Development:** 2,591 story points delivered across 22 phases
 
 **Upcoming:**
-- 📋 Phase 22: WRAITH-Mesh (IoT mesh networking)
 - 📋 Phase 23: WRAITH-Publish (censorship-resistant publishing)
 - 📋 Phase 24: WRAITH-Vault (distributed secret storage)
 - 📋 Post-quantum cryptography, formal verification
@@ -600,10 +600,12 @@ See [ROADMAP.md](to-dos/ROADMAP.md) and [Protocol Development History](docs/arch
   - ✅ WRAITH-Sync (file synchronization - v1.7.0)
   - ✅ WRAITH-Share (distributed file sharing - v1.8.0)
   - ✅ WRAITH-Stream (secure media streaming - v1.8.5)
-- **Tier 3 (Planned):** WRAITH-Mesh, WRAITH-Publish, WRAITH-Vault
+- **Tier 3 (Partial):**
+  - ✅ WRAITH-Mesh (IoT mesh networking - v1.9.0)
+  - Planned: WRAITH-Publish, WRAITH-Vault
 - **Security Testing (Planned):** WRAITH-Recon, WRAITH-RedOps (authorized use only)
 
-**Status:** 7 of 10 clients complete (734 SP delivered, 474 SP remaining)
+**Status:** 8 of 10 clients complete (794 SP delivered, 414 SP remaining)
 
 See [Client Roadmap](to-dos/ROADMAP-clients.md) for detailed planning.
 
@@ -695,7 +697,7 @@ WRAITH Protocol is designed with security as a core principle:
 - **Unsafe Code Audit:** 100% documentation coverage with SAFETY comments
 
 **Validation:**
-- **Test Coverage:** 1,739+ tests (16 ignored) covering all protocol layers
+- **Test Coverage:** 1,760+ tests (16 ignored) covering all protocol layers
 - **DPI Evasion:** Comprehensive validation against Wireshark, Zeek, Suricata, nDPI (see [DPI Evasion Report](docs/security/DPI_EVASION_REPORT.md))
 - **Fuzzing:** 5 libFuzzer targets continuously testing robustness
 - **Property-Based Tests:** QuickCheck-style invariant validation
@@ -787,6 +789,6 @@ WRAITH Protocol builds on the work of many excellent projects and technologies:
 
 **WRAITH Protocol** - *Secure. Fast. Invisible.*
 
-**Status:** v1.8.5 Phase 21 Complete | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 1,739 passing (16 ignored) | **Quality:** Production-ready, 0 vulnerabilities, zero warnings, 98/100 quality grade | **Clients:** 7 applications with full protocol integration, voice/video calling, group messaging, file synchronization, distributed file sharing, secure media streaming, and unified UI/UX design system
+**Status:** v1.9.0 Phase 22 Complete | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 1,760 passing (16 ignored) | **Quality:** Production-ready, 0 vulnerabilities, zero warnings, 98/100 quality grade | **Clients:** 8 applications with full protocol integration, voice/video calling, group messaging, file synchronization, distributed file sharing, secure media streaming, IoT mesh networking, and unified UI/UX design system
 
 *Last Updated: 2026-01-22*

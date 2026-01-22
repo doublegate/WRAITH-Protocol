@@ -1,0 +1,154 @@
+@import "tailwindcss";
+
+/* Custom theme overrides - WRAITH Design System */
+@theme {
+  /* WRAITH brand colors (aligned with design reference) */
+  --color-wraith-primary: #7c3aed;    /* Violet 600 - Primary actions */
+  --color-wraith-secondary: #4f46e5;  /* Indigo 600 - Secondary actions */
+  --color-wraith-accent: #06b6d4;     /* Cyan 500 - Highlights, progress */
+  --color-wraith-dark: #0f172a;       /* Slate 900 - Primary background */
+  --color-wraith-darker: #020617;     /* Slate 950 - Deepest background */
+
+  /* Status colors (standardized) */
+  --color-success: #22c55e;   /* Green 500 - Connected, completed */
+  --color-warning: #f59e0b;   /* Amber 500 - Caution, pending */
+  --color-error: #ef4444;     /* Red 500 - Errors, disconnected */
+
+  /* Background colors for dark theme (aligned with design reference) */
+  --color-bg-primary: #0f172a;    /* Main content area */
+  --color-bg-secondary: #1e293b;  /* Sidebars, headers, cards */
+  --color-bg-tertiary: #334155;   /* Elevated elements, hovers */
+
+  /* Network graph node colors */
+  --color-node-self: #3b82f6;     /* Blue 500 - Self node */
+  --color-node-direct: #22c55e;   /* Green 500 - Direct peers */
+  --color-node-relay: #f59e0b;    /* Amber 500 - Relay servers */
+  --color-node-indirect: #6b7280; /* Gray 500 - Indirect/DHT peers */
+}
+
+/* Base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: var(--color-bg-primary);
+  color: #e2e8f0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont,
+               'Segoe UI', Roboto, 'Oxygen', 'Ubuntu',
+               'Cantarell', 'Fira Sans', 'Droid Sans',
+               'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Focus styles for accessibility */
+:focus-visible {
+  outline: 2px solid var(--color-wraith-accent);
+  outline-offset: 2px;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-wraith-primary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-wraith-secondary);
+}
+
+/* SVG graph styles */
+.network-graph {
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+}
+
+.network-graph:active {
+  cursor: grabbing;
+}
+
+.network-graph .node {
+  cursor: pointer;
+  transition: filter 0.2s;
+}
+
+.network-graph .node:hover {
+  filter: brightness(1.2);
+}
+
+.network-graph .link {
+  stroke-opacity: 0.6;
+  transition: stroke-opacity 0.2s;
+}
+
+.network-graph .link:hover {
+  stroke-opacity: 1;
+}
+
+.network-graph .label {
+  font-size: 10px;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Tooltip styles */
+.tooltip {
+  position: absolute;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-bg-tertiary);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  pointer-events: none;
+  z-index: 100;
+  max-width: 300px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+/* Metric card animations */
+.metric-card {
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Progress bar animations */
+.progress-bar {
+  transition: width 0.3s ease-out;
+}
+
+/* Prevent text selection on UI elements */
+button,
+nav {
+  user-select: none;
+}
+
+/* Tab indicator animation */
+.tab-indicator {
+  transition: left 0.2s, width 0.2s;
+}

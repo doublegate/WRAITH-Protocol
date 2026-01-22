@@ -1,0 +1,1 @@
+{"root":["./src/App.tsx","./src/main.tsx","./src/components/DhtViewer.tsx","./src/components/DiagnosticsPanel.tsx","./src/components/Header.tsx","./src/components/NetworkGraph.tsx","./src/components/PeerList.tsx","./src/components/StatsDashboard.tsx","./src/stores/networkStore.ts","./src/stores/uiStore.ts","./src/types/index.ts"],"version":"5.6.3"}

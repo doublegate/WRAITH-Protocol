@@ -11,6 +11,158 @@ _No changes yet._
 
 ---
 
+## [1.9.0] - 2026-01-22 - Phase 22 Complete: WRAITH-Mesh IoT Mesh Networking
+
+### Phase 22 - IoT Mesh Network Visualization and Diagnostics
+
+This release delivers Phase 22 (WRAITH-Mesh), a comprehensive IoT mesh networking application with D3.js force-directed network topology visualization, DHT routing table inspection, network diagnostics suite, and real-time health monitoring.
+
+### Highlights
+
+- **8 Production-Ready Client Applications**: Transfer, Chat, Android, iOS, Sync, Share, Stream, Mesh
+- **1,760+ Tests Passing**: 100% pass rate across all crates and clients
+- **WRAITH-Mesh Complete**: New Tier 3 IoT mesh networking application
+- **Network Topology**: D3.js force-directed graph with peer connections
+- **DHT Inspection**: K-bucket routing table visualization
+- **Diagnostics Suite**: Ping, bandwidth, NAT detection, health checks
+- **Metrics History**: Time-series graphs with configurable ranges
+- **Data Export**: JSON and CSV export for network snapshots
+
+### Added
+
+#### Phase 22: WRAITH-Mesh Application
+
+##### Backend Architecture (`clients/wraith-mesh/src-tauri/src/`)
+- **Tauri 2.0 Backend**: Complete Rust backend with 8+ modules (~3,000 lines)
+- **State Management** (`state.rs`): Application state with monitoring controls
+- **Database Layer** (`database.rs`): SQLite for connection history and metrics
+- **Error Handling** (`error.rs`): Unified error types with user-friendly messages
+- **IPC Commands** (`commands.rs`): 15+ Tauri commands for all operations
+
+##### Network Monitoring
+- **Network Monitor** (`network_monitor.rs`): Real-time peer tracking
+  - Peer add/remove with connection tracking
+  - Latency, bandwidth, packet loss metrics
+  - Network snapshot generation
+  - Health score calculation
+  - Demo network initialization for testing
+- **Metrics Collection**: Time-series data for:
+  - Peer count over time
+  - Average latency trends
+  - Total bandwidth utilization
+  - Packet loss rates
+
+##### DHT Inspection
+- **DHT Inspector** (`dht_inspector.rs`): Routing table analysis
+  - K-bucket enumeration and visualization
+  - Node details (ID, address, last seen)
+  - Key lookup simulation
+  - Lookup path tracing
+  - Stored key enumeration
+
+##### Diagnostics Suite
+- **Diagnostics Module** (`diagnostics.rs`): Network testing tools
+  - Ping test with latency measurement
+  - Bandwidth test with throughput calculation
+  - NAT type detection (Full Cone, Restricted, Symmetric, etc.)
+  - Health check with comprehensive scoring
+
+##### Data Export
+- **Export Module** (`export.rs`): Data export functionality
+  - JSON export with pretty printing
+  - CSV export with sections (nodes, links, DHT stats)
+  - Metrics history export
+
+##### Frontend Components (`clients/wraith-mesh/frontend/src/`)
+- **React 18 + TypeScript**: Modern frontend with strict typing (~3,500 lines)
+- **Network Graph** (`components/NetworkGraph.tsx`): D3.js visualization
+  - Force-directed layout with physics simulation
+  - Color-coded peer types (self, direct, relay, DHT)
+  - Interactive node dragging
+  - Zoom and pan controls
+- **Statistics Dashboard** (`components/StatsDashboard.tsx`): Metrics display
+  - Real-time peer count, latency, bandwidth
+  - Time-series charts with history
+  - Health score indicator
+- **DHT Viewer** (`components/DhtViewer.tsx`): Routing table UI
+  - K-bucket list with node counts
+  - Node detail panels
+  - Key lookup interface
+- **Diagnostics Panel** (`components/DiagnosticsPanel.tsx`): Test tools
+  - Ping test with result display
+  - Bandwidth measurement
+  - NAT detection
+  - Health check summary
+- **Peer List** (`components/PeerList.tsx`): Peer management
+- **Header** (`components/Header.tsx`): Navigation and controls
+
+##### State Management
+- **Zustand Stores**: 2 dedicated stores
+  - `networkStore`: Network state, peers, metrics
+  - `uiStore`: UI state, view selection
+
+##### Styling
+- **Tailwind CSS**: WRAITH design system with dark theme
+- **D3.js Integration**: Custom graph styling
+
+### Changed
+
+- **Test Count**: Increased from 1,739 to 1,760 tests (+21)
+- **Code Volume**: Increased from ~83,500 to ~86,500 lines Rust, ~26,000 to ~29,500 lines client code
+- **Client Count**: 8 production applications (was 7)
+- **Story Points Delivered**: 2,591 total (was 2,531)
+
+### Technical Details
+
+#### Phase 22 Statistics
+- **Backend Modules**: 8+ Rust modules (~3,000 lines)
+- **Frontend Components**: 6+ React components (~3,500 lines)
+- **Zustand Stores**: 2 stores (~300 lines)
+- **Total Phase 22**: ~6,800 lines
+- **Tests**: 21 passing
+
+#### File Manifest
+
+##### New Files (Phase 22 - WRAITH-Mesh)
+```
+clients/wraith-mesh/
+├── src-tauri/
+│   ├── src/
+│   │   ├── lib.rs
+│   │   ├── main.rs
+│   │   ├── commands.rs
+│   │   ├── state.rs
+│   │   ├── error.rs
+│   │   ├── database.rs
+│   │   ├── network_monitor.rs
+│   │   ├── dht_inspector.rs
+│   │   ├── diagnostics.rs
+│   │   └── export.rs
+│   ├── Cargo.toml
+│   └── tauri.conf.json
+├── frontend/
+│   ├── src/
+│   │   ├── App.tsx
+│   │   ├── main.tsx
+│   │   ├── index.css
+│   │   ├── types/index.ts
+│   │   ├── stores/
+│   │   │   ├── networkStore.ts
+│   │   │   └── uiStore.ts
+│   │   └── components/
+│   │       ├── Header.tsx
+│   │       ├── NetworkGraph.tsx
+│   │       ├── StatsDashboard.tsx
+│   │       ├── DhtViewer.tsx
+│   │       ├── DiagnosticsPanel.tsx
+│   │       └── PeerList.tsx
+│   ├── package.json
+│   └── vite.config.ts
+└── package.json
+```
+
+---
+
 ## [1.8.5] - 2026-01-22 - Phase 21 Complete: WRAITH-Stream Secure Media Streaming
 
 ### Phase 21 - Secure Media Streaming Application
