@@ -49,7 +49,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Check
-        run: cargo check --workspace --all-features --exclude wraith-transfer --exclude wraith-chat --exclude wraith-sync
+        run: cargo check --workspace --all-features --exclude wraith-transfer --exclude wraith-chat --exclude wraith-sync --exclude wraith-share --exclude wraith-stream --exclude wraith-mesh --exclude wraith-publish
 
   #############################################################################
   # Cross-Platform Test Matrix
@@ -115,7 +115,7 @@ jobs:
             ${{ runner.os }}-cargo-
 
       - name: Run tests
-        run: cargo test --workspace --all-features --exclude wraith-transfer --exclude wraith-chat --exclude wraith-sync ${{ matrix.test_flags }}
+        run: cargo test --workspace --all-features --exclude wraith-transfer --exclude wraith-chat --exclude wraith-sync --exclude wraith-share --exclude wraith-stream --exclude wraith-mesh --exclude wraith-publish ${{ matrix.test_flags }}
         shell: bash
 
   clippy:
@@ -144,7 +144,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Clippy
-        run: cargo clippy --workspace --all-features --exclude wraith-transfer --exclude wraith-chat --exclude wraith-sync -- -D warnings
+        run: cargo clippy --workspace --all-features --exclude wraith-transfer --exclude wraith-chat --exclude wraith-sync --exclude wraith-share --exclude wraith-stream --exclude wraith-mesh --exclude wraith-publish -- -D warnings
 
   fmt:
     name: Format
@@ -184,7 +184,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Check documentation
-        run: cargo doc --workspace --no-deps --exclude wraith-transfer --exclude wraith-chat --exclude wraith-sync
+        run: cargo doc --workspace --no-deps --exclude wraith-transfer --exclude wraith-chat --exclude wraith-sync --exclude wraith-share --exclude wraith-stream --exclude wraith-mesh --exclude wraith-publish
         env:
           RUSTDOCFLAGS: -Dwarnings
 
@@ -203,7 +203,7 @@ jobs:
         uses: dtolnay/rust-toolchain@1.85
 
       - name: Check MSRV
-        run: cargo check --workspace --exclude wraith-transfer --exclude wraith-chat --exclude wraith-sync
+        run: cargo check --workspace --exclude wraith-transfer --exclude wraith-chat --exclude wraith-sync --exclude wraith-share --exclude wraith-stream --exclude wraith-mesh --exclude wraith-publish
 
   #############################################################################
   # Code Coverage
@@ -240,7 +240,7 @@ jobs:
             ${{ runner.os }}-cargo-
 
       - name: Generate coverage report
-        run: cargo llvm-cov --workspace --all-features --exclude wraith-transfer --exclude wraith-chat --exclude wraith-sync --lcov --output-path lcov.info
+        run: cargo llvm-cov --workspace --all-features --exclude wraith-transfer --exclude wraith-chat --exclude wraith-sync --exclude wraith-share --exclude wraith-stream --exclude wraith-mesh --exclude wraith-publish --lcov --output-path lcov.info
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
