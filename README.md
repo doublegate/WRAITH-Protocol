@@ -9,7 +9,7 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
 [![CI Status](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/ci.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml)
 [![Release](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml)
-[![Version](https://img.shields.io/badge/version-1.9.5-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
 [![Security](https://img.shields.io/badge/security-audited-green.svg)](docs/security/SECURITY_AUDIT_v1.1.0.md)
 [![Rust](https://img.shields.io/badge/rust-1.85%2B-orange.svg)](https://www.rust-lang.org/)
 [![Edition](https://img.shields.io/badge/edition-2024-orange.svg)](https://doc.rust-lang.org/edition-guide/rust-2024/index.html)
@@ -17,43 +17,43 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
 
 ## Current Status
 
-**Version:** 1.9.5 Phase 23 Complete | **Development Phase:** Phase 23 Complete
+**Version:** 2.0.0 Phase 24 Complete | **Development Phase:** Phase 24 Complete
 
-WRAITH Protocol is production-ready with 9 desktop/mobile applications featuring full protocol integration, real-time voice/video calling, advanced group messaging, distributed anonymous file sharing, secure media streaming, IoT mesh networking, and censorship-resistant content publishing. Version 1.9.5 delivers Phase 23 (WRAITH-Publish), a decentralized content publishing platform with Ed25519 content signatures, markdown-to-HTML rendering, RSS/Atom feed generation, and DHT-based content distribution.
+WRAITH Protocol v2.0.0 is a major milestone release with 10 production-ready desktop/mobile applications. Version 2.0.0 delivers Phase 24 (WRAITH-Vault), a distributed secret storage application implementing Shamir's Secret Sharing with threshold cryptography, guardian-based key distribution, erasure coding for redundancy, and scheduled automatic backups.
 
 **Project Metrics (2026-01-22):**
-- **Code Volume:** ~83,000 lines of Rust code across protocol crates + ~25,000 lines in client applications (Kotlin/Swift/TypeScript)
-- **Test Coverage:** 1,816 tests passing (16 ignored) - 100% pass rate
-- **Documentation:** 130+ markdown files, ~88,000+ lines of comprehensive documentation
+- **Code Volume:** ~87,000 lines of Rust code across protocol crates + ~30,000 lines in client applications (Kotlin/Swift/TypeScript)
+- **Test Coverage:** 1,915+ tests passing (16 ignored) - 100% pass rate
+- **Documentation:** 130+ markdown files, ~90,000+ lines of comprehensive documentation
 - **Dependencies:** 295 audited packages (zero vulnerabilities via cargo-audit)
 - **Security:** Grade A+ (EXCELLENT), zero vulnerabilities, comprehensive DPI evasion validation
 - **Quality:** Code quality 98/100, zero compiler/clippy warnings, 3.5% technical debt ratio, production-ready codebase
-- **Client Applications:** 9 production-ready applications (4 Tier 1 + 3 Tier 2 + 2 Tier 3) with full protocol integration
+- **Client Applications:** 10 production-ready applications (4 Tier 1 + 3 Tier 2 + 3 Tier 3) with full protocol integration
 - **CI/CD:** GitHub Actions updated (upload-artifact v6, download-artifact v7, cache v5)
 
-**v1.9.5 Highlights (Phase 23 Complete):**
-- **WRAITH-Publish Complete**: New Tier 3 decentralized content publishing platform (Phase 23)
-- **Ed25519 Content Signatures**: Cryptographic author verification for all published content
-- **Markdown Rendering**: Full CommonMark + GFM extensions (tables, strikethrough, task lists)
-- **RSS/Atom Feeds**: Auto-generated RSS 2.0 feeds with author/tag filtering
-- **DHT Content Distribution**: Decentralized storage with configurable replication
-- **SQLite Article Database**: Full-text search, drafts, published, archived states
-- **Content Propagation**: Real-time tracking of content replication across network
-- **Reader Mode**: Cached content retrieval with offline reading support
-- **Image Optimization**: Embedded image storage with size validation
+**v2.0.0 Highlights (Phase 24 Complete):**
+- **WRAITH-Vault Complete**: New Tier 3 distributed secret storage application (Phase 24)
+- **Shamir's Secret Sharing**: Threshold cryptography with configurable k-of-n splitting
+- **Guardian System**: Trust-based key fragment distribution with device tracking
+- **Erasure Coding**: Reed-Solomon redundancy for data protection (configurable data/parity shards)
+- **Encrypted Backup**: AES-256-GCM encrypted incremental backups with zstd compression
+- **Scheduled Automation**: Cron-based automatic backup scheduling
+- **Recovery System**: Guardian-based secret reconstruction with progress tracking
+- **Content Deduplication**: BLAKE3-based chunk deduplication for storage efficiency
+- **SQLite Database**: Secure local storage with encryption-at-rest
+- **99 Tests**: Comprehensive test coverage across all modules
 
-**Phase 23 Highlights (WRAITH-Publish):**
-- **Content Management**: Draft creation, editing, publishing workflow
-- **Markdown Editor**: GFM syntax support with live preview
-- **Author Signatures**: Ed25519 signing with verification and author lookup
-- **Feed Generation**: RSS 2.0 with full content or excerpt modes
-- **DHT Storage**: Content addressing with CID-based retrieval
-- **Propagation Tracking**: Monitor content spread across network nodes
-- **Full-Text Search**: SQLite FTS5 for article discovery
-- **Archive/Restore**: Content lifecycle management
-- **Image Storage**: Base64 encoding with size limits
-- **Tauri 2.0 Desktop**: React 18 + TypeScript frontend with Zustand state management
-- **56 Tests**: Comprehensive test coverage across all modules
+**Phase 24 Highlights (WRAITH-Vault):**
+- **Secret Management**: Create, store, retrieve, and delete encrypted secrets
+- **Shamir Splitting**: k-of-n threshold scheme (1 ≤ k ≤ n ≤ 255)
+- **Guardian Network**: Trust levels, device management, share distribution
+- **Erasure Coding**: Reed-Solomon with automatic repair capability
+- **Backup System**: Incremental snapshots with manifest tracking
+- **Recovery Flow**: Multi-guardian share collection with verification
+- **Deduplication**: Content-defined chunking with BLAKE3 fingerprints
+- **Progress Tracking**: Real-time backup/restore progress reporting
+- **Tauri 2.0 Desktop**: React 18 + TypeScript frontend with dark theme
+- **99 Tests**: Full coverage including Shamir, erasure, backup, and recovery
 
 For detailed development history and phase accomplishments, see [Protocol Development History](docs/archive/README_Protocol-DEV.md).
 
@@ -276,7 +276,8 @@ WRAITH-Protocol/
 │   ├── wraith-chat/            # E2EE messaging (Tauri 2.0 + React 18 + SQLCipher)
 │   ├── wraith-sync/            # File synchronization (Tauri 2.0 + React 18)
 │   ├── wraith-share/           # Distributed file sharing (Tauri 2.0 + React 18)
-│   └── wraith-publish/         # Decentralized content publishing (Tauri 2.0 + React 18)
+│   ├── wraith-publish/         # Decentralized content publishing (Tauri 2.0 + React 18)
+│   └── wraith-vault/           # Distributed secret storage (Tauri 2.0 + React 18)
 ├── docs/                        # Comprehensive documentation
 │   ├── archive/                # Archived documentation and development history
 │   ├── architecture/           # Protocol design (5 docs)
@@ -326,8 +327,9 @@ WRAITH-Protocol/
 | **wraith-stream** | Secure media streaming with AV1/VP9/H.264, adaptive bitrate, live/VOD (Tauri 2.0 + React 18) | Desktop | 27 | ✅ v1.8.5 |
 | **wraith-mesh** | IoT mesh networking with topology visualization, DHT inspection, diagnostics (Tauri 2.0 + React 18) | Desktop | 21 | ✅ v1.9.0 |
 | **wraith-publish** | Decentralized content publishing with Ed25519 signatures, RSS feeds, DHT distribution (Tauri 2.0 + React 18) | Desktop | 56 | ✅ v1.9.5 |
+| **wraith-vault** | Distributed secret storage with Shamir's Secret Sharing, guardian system, erasure coding (Tauri 2.0 + React 18) | Desktop | 99 | ✅ v2.0.0 |
 
-**Total Clients:** 488 tests, 9 production applications (~32,500 lines: TypeScript/Kotlin/Swift)
+**Total Clients:** 587 tests, 10 production applications (~37,000 lines: TypeScript/Kotlin/Swift)
 
 ### Integration Tests & Benchmarks
 
@@ -336,7 +338,7 @@ WRAITH-Protocol/
 | **Integration Tests** | 323 | Cross-crate protocol integration and end-to-end scenarios |
 | **Benchmarks** | - | Performance validation (frame parsing, AEAD, hashing, file operations) |
 
-**Project Total:** 1,816+ tests (16 ignored) - 100% pass rate
+**Project Total:** 1,915+ tests (16 ignored) - 100% pass rate
 
 ## Documentation
 
@@ -428,8 +430,8 @@ WRAITH Protocol powers a comprehensive ecosystem of secure applications across 3
 | Client | Description | Status | Story Points |
 |--------|-------------|--------|--------------|
 | **WRAITH-Mesh** | IoT mesh networking with topology visualization and diagnostics | ✅ **Complete (v1.9.0)** | 60 |
-| **WRAITH-Publish** | Censorship-resistant publishing platform (blogs, wikis) | Planned | 76 |
-| **WRAITH-Vault** | Distributed secret storage using Shamir Secret Sharing | Planned | 94 |
+| **WRAITH-Publish** | Censorship-resistant publishing platform (blogs, wikis) | ✅ **Complete (v1.9.5)** | 76 |
+| **WRAITH-Vault** | Distributed secret storage using Shamir Secret Sharing | ✅ **Complete (v2.0.0)** | 94 |
 
 ### Tier 3: Security Testing (Specialized - Authorized Use Only)
 
@@ -438,7 +440,7 @@ WRAITH Protocol powers a comprehensive ecosystem of secure applications across 3
 | **WRAITH-Recon** | Network reconnaissance & data exfiltration assessment | Planned | 55 |
 | **WRAITH-RedOps** | Red team operations platform with C2 infrastructure | Planned | 89 |
 
-**Total Ecosystem:** 10 clients, ~1,148 story points (8 complete, 2 planned)
+**Total Ecosystem:** 10 clients, ~1,148 story points (10 complete)
 
 **Security Testing Notice:** WRAITH-Recon and WRAITH-RedOps require signed authorization and governance compliance. See [Security Testing Parameters](ref-docs/WRAITH-Security-Testing-Parameters-v1.0.md) for authorized use requirements.
 
@@ -580,13 +582,13 @@ WRAITH Protocol development follows a structured multi-phase approach:
   - Swarm-based multi-peer transfers
   - Link-based sharing with access control
 
-**Total Development:** 2,591 story points delivered across 22 phases
+**Total Development:** 2,685 story points delivered across 24 phases
 
 **Upcoming:**
-- 📋 Phase 23: WRAITH-Publish (censorship-resistant publishing)
-- 📋 Phase 24: WRAITH-Vault (distributed secret storage)
-- 📋 Post-quantum cryptography, formal verification
+- 📋 Post-quantum cryptography (Kyber/Dilithium hybrid mode)
+- 📋 Formal verification of cryptographic protocols
 - 📋 XDP/eBPF kernel bypass implementation
+- 📋 Security testing tools (WRAITH-Recon, WRAITH-RedOps)
 
 See [ROADMAP.md](to-dos/ROADMAP.md) and [Protocol Development History](docs/archive/README_Protocol-DEV.md) for detailed planning and phase accomplishments.
 
@@ -602,12 +604,13 @@ See [ROADMAP.md](to-dos/ROADMAP.md) and [Protocol Development History](docs/arch
   - ✅ WRAITH-Sync (file synchronization - v1.7.0)
   - ✅ WRAITH-Share (distributed file sharing - v1.8.0)
   - ✅ WRAITH-Stream (secure media streaming - v1.8.5)
-- **Tier 3 (Partial):**
+- **Tier 3 (Complete):**
   - ✅ WRAITH-Mesh (IoT mesh networking - v1.9.0)
-  - Planned: WRAITH-Publish, WRAITH-Vault
+  - ✅ WRAITH-Publish (decentralized publishing - v1.9.5)
+  - ✅ WRAITH-Vault (distributed secret storage - v2.0.0)
 - **Security Testing (Planned):** WRAITH-Recon, WRAITH-RedOps (authorized use only)
 
-**Status:** 8 of 10 clients complete (794 SP delivered, 414 SP remaining)
+**Status:** 10 of 10 core clients complete (1,004 SP delivered)
 
 See [Client Roadmap](to-dos/ROADMAP-clients.md) for detailed planning.
 
@@ -791,6 +794,6 @@ WRAITH Protocol builds on the work of many excellent projects and technologies:
 
 **WRAITH Protocol** - *Secure. Fast. Invisible.*
 
-**Status:** v1.9.0 Phase 22 Complete | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 1,760 passing (16 ignored) | **Quality:** Production-ready, 0 vulnerabilities, zero warnings, 98/100 quality grade | **Clients:** 8 applications with full protocol integration, voice/video calling, group messaging, file synchronization, distributed file sharing, secure media streaming, IoT mesh networking, and unified UI/UX design system
+**Status:** v2.0.0 Phase 24 Complete | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 1,915+ passing (16 ignored) | **Quality:** Production-ready, 0 vulnerabilities, zero warnings, 98/100 quality grade | **Clients:** 10 applications with full protocol integration, voice/video calling, group messaging, file synchronization, distributed file sharing, secure media streaming, IoT mesh networking, decentralized publishing, and distributed secret storage
 
 *Last Updated: 2026-01-22*

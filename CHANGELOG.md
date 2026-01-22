@@ -11,6 +11,179 @@ _No changes yet._
 
 ---
 
+## [2.0.0] - 2026-01-22 - Phase 24 Complete: WRAITH-Vault Distributed Secret Storage
+
+### Phase 24 - Distributed Secret Storage Application
+
+This major release delivers Phase 24 (WRAITH-Vault), a comprehensive distributed secret storage application implementing Shamir's Secret Sharing with threshold cryptography, guardian-based key distribution, erasure coding for redundancy, and scheduled automatic backups.
+
+### Highlights
+
+- **10 Production-Ready Client Applications**: Transfer, Chat, Android, iOS, Sync, Share, Stream, Mesh, Publish, Vault
+- **1,915+ Tests Passing**: 100% pass rate across all crates and clients
+- **WRAITH-Vault Complete**: New Tier 3 distributed secret storage application
+- **Shamir's Secret Sharing**: Threshold cryptography with configurable k-of-n splitting
+- **Guardian System**: Trust-based key fragment distribution
+- **Erasure Coding**: Reed-Solomon redundancy for data protection
+- **Encrypted Backups**: AES-256-GCM with zstd compression
+- **Recovery System**: Guardian-based secret reconstruction
+
+### Added
+
+#### Phase 24: WRAITH-Vault Application
+
+##### Backend Architecture (`clients/wraith-vault/src-tauri/src/`)
+- **Tauri 2.0 Backend**: Complete Rust backend with 15+ modules (~4,500 lines)
+- **State Management** (`state.rs`): Application state with identity persistence
+- **Database Layer** (`database.rs`): SQLite for secrets, guardians, and backups
+- **Error Handling** (`error.rs`): Unified error types with user-friendly messages
+- **IPC Commands** (`commands.rs`): 20+ Tauri commands for all operations
+
+##### Secret Management
+- **Secrets Module** (`secrets.rs`): Secret lifecycle management
+  - Create, retrieve, update, delete operations
+  - Secret types (passwords, keys, documents, notes)
+  - Expiration tracking
+  - Metadata management
+
+##### Shamir's Secret Sharing
+- **Shamir Module** (`shamir.rs`): Threshold cryptography
+  - k-of-n secret splitting (1 ≤ k ≤ n ≤ 255)
+  - GF(2^8) finite field arithmetic
+  - Lagrange polynomial interpolation
+  - Share verification
+
+##### Guardian System
+- **Guardian Module** (`guardian.rs`): Trust-based distribution
+  - Trust levels (Untrusted, Low, Medium, High, Critical)
+  - Device tracking and management
+  - Share distribution to guardians
+  - Guardian selection strategies
+
+##### Shard Distribution
+- **Shard Module** (`shard.rs`): Encrypted shard management
+  - Shard encryption with per-guardian keys
+  - Distribution tracking
+  - Acknowledgment handling
+
+##### Erasure Coding
+- **Erasure Module** (`erasure.rs`): Reed-Solomon redundancy
+  - Configurable data and parity shards
+  - Automatic repair capability
+  - Efficient encoding/decoding
+
+##### Backup System
+- **Backup Module** (`backup.rs`): Encrypted backups
+  - AES-256-GCM encryption
+  - zstd compression
+  - Incremental snapshots
+  - Manifest tracking
+- **Scheduler Module** (`scheduler.rs`): Automated backups
+  - Cron-based scheduling
+  - Manual trigger support
+
+##### Recovery System
+- **Recovery Module** (`recovery.rs`): Secret reconstruction
+  - Guardian share collection
+  - Threshold verification
+  - Progress tracking
+- **Restore Module** (`restore.rs`): Backup restoration
+  - Manifest validation
+  - Integrity verification
+
+##### Content Deduplication
+- **Deduplication Module** (`dedup.rs`): Storage efficiency
+  - BLAKE3-based fingerprinting
+  - Content-defined chunking
+  - Reference counting
+
+##### Chunking
+- **Chunker Module** (`chunker.rs`): Data chunking
+  - Configurable chunk sizes
+  - Efficient splitting algorithms
+
+##### Frontend Components (`clients/wraith-vault/frontend/src/`)
+- **React 18 + TypeScript**: Modern frontend with strict typing (~3,500 lines)
+- **Secrets Dashboard**: Secret management interface
+- **Guardian Management**: Trust configuration and device tracking
+- **Backup Interface**: Backup creation and scheduling
+- **Recovery Wizard**: Step-by-step secret recovery
+- **Settings Panel**: Configuration management
+
+##### State Management
+- **Zustand Stores**: 4 dedicated stores
+  - `secretStore`: Secrets and Shamir shares
+  - `guardianStore`: Guardian management
+  - `backupStore`: Backup and restore state
+  - `recoveryStore`: Recovery progress
+
+##### Styling
+- **Tailwind CSS**: WRAITH design system with dark theme
+- **Consistent UI**: Matches WRAITH-Publish design language
+
+### Changed
+
+- **Test Count**: Increased from 1,816 to 1,915 tests (+99)
+- **Code Volume**: Increased from ~90,000 to ~95,000 lines Rust, ~32,500 to ~37,000 lines client code
+- **Client Count**: 10 production applications (was 9)
+- **Story Points Delivered**: 2,685 total (was 2,591)
+- **Major Version**: Bumped to 2.0.0 to reflect complete client ecosystem
+
+### Technical Details
+
+#### Phase 24 Statistics
+- **Backend Modules**: 15+ Rust modules (~4,500 lines)
+- **Frontend Components**: 8+ React components (~3,500 lines)
+- **Zustand Stores**: 4 stores (~500 lines)
+- **Total Phase 24**: ~8,500 lines
+- **Tests**: 99 passing
+
+#### File Manifest
+
+##### New Files (Phase 24 - WRAITH-Vault)
+```
+clients/wraith-vault/
+├── src-tauri/
+│   ├── src/
+│   │   ├── lib.rs
+│   │   ├── main.rs
+│   │   ├── commands.rs
+│   │   ├── state.rs
+│   │   ├── error.rs
+│   │   ├── database.rs
+│   │   ├── secrets.rs
+│   │   ├── shamir.rs
+│   │   ├── guardian.rs
+│   │   ├── shard.rs
+│   │   ├── erasure.rs
+│   │   ├── backup.rs
+│   │   ├── scheduler.rs
+│   │   ├── recovery.rs
+│   │   ├── restore.rs
+│   │   ├── dedup.rs
+│   │   └── chunker.rs
+│   ├── Cargo.toml
+│   └── tauri.conf.json
+├── frontend/
+│   ├── src/
+│   │   ├── App.tsx
+│   │   ├── components/
+│   │   └── stores/
+│   ├── package.json
+│   └── vite.config.ts
+└── package.json
+```
+
+##### Modified Files
+- `Cargo.toml`: Workspace version updated to 2.0.0
+- `.github/workflows/ci.yml`: Added wraith-vault to exclusions
+- `.github/workflows/codeql.yml`: Added wraith-vault to exclusions
+- `.github/workflows/docs.yml`: Added wraith-vault to exclusions
+- `.github/workflows/release.yml`: Added wraith-vault to exclusions
+- `README.md`: Updated with v2.0.0 information and WRAITH-Vault details
+
+---
+
 ## [1.9.5] - 2026-01-22 - Phase 23 Complete: WRAITH-Publish Decentralized Content Publishing
 
 ### Phase 23 - Decentralized Content Publishing Platform

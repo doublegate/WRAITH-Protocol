@@ -155,10 +155,10 @@ jobs:
           VERSION: ${{ needs.validate.outputs.version }}
         run: |
           echo "Running test suite for version $VERSION"
-          cargo test --workspace --all-features --exclude wraith-transfer --exclude wraith-chat --exclude wraith-sync --exclude wraith-share --exclude wraith-stream --exclude wraith-mesh --exclude wraith-publish --verbose
+          cargo test --workspace --all-features --exclude wraith-transfer --exclude wraith-chat --exclude wraith-sync --exclude wraith-share --exclude wraith-stream --exclude wraith-mesh --exclude wraith-publish --exclude wraith-vault --verbose
 
       - name: Run clippy checks
-        run: cargo clippy --workspace --all-features --exclude wraith-transfer --exclude wraith-chat --exclude wraith-sync --exclude wraith-share --exclude wraith-stream --exclude wraith-mesh --exclude wraith-publish -- -D warnings
+        run: cargo clippy --workspace --all-features --exclude wraith-transfer --exclude wraith-chat --exclude wraith-sync --exclude wraith-share --exclude wraith-stream --exclude wraith-mesh --exclude wraith-publish --exclude wraith-vault -- -D warnings
 
       - name: Check formatting
         run: cargo fmt --all -- --check

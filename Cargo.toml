@@ -22,6 +22,7 @@ members = [
     "clients/wraith-stream/src-tauri",
     "clients/wraith-mesh/src-tauri",
     "clients/wraith-publish/src-tauri",
+    "clients/wraith-vault/src-tauri",
     "xtask",
     "tests",
 ]
@@ -31,7 +32,7 @@ members = [
 exclude = ["crates/wraith-xdp", "fuzz"]
 
 [workspace.package]
-version = "1.9.5"
+version = "2.0.0"
 edition = "2024"
 rust-version = "1.85"
 license = "MIT"

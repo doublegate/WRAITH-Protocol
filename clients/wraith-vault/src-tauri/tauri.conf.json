@@ -1,0 +1,50 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "WRAITH Vault",
+  "version": "1.7.2",
+  "identifier": "io.wraith.vault",
+  "build": {
+    "frontendDist": "../frontend/dist",
+    "devUrl": "http://localhost:5174",
+    "beforeDevCommand": "npm run dev --prefix frontend",
+    "beforeBuildCommand": "npm run build --prefix frontend"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "WRAITH Vault",
+        "width": 1200,
+        "height": 800,
+        "minWidth": 1000,
+        "minHeight": 700,
+        "resizable": true,
+        "fullscreen": false,
+        "center": true,
+        "decorations": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data: asset: https://asset.localhost"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["deb", "rpm", "appimage"],
+    "icon": [
+      "../../../clients/wraith-chat/src-tauri/icons/32x32.png",
+      "../../../clients/wraith-chat/src-tauri/icons/128x128.png",
+      "../../../clients/wraith-chat/src-tauri/icons/128x128@2x.png",
+      "../../../clients/wraith-chat/src-tauri/icons/icon.icns",
+      "../../../clients/wraith-chat/src-tauri/icons/icon.ico"
+    ],
+    "category": "Utility",
+    "shortDescription": "Distributed Secret Storage with Shamir's Secret Sharing",
+    "longDescription": "WRAITH Vault provides distributed secret storage using Shamir's Secret Sharing. Secrets are split into encrypted shards and distributed across trusted guardians. Recovery requires a threshold number of guardians, ensuring both security and availability.",
+    "linux": {
+      "appimage": {
+        "bundleMediaFramework": false
+      }
+    }
+  },
+  "plugins": {}
+}

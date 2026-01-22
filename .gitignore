@@ -62,6 +62,9 @@ criterion/
 fuzz/artifacts/
 fuzz/corpus/
 fuzz/target/
+
+# Client build artifacts (Tauri, mobile FFI)
+clients/*/src-tauri/target/
 clients/wraith-ios/wraith-swift-ffi/target/
 clients/wraith-android/app/src/main/rust/target/
 
