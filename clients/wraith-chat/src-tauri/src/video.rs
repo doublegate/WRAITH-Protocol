@@ -1102,6 +1102,12 @@ impl AdaptiveBitrateController {
         let avg_rtt = self.rtt_history.iter().sum::<f32>() / self.rtt_history.len().max(1) as f32;
         NetworkQuality::estimate(avg_loss, avg_rtt)
     }
+
+    /// Set minimum frames between quality changes (for testing)
+    #[cfg(test)]
+    pub fn set_hysteresis(&mut self, frames: u32) {
+        self.min_frames_between_changes = frames;
+    }
 }
 
 /// Result of bitrate adaptation

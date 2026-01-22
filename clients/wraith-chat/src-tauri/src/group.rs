@@ -800,4 +800,646 @@ mod tests {
         let groups = manager.list_groups();
         assert_eq!(groups.len(), 1);
     }
+
+    // ==================== Sprint 18.2 Edge Case Tests ====================
+
+    /// Test 1: Message ordering with concurrent sends
+    /// Tests that messages from multiple senders maintain correct ordering
+    #[test]
+    fn test_message_ordering_with_concurrent_sends() {
+        // Create a group with multiple members
+        let mut alice_session = GroupSession::new(
+            "ordering-test".to_string(),
+            "Ordering Test".to_string(),
+            "alice".to_string(),
+            Some("Alice".to_string()),
+        );
+
+        // Bob joins
+        let alice_dist = alice_session.get_my_distribution();
+        let mut bob_session = GroupSession::join(
+            "ordering-test".to_string(),
+            "Ordering Test".to_string(),
+            "bob".to_string(),
+            "alice".to_string(),
+            alice_dist.clone(),
+        );
+
+        // Charlie joins
+        let mut charlie_session = GroupSession::join(
+            "ordering-test".to_string(),
+            "Ordering Test".to_string(),
+            "charlie".to_string(),
+            "alice".to_string(),
+            alice_dist,
+        );
+
+        // Exchange keys
+        let bob_dist = bob_session.get_my_distribution();
+        let charlie_dist = charlie_session.get_my_distribution();
+
+        alice_session
+            .add_member_key(
+                "bob",
+                bob_dist.clone(),
+                Some("Bob".to_string()),
+                GroupRole::Member,
+            )
+            .unwrap();
+        alice_session
+            .add_member_key(
+                "charlie",
+                charlie_dist.clone(),
+                Some("Charlie".to_string()),
+                GroupRole::Member,
+            )
+            .unwrap();
+
+        bob_session
+            .add_member_key(
+                "charlie",
+                charlie_dist,
+                Some("Charlie".to_string()),
+                GroupRole::Member,
+            )
+            .unwrap();
+        charlie_session
+            .add_member_key("bob", bob_dist, Some("Bob".to_string()), GroupRole::Member)
+            .unwrap();
+
+        // Simulate concurrent message sends
+        let messages: Vec<(String, GroupEncryptedMessage)> = vec![
+            ("bob", bob_session.encrypt(b"Message 1 from Bob").unwrap()),
+            (
+                "charlie",
+                charlie_session.encrypt(b"Message 2 from Charlie").unwrap(),
+            ),
+            ("bob", bob_session.encrypt(b"Message 3 from Bob").unwrap()),
+            (
+                "charlie",
+                charlie_session.encrypt(b"Message 4 from Charlie").unwrap(),
+            ),
+            ("bob", bob_session.encrypt(b"Message 5 from Bob").unwrap()),
+        ]
+        .into_iter()
+        .map(|(sender, msg)| (sender.to_string(), msg))
+        .collect();
+
+        // Alice receives all messages - each sender's messages should maintain their iteration order
+        for (_, encrypted) in &messages {
+            let decrypted = alice_session.decrypt(encrypted);
+            assert!(
+                decrypted.is_ok(),
+                "Should decrypt all messages successfully"
+            );
+        }
+
+        // Verify Bob's messages maintain iteration sequence
+        assert_eq!(messages[0].1.iteration, 0); // Bob's first message
+        assert_eq!(messages[2].1.iteration, 1); // Bob's second message
+        assert_eq!(messages[4].1.iteration, 2); // Bob's third message
+
+        // Verify Charlie's messages maintain iteration sequence
+        assert_eq!(messages[1].1.iteration, 0); // Charlie's first message
+        assert_eq!(messages[3].1.iteration, 1); // Charlie's second message
+    }
+
+    /// Test 2: Sender key rotation during active conversation
+    /// Tests key rotation while messages are being exchanged
+    #[test]
+    fn test_sender_key_rotation_during_conversation() {
+        let mut alice_session = GroupSession::new(
+            "rotation-test".to_string(),
+            "Rotation Test".to_string(),
+            "alice".to_string(),
+            None,
+        );
+
+        let alice_dist = alice_session.get_my_distribution();
+        let mut bob_session = GroupSession::join(
+            "rotation-test".to_string(),
+            "Rotation Test".to_string(),
+            "bob".to_string(),
+            "alice".to_string(),
+            alice_dist,
+        );
+
+        let bob_dist = bob_session.get_my_distribution();
+        alice_session
+            .add_member_key("bob", bob_dist, None, GroupRole::Member)
+            .unwrap();
+
+        // Send some messages before rotation
+        let msg1 = bob_session.encrypt(b"Message before rotation").unwrap();
+        let decrypted1 = alice_session.decrypt(&msg1).unwrap();
+        assert_eq!(decrypted1, b"Message before rotation");
+
+        let old_generation = bob_session.my_sender_key.generation;
+
+        // Bob rotates his sender key
+        bob_session.rotate_sender_key();
+        assert_eq!(bob_session.my_sender_key.generation, old_generation + 1);
+
+        // Alice needs Bob's new key distribution
+        let new_bob_dist = bob_session.get_my_distribution();
+        alice_session
+            .add_member_key("bob", new_bob_dist, None, GroupRole::Member)
+            .unwrap();
+
+        // Send message after rotation
+        let msg2 = bob_session.encrypt(b"Message after rotation").unwrap();
+        assert_eq!(msg2.key_generation, old_generation + 1);
+
+        let decrypted2 = alice_session.decrypt(&msg2).unwrap();
+        assert_eq!(decrypted2, b"Message after rotation");
+
+        // Verify old message with old key generation fails (stale key)
+        // Create a stale message manually
+        let stale_msg = GroupEncryptedMessage {
+            group_id: msg2.group_id.clone(),
+            sender_peer_id: msg2.sender_peer_id.clone(),
+            key_generation: old_generation, // Old generation
+            iteration: msg2.iteration,
+            nonce: msg2.nonce.clone(),
+            ciphertext: msg2.ciphertext.clone(),
+        };
+
+        let result = alice_session.decrypt(&stale_msg);
+        assert!(result.is_err());
+        if let Err(GroupError::StaleKeyGeneration { expected, actual }) = result {
+            assert_eq!(expected, old_generation + 1);
+            assert_eq!(actual, old_generation);
+        } else {
+            panic!("Expected StaleKeyGeneration error");
+        }
+    }
+
+    /// Test 3: Member join during key distribution
+    /// Tests handling of a new member joining while keys are being distributed
+    #[test]
+    fn test_member_join_during_key_distribution() {
+        let mut alice_session = GroupSession::new(
+            "join-test".to_string(),
+            "Join Test".to_string(),
+            "alice".to_string(),
+            None,
+        );
+
+        // Bob joins first
+        let alice_dist = alice_session.get_my_distribution();
+        let mut bob_session = GroupSession::join(
+            "join-test".to_string(),
+            "Join Test".to_string(),
+            "bob".to_string(),
+            "alice".to_string(),
+            alice_dist.clone(),
+        );
+
+        let bob_dist = bob_session.get_my_distribution();
+        alice_session
+            .add_member_key("bob", bob_dist.clone(), None, GroupRole::Member)
+            .unwrap();
+
+        // Charlie joins while Bob's key is being distributed
+        let mut charlie_session = GroupSession::join(
+            "join-test".to_string(),
+            "Join Test".to_string(),
+            "charlie".to_string(),
+            "alice".to_string(),
+            alice_dist,
+        );
+
+        // Charlie needs Bob's key too
+        charlie_session
+            .add_member_key("bob", bob_dist, None, GroupRole::Member)
+            .unwrap();
+
+        let charlie_dist = charlie_session.get_my_distribution();
+        alice_session
+            .add_member_key("charlie", charlie_dist.clone(), None, GroupRole::Member)
+            .unwrap();
+        bob_session
+            .add_member_key("charlie", charlie_dist, None, GroupRole::Member)
+            .unwrap();
+
+        // Now all members should be able to communicate
+        let msg = bob_session.encrypt(b"Hello everyone!").unwrap();
+        let decrypted_alice = alice_session.decrypt(&msg).unwrap();
+        let decrypted_charlie = charlie_session.decrypt(&msg).unwrap();
+
+        assert_eq!(decrypted_alice, b"Hello everyone!");
+        assert_eq!(decrypted_charlie, b"Hello everyone!");
+    }
+
+    /// Test 4: Offline member key catch-up
+    /// Tests handling of messages from a sender whose key iterations have advanced
+    #[test]
+    fn test_offline_member_key_catchup() {
+        let mut alice_session = GroupSession::new(
+            "catchup-test".to_string(),
+            "Catchup Test".to_string(),
+            "alice".to_string(),
+            None,
+        );
+
+        let alice_dist = alice_session.get_my_distribution();
+        let mut bob_session = GroupSession::join(
+            "catchup-test".to_string(),
+            "Catchup Test".to_string(),
+            "bob".to_string(),
+            "alice".to_string(),
+            alice_dist,
+        );
+
+        let bob_dist = bob_session.get_my_distribution();
+        alice_session
+            .add_member_key("bob", bob_dist, None, GroupRole::Member)
+            .unwrap();
+
+        // Bob sends multiple messages while Alice is "offline"
+        // (simulated by not decrypting them immediately)
+        let _msg1 = bob_session.encrypt(b"Message 1").unwrap();
+        let _msg2 = bob_session.encrypt(b"Message 2").unwrap();
+        let _msg3 = bob_session.encrypt(b"Message 3").unwrap();
+        let _msg4 = bob_session.encrypt(b"Message 4").unwrap();
+        let msg5 = bob_session.encrypt(b"Message 5").unwrap();
+
+        // Alice comes back online and receives only message 5
+        // The chain should fast-forward to catch up
+        let decrypted = alice_session.decrypt(&msg5).unwrap();
+        assert_eq!(decrypted, b"Message 5");
+
+        // Alice's copy of Bob's sender key should have advanced
+        let bob_key = alice_session.member_sender_keys.get("bob").unwrap();
+        assert_eq!(bob_key.iteration, 5); // After processing msg5 (iterations 0-4)
+    }
+
+    /// Test 5: Large group (100+ members) simulation
+    /// Tests performance and correctness with many members
+    #[test]
+    fn test_large_group_simulation() {
+        let mut admin_session = GroupSession::new(
+            "large-group".to_string(),
+            "Large Group".to_string(),
+            "admin".to_string(),
+            Some("Admin".to_string()),
+        );
+
+        let admin_dist = admin_session.get_my_distribution();
+
+        // Add 100 members
+        let mut member_sessions: Vec<GroupSession> = Vec::new();
+        for i in 0..100 {
+            let peer_id = format!("member-{}", i);
+            let member_session = GroupSession::join(
+                "large-group".to_string(),
+                "Large Group".to_string(),
+                peer_id.clone(),
+                "admin".to_string(),
+                admin_dist.clone(),
+            );
+
+            let member_dist = member_session.get_my_distribution();
+            admin_session
+                .add_member_key(
+                    &peer_id,
+                    member_dist.clone(),
+                    Some(format!("Member {}", i)),
+                    GroupRole::Member,
+                )
+                .unwrap();
+
+            // Each member gets the admin's key (already have from join)
+            // Add to our collection
+            member_sessions.push(member_session);
+        }
+
+        // Verify member count (admin + 100 members)
+        assert_eq!(admin_session.get_members().len(), 101);
+
+        // Admin sends a message
+        let admin_msg = admin_session.encrypt(b"Hello to all 100 members!").unwrap();
+
+        // All members should be able to decrypt
+        for (i, member_session) in member_sessions.iter_mut().enumerate() {
+            let decrypted = member_session.decrypt(&admin_msg);
+            assert!(
+                decrypted.is_ok(),
+                "Member {} should decrypt admin message",
+                i
+            );
+            assert_eq!(decrypted.unwrap(), b"Hello to all 100 members!");
+        }
+
+        // Test that we cannot exceed MAX_GROUP_MEMBERS
+        let result = admin_session.add_member_key(
+            "member-overflow",
+            SenderKeyState::new().to_distribution(),
+            None,
+            GroupRole::Member,
+        );
+        // Should still succeed since we have 101 < 1000 (MAX_GROUP_MEMBERS)
+        assert!(result.is_ok());
+
+        // Verify group info
+        let info = admin_session.get_info();
+        assert_eq!(info.member_count, 102);
+        assert!(info.am_i_admin);
+    }
+
+    /// Test 6: Admin role transfer
+    /// Tests promoting a member to admin and demoting the original admin
+    #[test]
+    fn test_admin_role_transfer() {
+        let mut admin_session = GroupSession::new(
+            "admin-transfer".to_string(),
+            "Admin Transfer Test".to_string(),
+            "original-admin".to_string(),
+            Some("Original Admin".to_string()),
+        );
+
+        // Verify original admin status
+        assert!(admin_session.am_i_admin());
+        assert!(admin_session.is_admin("original-admin"));
+
+        // Add a member
+        let member_key = SenderKeyState::new();
+        admin_session
+            .add_member_key(
+                "new-admin",
+                member_key.to_distribution(),
+                Some("New Admin".to_string()),
+                GroupRole::Member,
+            )
+            .unwrap();
+
+        // Verify member is not admin initially
+        assert!(!admin_session.is_admin("new-admin"));
+
+        // Promote member to admin
+        admin_session.promote_to_admin("new-admin").unwrap();
+        assert!(admin_session.is_admin("new-admin"));
+
+        // Now we have 2 admins
+        let members = admin_session.get_members();
+        let admin_count = members
+            .iter()
+            .filter(|m| m.role == GroupRole::Admin)
+            .count();
+        assert_eq!(admin_count, 2);
+
+        // Demote original admin (now that we have another admin)
+        admin_session.demote_from_admin("original-admin").unwrap();
+        assert!(!admin_session.is_admin("original-admin"));
+        assert!(!admin_session.am_i_admin()); // We are original-admin
+
+        // Verify only one admin now
+        let members = admin_session.get_members();
+        let admins: Vec<_> = members
+            .iter()
+            .filter(|m| m.role == GroupRole::Admin)
+            .collect();
+        assert_eq!(admins.len(), 1);
+        assert_eq!(admins[0].peer_id, "new-admin");
+    }
+
+    /// Test 7: Cannot demote last admin
+    /// Tests that the last admin cannot be demoted
+    #[test]
+    fn test_cannot_demote_last_admin() {
+        let mut session = GroupSession::new(
+            "last-admin".to_string(),
+            "Last Admin Test".to_string(),
+            "sole-admin".to_string(),
+            None,
+        );
+
+        // Add a regular member
+        let member_key = SenderKeyState::new();
+        session
+            .add_member_key(
+                "member",
+                member_key.to_distribution(),
+                None,
+                GroupRole::Member,
+            )
+            .unwrap();
+
+        // Try to demote the only admin
+        let result = session.demote_from_admin("sole-admin");
+        assert!(result.is_err());
+
+        if let Err(GroupError::NotAuthorized(msg)) = result {
+            assert!(msg.contains("last admin"));
+        } else {
+            panic!("Expected NotAuthorized error");
+        }
+
+        // Admin should still be admin
+        assert!(session.is_admin("sole-admin"));
+    }
+
+    /// Test 8: Group settings update
+    /// Tests updating group name, description, and avatar
+    #[test]
+    fn test_group_settings_update() {
+        let mut session = GroupSession::new(
+            "settings-test".to_string(),
+            "Original Name".to_string(),
+            "admin".to_string(),
+            None,
+        );
+
+        assert_eq!(session.name, "Original Name");
+        assert!(session.description.is_none());
+        assert!(session.avatar.is_none());
+
+        // Update name only
+        session.update_settings(Some("New Name".to_string()), None, None);
+        assert_eq!(session.name, "New Name");
+
+        // Update description
+        session.update_settings(None, Some("Group description".to_string()), None);
+        assert_eq!(session.description, Some("Group description".to_string()));
+
+        // Update avatar
+        let avatar_data = vec![0u8, 1, 2, 3, 4, 5];
+        session.update_settings(None, None, Some(avatar_data.clone()));
+        assert_eq!(session.avatar, Some(avatar_data));
+
+        // Update all at once
+        session.update_settings(
+            Some("Final Name".to_string()),
+            Some("Final description".to_string()),
+            Some(vec![10, 20, 30]),
+        );
+        assert_eq!(session.name, "Final Name");
+        assert_eq!(session.description, Some("Final description".to_string()));
+        assert_eq!(session.avatar, Some(vec![10, 20, 30]));
+    }
+
+    /// Test 9: Session serialization and deserialization
+    /// Tests JSON serialization preserves all session data
+    #[test]
+    fn test_session_serialization() {
+        let mut session = GroupSession::new(
+            "serialize-test".to_string(),
+            "Serialization Test".to_string(),
+            "admin".to_string(),
+            Some("Admin Name".to_string()),
+        );
+
+        session.update_settings(
+            None,
+            Some("Test description".to_string()),
+            Some(vec![1, 2, 3]),
+        );
+
+        // Add a member
+        let member_key = SenderKeyState::new();
+        session
+            .add_member_key(
+                "member1",
+                member_key.to_distribution(),
+                Some("Member One".to_string()),
+                GroupRole::Member,
+            )
+            .unwrap();
+
+        // Serialize
+        let json = session.to_json().unwrap();
+
+        // Deserialize
+        let restored = GroupSession::from_json(&json).unwrap();
+
+        // Verify all data preserved
+        assert_eq!(restored.group_id, session.group_id);
+        assert_eq!(restored.name, session.name);
+        assert_eq!(restored.description, session.description);
+        assert_eq!(restored.avatar, session.avatar);
+        assert_eq!(restored.get_members().len(), session.get_members().len());
+        assert!(restored.am_i_admin());
+
+        // Verify encryption still works after deserialization
+        let mut restored = restored;
+        let encrypted = restored.encrypt(b"Test message").unwrap();
+        assert!(!encrypted.ciphertext.is_empty());
+    }
+
+    /// Test 10: Key rotation on member removal
+    /// Tests that keys are rotated for forward secrecy when members leave
+    #[test]
+    fn test_key_rotation_on_member_removal() {
+        let mut session = GroupSession::new(
+            "removal-rotation".to_string(),
+            "Removal Test".to_string(),
+            "admin".to_string(),
+            None,
+        );
+
+        // Add members
+        for i in 0..3 {
+            let key = SenderKeyState::new();
+            session
+                .add_member_key(
+                    &format!("member-{}", i),
+                    key.to_distribution(),
+                    None,
+                    GroupRole::Member,
+                )
+                .unwrap();
+        }
+
+        assert_eq!(session.get_members().len(), 4);
+
+        let initial_generation = session.my_sender_key.generation;
+
+        // Remove each member and verify key rotates
+        for i in 0..3 {
+            let gen_before = session.my_sender_key.generation;
+            session.remove_member(&format!("member-{}", i)).unwrap();
+            let gen_after = session.my_sender_key.generation;
+
+            // Key should rotate on each removal
+            assert_eq!(gen_after, gen_before + 1);
+        }
+
+        // Final generation should be initial + 3
+        assert_eq!(session.my_sender_key.generation, initial_generation + 3);
+        assert_eq!(session.get_members().len(), 1); // Only admin left
+    }
+
+    /// Test 11: Error handling for non-existent member
+    /// Tests error handling when operations target non-existent members
+    #[test]
+    fn test_nonexistent_member_operations() {
+        let mut session = GroupSession::new(
+            "error-test".to_string(),
+            "Error Test".to_string(),
+            "admin".to_string(),
+            None,
+        );
+
+        // Try to remove non-existent member
+        let result = session.remove_member("ghost");
+        assert!(result.is_err());
+        if let Err(GroupError::MemberNotFound(id)) = result {
+            assert_eq!(id, "ghost");
+        } else {
+            panic!("Expected MemberNotFound error");
+        }
+
+        // Try to promote non-existent member
+        let result = session.promote_to_admin("ghost");
+        assert!(result.is_err());
+
+        // Try to demote non-existent member
+        let result = session.demote_from_admin("ghost");
+        assert!(result.is_err());
+
+        // Try to get non-existent member info
+        let member = session.get_member("ghost");
+        assert!(member.is_none());
+    }
+
+    /// Test 12: Stale key rotation manager
+    /// Tests the automatic key rotation for groups that haven't rotated recently
+    #[test]
+    fn test_stale_key_rotation_manager() {
+        let mut manager = GroupSessionManager::new();
+
+        // Create multiple groups
+        let _ = manager.create_group("Group 1".to_string(), "admin".to_string(), None);
+        let _ = manager.create_group("Group 2".to_string(), "admin".to_string(), None);
+        let _ = manager.create_group("Group 3".to_string(), "admin".to_string(), None);
+
+        assert_eq!(manager.list_groups().len(), 3);
+
+        // Immediately after creation, no groups should need rotation
+        let rotated = manager.rotate_stale_keys();
+        assert!(
+            rotated.is_empty(),
+            "No groups should need rotation immediately"
+        );
+
+        // Manually set last_key_rotation to a time > 7 days ago for testing
+        for session in manager.sessions.values_mut() {
+            session.last_key_rotation = chrono::Utc::now().timestamp() - (8 * 86400); // 8 days ago
+        }
+
+        // Now all groups should need rotation
+        for session in manager.sessions.values() {
+            assert!(session.needs_key_rotation());
+        }
+
+        // Rotate stale keys
+        let rotated = manager.rotate_stale_keys();
+        assert_eq!(rotated.len(), 3, "All 3 groups should be rotated");
+
+        // Verify rotation happened
+        for session in manager.sessions.values() {
+            assert!(!session.needs_key_rotation());
+            assert_eq!(session.my_sender_key.generation, 1); // Rotated once
+        }
+    }
 }

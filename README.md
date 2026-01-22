@@ -9,7 +9,7 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
 [![CI Status](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/ci.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml)
 [![Release](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml)
-[![Version](https://img.shields.io/badge/version-1.7.2-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
+[![Version](https://img.shields.io/badge/version-1.8.0-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
 [![Security](https://img.shields.io/badge/security-audited-green.svg)](docs/security/SECURITY_AUDIT_v1.1.0.md)
 [![Rust](https://img.shields.io/badge/rust-1.85%2B-orange.svg)](https://www.rust-lang.org/)
 [![Edition](https://img.shields.io/badge/edition-2024-orange.svg)](https://doc.rust-lang.org/edition-guide/rust-2024/index.html)
@@ -17,40 +17,48 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
 
 ## Current Status
 
-**Version:** 1.7.2 UI/UX Design System & Cross-Client Standardization | **Development Phase:** Phase 17 Complete
+**Version:** 1.8.0 Phase 18-20 Complete | **Development Phase:** Phase 20 Complete
 
-WRAITH Protocol is production-ready with desktop, mobile, and messaging applications featuring full protocol integration, real-time voice/video calling, and advanced group messaging. Phase 17 completes the mobile ecosystem with actual WRAITH protocol bindings (replacing placeholders), secure native storage (Android Keystore, iOS Keychain), push notifications (FCM/APNs), encrypted voice/video calls (Opus/VP8/VP9), and Sender Keys group messaging for efficient multi-party encryption. Version 1.7.2 introduces a comprehensive UI/UX Design System with a 2,400+ line design reference document, standardizes visual design across all WRAITH desktop clients (Transfer, Chat, Sync), and includes 50+ accessibility improvements with WCAG 2.1 AA compliance enhancements.
+WRAITH Protocol is production-ready with 6 desktop/mobile applications featuring full protocol integration, real-time voice/video calling, advanced group messaging, and distributed anonymous file sharing. Version 1.8.0 delivers Phase 18 (Chat Protocol Wire-Up), Phase 19 (DNS STUN Resolution), and Phase 20 (WRAITH-Share complete). The release includes comprehensive chat protocol integration with voice call signaling, video call coordination, and group messaging protocol wire-up, as well as a complete distributed file sharing application with swarm-based transfers and link-based sharing.
 
-**Project Metrics (2026-01-21):**
-- **Code Volume:** ~72,400 lines of Rust code across protocol crates + ~14,100 lines in client applications (Kotlin/Swift/TypeScript)
-- **Test Coverage:** 1,695 tests passing (16 ignored) - 100% pass rate
-- **Documentation:** 120+ markdown files, ~72,000+ lines of comprehensive documentation
+**Project Metrics (2026-01-22):**
+- **Code Volume:** ~80,000 lines of Rust code across protocol crates + ~22,000 lines in client applications (Kotlin/Swift/TypeScript)
+- **Test Coverage:** 1,712 tests passing (16 ignored) - 100% pass rate
+- **Documentation:** 130+ markdown files, ~85,000+ lines of comprehensive documentation
 - **Dependencies:** 295 audited packages (zero vulnerabilities via cargo-audit)
 - **Security:** Grade A+ (EXCELLENT), zero vulnerabilities, comprehensive DPI evasion validation
 - **Quality:** Code quality 98/100, zero compiler/clippy warnings, 3.5% technical debt ratio, production-ready codebase
-- **Client Applications:** 5 production-ready applications (4 Tier 1 + 1 Tier 2) with full protocol integration
+- **Client Applications:** 6 production-ready applications (4 Tier 1 + 2 Tier 2) with full protocol integration
 - **CI/CD:** GitHub Actions updated (upload-artifact v6, download-artifact v7, cache v5)
 
-**v1.7.2 Highlights (UI/UX Design System & Cross-Client Standardization):**
-- **UI/UX Design Reference**: New 2,400+ line comprehensive design guide (docs/clients/UI-UX-DESIGN-REFERENCE.md)
-- **Cross-Client Standardization**: Unified visual design across WRAITH-Transfer, WRAITH-Chat, WRAITH-Sync
-- **Color System**: Standardized palette (Primary #7c3aed, Secondary #4f46e5, Accent #06b6d4, Slate tones)
-- **Component Library**: Consistent buttons, inputs, modals, cards across all clients
-- **Accessibility**: WCAG 2.1 AA compliance with ARIA attributes, focus states, keyboard navigation
-- **50+ Component Fixes**: Modal backdrops, color standardization (gray->slate), typography hierarchy
-- **JACK/ALSA Fix**: Resolved audio device enumeration errors in WRAITH-Chat voice calls
-- **TypeScript Fix**: Fixed Vitest config import in WRAITH-Transfer
+**v1.8.0 Highlights (Phases 18-20 Complete):**
+- **WRAITH-Share Complete**: New Tier 2 distributed anonymous file sharing application (Phase 20)
+- **Chat Protocol Wire-Up**: Voice call signaling, video call coordination, group messaging protocol (Phase 18)
+- **DNS STUN Resolution**: Dynamic STUN server resolution with TTL caching and health monitoring (Phase 19)
+- **Swarm-Based Transfers**: Multi-peer parallel downloads with BitTorrent-style chunk distribution
+- **Link-Based Sharing**: Shareable links with expiration, download limits, and password protection
+- **Access Control**: Fine-grained permissions (view/download/upload/admin) for shared content
+- **Activity Tracking**: Real-time activity feeds with peer join/leave notifications
+- **ICE Protocol Enhancements**: Improved NAT traversal with enhanced candidate gathering
 
-**Phase 17 Highlights:**
-- Mobile Protocol Integration: Android JNI and iOS UniFFI with actual WRAITH protocol bindings (26 new tests)
-- Mobile Secure Storage: Android Keystore and iOS Keychain for hardware-backed key storage (45 new tests)
-- Mobile Discovery: DHT peer discovery and NAT traversal optimized for mobile networks (63 new tests)
-- Push Notifications: FCM (Android) and APNs (iOS) for real-time message delivery (107 new tests)
-- Voice Calling: Opus codec with RNNoise noise suppression and echo cancellation
-- Video Calling: VP8/VP9 codecs with adaptive bitrate streaming (38 new tests)
-- Group Messaging: Sender Keys protocol for O(1) encryption efficiency
-- Integration Testing: 260 new end-to-end tests for cross-platform verification
-- 39 new Tauri IPC commands (16 voice, 16 video, 11 group messaging)
+**Phase 20 Highlights (WRAITH-Share):**
+- Distributed Anonymous File Sharing: BitTorrent-style swarm-based transfers over WRAITH protocol
+- Multi-Peer Downloads: Parallel chunk fetching from multiple peers with automatic peer discovery
+- Link-Based Sharing: Shareable links with configurable expiration, download limits, password protection
+- Access Control System: Fine-grained permissions (view/download/upload/admin) per file/folder
+- Group Sharing: Share content with groups of peers with role-based access management
+- Activity Tracking: Real-time activity feeds showing peer joins, downloads, uploads
+- Version History: File versioning with automatic conflict resolution
+- Tauri 2.0 Desktop App: React 18 + TypeScript frontend with comprehensive file browser UI
+- 79+ source files with complete frontend and backend implementation
+
+**Phase 18-19 Highlights:**
+- Voice Call Signaling: Protocol-level wire-up for voice call initiation and state management
+- Video Call Coordination: Protocol integration for video streams with quality negotiation
+- Group Messaging Protocol: Sender Keys distribution via WRAITH protocol streams
+- DNS STUN Resolution: Dynamic server discovery with DNS SRV records and A/AAAA fallback
+- STUN Health Monitoring: Automatic failover with response time tracking
+- ICE Enhancements: Improved candidate gathering with mobile network optimizations
 
 For detailed development history and phase accomplishments, see [Protocol Development History](docs/archive/README_Protocol-DEV.md).
 
@@ -271,7 +279,8 @@ WRAITH-Protocol/
 │   ├── wraith-android/         # Android mobile client (Kotlin + Jetpack Compose)
 │   ├── wraith-ios/             # iOS mobile client (Swift + SwiftUI)
 │   ├── wraith-chat/            # E2EE messaging (Tauri 2.0 + React 18 + SQLCipher)
-│   └── wraith-sync/            # File synchronization (Tauri 2.0 + React 18)
+│   ├── wraith-sync/            # File synchronization (Tauri 2.0 + React 18)
+│   └── wraith-share/           # Distributed file sharing (Tauri 2.0 + React 18)
 ├── docs/                        # Comprehensive documentation
 │   ├── archive/                # Archived documentation and development history
 │   ├── architecture/           # Protocol design (5 docs)
@@ -317,8 +326,9 @@ WRAITH-Protocol/
 | **wraith-ios** | Mobile client with full protocol integration (Swift + SwiftUI + UniFFI) | iOS | 103 | ✅ v1.7.0 |
 | **wraith-chat** | E2EE messaging with voice/video/groups (Tauri 2.0 + React 18 + SQLCipher) | Desktop | 76 | ✅ v1.7.0 |
 | **wraith-sync** | Decentralized file sync with delta transfers and version history (Tauri 2.0 + React 18) | Desktop | 17 | ✅ v1.7.0 |
+| **wraith-share** | Distributed anonymous file sharing with swarm transfers and link sharing (Tauri 2.0 + React 18) | Desktop | 24 | ✅ v1.8.0 |
 
-**Total Clients:** 360 tests, 5 production applications (~14,100 lines: TypeScript/Kotlin/Swift)
+**Total Clients:** 384 tests, 6 production applications (~22,000 lines: TypeScript/Kotlin/Swift)
 
 ### Integration Tests & Benchmarks
 
@@ -327,7 +337,7 @@ WRAITH-Protocol/
 | **Integration Tests** | 323 | Cross-crate protocol integration and end-to-end scenarios |
 | **Benchmarks** | - | Performance validation (frame parsing, AEAD, hashing, file operations) |
 
-**Project Total:** 1,695+ tests (16 ignored) - 100% pass rate
+**Project Total:** 1,712+ tests (16 ignored) - 100% pass rate
 
 ## Documentation
 
@@ -411,7 +421,7 @@ WRAITH Protocol powers a comprehensive ecosystem of secure applications across 3
 | Client | Description | Status | Story Points |
 |--------|-------------|--------|--------------|
 | **WRAITH-Sync** | Decentralized backup synchronization with delta sync and version history | ✅ **Complete (v1.7.0)** | 136 |
-| **WRAITH-Share** | Distributed anonymous file sharing (BitTorrent-like) | Planned | 123 |
+| **WRAITH-Share** | Distributed anonymous file sharing (BitTorrent-like) with swarm transfers and link sharing | ✅ **Complete (v1.8.0)** | 123 |
 
 ### Tier 3: Advanced Applications (Lower Priority)
 
@@ -429,7 +439,7 @@ WRAITH Protocol powers a comprehensive ecosystem of secure applications across 3
 | **WRAITH-Recon** | Network reconnaissance & data exfiltration assessment | Planned | 55 |
 | **WRAITH-RedOps** | Red team operations platform with C2 infrastructure | Planned | 89 |
 
-**Total Ecosystem:** 10 clients, ~1,148 story points (5 complete, 5 planned)
+**Total Ecosystem:** 10 clients, ~1,148 story points (6 complete, 4 planned)
 
 **Security Testing Notice:** WRAITH-Recon and WRAITH-RedOps require signed authorization and governance compliance. See [Security Testing Parameters](ref-docs/WRAITH-Security-Testing-Parameters-v1.0.md) for authorized use requirements.
 
@@ -558,13 +568,28 @@ WRAITH Protocol development follows a structured multi-phase approach:
   - Video Calling: VP8/VP9, adaptive bitrate (38 tests)
   - Group Messaging: Sender Keys protocol for O(1) encryption
   - Integration Testing: 260 end-to-end tests
+- ✅ Phase 18: Chat Protocol Wire-Up (45 SP)
+  - Voice call signaling via WRAITH protocol streams
+  - Video call coordination with quality negotiation
+  - Group messaging protocol integration with Sender Keys distribution
+- ✅ Phase 19: DNS STUN Resolution (35 SP)
+  - Dynamic STUN server discovery via DNS SRV records
+  - Health monitoring with automatic failover
+  - TTL-based caching for performance optimization
+- ✅ Phase 20: WRAITH-Share Complete (123 SP)
+  - Distributed anonymous file sharing application
+  - Swarm-based multi-peer transfers
+  - Link-based sharing with access control
 
-**Total Development:** 2,257 story points delivered across 17 phases
+**Total Development:** 2,460 story points delivered across 20 phases
 
 **Upcoming:**
-- 📋 Phase 18: XDP Implementation & Advanced Testing
-- 📋 Phase 18+: Post-quantum cryptography, formal verification
-- 📋 Client Applications (804 SP across 6 remaining applications)
+- 📋 Phase 21: WRAITH-Stream (secure media streaming)
+- 📋 Phase 22: WRAITH-Mesh (IoT mesh networking)
+- 📋 Phase 23: WRAITH-Publish (censorship-resistant publishing)
+- 📋 Phase 24: WRAITH-Vault (distributed secret storage)
+- 📋 Post-quantum cryptography, formal verification
+- 📋 XDP/eBPF kernel bypass implementation
 
 See [ROADMAP.md](to-dos/ROADMAP.md) and [Protocol Development History](docs/archive/README_Protocol-DEV.md) for detailed planning and phase accomplishments.
 
@@ -576,11 +601,13 @@ See [ROADMAP.md](to-dos/ROADMAP.md) and [Protocol Development History](docs/arch
   - ✅ WRAITH-Android (Android mobile client with full protocol integration - v1.7.0)
   - ✅ WRAITH-iOS (iOS mobile client with full protocol integration - v1.7.0)
   - ✅ WRAITH-Chat (E2EE messaging with voice/video/groups - v1.7.0)
-- **Tier 2:** ✅ WRAITH-Sync (file synchronization - v1.7.0), WRAITH-Share (distributed sharing - planned)
+- **Tier 2 (Complete):**
+  - ✅ WRAITH-Sync (file synchronization - v1.7.0)
+  - ✅ WRAITH-Share (distributed file sharing - v1.8.0)
 - **Tier 3 (Planned):** WRAITH-Stream, WRAITH-Mesh, WRAITH-Publish, WRAITH-Vault
 - **Security Testing (Planned):** WRAITH-Recon, WRAITH-RedOps (authorized use only)
 
-**Status:** 5 of 10 clients complete (540 SP delivered, 668 SP remaining)
+**Status:** 6 of 10 clients complete (663 SP delivered, 545 SP remaining)
 
 See [Client Roadmap](to-dos/ROADMAP-clients.md) for detailed planning.
 
@@ -672,7 +699,7 @@ WRAITH Protocol is designed with security as a core principle:
 - **Unsafe Code Audit:** 100% documentation coverage with SAFETY comments
 
 **Validation:**
-- **Test Coverage:** 1,695+ tests (16 ignored) covering all protocol layers
+- **Test Coverage:** 1,712+ tests (16 ignored) covering all protocol layers
 - **DPI Evasion:** Comprehensive validation against Wireshark, Zeek, Suricata, nDPI (see [DPI Evasion Report](docs/security/DPI_EVASION_REPORT.md))
 - **Fuzzing:** 5 libFuzzer targets continuously testing robustness
 - **Property-Based Tests:** QuickCheck-style invariant validation
@@ -764,6 +791,6 @@ WRAITH Protocol builds on the work of many excellent projects and technologies:
 
 **WRAITH Protocol** - *Secure. Fast. Invisible.*
 
-**Status:** v1.7.2 UI/UX Design System | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 1,695 passing (16 ignored) | **Quality:** Production-ready, 0 vulnerabilities, zero warnings, 98/100 quality grade | **Clients:** 5 applications with full protocol integration, voice/video calling, group messaging, file synchronization, and unified UI/UX design system
+**Status:** v1.8.0 Phase 20 Complete | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 1,712 passing (16 ignored) | **Quality:** Production-ready, 0 vulnerabilities, zero warnings, 98/100 quality grade | **Clients:** 6 applications with full protocol integration, voice/video calling, group messaging, file synchronization, distributed file sharing, and unified UI/UX design system
 
-*Last Updated: 2026-01-21*
+*Last Updated: 2026-01-22*

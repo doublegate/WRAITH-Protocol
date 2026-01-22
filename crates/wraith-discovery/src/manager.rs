@@ -4,7 +4,10 @@
 //! to provide seamless peer discovery and connection establishment.
 
 use crate::dht::{DhtNode, NodeId};
-use crate::nat::{Candidate, HolePuncher, IceGatherer, NatDetector, NatType, fallback_stun_ips};
+use crate::nat::{
+    Candidate, HolePuncher, IceGatherer, NatDetector, NatType, StunDnsResolver, StunServerSpec,
+    default_stun_servers, fallback_stun_ips,
+};
 use crate::relay::client::{RelayClient, RelayClientState};
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -80,7 +83,7 @@ impl DiscoveryConfig {
     /// Create a new discovery configuration
     ///
     /// Uses default STUN server IPs (fallback IPs from well-known STUN providers).
-    /// For DNS-based STUN resolution, use `add_stun_server()` with resolved addresses.
+    /// For DNS-based STUN resolution, use `with_dns_resolution()` instead.
     #[must_use]
     pub fn new(node_id: NodeId, listen_addr: SocketAddr) -> Self {
         // Use fallback STUN IPs from the dns module
@@ -98,6 +101,72 @@ impl DiscoveryConfig {
         }
     }
 
+    /// Create a new discovery configuration with DNS resolution for STUN servers
+    ///
+    /// Resolves STUN server hostnames (like stun.l.google.com) to IP addresses
+    /// using DNS. Falls back to hardcoded IPs if DNS resolution fails completely.
+    ///
+    /// This is the preferred method when DNS is available, as it allows STUN
+    /// servers to update their IPs without requiring client updates.
+    ///
+    /// # Errors
+    ///
+    /// Returns error if DNS resolver initialization fails
+    pub async fn with_dns_resolution(
+        node_id: NodeId,
+        listen_addr: SocketAddr,
+    ) -> Result<Self, DiscoveryError> {
+        Self::with_custom_stun_dns_resolution(node_id, listen_addr, &default_stun_servers()).await
+    }
+
+    /// Create a new discovery configuration with DNS resolution for custom STUN servers
+    ///
+    /// Resolves the provided STUN server specifications (hostnames or IPs) using DNS.
+    /// Falls back to hardcoded IPs if DNS resolution fails for all servers.
+    ///
+    /// # Arguments
+    ///
+    /// * `node_id` - The local node's identifier
+    /// * `listen_addr` - The local address to listen on
+    /// * `stun_specs` - STUN server specifications (hostnames or IP addresses)
+    ///
+    /// # Errors
+    ///
+    /// Returns error if DNS resolver initialization fails
+    pub async fn with_custom_stun_dns_resolution(
+        node_id: NodeId,
+        listen_addr: SocketAddr,
+        stun_specs: &[StunServerSpec],
+    ) -> Result<Self, DiscoveryError> {
+        let resolver = StunDnsResolver::new()
+            .await
+            .map_err(|e| DiscoveryError::InvalidConfig(format!("DNS resolver init failed: {e}")))?;
+
+        let mut resolved_servers = resolver.resolve_many(stun_specs).await;
+
+        // Fall back to hardcoded IPs if DNS resolution failed for all servers
+        if resolved_servers.is_empty() {
+            tracing::warn!("DNS resolution failed for all STUN servers, using fallback IPs");
+            resolved_servers = fallback_stun_ips();
+        } else {
+            tracing::info!(
+                "Resolved {} STUN server addresses via DNS",
+                resolved_servers.len()
+            );
+        }
+
+        Ok(Self {
+            node_id,
+            listen_addr,
+            bootstrap_nodes: Vec::new(),
+            stun_servers: resolved_servers,
+            relay_servers: Vec::new(),
+            nat_detection_enabled: true,
+            relay_enabled: true,
+            connection_timeout: Duration::from_secs(10),
+        })
+    }
+
     /// Add a bootstrap DHT node
     pub fn add_bootstrap_node(&mut self, addr: SocketAddr) {
         self.bootstrap_nodes.push(addr);
@@ -111,6 +180,37 @@ impl DiscoveryConfig {
     /// Add a relay server
     pub fn add_relay_server(&mut self, info: RelayInfo) {
         self.relay_servers.push(info);
+    }
+
+    /// Replace STUN servers with DNS-resolved addresses
+    ///
+    /// This method allows resolving STUN server hostnames after initial
+    /// configuration. Useful for refreshing DNS entries periodically.
+    ///
+    /// # Errors
+    ///
+    /// Returns error if DNS resolver initialization fails
+    pub async fn resolve_stun_servers(
+        &mut self,
+        stun_specs: &[StunServerSpec],
+    ) -> Result<(), DiscoveryError> {
+        let resolver = StunDnsResolver::new()
+            .await
+            .map_err(|e| DiscoveryError::InvalidConfig(format!("DNS resolver init failed: {e}")))?;
+
+        let resolved = resolver.resolve_many(stun_specs).await;
+
+        if resolved.is_empty() {
+            tracing::warn!("DNS resolution failed for all STUN servers, keeping existing servers");
+        } else {
+            self.stun_servers = resolved;
+            tracing::info!(
+                "Updated STUN servers: {} addresses resolved",
+                self.stun_servers.len()
+            );
+        }
+
+        Ok(())
     }
 }
 
@@ -185,6 +285,9 @@ pub struct DiscoveryManager {
 impl DiscoveryManager {
     /// Create a new discovery manager
     ///
+    /// Uses the STUN servers configured in `DiscoveryConfig`. For DNS-based
+    /// resolution, use `DiscoveryConfig::with_dns_resolution()` to create the config.
+    ///
     /// # Errors
     ///
     /// Returns error if initialization fails
@@ -221,6 +324,69 @@ impl DiscoveryManager {
             nat_type: Arc::new(RwLock::new(None)),
             state: Arc::new(RwLock::new(DiscoveryState::Stopped)),
         })
+    }
+
+    /// Create a new discovery manager with DNS resolution for STUN servers
+    ///
+    /// This is the preferred constructor when DNS is available. It resolves
+    /// STUN server hostnames (like stun.l.google.com) to IP addresses, with
+    /// automatic fallback to hardcoded IPs if DNS resolution fails.
+    ///
+    /// # Arguments
+    ///
+    /// * `node_id` - The local node's identifier
+    /// * `listen_addr` - The local address to listen on
+    ///
+    /// # Errors
+    ///
+    /// Returns error if DNS resolver or discovery manager initialization fails
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// use wraith_discovery::{DiscoveryManager, dht::NodeId};
+    /// use std::net::SocketAddr;
+    ///
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let node_id = NodeId::random();
+    /// let listen_addr: SocketAddr = "0.0.0.0:0".parse()?;
+    ///
+    /// // Uses DNS to resolve STUN servers with fallback to hardcoded IPs
+    /// let manager = DiscoveryManager::with_dns_resolution(node_id, listen_addr).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn with_dns_resolution(
+        node_id: NodeId,
+        listen_addr: SocketAddr,
+    ) -> Result<Self, DiscoveryError> {
+        let config = DiscoveryConfig::with_dns_resolution(node_id, listen_addr).await?;
+        Self::new(config).await
+    }
+
+    /// Create a new discovery manager with custom STUN server DNS resolution
+    ///
+    /// Resolves custom STUN server specifications using DNS, with fallback
+    /// to hardcoded IPs if all resolutions fail.
+    ///
+    /// # Arguments
+    ///
+    /// * `node_id` - The local node's identifier
+    /// * `listen_addr` - The local address to listen on
+    /// * `stun_specs` - Custom STUN server specifications (hostnames or IPs)
+    ///
+    /// # Errors
+    ///
+    /// Returns error if DNS resolver or discovery manager initialization fails
+    pub async fn with_custom_stun_dns_resolution(
+        node_id: NodeId,
+        listen_addr: SocketAddr,
+        stun_specs: &[StunServerSpec],
+    ) -> Result<Self, DiscoveryError> {
+        let config =
+            DiscoveryConfig::with_custom_stun_dns_resolution(node_id, listen_addr, stun_specs)
+                .await?;
+        Self::new(config).await
     }
 
     /// Start the discovery manager
@@ -725,5 +891,113 @@ mod tests {
 
         let manager = DiscoveryManager::new(config).await;
         assert!(manager.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_discovery_config_with_dns_resolution() {
+        let node_id = NodeId::random();
+        let addr = "127.0.0.1:8006".parse().unwrap();
+
+        // Test DNS resolution config constructor
+        let result = DiscoveryConfig::with_dns_resolution(node_id, addr).await;
+        assert!(result.is_ok());
+
+        let config = result.unwrap();
+        // Should have resolved addresses or fallback IPs
+        assert!(!config.stun_servers.is_empty());
+        assert!(config.nat_detection_enabled);
+        assert!(config.relay_enabled);
+    }
+
+    #[tokio::test]
+    async fn test_discovery_config_with_custom_stun_dns() {
+        let node_id = NodeId::random();
+        let addr = "127.0.0.1:8007".parse().unwrap();
+
+        // Test with IP-based specs (no actual DNS needed)
+        let specs = vec![
+            StunServerSpec::ip("1.2.3.4:3478".parse().unwrap()),
+            StunServerSpec::ip("5.6.7.8:3478".parse().unwrap()),
+        ];
+
+        let result = DiscoveryConfig::with_custom_stun_dns_resolution(node_id, addr, &specs).await;
+        assert!(result.is_ok());
+
+        let config = result.unwrap();
+        assert_eq!(config.stun_servers.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn test_discovery_config_resolve_stun_servers() {
+        let node_id = NodeId::random();
+        let addr = "127.0.0.1:8008".parse().unwrap();
+        let mut config = DiscoveryConfig::new(node_id, addr);
+
+        let initial_count = config.stun_servers.len();
+
+        // Test resolving new STUN servers (IP-based, no actual DNS)
+        let specs = vec![
+            StunServerSpec::ip("10.0.0.1:3478".parse().unwrap()),
+            StunServerSpec::ip("10.0.0.2:3478".parse().unwrap()),
+            StunServerSpec::ip("10.0.0.3:3478".parse().unwrap()),
+        ];
+
+        let result = config.resolve_stun_servers(&specs).await;
+        assert!(result.is_ok());
+
+        // Should have replaced the servers
+        assert_eq!(config.stun_servers.len(), 3);
+        assert_ne!(config.stun_servers.len(), initial_count);
+    }
+
+    #[tokio::test]
+    async fn test_discovery_manager_with_dns_resolution() {
+        let node_id = NodeId::random();
+        let addr = "127.0.0.1:8009".parse().unwrap();
+
+        // Test DNS resolution manager constructor
+        let result = DiscoveryManager::with_dns_resolution(node_id, addr).await;
+        assert!(result.is_ok());
+
+        let manager = result.unwrap();
+        assert_eq!(manager.state().await, DiscoveryState::Stopped);
+    }
+
+    #[tokio::test]
+    async fn test_discovery_manager_with_custom_stun_dns() {
+        let node_id = NodeId::random();
+        let addr = "127.0.0.1:8010".parse().unwrap();
+
+        // Test with IP-based specs (no actual DNS needed)
+        let specs = vec![
+            StunServerSpec::ip("1.2.3.4:3478".parse().unwrap()),
+            StunServerSpec::ip("5.6.7.8:19302".parse().unwrap()),
+        ];
+
+        let result = DiscoveryManager::with_custom_stun_dns_resolution(node_id, addr, &specs).await;
+        assert!(result.is_ok());
+
+        let manager = result.unwrap();
+        assert_eq!(manager.state().await, DiscoveryState::Stopped);
+    }
+
+    #[tokio::test]
+    async fn test_dns_fallback_on_empty_resolution() {
+        let node_id = NodeId::random();
+        let addr = "127.0.0.1:8011".parse().unwrap();
+
+        // Test with hostname that won't resolve (will fallback to hardcoded IPs)
+        // Note: This uses a hostname that's unlikely to resolve
+        let specs = vec![StunServerSpec::hostname(
+            "nonexistent.invalid.example",
+            3478,
+        )];
+
+        let result = DiscoveryConfig::with_custom_stun_dns_resolution(node_id, addr, &specs).await;
+        assert!(result.is_ok());
+
+        let config = result.unwrap();
+        // Should have fallen back to hardcoded IPs
+        assert!(!config.stun_servers.is_empty());
     }
 }

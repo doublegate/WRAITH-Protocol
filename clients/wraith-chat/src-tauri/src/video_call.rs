@@ -1368,4 +1368,580 @@ mod tests {
         assert_eq!(stats.video_frames_received, 0);
         assert_eq!(stats.video_bitrate, 0);
     }
+
+    // ==================== Sprint 18.2 Edge Case Tests ====================
+
+    /// Test 1: Camera permission handling
+    /// Tests video call behavior when camera access might be unavailable
+    #[tokio::test]
+    async fn test_camera_permission_handling() {
+        let manager = VideoCallManager::new();
+
+        // Start a video call without video initially (permission pending scenario)
+        let call_info = manager
+            .start_video_call("peer-camera-test", false)
+            .await
+            .unwrap();
+        assert!(!call_info.video_enabled);
+        assert_eq!(call_info.video_source, VideoSource::None);
+
+        // List cameras (simulated permission check)
+        let cameras = VideoCallManager::list_cameras().unwrap();
+        assert!(
+            !cameras.is_empty(),
+            "Should have simulated cameras available"
+        );
+
+        // Now enable video (permission granted scenario)
+        // First we need to simulate call being answered
+        let calls = manager.video_calls.read().await;
+        if let Some(call_arc) = calls.get(&call_info.call_id) {
+            let mut call = call_arc.lock().await;
+            call.info.state = CallState::Connected;
+            call.info.connected_at = Some(chrono::Utc::now().timestamp());
+        }
+        drop(calls);
+
+        let result = manager
+            .enable_video(&call_info.call_id, VideoSource::Camera)
+            .await;
+        assert!(result.is_ok());
+
+        let info = manager
+            .get_call_info(&call_info.call_id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert!(info.video_enabled);
+        assert_eq!(info.video_source, VideoSource::Camera);
+    }
+
+    /// Test 2: Resolution change during call
+    /// Tests dynamic resolution switching during an active video call
+    #[tokio::test]
+    async fn test_resolution_change_during_call() {
+        // Create encoder with HD resolution
+        let config_hd = VideoConfig {
+            resolution: VideoResolution::Hd,
+            ..Default::default()
+        };
+        let mut encoder = VideoEncoder::new(config_hd).unwrap();
+        let initial_bitrate = encoder.config().effective_bitrate();
+        assert_eq!(initial_bitrate, 1_500_000);
+
+        // Simulate resolution downgrade (e.g., due to bandwidth)
+        encoder.set_bitrate(600_000); // Medium bitrate
+
+        // Create a frame and encode at new bitrate
+        let frame = VideoFrame::blank(1280, 720);
+        let encoded = encoder.encode(&frame).unwrap();
+
+        // Frame should still encode successfully
+        assert!(!encoded.data.is_empty());
+        assert!(encoded.is_keyframe); // First frame is keyframe
+
+        // Test decoder handles resolution change gracefully
+        let config_new = VideoConfig {
+            resolution: VideoResolution::Medium,
+            ..Default::default()
+        };
+        let mut decoder = VideoDecoder::new(config_new).unwrap();
+
+        // Decoder should handle frames from different resolutions
+        let decoded = decoder.decode(&encoded);
+        assert!(decoded.is_ok());
+    }
+
+    /// Test 3: Bandwidth adaptation under stress
+    /// Tests the adaptive bitrate controller under various network conditions
+    #[test]
+    fn test_bandwidth_adaptation_under_stress() {
+        let mut controller = AdaptiveBitrateController::new(VideoResolution::Hd);
+        controller.set_hysteresis(0); // Disable hysteresis for testing
+
+        // Initial state
+        assert_eq!(controller.current_bitrate(), 1_500_000);
+        assert_eq!(controller.target_resolution(), VideoResolution::Hd);
+
+        // Simulate severe bandwidth drop
+        let mut bitrate_decreased = false;
+        for _ in 0..50 {
+            let result = controller.update(200_000, 15.0, 500.0); // Very poor network
+            if matches!(result, AdaptationResult::BitrateDecreased { .. }) {
+                bitrate_decreased = true;
+            }
+        }
+
+        assert!(
+            bitrate_decreased,
+            "Bitrate should decrease under poor network conditions"
+        );
+        assert!(
+            controller.current_bitrate() < 1_500_000,
+            "Bitrate should be lower than initial"
+        );
+
+        // Simulate network recovery
+        let mut controller2 = AdaptiveBitrateController::new(VideoResolution::Low);
+        controller2.set_hysteresis(0);
+
+        let mut bitrate_increased = false;
+        for _ in 0..50 {
+            let result = controller2.update(5_000_000, 0.1, 20.0); // Excellent network
+            if matches!(result, AdaptationResult::BitrateIncreased { .. }) {
+                bitrate_increased = true;
+            }
+        }
+
+        assert!(
+            bitrate_increased,
+            "Bitrate should increase under good network conditions"
+        );
+    }
+
+    /// Test 4: Frame drop recovery
+    /// Tests video decoder behavior when frames are dropped/lost
+    #[test]
+    fn test_frame_drop_recovery() {
+        let config = VideoConfig {
+            resolution: VideoResolution::Low,
+            keyframe_interval: 30, // Keyframe every 30 frames
+            ..Default::default()
+        };
+
+        let mut encoder = VideoEncoder::new(config.clone()).unwrap();
+        let mut decoder = VideoDecoder::new(config).unwrap();
+
+        // Encode first frame (keyframe)
+        let frame0 = VideoFrame::blank(640, 360);
+        let encoded0 = encoder.encode(&frame0).unwrap();
+        assert!(encoded0.is_keyframe);
+
+        // Decode keyframe successfully
+        let decoded0 = decoder.decode(&encoded0);
+        assert!(decoded0.is_ok());
+
+        // Encode frames 1-5
+        let mut encoded_frames = Vec::new();
+        for i in 1..6 {
+            let frame = VideoFrame::new(vec![i as u8; 640 * 360 * 4], 640, 360, i * 33333);
+            encoded_frames.push(encoder.encode(&frame).unwrap());
+        }
+
+        // Simulate frame loss - skip frames 1-3, try to decode frame 4
+        // Decoder should still work (P-frame can be decoded after keyframe)
+        let decoded4 = decoder.decode(&encoded_frames[3]);
+        assert!(decoded4.is_ok());
+
+        // Reset decoder and try to decode without keyframe first
+        decoder.reset();
+        let result = decoder.decode(&encoded_frames[4]);
+        assert!(result.is_err(), "Should fail without keyframe");
+    }
+
+    /// Test 5: Codec fallback (VP9 to VP8)
+    /// Tests codec negotiation and fallback scenarios
+    #[test]
+    fn test_codec_fallback_vp9_to_vp8() {
+        // Try VP9 first
+        let config_vp9 = VideoConfig {
+            codec: VideoCodec::Vp9,
+            resolution: VideoResolution::Low,
+            ..Default::default()
+        };
+
+        let mut encoder_vp9 = VideoEncoder::new(config_vp9).unwrap();
+        let frame = VideoFrame::blank(640, 360);
+        let encoded_vp9 = encoder_vp9.encode(&frame).unwrap();
+        assert_eq!(encoded_vp9.codec, VideoCodec::Vp9);
+
+        // Fallback to VP8
+        let config_vp8 = VideoConfig {
+            codec: VideoCodec::Vp8,
+            resolution: VideoResolution::Low,
+            ..Default::default()
+        };
+
+        let mut encoder_vp8 = VideoEncoder::new(config_vp8).unwrap();
+        let encoded_vp8 = encoder_vp8.encode(&frame).unwrap();
+        assert_eq!(encoded_vp8.codec, VideoCodec::Vp8);
+
+        // Both should produce valid output
+        assert!(!encoded_vp9.data.is_empty());
+        assert!(!encoded_vp8.data.is_empty());
+
+        // Create decoders for each codec
+        let config_decoder_vp9 = VideoConfig {
+            codec: VideoCodec::Vp9,
+            resolution: VideoResolution::Low,
+            ..Default::default()
+        };
+        let mut decoder_vp9 = VideoDecoder::new(config_decoder_vp9).unwrap();
+        let decoded = decoder_vp9.decode(&encoded_vp9);
+        assert!(decoded.is_ok());
+
+        let config_decoder_vp8 = VideoConfig {
+            codec: VideoCodec::Vp8,
+            resolution: VideoResolution::Low,
+            ..Default::default()
+        };
+        let mut decoder_vp8 = VideoDecoder::new(config_decoder_vp8).unwrap();
+        let decoded = decoder_vp8.decode(&encoded_vp8);
+        assert!(decoded.is_ok());
+    }
+
+    /// Test 6: Screen share on simulated multi-monitor
+    /// Tests screen capture source selection with multiple displays
+    #[test]
+    fn test_screen_share_multi_monitor() {
+        // List all screen sources (simulated multi-monitor)
+        let sources = ScreenCapture::list_sources().unwrap();
+
+        // Should have multiple sources (screens + windows)
+        assert!(sources.len() >= 2, "Should have multiple capture sources");
+
+        // Find screen sources specifically
+        let screens: Vec<&ScreenSource> = sources.iter().filter(|s| s.is_screen).collect();
+        assert!(screens.len() >= 2, "Should have at least 2 screen sources");
+
+        // Find window sources
+        let windows: Vec<&ScreenSource> = sources.iter().filter(|s| !s.is_screen).collect();
+        assert!(!windows.is_empty(), "Should have window sources");
+
+        // Create screen capture and select different sources
+        let config = VideoConfig::default();
+        let mut capture = ScreenCapture::new(config);
+
+        // Select primary display
+        let primary = sources
+            .iter()
+            .find(|s| s.is_screen && s.id == "screen-0")
+            .unwrap();
+        capture.select_source(&primary.id).unwrap();
+        assert_eq!(capture.current_source(), Some(primary.id.as_str()));
+
+        // Select secondary display
+        let secondary = sources
+            .iter()
+            .find(|s| s.is_screen && s.id == "screen-1")
+            .unwrap();
+        capture.select_source(&secondary.id).unwrap();
+        assert_eq!(capture.current_source(), Some(secondary.id.as_str()));
+
+        // Select a window
+        let window = windows.first().unwrap();
+        capture.select_source(&window.id).unwrap();
+        assert_eq!(capture.current_source(), Some(window.id.as_str()));
+
+        // Start capture and verify it works
+        capture.start().unwrap();
+        assert!(capture.is_running());
+
+        // Capture a frame
+        let frame = capture.capture_frame().unwrap();
+        assert!(!frame.data.is_empty());
+
+        capture.stop();
+        assert!(!capture.is_running());
+    }
+
+    /// Test 7: Video call signal handling - all signal types
+    #[tokio::test]
+    async fn test_video_signal_handling_all_types() {
+        let manager = VideoCallManager::new();
+
+        // Start a video call
+        let call_info = manager
+            .start_video_call("peer-signal-test", true)
+            .await
+            .unwrap();
+        let call_id = call_info.call_id.clone();
+
+        // Simulate call being answered
+        {
+            let calls = manager.video_calls.read().await;
+            if let Some(call_arc) = calls.get(&call_id) {
+                let mut call = call_arc.lock().await;
+                call.info.state = CallState::Connected;
+                call.info.connected_at = Some(chrono::Utc::now().timestamp());
+            }
+        }
+
+        // Test VideoAccept signal
+        let signal = VideoCallSignal::VideoAccept {
+            call_id: call_id.clone(),
+            video_config: VideoCodecConfig::default(),
+        };
+        let result = manager.process_signal("peer-signal-test", signal).await;
+        assert!(result.is_ok());
+
+        // Test VideoEnable signal
+        let signal = VideoCallSignal::VideoEnable {
+            call_id: call_id.clone(),
+            source: VideoSource::Camera,
+        };
+        let result = manager.process_signal("peer-signal-test", signal).await;
+        assert!(result.is_ok());
+
+        let info = result.unwrap().unwrap();
+        assert!(info.remote_video_enabled);
+
+        // Test VideoDisable signal
+        let signal = VideoCallSignal::VideoDisable {
+            call_id: call_id.clone(),
+        };
+        let result = manager.process_signal("peer-signal-test", signal).await;
+        assert!(result.is_ok());
+
+        let info = result.unwrap().unwrap();
+        assert!(!info.remote_video_enabled);
+
+        // Test KeyframeRequest signal
+        let signal = VideoCallSignal::KeyframeRequest {
+            call_id: call_id.clone(),
+        };
+        let result = manager.process_signal("peer-signal-test", signal).await;
+        assert!(result.is_ok());
+
+        // Test BandwidthUpdate signal
+        let signal = VideoCallSignal::BandwidthUpdate {
+            call_id: call_id.clone(),
+            estimated_bps: 1_000_000,
+        };
+        let result = manager.process_signal("peer-signal-test", signal).await;
+        assert!(result.is_ok());
+    }
+
+    /// Test 8: Video frame buffer ordering and overflow
+    #[test]
+    fn test_video_frame_buffer_ordering_overflow() {
+        let mut buffer = VideoFrameBuffer::new(3);
+
+        // Add keyframe
+        let keyframe = EncodedVideoFrame {
+            data: vec![b'W', b'V', b'I', b'D', 0x01, 0, 5, 0],
+            width: 1280,
+            height: 720,
+            timestamp_us: 0,
+            is_keyframe: true,
+            codec: VideoCodec::Vp9,
+        };
+        buffer.push(keyframe).unwrap();
+
+        // Add frames out of order
+        for ts in [100000u64, 33333, 66666, 133333, 166666] {
+            let frame = EncodedVideoFrame {
+                data: vec![b'W', b'V', b'I', b'D', 0x00, 0, 5, 0],
+                width: 1280,
+                height: 720,
+                timestamp_us: ts,
+                is_keyframe: false,
+                codec: VideoCodec::Vp9,
+            };
+            buffer.push(frame).unwrap();
+        }
+
+        // Buffer should reorder by timestamp
+        assert!(buffer.ready());
+
+        // Pop and verify ordering
+        let first = buffer.pop().unwrap();
+        assert!(first.is_keyframe);
+        assert_eq!(first.timestamp_us, 0);
+
+        let second = buffer.pop().unwrap();
+        assert_eq!(second.timestamp_us, 33333);
+
+        let third = buffer.pop().unwrap();
+        assert_eq!(third.timestamp_us, 66666);
+
+        // Continue popping - should maintain order
+        let fourth = buffer.pop().unwrap();
+        assert_eq!(fourth.timestamp_us, 100000);
+    }
+
+    /// Test 9: Camera switching during active call
+    #[tokio::test]
+    async fn test_camera_switching_during_call() {
+        let config = VideoConfig::default();
+        let mut capture = CameraCapture::new(config);
+
+        // List cameras
+        let cameras = CameraCapture::list_devices().unwrap();
+        assert!(cameras.len() >= 2, "Need at least 2 cameras for this test");
+
+        // Start with default camera
+        capture.start().unwrap();
+        assert!(capture.is_running());
+
+        // Get initial device
+        let initial_device = capture.current_device().map(|s| s.to_string());
+
+        // Switch camera
+        capture.switch_camera().unwrap();
+        let new_device = capture.current_device().map(|s| s.to_string());
+
+        // Device should have changed
+        assert_ne!(initial_device, new_device, "Camera should have switched");
+
+        // Capture should still work
+        let frame = capture.capture_frame().unwrap();
+        assert!(!frame.data.is_empty());
+
+        // Switch back
+        capture.switch_camera().unwrap();
+        let final_device = capture.current_device().map(|s| s.to_string());
+
+        // Should be back to original (or different if only 2 cameras)
+        assert!(final_device.is_some());
+
+        capture.stop();
+    }
+
+    /// Test 10: Video quality settings persistence
+    #[tokio::test]
+    async fn test_video_quality_settings() {
+        let manager = VideoCallManager::new();
+
+        // Start a video call
+        let call_info = manager
+            .start_video_call("peer-quality-test", true)
+            .await
+            .unwrap();
+        let call_id = call_info.call_id.clone();
+
+        // Simulate call being connected
+        {
+            let calls = manager.video_calls.read().await;
+            if let Some(call_arc) = calls.get(&call_id) {
+                let mut call = call_arc.lock().await;
+                call.info.state = CallState::Connected;
+            }
+        }
+
+        // Set video quality to Low
+        manager
+            .set_video_quality(&call_id, VideoResolution::Low)
+            .await
+            .unwrap();
+
+        let info = manager.get_call_info(&call_id).await.unwrap().unwrap();
+        assert_eq!(info.stats.current_resolution, VideoResolution::Low);
+
+        // Set to Medium
+        manager
+            .set_video_quality(&call_id, VideoResolution::Medium)
+            .await
+            .unwrap();
+
+        let info = manager.get_call_info(&call_id).await.unwrap().unwrap();
+        assert_eq!(info.stats.current_resolution, VideoResolution::Medium);
+
+        // Set to HD
+        manager
+            .set_video_quality(&call_id, VideoResolution::Hd)
+            .await
+            .unwrap();
+
+        let info = manager.get_call_info(&call_id).await.unwrap().unwrap();
+        assert_eq!(info.stats.current_resolution, VideoResolution::Hd);
+    }
+
+    /// Test 11: Video disable/enable toggle during call
+    #[tokio::test]
+    async fn test_video_disable_enable_toggle() {
+        let manager = VideoCallManager::new();
+
+        // Start a video call with video enabled
+        let call_info = manager
+            .start_video_call("peer-toggle-test", true)
+            .await
+            .unwrap();
+        let call_id = call_info.call_id.clone();
+
+        assert!(call_info.video_enabled);
+
+        // Simulate call being connected
+        {
+            let calls = manager.video_calls.read().await;
+            if let Some(call_arc) = calls.get(&call_id) {
+                let mut call = call_arc.lock().await;
+                call.info.state = CallState::Connected;
+            }
+        }
+
+        // Disable video
+        manager.disable_video(&call_id).await.unwrap();
+
+        let info = manager.get_call_info(&call_id).await.unwrap().unwrap();
+        assert!(!info.video_enabled);
+        assert_eq!(info.video_source, VideoSource::None);
+
+        // Re-enable video
+        manager
+            .enable_video(&call_id, VideoSource::Camera)
+            .await
+            .unwrap();
+
+        let info = manager.get_call_info(&call_id).await.unwrap().unwrap();
+        assert!(info.video_enabled);
+        assert_eq!(info.video_source, VideoSource::Camera);
+
+        // Switch to screen share
+        manager
+            .switch_video_source(&call_id, VideoSource::Screen)
+            .await
+            .unwrap();
+
+        let info = manager.get_call_info(&call_id).await.unwrap().unwrap();
+        assert!(info.video_enabled);
+        assert_eq!(info.video_source, VideoSource::Screen);
+    }
+
+    /// Test 12: Network quality estimation accuracy
+    #[test]
+    fn test_network_quality_estimation_boundaries() {
+        use crate::video::NetworkQuality;
+
+        // Test exact boundary conditions
+        // Excellent: <1% loss, <100ms RTT
+        assert_eq!(
+            NetworkQuality::estimate(0.9, 99.9),
+            NetworkQuality::Excellent
+        );
+        assert_eq!(NetworkQuality::estimate(1.0, 100.0), NetworkQuality::Good); // At boundary
+
+        // Good: <3% loss, <200ms RTT
+        assert_eq!(NetworkQuality::estimate(2.9, 199.9), NetworkQuality::Good);
+        assert_eq!(NetworkQuality::estimate(3.0, 200.0), NetworkQuality::Fair); // At boundary
+
+        // Fair: <5% loss, <300ms RTT
+        assert_eq!(NetworkQuality::estimate(4.9, 299.9), NetworkQuality::Fair);
+        assert_eq!(NetworkQuality::estimate(5.0, 300.0), NetworkQuality::Poor); // At boundary
+
+        // Poor: <10% loss, <500ms RTT
+        assert_eq!(NetworkQuality::estimate(9.9, 499.9), NetworkQuality::Poor);
+        assert_eq!(
+            NetworkQuality::estimate(10.0, 500.0),
+            NetworkQuality::Critical
+        ); // At boundary
+
+        // Critical: >=10% loss or >=500ms RTT
+        assert_eq!(
+            NetworkQuality::estimate(20.0, 800.0),
+            NetworkQuality::Critical
+        );
+
+        // Edge case: good loss but bad RTT
+        assert_eq!(
+            NetworkQuality::estimate(0.5, 600.0),
+            NetworkQuality::Critical
+        );
+
+        // Edge case: bad loss but good RTT
+        assert_eq!(
+            NetworkQuality::estimate(15.0, 50.0),
+            NetworkQuality::Critical
+        );
+    }
 }

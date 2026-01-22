@@ -2,14 +2,17 @@
 
 use crate::audio::AudioDevice;
 use crate::crypto::{DoubleRatchet, EncryptedMessage};
-use crate::database::{Contact, Conversation, Message, NewConversation};
+use crate::database::{
+    Contact, Conversation, GroupActivityStats, Message, NewConversation, StorageBreakdown,
+};
 use crate::group::{GroupInfo, GroupMember, GroupRole, SenderKeyDistribution};
 use crate::state::AppState;
 use crate::video::{CameraDevice, ScreenSource, VideoResolution};
 use crate::video_call::{VideoCallInfo, VideoSource};
 use crate::voice_call::CallInfo;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tauri::State;
+use tauri::{AppHandle, Emitter, State};
 
 // MARK: - Contact Commands
 
@@ -188,6 +191,7 @@ pub async fn send_message(
 
 #[tauri::command]
 pub async fn receive_message(
+    app: AppHandle,
     state: State<'_, Arc<AppState>>,
     peer_id: String,
     encrypted_message: EncryptedMessage,
@@ -246,7 +250,7 @@ pub async fn receive_message(
     let message = Message {
         id: 0,
         conversation_id,
-        sender_peer_id: peer_id,
+        sender_peer_id: peer_id.clone(),
         content_type: "text".to_string(),
         body: Some(body),
         media_path: None,
@@ -262,7 +266,18 @@ pub async fn receive_message(
 
     let message_id = db.insert_message(&message).map_err(|e| e.to_string())?;
 
-    // TODO: Emit event to frontend to update UI
+    // Emit event to frontend to update UI
+    if let Err(e) = app.emit(
+        "message_received",
+        serde_json::json!({
+            "message_id": message_id,
+            "conversation_id": conversation_id,
+            "peer_id": peer_id,
+            "timestamp": chrono::Utc::now().to_rfc3339(),
+        }),
+    ) {
+        log::warn!("Failed to emit message_received event: {}", e);
+    }
 
     Ok(message_id)
 }
@@ -707,15 +722,77 @@ pub async fn create_group(
     let mut group_sessions = state.group_sessions.lock().await;
     let info = group_sessions.create_group(name, local_peer_id.clone(), None);
 
-    // If member_peer_ids provided, we'll need to invite them
-    // For now, just return the group info - invitations would be sent via WRAITH protocol
+    // Get our sender key distribution to share with invited members
+    let session = group_sessions
+        .get_session(&info.group_id)
+        .ok_or_else(|| "Failed to get newly created group session".to_string())?;
+    let our_distribution = session.get_my_distribution();
+
+    drop(group_sessions);
+
+    // If member_peer_ids provided, send invitations via WRAITH protocol
     if let Some(peer_ids) = member_peer_ids {
         log::info!(
-            "Group {} created, will invite {} members",
+            "Group {} created, inviting {} members",
             info.group_id,
             peer_ids.len()
         );
-        // TODO: Send invitations to members via WRAITH protocol
+
+        // Prepare invitation payload
+        let invitation = serde_json::json!({
+            "type": "group_invitation",
+            "group_id": info.group_id,
+            "group_name": info.name,
+            "inviter_peer_id": local_peer_id,
+            "sender_key_distribution": {
+                "generation": our_distribution.generation,
+                "chain_key": hex::encode(&our_distribution.chain_key),
+                "iteration": our_distribution.iteration,
+                "signing_key": hex::encode(&our_distribution.signing_key),
+            },
+            "timestamp": chrono::Utc::now().to_rfc3339(),
+        });
+        let invitation_bytes = serde_json::to_vec(&invitation)
+            .map_err(|e| format!("Failed to serialize invitation: {}", e))?;
+
+        // Send to each invited peer
+        let node = state.node.lock().await;
+        if node.is_running() {
+            for peer_id_hex in &peer_ids {
+                // Parse peer ID from hex
+                match hex::decode(peer_id_hex) {
+                    Ok(bytes) if bytes.len() == 32 => {
+                        let mut peer_id_bytes = [0u8; 32];
+                        peer_id_bytes.copy_from_slice(&bytes);
+
+                        match node.send_data(&peer_id_bytes, &invitation_bytes).await {
+                            Ok(()) => {
+                                log::info!(
+                                    "Sent group invitation for {} to peer {}",
+                                    info.group_id,
+                                    &peer_id_hex[..16]
+                                );
+                            }
+                            Err(e) => {
+                                log::warn!(
+                                    "Failed to send invitation to {}: {}",
+                                    &peer_id_hex[..16],
+                                    e
+                                );
+                            }
+                        }
+                    }
+                    Ok(_) => {
+                        log::warn!("Invalid peer ID length for {}", peer_id_hex);
+                    }
+                    Err(e) => {
+                        log::warn!("Invalid peer ID hex {}: {}", peer_id_hex, e);
+                    }
+                }
+            }
+        } else {
+            log::warn!("WRAITH node not running, group invitations not sent");
+        }
     }
 
     // Also create a conversation for this group
@@ -988,11 +1065,76 @@ pub async fn send_group_message(
 
     let message_id = db.insert_message(&message).map_err(|e| e.to_string())?;
 
-    // TODO: Send encrypted message to all group members via WRAITH protocol
-    let _encrypted_json =
-        serde_json::to_string(&encrypted).map_err(|e| format!("Serialization error: {}", e))?;
+    // Serialize encrypted message for transport
+    let encrypted_bytes =
+        serde_json::to_vec(&encrypted).map_err(|e| format!("Serialization error: {}", e))?;
 
-    // Mark as sent (in real implementation, this would be after transport confirms)
+    // Send encrypted message to all group members via WRAITH protocol
+    let node = state.node.lock().await;
+    let local_peer_id = state.local_peer_id.lock().await.clone();
+
+    if node.is_running() {
+        // Re-acquire group session to get members
+        let group_sessions = state.group_sessions.lock().await;
+        if let Some(session) = group_sessions.get_session(&group_id) {
+            let members = session.get_members();
+            let mut send_count = 0;
+            let mut fail_count = 0;
+
+            for member in members {
+                // Skip ourselves
+                if member.peer_id == local_peer_id {
+                    continue;
+                }
+
+                // Parse peer ID from hex
+                match hex::decode(&member.peer_id) {
+                    Ok(bytes) if bytes.len() == 32 => {
+                        let mut peer_id_bytes = [0u8; 32];
+                        peer_id_bytes.copy_from_slice(&bytes);
+
+                        match node.send_data(&peer_id_bytes, &encrypted_bytes).await {
+                            Ok(()) => {
+                                send_count += 1;
+                                log::debug!(
+                                    "Sent group message to member {}",
+                                    &member.peer_id[..16]
+                                );
+                            }
+                            Err(e) => {
+                                fail_count += 1;
+                                log::warn!(
+                                    "Failed to send group message to {}: {}",
+                                    &member.peer_id[..16],
+                                    e
+                                );
+                            }
+                        }
+                    }
+                    Ok(_) => {
+                        log::warn!("Invalid peer ID length for member {}", member.peer_id);
+                        fail_count += 1;
+                    }
+                    Err(e) => {
+                        log::warn!("Invalid peer ID hex for member: {}", e);
+                        fail_count += 1;
+                    }
+                }
+            }
+
+            log::info!(
+                "Group message {} sent to {}/{} members (group: {})",
+                message_id,
+                send_count,
+                send_count + fail_count,
+                group_id
+            );
+        }
+    } else {
+        log::warn!("WRAITH node not running, group message saved but not sent");
+    }
+
+    // Mark as sent (message saved locally regardless of send status)
     db.mark_message_sent(message_id)
         .map_err(|e| e.to_string())?;
 
@@ -1031,9 +1173,91 @@ pub async fn rotate_group_keys(
 
     session.rotate_sender_key();
 
-    // TODO: Distribute new sender key to all members via WRAITH protocol
+    // Get the new sender key distribution to share with members
+    let new_distribution = session.get_my_distribution();
+    let members: Vec<_> = session
+        .get_members()
+        .iter()
+        .map(|m| m.peer_id.clone())
+        .collect();
+    let local_peer_id = state.local_peer_id.lock().await.clone();
 
-    log::info!("Rotated keys for group {}", group_id);
+    drop(group_sessions);
+
+    // Distribute new sender key to all members via WRAITH protocol
+    let distribution_message = serde_json::json!({
+        "type": "sender_key_distribution",
+        "group_id": group_id,
+        "sender_peer_id": local_peer_id,
+        "distribution": {
+            "generation": new_distribution.generation,
+            "chain_key": hex::encode(&new_distribution.chain_key),
+            "iteration": new_distribution.iteration,
+            "signing_key": hex::encode(&new_distribution.signing_key),
+        },
+        "timestamp": chrono::Utc::now().to_rfc3339(),
+    });
+    let distribution_bytes = serde_json::to_vec(&distribution_message)
+        .map_err(|e| format!("Failed to serialize distribution: {}", e))?;
+
+    let node = state.node.lock().await;
+    if node.is_running() {
+        let mut send_count = 0;
+        let mut fail_count = 0;
+
+        for member_peer_id in &members {
+            // Skip ourselves
+            if member_peer_id == &local_peer_id {
+                continue;
+            }
+
+            // Parse peer ID from hex
+            match hex::decode(member_peer_id) {
+                Ok(bytes) if bytes.len() == 32 => {
+                    let mut peer_id_bytes = [0u8; 32];
+                    peer_id_bytes.copy_from_slice(&bytes);
+
+                    match node.send_data(&peer_id_bytes, &distribution_bytes).await {
+                        Ok(()) => {
+                            send_count += 1;
+                            log::debug!(
+                                "Distributed new sender key to member {}",
+                                &member_peer_id[..16.min(member_peer_id.len())]
+                            );
+                        }
+                        Err(e) => {
+                            fail_count += 1;
+                            log::warn!(
+                                "Failed to distribute sender key to {}: {}",
+                                &member_peer_id[..16.min(member_peer_id.len())],
+                                e
+                            );
+                        }
+                    }
+                }
+                Ok(_) => {
+                    log::warn!("Invalid peer ID length for member {}", member_peer_id);
+                    fail_count += 1;
+                }
+                Err(e) => {
+                    log::warn!("Invalid peer ID hex for member: {}", e);
+                    fail_count += 1;
+                }
+            }
+        }
+
+        log::info!(
+            "Rotated keys for group {}: distributed to {}/{} members",
+            group_id,
+            send_count,
+            send_count + fail_count
+        );
+    } else {
+        log::warn!(
+            "WRAITH node not running, sender key distribution for group {} not sent",
+            group_id
+        );
+    }
 
     Ok(())
 }
@@ -1254,4 +1478,203 @@ pub async fn request_keyframe(
         .request_keyframe(&call_id)
         .await
         .map_err(|e| e.to_string())
+}
+
+// MARK: - Statistics Commands (Sprint 18.3)
+
+/// Enhanced statistics with detailed metrics
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EnhancedStatistics {
+    // Message counts
+    /// Total messages (sent + received)
+    pub total_messages: u64,
+    /// Total conversations
+    pub total_conversations: u64,
+    /// Messages sent by the user
+    pub messages_sent: u64,
+    /// Messages received from others
+    pub messages_received: u64,
+
+    // Time-based message breakdown
+    /// Messages sent today
+    pub messages_sent_today: u64,
+    /// Messages received today
+    pub messages_received_today: u64,
+    /// Messages sent this week
+    pub messages_sent_week: u64,
+    /// Messages received this week
+    pub messages_received_week: u64,
+    /// Messages sent this month
+    pub messages_sent_month: u64,
+    /// Messages received this month
+    pub messages_received_month: u64,
+
+    // Latency metrics
+    /// Average message delivery latency in milliseconds
+    pub average_latency_ms: Option<f64>,
+
+    // Call statistics
+    /// Total voice call duration in seconds
+    pub total_voice_call_duration_secs: u64,
+    /// Number of voice calls completed
+    pub voice_call_count: u64,
+    /// Average voice call duration in seconds
+    pub average_voice_call_duration_secs: Option<f64>,
+    /// Total video call duration in seconds
+    pub total_video_call_duration_secs: u64,
+    /// Number of video calls completed
+    pub video_call_count: u64,
+    /// Average video call duration in seconds
+    pub average_video_call_duration_secs: Option<f64>,
+    /// Total call duration (voice + video) in seconds
+    pub total_call_duration_secs: u64,
+    /// Average call duration across all calls in seconds
+    pub average_call_duration_secs: Option<f64>,
+
+    // Group statistics
+    /// Number of groups
+    pub total_groups: u64,
+    /// Activity statistics per group
+    pub group_stats: Vec<GroupActivityStats>,
+
+    // Security metrics
+    /// Number of encryption key rotations (Double Ratchet + group keys)
+    pub key_rotations: u64,
+    /// Number of peer sessions with encryption keys
+    pub active_peer_sessions: u64,
+
+    // Storage usage
+    /// Storage breakdown by category
+    pub storage_bytes: StorageBreakdown,
+
+    // Timestamps
+    /// When statistics were generated (RFC 3339)
+    pub generated_at: String,
+}
+
+/// Get comprehensive chat statistics
+#[tauri::command]
+pub async fn get_statistics(state: State<'_, Arc<AppState>>) -> Result<EnhancedStatistics, String> {
+    let db = state.db.lock().await;
+    let now = chrono::Utc::now();
+
+    // Calculate time boundaries
+    let today_start = now
+        .date_naive()
+        .and_hms_opt(0, 0, 0)
+        .unwrap()
+        .and_utc()
+        .timestamp();
+    let week_start = (now - chrono::Duration::days(7)).timestamp();
+    let month_start = (now - chrono::Duration::days(30)).timestamp();
+
+    // Get message counts
+    let total_messages = db.count_messages().map_err(|e| e.to_string())?;
+    let messages_sent = db
+        .count_messages_by_direction("outgoing")
+        .map_err(|e| e.to_string())?;
+    let messages_received = db
+        .count_messages_by_direction("incoming")
+        .map_err(|e| e.to_string())?;
+
+    // Get time-based counts
+    let messages_sent_today = db
+        .count_messages_since("outgoing", today_start)
+        .map_err(|e| e.to_string())?;
+    let messages_received_today = db
+        .count_messages_since("incoming", today_start)
+        .map_err(|e| e.to_string())?;
+    let messages_sent_week = db
+        .count_messages_since("outgoing", week_start)
+        .map_err(|e| e.to_string())?;
+    let messages_received_week = db
+        .count_messages_since("incoming", week_start)
+        .map_err(|e| e.to_string())?;
+    let messages_sent_month = db
+        .count_messages_since("outgoing", month_start)
+        .map_err(|e| e.to_string())?;
+    let messages_received_month = db
+        .count_messages_since("incoming", month_start)
+        .map_err(|e| e.to_string())?;
+
+    // Get conversation counts
+    let total_conversations = db.count_conversations().map_err(|e| e.to_string())? as u64;
+    let total_groups = db.count_group_conversations().map_err(|e| e.to_string())? as u64;
+
+    // Get group activity stats
+    let group_stats = db.get_group_activity_stats().map_err(|e| e.to_string())?;
+
+    // Get storage breakdown
+    let storage_bytes = db.get_storage_breakdown().map_err(|e| e.to_string())?;
+
+    // Get peer session count (ratchet states)
+    let active_peer_sessions = db.count_ratchet_states().map_err(|e| e.to_string())?;
+
+    // Get runtime statistics from the tracker
+    let stats_tracker = &state.statistics;
+
+    Ok(EnhancedStatistics {
+        total_messages,
+        total_conversations,
+        messages_sent,
+        messages_received,
+        messages_sent_today,
+        messages_received_today,
+        messages_sent_week,
+        messages_received_week,
+        messages_sent_month,
+        messages_received_month,
+        average_latency_ms: stats_tracker.average_latency_ms(),
+        total_voice_call_duration_secs: stats_tracker.total_voice_call_duration_secs(),
+        voice_call_count: stats_tracker.voice_call_count(),
+        average_voice_call_duration_secs: stats_tracker.average_voice_call_duration_secs(),
+        total_video_call_duration_secs: stats_tracker.total_video_call_duration_secs(),
+        video_call_count: stats_tracker.video_call_count(),
+        average_video_call_duration_secs: stats_tracker.average_video_call_duration_secs(),
+        total_call_duration_secs: stats_tracker.total_call_duration_secs(),
+        average_call_duration_secs: stats_tracker.average_call_duration_secs(),
+        total_groups,
+        group_stats,
+        key_rotations: stats_tracker.key_rotation_count(),
+        active_peer_sessions,
+        storage_bytes,
+        generated_at: now.to_rfc3339(),
+    })
+}
+
+/// Record a message delivery latency (called internally when message is confirmed delivered)
+#[tauri::command]
+pub async fn record_message_latency(
+    state: State<'_, Arc<AppState>>,
+    latency_ms: u64,
+) -> Result<(), String> {
+    state.statistics.record_latency(latency_ms);
+    Ok(())
+}
+
+/// Record a completed voice call (called when a voice call ends)
+#[tauri::command]
+pub async fn record_voice_call_completed(
+    state: State<'_, Arc<AppState>>,
+    duration_secs: u64,
+) -> Result<(), String> {
+    state.statistics.record_voice_call(duration_secs);
+    Ok(())
+}
+
+/// Record a completed video call (called when a video call ends)
+#[tauri::command]
+pub async fn record_video_call_completed(
+    state: State<'_, Arc<AppState>>,
+    duration_secs: u64,
+) -> Result<(), String> {
+    state.statistics.record_video_call(duration_secs);
+    Ok(())
+}
+
+/// Record an encryption key rotation (called when keys are rotated)
+#[tauri::command]
+pub async fn record_key_rotation(state: State<'_, Arc<AppState>>) -> Result<(), String> {
+    state.statistics.record_key_rotation();
+    Ok(())
 }

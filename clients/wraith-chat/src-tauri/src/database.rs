@@ -343,6 +343,16 @@ impl Database {
         Ok(count as usize)
     }
 
+    /// Count group conversations
+    pub fn count_group_conversations(&self) -> Result<usize> {
+        let count: i64 = self.conn.query_row(
+            "SELECT COUNT(*) FROM conversations WHERE type = 'group' AND archived = 0",
+            [],
+            |row| row.get(0),
+        )?;
+        Ok(count as usize)
+    }
+
     // MARK: - Message Operations
 
     pub fn insert_message(&self, msg: &Message) -> Result<i64> {
@@ -489,6 +499,158 @@ impl Database {
             .optional()
             .context("Failed to load ratchet state")
     }
+
+    // MARK: - Statistics Operations
+
+    /// Count total messages
+    pub fn count_messages(&self) -> Result<u64> {
+        let count: i64 = self
+            .conn
+            .query_row("SELECT COUNT(*) FROM messages", [], |row| row.get(0))?;
+        Ok(count as u64)
+    }
+
+    /// Count messages by direction (incoming/outgoing)
+    pub fn count_messages_by_direction(&self, direction: &str) -> Result<u64> {
+        let count: i64 = self.conn.query_row(
+            "SELECT COUNT(*) FROM messages WHERE direction = ?1",
+            params![direction],
+            |row| row.get(0),
+        )?;
+        Ok(count as u64)
+    }
+
+    /// Count messages sent/received within a time range (since timestamp)
+    pub fn count_messages_since(&self, direction: &str, since_timestamp: i64) -> Result<u64> {
+        let count: i64 = self.conn.query_row(
+            "SELECT COUNT(*) FROM messages WHERE direction = ?1 AND timestamp >= ?2",
+            params![direction, since_timestamp],
+            |row| row.get(0),
+        )?;
+        Ok(count as u64)
+    }
+
+    /// Get storage usage breakdown
+    pub fn get_storage_breakdown(&self) -> Result<StorageBreakdown> {
+        // Calculate message storage (estimate: each message is roughly id(8) + body(~200 avg) + metadata(~100))
+        let message_count: i64 =
+            self.conn
+                .query_row("SELECT COUNT(*) FROM messages", [], |row| row.get(0))?;
+
+        // Sum actual body sizes where available
+        let body_size: Option<i64> = self
+            .conn
+            .query_row(
+                "SELECT SUM(LENGTH(body)) FROM messages WHERE body IS NOT NULL",
+                [],
+                |row| row.get(0),
+            )
+            .optional()?
+            .flatten();
+
+        // Media size (sum of all media_size values)
+        let media_size: Option<i64> = self
+            .conn
+            .query_row(
+                "SELECT SUM(media_size) FROM messages WHERE media_size IS NOT NULL",
+                [],
+                |row| row.get(0),
+            )
+            .optional()?
+            .flatten();
+
+        // Ratchet state storage (encryption keys)
+        let ratchet_size: Option<i64> = self
+            .conn
+            .query_row(
+                "SELECT SUM(LENGTH(state_json)) FROM ratchet_states",
+                [],
+                |row| row.get(0),
+            )
+            .optional()?
+            .flatten();
+
+        // Estimate message overhead (metadata per message)
+        let message_overhead = message_count * 100; // ~100 bytes metadata per message
+
+        let messages = (body_size.unwrap_or(0) + message_overhead) as u64;
+        let media = media_size.unwrap_or(0) as u64;
+        let keys = ratchet_size.unwrap_or(0) as u64;
+
+        Ok(StorageBreakdown {
+            messages,
+            media,
+            keys,
+            total: messages + media + keys,
+        })
+    }
+
+    /// Get group activity statistics
+    pub fn get_group_activity_stats(&self) -> Result<Vec<GroupActivityStats>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT
+                c.group_id,
+                COUNT(m.id) as message_count,
+                MAX(m.timestamp) as last_activity
+             FROM conversations c
+             LEFT JOIN messages m ON c.id = m.conversation_id
+             WHERE c.type = 'group' AND c.archived = 0 AND c.group_id IS NOT NULL
+             GROUP BY c.group_id
+             ORDER BY message_count DESC
+             LIMIT 50",
+        )?;
+
+        let stats = stmt
+            .query_map([], |row| {
+                let group_id: String = row.get(0)?;
+                let message_count: i64 = row.get(1)?;
+                let last_activity: Option<i64> = row.get(2)?;
+                Ok(GroupActivityStats {
+                    group_id,
+                    message_count: message_count as u64,
+                    last_activity: last_activity.map(|ts| {
+                        chrono::DateTime::from_timestamp(ts, 0)
+                            .map(|dt| dt.to_rfc3339())
+                            .unwrap_or_default()
+                    }),
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(stats)
+    }
+
+    /// Count ratchet states (number of peer sessions with encryption keys)
+    pub fn count_ratchet_states(&self) -> Result<u64> {
+        let count: i64 = self
+            .conn
+            .query_row("SELECT COUNT(*) FROM ratchet_states", [], |row| row.get(0))?;
+        Ok(count as u64)
+    }
+}
+
+// MARK: - Statistics Data Models
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StorageBreakdown {
+    /// Bytes used by message content
+    pub messages: u64,
+    /// Bytes used by media files
+    pub media: u64,
+    /// Bytes used by encryption keys
+    pub keys: u64,
+    /// Total bytes
+    pub total: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GroupActivityStats {
+    /// Group identifier
+    pub group_id: String,
+    /// Number of messages in this group
+    pub message_count: u64,
+    /// Last activity timestamp (RFC 3339 format)
+    pub last_activity: Option<String>,
 }
 
 // MARK: - Data Models

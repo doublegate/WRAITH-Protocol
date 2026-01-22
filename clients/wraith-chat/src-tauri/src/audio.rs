@@ -682,6 +682,78 @@ impl AudioDeviceManager {
     pub fn output_device(&self) -> Option<&str> {
         self.output_device.as_deref()
     }
+
+    /// Find an input device by its ID/name
+    ///
+    /// Returns the cpal device if found, or None if not found or if device_id is None
+    /// (in which case the caller should use the default device).
+    pub fn find_input_device(&self, device_id: Option<&str>) -> Option<cpal::Device> {
+        let device_id = device_id?;
+
+        with_suppressed_stderr(|| {
+            let host = Self::get_preferred_host();
+            let devices = host.input_devices().ok()?;
+
+            for device in devices {
+                if let Ok(name) = device.name() {
+                    if name == device_id {
+                        return Some(device);
+                    }
+                }
+            }
+            None
+        })
+    }
+
+    /// Find an output device by its ID/name
+    ///
+    /// Returns the cpal device if found, or None if not found or if device_id is None
+    /// (in which case the caller should use the default device).
+    pub fn find_output_device(&self, device_id: Option<&str>) -> Option<cpal::Device> {
+        let device_id = device_id?;
+
+        with_suppressed_stderr(|| {
+            let host = Self::get_preferred_host();
+            let devices = host.output_devices().ok()?;
+
+            for device in devices {
+                if let Ok(name) = device.name() {
+                    if name == device_id {
+                        return Some(device);
+                    }
+                }
+            }
+            None
+        })
+    }
+
+    /// Get the input device to use - either the selected one or the default
+    pub fn get_active_input_device(&self) -> Option<cpal::Device> {
+        with_suppressed_stderr(|| {
+            // Try to get the selected device first
+            if let Some(device) = self.find_input_device(self.input_device.as_deref()) {
+                return Some(device);
+            }
+
+            // Fall back to default device
+            let host = Self::get_preferred_host();
+            host.default_input_device()
+        })
+    }
+
+    /// Get the output device to use - either the selected one or the default
+    pub fn get_active_output_device(&self) -> Option<cpal::Device> {
+        with_suppressed_stderr(|| {
+            // Try to get the selected device first
+            if let Some(device) = self.find_output_device(self.output_device.as_deref()) {
+                return Some(device);
+            }
+
+            // Fall back to default device
+            let host = Self::get_preferred_host();
+            host.default_output_device()
+        })
+    }
 }
 
 impl Default for AudioDeviceManager {

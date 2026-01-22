@@ -11,6 +11,249 @@ _No changes yet._
 
 ---
 
+## [1.8.0] - 2026-01-22 - Phases 18-20 Complete: Chat Protocol Wire-Up, DNS STUN Resolution & WRAITH-Share
+
+### Phases 18-20 - Chat Protocol Integration, Discovery Enhancements & Distributed File Sharing
+
+This major release completes three development phases: Phase 18 (Chat Protocol Wire-Up) integrates voice calling, video calling, and group messaging with the WRAITH protocol layer; Phase 19 (DNS STUN Resolution) adds dynamic STUN server discovery with health monitoring; and Phase 20 (WRAITH-Share) delivers a complete distributed anonymous file sharing application with swarm-based transfers and link-based sharing.
+
+### Highlights
+
+- **6 Production-Ready Client Applications**: Transfer, Chat, Android, iOS, Sync, Share
+- **1,712+ Tests Passing**: 100% pass rate across all crates and clients
+- **WRAITH-Share Complete**: New Tier 2 distributed file sharing application
+- **Chat Protocol Wire-Up**: Voice/video call signaling and group messaging via WRAITH protocol
+- **DNS STUN Resolution**: Dynamic server discovery with health monitoring and failover
+- **Swarm-Based Transfers**: Multi-peer parallel downloads with automatic peer discovery
+- **Link-Based Sharing**: Shareable links with expiration, download limits, password protection
+- **Access Control System**: Fine-grained permissions for shared content
+- **ICE Protocol Enhancements**: Improved NAT traversal with enhanced candidate gathering
+
+### Added
+
+#### Phase 18: Chat Protocol Wire-Up
+
+##### Voice Call Signaling (`clients/wraith-chat/src-tauri/src/voice_call.rs`)
+- **Protocol Integration**: Voice call initiation, acceptance, and termination via WRAITH protocol streams
+- **Call State Machine**: Proper state transitions (Initiating → Ringing → Connected → Ended)
+- **Signaling Messages**: OFFER, ANSWER, ICE_CANDIDATE, HANGUP message types
+- **Media Negotiation**: Codec capability exchange and selection
+- **Error Handling**: Comprehensive error propagation with user-friendly messages
+- **920+ lines of voice call signaling implementation**
+
+##### Video Call Coordination (`clients/wraith-chat/src-tauri/src/video_call.rs`)
+- **Protocol Integration**: Video call establishment with quality negotiation
+- **Bandwidth Estimation**: Adaptive bitrate based on network conditions
+- **Resolution Negotiation**: Dynamic quality adjustment (360p-1080p)
+- **Screen Sharing Signaling**: Protocol support for screen share initiation
+- **576+ lines of video call coordination implementation**
+
+##### Group Messaging Protocol (`clients/wraith-chat/src-tauri/src/group.rs`)
+- **Sender Keys Distribution**: Key distribution via WRAITH protocol streams
+- **Key Rotation Protocol**: Automatic key rotation signaling (7-day interval)
+- **Member Management**: Join/leave notifications via protocol
+- **Admin Controls**: Promote/demote/kick operations with protocol support
+- **642+ lines of group messaging protocol implementation**
+
+##### Additional Chat Enhancements
+- **Database Improvements** (`database.rs`): +162 lines for call history and group metadata
+- **State Management** (`state.rs`): +149 lines for call state tracking
+- **Commands** (`commands.rs`): +451 lines for new IPC command handlers
+- **Audio Processing** (`audio.rs`): Enhanced Opus codec integration
+- **Video Processing** (`video.rs`): VP8/VP9 frame handling improvements
+
+#### Phase 19: DNS STUN Resolution
+
+##### DNS-Based Server Discovery (`crates/wraith-discovery/src/manager.rs`)
+- **SRV Record Lookup**: DNS SRV record queries for STUN server discovery
+- **A/AAAA Fallback**: Direct address resolution when SRV unavailable
+- **TTL Caching**: Response caching based on DNS TTL values
+- **Health Monitoring**: Automatic health checks with response time tracking
+- **Failover Logic**: Automatic failover to backup servers on failure
+- **278+ lines of DNS resolution implementation**
+
+##### ICE Protocol Enhancements (`crates/wraith-discovery/src/nat/ice.rs`)
+- **Enhanced Candidate Gathering**: Improved host, server-reflexive, and relay candidate collection
+- **Mobile Network Optimization**: Better handling of cellular/WiFi transitions
+- **Candidate Prioritization**: RFC 5245 compliant priority calculation
+- **88+ lines of ICE enhancements**
+
+#### Phase 20: WRAITH-Share Application
+
+##### Backend Architecture (`clients/wraith-share/src-tauri/src/`)
+- **Tauri 2.0 Backend**: Complete Rust backend with 15+ modules
+- **State Management** (`state.rs`): Application state with Arc<RwLock> thread safety
+- **Database Layer** (`database.rs`): SQLite with comprehensive schema for files, shares, groups
+- **Error Handling** (`error.rs`): Unified error types with user-friendly messages
+- **IPC Commands** (`commands.rs`): 30+ Tauri commands for all operations
+
+##### File Transfer System
+- **File Transfer Manager** (`file_transfer.rs`): Chunked transfers with progress tracking
+- **Swarm Manager** (`swarm.rs`): Multi-peer swarm coordination for parallel downloads
+- **Chunk Distribution**: BitTorrent-style piece selection for efficient distribution
+- **Resume Support**: Automatic resume of interrupted transfers
+- **Progress Callbacks**: Real-time progress updates to frontend
+
+##### Sharing Features
+- **Link Sharing** (`link_share.rs`): Shareable links with configurable options
+  - Expiration dates (1 hour to never)
+  - Download limits (1 to unlimited)
+  - Password protection with BLAKE3 hashing
+  - View/download permission separation
+- **Access Control** (`access_control.rs`): Fine-grained permission system
+  - Role-based access (viewer, downloader, uploader, admin)
+  - Per-file and per-folder permissions
+  - Inheritance with override support
+- **Group Sharing** (`group.rs`): Share with groups of peers
+  - Group creation and management
+  - Member invitation and removal
+  - Role-based group permissions
+
+##### Activity and Versioning
+- **Activity Tracking** (`activity.rs`): Real-time activity feed
+  - File uploads/downloads
+  - Peer join/leave events
+  - Permission changes
+  - Share link usage
+- **Version History** (`versioning.rs`): File versioning system
+  - Automatic version creation on changes
+  - Version comparison and restore
+  - Conflict resolution strategies
+
+##### Frontend Components (`clients/wraith-share/src/`)
+- **React 18 + TypeScript**: Modern frontend with strict typing
+- **File Browser** (`components/FileBrowser.tsx`): Grid/list view file browser
+- **File Card** (`components/FileCard.tsx`): File display with actions
+- **Group List** (`components/GroupList.tsx`): Group management UI
+- **Activity Feed** (`components/ActivityFeed.tsx`): Real-time activity display
+- **Share Dialog** (`components/ShareDialog.tsx`): Link and group sharing UI
+- **Settings Panel** (`components/Settings.tsx`): Application configuration
+
+##### State Management
+- **Zustand Stores**: 4 dedicated stores for state management
+  - `fileStore`: File and folder state
+  - `groupStore`: Group membership and permissions
+  - `activityStore`: Activity feed state
+  - `uiStore`: UI state (modals, selections, views)
+
+##### Wayland Compatibility
+- **Display Server Handling**: Automatic X11/Wayland detection
+- **WebKit Workarounds**: WEBKIT_DISABLE_COMPOSITING_MODE for Wayland
+- **GDK Backend Selection**: Configurable display backend
+
+### Changed
+
+- **Test Count**: Increased from 1,695 to 1,712 tests (+17)
+- **Code Volume**: Increased from ~72,400 to ~80,000 lines Rust, ~14,100 to ~22,000 lines client code
+- **Client Count**: 6 production applications (was 5)
+- **Story Points Delivered**: 2,460 total (was 2,257)
+- **Documentation**: 130+ files (was 120+)
+
+### Technical Details
+
+#### Phase 18 Statistics
+- **Voice Call Module**: 920+ lines
+- **Video Call Module**: 576+ lines
+- **Group Protocol**: 642+ lines
+- **Database Extensions**: 162+ lines
+- **State Management**: 149+ lines
+- **Command Handlers**: 451+ lines
+- **Total Phase 18**: ~2,900 lines
+
+#### Phase 19 Statistics
+- **DNS Resolution**: 278+ lines
+- **ICE Enhancements**: 88+ lines
+- **Total Phase 19**: ~366 lines
+
+#### Phase 20 Statistics
+- **Backend Modules**: 15+ Rust modules (~4,500 lines)
+- **Frontend Components**: 12+ React components (~2,800 lines)
+- **Zustand Stores**: 4 stores (~600 lines)
+- **Total Phase 20**: ~7,900 lines
+
+#### Combined Release
+- **New Files**: 79+ source files
+- **Modified Files**: 10+ existing files
+- **Total New Code**: ~11,000+ lines
+
+### File Manifest
+
+#### New Files (Phase 20 - WRAITH-Share)
+```
+clients/wraith-share/
+├── src-tauri/
+│   ├── src/
+│   │   ├── lib.rs
+│   │   ├── main.rs
+│   │   ├── commands.rs
+│   │   ├── state.rs
+│   │   ├── error.rs
+│   │   ├── database.rs
+│   │   ├── file_transfer.rs
+│   │   ├── swarm.rs
+│   │   ├── link_share.rs
+│   │   ├── access_control.rs
+│   │   ├── group.rs
+│   │   ├── activity.rs
+│   │   ├── versioning.rs
+│   │   └── tests.rs
+│   ├── Cargo.toml
+│   ├── tauri.conf.json
+│   └── capabilities/
+├── src/
+│   ├── App.tsx
+│   ├── main.tsx
+│   ├── components/
+│   │   ├── FileBrowser.tsx
+│   │   ├── FileCard.tsx
+│   │   ├── GroupList.tsx
+│   │   ├── ActivityFeed.tsx
+│   │   ├── ShareDialog.tsx
+│   │   ├── Settings.tsx
+│   │   └── ...
+│   ├── stores/
+│   │   ├── fileStore.ts
+│   │   ├── groupStore.ts
+│   │   ├── activityStore.ts
+│   │   └── uiStore.ts
+│   └── styles/
+├── package.json
+├── vite.config.ts
+└── tsconfig.json
+```
+
+#### Modified Files (Phases 18-19)
+```
+clients/wraith-chat/src-tauri/src/
+├── voice_call.rs (+920 lines)
+├── video_call.rs (+576 lines)
+├── group.rs (+642 lines)
+├── commands.rs (+451 lines)
+├── database.rs (+162 lines)
+├── state.rs (+149 lines)
+├── audio.rs (enhanced)
+├── video.rs (enhanced)
+└── lib.rs (module registration)
+
+crates/wraith-discovery/src/
+├── manager.rs (+278 lines)
+└── nat/ice.rs (+88 lines)
+```
+
+---
+
+## [1.7.2] - 2026-01-21 - Version Bump
+
+### Version Alignment
+
+Minor version bump to align with UI/UX standardization work.
+
+### Changed
+
+- Version number updated to 1.7.2 across all configuration files
+
+---
+
 ## [1.7.1] - 2026-01-21 - WRAITH-Chat UI Redesign & UI/UX Standardization
 
 ### WRAITH-Chat Comprehensive UI Redesign & Cross-Client UI/UX Standardization

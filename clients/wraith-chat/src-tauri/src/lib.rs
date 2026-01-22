@@ -96,6 +96,12 @@ pub fn run() {
             commands::select_screen_source,
             commands::set_video_quality,
             commands::request_keyframe,
+            // Statistics commands (Sprint 18.3)
+            commands::get_statistics,
+            commands::record_message_latency,
+            commands::record_voice_call_completed,
+            commands::record_video_call_completed,
+            commands::record_key_rotation,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

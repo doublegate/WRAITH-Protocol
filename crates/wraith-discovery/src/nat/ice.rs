@@ -3,6 +3,7 @@
 //! This module implements ICE (Interactive Connectivity Establishment) candidate
 //! gathering for peer-to-peer connection establishment.
 
+use super::dns::{StunDnsResolver, StunServerSpec, default_stun_servers, fallback_stun_ips};
 use super::stun::StunClient;
 use std::net::SocketAddr;
 
@@ -168,21 +169,14 @@ pub struct IceGatherer {
 }
 
 impl IceGatherer {
-    /// Create a new ICE gatherer
+    /// Create a new ICE gatherer with fallback STUN server IPs
     ///
-    /// Note: In production, STUN server addresses should be resolved from hostnames
-    /// like "stun.l.google.com" and "stun1.l.google.com". For now, we use
-    /// placeholder addresses that need to be configured with actual STUN servers.
+    /// Uses hardcoded fallback IPs from well-known STUN providers.
+    /// For DNS-based resolution, use `with_dns_resolution()` instead.
     #[must_use]
     pub fn new() -> Self {
         Self {
-            stun_servers: vec![
-                // Placeholder STUN server addresses
-                // In production, resolve: stun.l.google.com:19302
-                "1.1.1.1:3478".parse().expect("valid STUN server"),
-                // In production, resolve: stun1.l.google.com:19302
-                "8.8.8.8:3478".parse().expect("valid STUN server"),
-            ],
+            stun_servers: fallback_stun_ips(),
         }
     }
 
@@ -192,6 +186,51 @@ impl IceGatherer {
         Self {
             stun_servers: servers,
         }
+    }
+
+    /// Create an ICE gatherer with DNS resolution for STUN servers
+    ///
+    /// Resolves STUN server hostnames (like stun.l.google.com) using DNS,
+    /// with automatic fallback to hardcoded IPs if DNS resolution fails.
+    ///
+    /// This is the preferred constructor when DNS is available.
+    ///
+    /// # Errors
+    ///
+    /// Returns error if DNS resolver initialization fails
+    pub async fn with_dns_resolution() -> Result<Self, std::io::Error> {
+        Self::with_custom_dns_resolution(&default_stun_servers()).await
+    }
+
+    /// Create an ICE gatherer with DNS resolution for custom STUN servers
+    ///
+    /// Resolves the provided STUN server specifications using DNS,
+    /// with automatic fallback to hardcoded IPs if all resolutions fail.
+    ///
+    /// # Arguments
+    ///
+    /// * `stun_specs` - STUN server specifications (hostnames or IP addresses)
+    ///
+    /// # Errors
+    ///
+    /// Returns error if DNS resolver initialization fails
+    pub async fn with_custom_dns_resolution(
+        stun_specs: &[StunServerSpec],
+    ) -> Result<Self, std::io::Error> {
+        let resolver = StunDnsResolver::new()
+            .await
+            .map_err(|e| std::io::Error::other(format!("DNS resolver init failed: {e}")))?;
+
+        let mut resolved = resolver.resolve_many(stun_specs).await;
+
+        // Fall back to hardcoded IPs if DNS resolution failed for all servers
+        if resolved.is_empty() {
+            resolved = fallback_stun_ips();
+        }
+
+        Ok(Self {
+            stun_servers: resolved,
+        })
     }
 
     /// Gather all candidates for a local address
@@ -375,7 +414,8 @@ mod tests {
     #[test]
     fn test_ice_gatherer_creation() {
         let gatherer = IceGatherer::new();
-        assert_eq!(gatherer.stun_servers.len(), 2);
+        // Now uses fallback_stun_ips() which has 5 servers
+        assert_eq!(gatherer.stun_servers.len(), 5);
 
         let custom_servers = vec!["1.1.1.1:3478".parse().unwrap()];
         let gatherer = IceGatherer::with_stun_servers(custom_servers);
@@ -461,6 +501,30 @@ mod tests {
     #[test]
     fn test_ice_gatherer_default() {
         let gatherer = IceGatherer::default();
+        // Now uses fallback_stun_ips() which has 5 servers
+        assert_eq!(gatherer.stun_servers.len(), 5);
+    }
+
+    #[tokio::test]
+    async fn test_ice_gatherer_dns_resolution() {
+        // Test DNS resolution constructor
+        let result = IceGatherer::with_dns_resolution().await;
+        assert!(result.is_ok());
+        let gatherer = result.unwrap();
+        // Should have resolved addresses or fallback IPs
+        assert!(!gatherer.stun_servers.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_ice_gatherer_custom_dns_resolution() {
+        // Test with IP-based specs (no actual DNS needed)
+        let specs = vec![
+            StunServerSpec::ip("1.2.3.4:3478".parse().unwrap()),
+            StunServerSpec::ip("5.6.7.8:3478".parse().unwrap()),
+        ];
+        let result = IceGatherer::with_custom_dns_resolution(&specs).await;
+        assert!(result.is_ok());
+        let gatherer = result.unwrap();
         assert_eq!(gatherer.stun_servers.len(), 2);
     }
 

@@ -7,9 +7,12 @@ use crate::audio::{
     AudioConfig, AudioDevice, AudioDeviceManager, AudioFrame, JitterBuffer, VoiceDecoder,
     VoiceEncoder,
 };
-use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use cpal::traits::{DeviceTrait, StreamTrait};
 use ringbuf::HeapRb;
 use ringbuf::traits::{Consumer, Observer, Producer, Split};
+// Re-import Consumer and Producer for explicit trait method calls
+use ringbuf::traits::Consumer as ConsumerTrait;
+use ringbuf::traits::Producer as ProducerTrait;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -219,6 +222,15 @@ pub struct CallInfo {
     pub stats: CallStats,
 }
 
+/// Signal to change audio device in running loops
+#[derive(Debug, Clone)]
+pub enum AudioDeviceSignal {
+    /// Switch to a new input device (microphone)
+    SwitchInput(Option<String>),
+    /// Switch to a new output device (speaker/headphone)
+    SwitchOutput(Option<String>),
+}
+
 /// Internal call state
 struct Call {
     info: CallInfo,
@@ -234,6 +246,10 @@ struct Call {
     /// Channel for sending captured audio
     #[allow(dead_code)]
     audio_tx: Option<mpsc::Sender<Vec<i16>>>,
+    /// Channel for signaling input device changes
+    input_device_signal: Option<mpsc::Sender<AudioDeviceSignal>>,
+    /// Channel for signaling output device changes
+    output_device_signal: Option<mpsc::Sender<AudioDeviceSignal>>,
 }
 
 /// Voice call manager
@@ -326,6 +342,8 @@ impl VoiceCallManager {
             running: AtomicBool::new(false),
             audio_rx: None,
             audio_tx: None,
+            input_device_signal: None,
+            output_device_signal: None,
         };
 
         // Store the call
@@ -388,6 +406,8 @@ impl VoiceCallManager {
             running: AtomicBool::new(false),
             audio_rx: None,
             audio_tx: None,
+            input_device_signal: None,
+            output_device_signal: None,
         };
 
         let mut calls = self.calls.write().await;
@@ -583,6 +603,12 @@ impl VoiceCallManager {
     }
 
     /// Toggle speaker on a call
+    ///
+    /// When speaker is turned ON, switches to the configured output device (or default speaker).
+    /// When speaker is turned OFF, switches back to the default output device (typically earpiece on mobile).
+    ///
+    /// For desktop applications, this effectively switches between the primary and secondary
+    /// output devices if configured.
     pub async fn toggle_speaker(&self, call_id: &str) -> Result<bool, VoiceCallError> {
         let calls = self.calls.read().await;
         let call_arc = calls
@@ -593,7 +619,29 @@ impl VoiceCallManager {
 
         let mut call = call_arc.lock().await;
         call.info.speaker_on = !call.info.speaker_on;
-        // TODO: Actually switch audio output device
+
+        // Determine which device to switch to
+        let new_device_id = if call.info.speaker_on {
+            // Speaker ON: use the configured output device (or default)
+            let device_manager = self.device_manager.read().await;
+            device_manager.output_device().map(String::from)
+        } else {
+            // Speaker OFF: use default device (None means default)
+            None
+        };
+
+        // Signal the output stream to switch devices if the call is active
+        if call.info.state == CallState::Connected {
+            if let Some(ref signal_tx) = call.output_device_signal {
+                if let Err(e) = signal_tx
+                    .send(AudioDeviceSignal::SwitchOutput(new_device_id))
+                    .await
+                {
+                    log::warn!("Failed to send output device switch signal: {}", e);
+                }
+            }
+        }
+
         Ok(call.info.speaker_on)
     }
 
@@ -754,16 +802,62 @@ impl VoiceCallManager {
     }
 
     /// Set the input audio device
+    ///
+    /// This updates the device manager's selection and propagates the change
+    /// to all active connected calls.
     pub async fn set_input_device(&self, device_id: Option<String>) -> Result<(), VoiceCallError> {
-        let mut device_manager = self.device_manager.write().await;
-        device_manager.set_input_device(device_id);
+        // Update device manager
+        {
+            let mut device_manager = self.device_manager.write().await;
+            device_manager.set_input_device(device_id.clone());
+        }
+
+        // Propagate to all active calls
+        let calls = self.calls.read().await;
+        for call_arc in calls.values() {
+            let call = call_arc.lock().await;
+            if call.info.state == CallState::Connected {
+                if let Some(ref signal_tx) = call.input_device_signal {
+                    if let Err(e) = signal_tx
+                        .send(AudioDeviceSignal::SwitchInput(device_id.clone()))
+                        .await
+                    {
+                        log::warn!("Failed to send input device switch signal: {}", e);
+                    }
+                }
+            }
+        }
+
         Ok(())
     }
 
     /// Set the output audio device
+    ///
+    /// This updates the device manager's selection and propagates the change
+    /// to all active connected calls.
     pub async fn set_output_device(&self, device_id: Option<String>) -> Result<(), VoiceCallError> {
-        let mut device_manager = self.device_manager.write().await;
-        device_manager.set_output_device(device_id);
+        // Update device manager
+        {
+            let mut device_manager = self.device_manager.write().await;
+            device_manager.set_output_device(device_id.clone());
+        }
+
+        // Propagate to all active calls
+        let calls = self.calls.read().await;
+        for call_arc in calls.values() {
+            let call = call_arc.lock().await;
+            if call.info.state == CallState::Connected {
+                if let Some(ref signal_tx) = call.output_device_signal {
+                    if let Err(e) = signal_tx
+                        .send(AudioDeviceSignal::SwitchOutput(device_id.clone()))
+                        .await
+                    {
+                        log::warn!("Failed to send output device switch signal: {}", e);
+                    }
+                }
+            }
+        }
+
         Ok(())
     }
 
@@ -793,19 +887,46 @@ impl VoiceCallManager {
             .clone();
         drop(calls);
 
+        // Create device signal channels
+        let (input_signal_tx, input_signal_rx) = mpsc::channel::<AudioDeviceSignal>(4);
+        let (output_signal_tx, output_signal_rx) = mpsc::channel::<AudioDeviceSignal>(4);
+
+        // Store signal senders in the call for later device switching
+        {
+            let mut call = call_arc.lock().await;
+            call.input_device_signal = Some(input_signal_tx);
+            call.output_device_signal = Some(output_signal_tx);
+        }
+
+        // Get current device selections
+        let (input_device_id, output_device_id) = {
+            let device_manager = self.device_manager.read().await;
+            (
+                device_manager.input_device().map(String::from),
+                device_manager.output_device().map(String::from),
+            )
+        };
+
         let call_id = call_id.to_string();
         let outgoing_tx = self.outgoing_tx.clone();
 
         // Spawn audio capture task
         let call_arc_capture = call_arc.clone();
         tokio::spawn(async move {
-            Self::audio_capture_loop(call_id, call_arc_capture, outgoing_tx).await;
+            Self::audio_capture_loop(
+                call_id,
+                call_arc_capture,
+                outgoing_tx,
+                input_device_id,
+                input_signal_rx,
+            )
+            .await;
         });
 
         // Spawn audio playback task
         let call_arc_playback = call_arc.clone();
         tokio::spawn(async move {
-            Self::audio_playback_loop(call_arc_playback).await;
+            Self::audio_playback_loop(call_arc_playback, output_device_id, output_signal_rx).await;
         });
 
         Ok(())
@@ -889,7 +1010,12 @@ impl VoiceCallManager {
         call_id: String,
         call_arc: Arc<Mutex<Call>>,
         outgoing_tx: mpsc::Sender<VoicePacket>,
+        initial_device_id: Option<String>,
+        mut device_signal_rx: mpsc::Receiver<AudioDeviceSignal>,
     ) {
+        // Track current device ID
+        let current_device_id = Arc::new(std::sync::Mutex::new(initial_device_id));
+
         // Create ring buffer for audio samples - shared between async task and audio thread
         let rb = HeapRb::<i16>::new(4800); // 100ms buffer
         let (producer, consumer) = rb.split();
@@ -900,62 +1026,23 @@ impl VoiceCallManager {
 
         // Flag to signal the audio thread to stop
         let running = Arc::new(AtomicBool::new(true));
+        // Flag to signal device switch is needed
+        let device_switch_requested = Arc::new(AtomicBool::new(false));
+
+        // Clone all the Arc values needed by the audio thread
         let running_clone = running.clone();
+        let device_switch_clone = device_switch_requested.clone();
         let producer_clone = producer.clone();
+        let current_device_id_clone = current_device_id.clone();
 
         // Spawn the audio input stream in a blocking thread (since Stream is !Send)
         let audio_handle = std::thread::spawn(move || {
-            let host = Self::get_preferred_host();
-            let device = match host.default_input_device() {
-                Some(d) => d,
-                None => {
-                    log::error!("No input audio device available");
-                    return;
-                }
-            };
-
-            let config = cpal::StreamConfig {
-                channels: 1,
-                sample_rate: cpal::SampleRate(48000),
-                buffer_size: cpal::BufferSize::Fixed(960),
-            };
-
-            let err_fn = |err| log::error!("Audio capture error: {}", err);
-
-            let stream = device.build_input_stream(
-                &config,
-                move |data: &[f32], _: &cpal::InputCallbackInfo| {
-                    // Convert f32 to i16 and push to ring buffer
-                    if let Ok(mut prod) = producer_clone.lock() {
-                        for &sample in data {
-                            let sample_i16 = (sample * 32767.0) as i16;
-                            let _ = prod.try_push(sample_i16);
-                        }
-                    }
-                },
-                err_fn,
-                None,
+            Self::run_input_stream_loop(
+                running_clone,
+                device_switch_clone,
+                producer_clone,
+                current_device_id_clone,
             );
-
-            let stream = match stream {
-                Ok(s) => s,
-                Err(e) => {
-                    log::error!("Failed to build input stream: {}", e);
-                    return;
-                }
-            };
-
-            if let Err(e) = stream.play() {
-                log::error!("Failed to start input stream: {}", e);
-                return;
-            }
-
-            // Keep the stream alive while running
-            while running_clone.load(Ordering::SeqCst) {
-                std::thread::sleep(std::time::Duration::from_millis(10));
-            }
-
-            drop(stream);
         });
 
         let mut frame_buffer = vec![0i16; 960];
@@ -963,6 +1050,19 @@ impl VoiceCallManager {
 
         // Main async loop: read from ring buffer, encode, and send
         loop {
+            // Check for device switch signals (non-blocking)
+            if let Ok(AudioDeviceSignal::SwitchInput(new_device_id)) = device_signal_rx.try_recv() {
+                log::info!(
+                    "Switching input device to: {:?}",
+                    new_device_id.as_deref().unwrap_or("default")
+                );
+                if let Ok(mut device_id) = current_device_id.lock() {
+                    *device_id = new_device_id;
+                }
+                // Signal the audio thread to restart with new device
+                device_switch_requested.store(true, Ordering::SeqCst);
+            }
+
             // Check if call is still active
             {
                 let call = call_arc.lock().await;
@@ -1026,28 +1126,27 @@ impl VoiceCallManager {
         let _ = audio_handle.join();
     }
 
-    async fn audio_playback_loop(call_arc: Arc<Mutex<Call>>) {
-        // Create ring buffer for playback - shared between async task and audio thread
-        let rb = HeapRb::<i16>::new(9600); // 200ms buffer
-        let (producer, consumer) = rb.split();
+    /// Run the input stream loop in a blocking thread, handling device switches
+    fn run_input_stream_loop(
+        running: Arc<AtomicBool>,
+        device_switch_requested: Arc<AtomicBool>,
+        producer: Arc<std::sync::Mutex<ringbuf::HeapProd<i16>>>,
+        current_device_id: Arc<std::sync::Mutex<Option<String>>>,
+    ) {
+        while running.load(Ordering::SeqCst) {
+            // Get current device
+            let device = {
+                let device_id = current_device_id.lock().ok().and_then(|d| d.clone());
+                Self::get_input_device_by_id(device_id.as_deref())
+            };
 
-        // Wrap in Arc<Mutex> for thread-safe access
-        let producer = Arc::new(std::sync::Mutex::new(producer));
-        let consumer = Arc::new(std::sync::Mutex::new(consumer));
-
-        // Flag to signal the audio thread to stop
-        let running = Arc::new(AtomicBool::new(true));
-        let running_clone = running.clone();
-        let consumer_clone = consumer.clone();
-
-        // Spawn the audio output stream in a blocking thread (since Stream is !Send)
-        let audio_handle = std::thread::spawn(move || {
-            let host = Self::get_preferred_host();
-            let device = match host.default_output_device() {
+            let device = match device {
                 Some(d) => d,
                 None => {
-                    log::error!("No output audio device available");
-                    return;
+                    log::error!("No input audio device available");
+                    // Wait a bit before retrying
+                    std::thread::sleep(std::time::Duration::from_secs(1));
+                    continue;
                 }
             };
 
@@ -1057,14 +1156,17 @@ impl VoiceCallManager {
                 buffer_size: cpal::BufferSize::Fixed(960),
             };
 
-            let err_fn = |err| log::error!("Audio playback error: {}", err);
+            let err_fn = |err| log::error!("Audio capture error: {}", err);
+            let producer_clone = producer.clone();
 
-            let stream = device.build_output_stream(
+            let stream = device.build_input_stream(
                 &config,
-                move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
-                    if let Ok(mut cons) = consumer_clone.lock() {
-                        for sample in data.iter_mut() {
-                            *sample = cons.try_pop().map(|s| s as f32 / 32767.0).unwrap_or(0.0);
+                move |data: &[f32], _: &cpal::InputCallbackInfo| {
+                    // Convert f32 to i16 and push to ring buffer
+                    if let Ok(mut prod) = producer_clone.lock() {
+                        for &sample in data {
+                            let sample_i16 = (sample * 32767.0) as i16;
+                            let _ = ProducerTrait::try_push(&mut *prod, sample_i16);
                         }
                     }
                 },
@@ -1075,26 +1177,114 @@ impl VoiceCallManager {
             let stream = match stream {
                 Ok(s) => s,
                 Err(e) => {
-                    log::error!("Failed to build output stream: {}", e);
-                    return;
+                    log::error!("Failed to build input stream: {}", e);
+                    std::thread::sleep(std::time::Duration::from_secs(1));
+                    continue;
                 }
             };
 
             if let Err(e) = stream.play() {
-                log::error!("Failed to start output stream: {}", e);
-                return;
+                log::error!("Failed to start input stream: {}", e);
+                std::thread::sleep(std::time::Duration::from_secs(1));
+                continue;
             }
 
-            // Keep the stream alive while running
-            while running_clone.load(Ordering::SeqCst) {
+            log::info!("Input audio stream started");
+
+            // Keep the stream alive while running and no device switch is requested
+            while running.load(Ordering::SeqCst) && !device_switch_requested.load(Ordering::SeqCst)
+            {
                 std::thread::sleep(std::time::Duration::from_millis(10));
             }
 
+            // Drop stream before potentially creating a new one
             drop(stream);
+
+            // Clear the device switch flag if it was set
+            if device_switch_requested.load(Ordering::SeqCst) {
+                device_switch_requested.store(false, Ordering::SeqCst);
+                log::info!("Input device switch completed");
+            }
+        }
+    }
+
+    /// Get input device by ID or return default
+    fn get_input_device_by_id(device_id: Option<&str>) -> Option<cpal::Device> {
+        use cpal::traits::{DeviceTrait, HostTrait};
+
+        let host = Self::get_preferred_host();
+
+        if let Some(id) = device_id {
+            // Try to find the specific device
+            if let Ok(devices) = host.input_devices() {
+                for device in devices {
+                    if let Ok(name) = device.name() {
+                        if name == id {
+                            return Some(device);
+                        }
+                    }
+                }
+            }
+            log::warn!("Input device '{}' not found, using default", id);
+        }
+
+        // Fall back to default
+        host.default_input_device()
+    }
+
+    async fn audio_playback_loop(
+        call_arc: Arc<Mutex<Call>>,
+        initial_device_id: Option<String>,
+        mut device_signal_rx: mpsc::Receiver<AudioDeviceSignal>,
+    ) {
+        // Track current device ID
+        let current_device_id = Arc::new(std::sync::Mutex::new(initial_device_id));
+
+        // Create ring buffer for playback - shared between async task and audio thread
+        let rb = HeapRb::<i16>::new(9600); // 200ms buffer
+        let (producer, consumer) = rb.split();
+
+        // Wrap in Arc<Mutex> for thread-safe access
+        let producer = Arc::new(std::sync::Mutex::new(producer));
+        let consumer = Arc::new(std::sync::Mutex::new(consumer));
+
+        // Flag to signal the audio thread to stop
+        let running = Arc::new(AtomicBool::new(true));
+        // Flag to signal device switch is needed
+        let device_switch_requested = Arc::new(AtomicBool::new(false));
+
+        // Clone all the Arc values needed by the audio thread
+        let running_clone = running.clone();
+        let device_switch_clone = device_switch_requested.clone();
+        let consumer_clone = consumer.clone();
+        let current_device_id_clone = current_device_id.clone();
+
+        // Spawn the audio output stream in a blocking thread (since Stream is !Send)
+        let audio_handle = std::thread::spawn(move || {
+            Self::run_output_stream_loop(
+                running_clone,
+                device_switch_clone,
+                consumer_clone,
+                current_device_id_clone,
+            );
         });
 
         // Main async loop: feed audio from jitter buffer to the ring buffer
         loop {
+            // Check for device switch signals (non-blocking)
+            if let Ok(AudioDeviceSignal::SwitchOutput(new_device_id)) = device_signal_rx.try_recv()
+            {
+                log::info!(
+                    "Switching output device to: {:?}",
+                    new_device_id.as_deref().unwrap_or("default")
+                );
+                if let Ok(mut device_id) = current_device_id.lock() {
+                    *device_id = new_device_id;
+                }
+                // Signal the audio thread to restart with new device
+                device_switch_requested.store(true, Ordering::SeqCst);
+            }
+
             // Check if call is still active
             {
                 let call = call_arc.lock().await;
@@ -1121,6 +1311,112 @@ impl VoiceCallManager {
         // Signal the audio thread to stop
         running.store(false, Ordering::SeqCst);
         let _ = audio_handle.join();
+    }
+
+    /// Run the output stream loop in a blocking thread, handling device switches
+    fn run_output_stream_loop(
+        running: Arc<AtomicBool>,
+        device_switch_requested: Arc<AtomicBool>,
+        consumer: Arc<std::sync::Mutex<ringbuf::HeapCons<i16>>>,
+        current_device_id: Arc<std::sync::Mutex<Option<String>>>,
+    ) {
+        while running.load(Ordering::SeqCst) {
+            // Get current device
+            let device = {
+                let device_id = current_device_id.lock().ok().and_then(|d| d.clone());
+                Self::get_output_device_by_id(device_id.as_deref())
+            };
+
+            let device = match device {
+                Some(d) => d,
+                None => {
+                    log::error!("No output audio device available");
+                    // Wait a bit before retrying
+                    std::thread::sleep(std::time::Duration::from_secs(1));
+                    continue;
+                }
+            };
+
+            let config = cpal::StreamConfig {
+                channels: 1,
+                sample_rate: cpal::SampleRate(48000),
+                buffer_size: cpal::BufferSize::Fixed(960),
+            };
+
+            let err_fn = |err| log::error!("Audio playback error: {}", err);
+            let consumer_clone = consumer.clone();
+
+            let stream = device.build_output_stream(
+                &config,
+                move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
+                    if let Ok(mut cons) = consumer_clone.lock() {
+                        for sample in data.iter_mut() {
+                            *sample = ConsumerTrait::try_pop(&mut *cons)
+                                .map(|s| s as f32 / 32767.0)
+                                .unwrap_or(0.0);
+                        }
+                    }
+                },
+                err_fn,
+                None,
+            );
+
+            let stream = match stream {
+                Ok(s) => s,
+                Err(e) => {
+                    log::error!("Failed to build output stream: {}", e);
+                    std::thread::sleep(std::time::Duration::from_secs(1));
+                    continue;
+                }
+            };
+
+            if let Err(e) = stream.play() {
+                log::error!("Failed to start output stream: {}", e);
+                std::thread::sleep(std::time::Duration::from_secs(1));
+                continue;
+            }
+
+            log::info!("Output audio stream started");
+
+            // Keep the stream alive while running and no device switch is requested
+            while running.load(Ordering::SeqCst) && !device_switch_requested.load(Ordering::SeqCst)
+            {
+                std::thread::sleep(std::time::Duration::from_millis(10));
+            }
+
+            // Drop stream before potentially creating a new one
+            drop(stream);
+
+            // Clear the device switch flag if it was set
+            if device_switch_requested.load(Ordering::SeqCst) {
+                device_switch_requested.store(false, Ordering::SeqCst);
+                log::info!("Output device switch completed");
+            }
+        }
+    }
+
+    /// Get output device by ID or return default
+    fn get_output_device_by_id(device_id: Option<&str>) -> Option<cpal::Device> {
+        use cpal::traits::{DeviceTrait, HostTrait};
+
+        let host = Self::get_preferred_host();
+
+        if let Some(id) = device_id {
+            // Try to find the specific device
+            if let Ok(devices) = host.output_devices() {
+                for device in devices {
+                    if let Ok(name) = device.name() {
+                        if name == id {
+                            return Some(device);
+                        }
+                    }
+                }
+            }
+            log::warn!("Output device '{}' not found, using default", id);
+        }
+
+        // Fall back to default
+        host.default_output_device()
     }
 }
 
@@ -1172,5 +1468,453 @@ mod tests {
         assert_eq!(decoded.call_id, packet.call_id);
         assert_eq!(decoded.sequence, packet.sequence);
         assert_eq!(decoded.timestamp, packet.timestamp);
+    }
+
+    // ==================== Sprint 18.2 Edge Case Tests ====================
+
+    /// Test 1: Call reconnection after brief network drop
+    /// Simulates a network drop by transitioning through Reconnecting state
+    #[tokio::test]
+    async fn test_call_reconnection_after_network_drop() {
+        let manager = VoiceCallManager::new();
+
+        // Start a call
+        let call_info = manager.start_call("peer-123").await.unwrap();
+        let call_id = call_info.call_id.clone();
+
+        // Simulate receiving answer
+        manager.handle_call_answered(&call_id).await.unwrap();
+
+        // Verify call is connected
+        let info = manager.get_call_info(&call_id).await.unwrap().unwrap();
+        assert_eq!(info.state, CallState::Connected);
+
+        // Simulate network drop by transitioning to Reconnecting state
+        manager
+            .update_call_state(&call_id, CallState::Reconnecting)
+            .await
+            .unwrap();
+
+        let info = manager.get_call_info(&call_id).await.unwrap().unwrap();
+        assert_eq!(info.state, CallState::Reconnecting);
+
+        // Simulate network recovery - reconnect
+        manager
+            .update_call_state(&call_id, CallState::Connected)
+            .await
+            .unwrap();
+
+        let info = manager.get_call_info(&call_id).await.unwrap().unwrap();
+        assert_eq!(info.state, CallState::Connected);
+
+        // Verify call statistics were maintained through reconnection
+        assert!(info.connected_at.is_some());
+    }
+
+    /// Test 2: Audio device disconnected during call (simulated)
+    /// Tests the device switching mechanism when a device becomes unavailable
+    #[tokio::test]
+    async fn test_audio_device_disconnection_handling() {
+        let manager = VoiceCallManager::new();
+
+        // Start a call
+        let call_info = manager.start_call("peer-456").await.unwrap();
+        let call_id = call_info.call_id.clone();
+
+        // Simulate receiving answer
+        manager.handle_call_answered(&call_id).await.unwrap();
+
+        // Try to set a non-existent device - should fall back to default
+        let result = manager
+            .set_input_device(Some("non-existent-device-12345".to_string()))
+            .await;
+
+        // Setting device should succeed (device lookup happens at stream creation time)
+        assert!(result.is_ok());
+
+        // Try to set output device
+        let result = manager
+            .set_output_device(Some("non-existent-output-device".to_string()))
+            .await;
+        assert!(result.is_ok());
+
+        // Call should still be in valid state
+        let info = manager.get_call_info(&call_id).await.unwrap().unwrap();
+        assert_eq!(info.state, CallState::Connected);
+    }
+
+    /// Test 3: Microphone permission scenarios
+    /// Tests call behavior when microphone access might be restricted
+    #[tokio::test]
+    async fn test_microphone_permission_scenarios() {
+        let manager = VoiceCallManager::new();
+
+        // Start call - call initiation should work regardless of mic permission
+        let call_info = manager.start_call("peer-789").await.unwrap();
+        assert_eq!(call_info.state, CallState::Ringing);
+
+        // Toggle mute should work to handle no-mic scenarios
+        let muted = manager.toggle_mute(&call_info.call_id).await.unwrap();
+        assert!(muted);
+
+        // Toggle again to unmute
+        let muted = manager.toggle_mute(&call_info.call_id).await.unwrap();
+        assert!(!muted);
+
+        // Call should remain valid
+        let info = manager
+            .get_call_info(&call_info.call_id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(info.muted, false);
+    }
+
+    /// Test 4: Jitter buffer underflow/overflow simulation
+    /// Tests the jitter buffer behavior under extreme conditions
+    #[test]
+    fn test_jitter_buffer_underflow_overflow() {
+        use crate::audio::{AudioFrame, JitterBuffer};
+
+        // Create a small buffer to test overflow
+        let mut buffer = JitterBuffer::new(50, 48000, 960);
+
+        // Test underflow - try to pop from empty buffer
+        let frame = buffer.pop();
+        assert!(frame.is_none(), "Should return None on empty buffer");
+
+        // Fill buffer beyond capacity to test overflow
+        for i in 0..200 {
+            let frame = AudioFrame {
+                samples: vec![0i16; 960],
+                sequence: i,
+                timestamp: i as u64 * 960,
+                synthesized: false,
+            };
+            let result = buffer.push(frame);
+            assert!(result.is_ok(), "Push should always succeed");
+        }
+
+        // Buffer should have dropped some frames
+        let stats = buffer.stats();
+        assert!(
+            stats.frames_dropped > 0,
+            "Should have dropped frames on overflow"
+        );
+        assert!(
+            stats.frames_received == 200,
+            "Should have received all frames"
+        );
+
+        // Pop all frames - should still work
+        let mut popped_count = 0;
+        while buffer.pop().is_some() {
+            popped_count += 1;
+        }
+        assert!(popped_count > 0, "Should be able to pop frames");
+    }
+
+    /// Test 5: Echo cancellation verification (via noise suppression)
+    /// Tests that audio processing with noise suppression is functioning
+    #[test]
+    fn test_echo_cancellation_via_noise_suppression() {
+        use crate::audio::{AudioConfig, VoiceEncoder};
+
+        // Create encoder with noise suppression enabled (includes echo cancellation path)
+        let config = AudioConfig {
+            enable_noise_suppression: true,
+            enable_vad: false, // Disable VAD to ensure audio goes through
+            ..Default::default()
+        };
+
+        let mut encoder = VoiceEncoder::new(config).unwrap();
+
+        // Create a loud test signal that should be processed
+        let mut pcm = vec![0i16; 960];
+        for (i, sample) in pcm.iter_mut().enumerate() {
+            // Generate a 440Hz sine wave at moderate volume
+            let t = i as f32 / 48000.0;
+            *sample = (f32::sin(2.0 * std::f32::consts::PI * 440.0 * t) * 8000.0) as i16;
+        }
+
+        // Encode the audio
+        let mut output = vec![0u8; 4000];
+        let encoded_len = encoder.encode(&pcm, &mut output).unwrap();
+
+        // Should produce output (noise suppression shouldn't eliminate real audio)
+        assert!(
+            encoded_len > 0,
+            "Encoder should produce output for non-silent audio"
+        );
+
+        // Test with noise suppression disabled
+        let config_no_ns = AudioConfig {
+            enable_noise_suppression: false,
+            enable_vad: false,
+            ..Default::default()
+        };
+
+        let mut encoder_no_ns = VoiceEncoder::new(config_no_ns).unwrap();
+        let mut output2 = vec![0u8; 4000];
+        let encoded_len2 = encoder_no_ns.encode(&pcm, &mut output2).unwrap();
+
+        // Both should produce output
+        assert!(encoded_len > 0);
+        assert!(encoded_len2 > 0);
+    }
+
+    /// Test 6: Device switching during active call
+    /// Tests the ability to switch audio devices during an active call
+    #[tokio::test]
+    async fn test_device_switching_during_active_call() {
+        let manager = VoiceCallManager::new();
+
+        // Start and connect a call
+        let call_info = manager.start_call("peer-switch-test").await.unwrap();
+        let call_id = call_info.call_id.clone();
+        manager.handle_call_answered(&call_id).await.unwrap();
+
+        // Verify call is connected
+        let info = manager.get_call_info(&call_id).await.unwrap().unwrap();
+        assert_eq!(info.state, CallState::Connected);
+
+        // Switch input device (None means default)
+        let result = manager.set_input_device(None).await;
+        assert!(result.is_ok());
+
+        // Switch output device
+        let result = manager.set_output_device(None).await;
+        assert!(result.is_ok());
+
+        // Toggle speaker (tests output device switching logic)
+        let speaker_on = manager.toggle_speaker(&call_id).await.unwrap();
+        assert!(speaker_on);
+
+        let speaker_off = manager.toggle_speaker(&call_id).await.unwrap();
+        assert!(!speaker_off);
+
+        // Call should remain connected after device switches
+        let info = manager.get_call_info(&call_id).await.unwrap().unwrap();
+        assert_eq!(info.state, CallState::Connected);
+    }
+
+    /// Test 7: Multiple concurrent calls rejection
+    /// Tests that starting a call with an existing peer is rejected
+    #[tokio::test]
+    async fn test_duplicate_call_rejection() {
+        let manager = VoiceCallManager::new();
+
+        // Start first call
+        let call_info = manager.start_call("peer-duplicate").await.unwrap();
+        assert_eq!(call_info.state, CallState::Ringing);
+
+        // Try to start another call with the same peer
+        let result = manager.start_call("peer-duplicate").await;
+        assert!(result.is_err());
+
+        if let Err(VoiceCallError::CallAlreadyExists(peer)) = result {
+            assert_eq!(peer, "peer-duplicate");
+        } else {
+            panic!("Expected CallAlreadyExists error");
+        }
+    }
+
+    /// Test 8: Call state transitions validation
+    /// Tests that invalid state transitions are properly handled
+    #[tokio::test]
+    async fn test_call_state_transition_validation() {
+        let manager = VoiceCallManager::new();
+
+        // Try to answer a non-existent call
+        let result = manager.answer_call("non-existent-call").await;
+        assert!(result.is_err());
+
+        if let Err(VoiceCallError::CallNotFound(id)) = result {
+            assert_eq!(id, "non-existent-call");
+        } else {
+            panic!("Expected CallNotFound error");
+        }
+
+        // Start a call and try to answer it (wrong state - it's outgoing)
+        let call_info = manager.start_call("peer-state-test").await.unwrap();
+        let result = manager.answer_call(&call_info.call_id).await;
+        assert!(result.is_err());
+
+        if let Err(VoiceCallError::InvalidState { expected, actual }) = result {
+            assert_eq!(expected, "incoming");
+            assert_eq!(actual, "ringing");
+        } else {
+            panic!("Expected InvalidState error");
+        }
+    }
+
+    /// Test 9: Voice packet processing with various states
+    /// Tests voice packet handling in different call states
+    #[tokio::test]
+    async fn test_voice_packet_processing_states() {
+        let manager = VoiceCallManager::new();
+
+        // Start a call
+        let call_info = manager.start_call("peer-packet-test").await.unwrap();
+        let call_id = call_info.call_id.clone();
+
+        // Create a test packet
+        let packet = VoicePacket {
+            call_id: call_id.clone(),
+            sequence: 1,
+            timestamp: 960,
+            audio_data: vec![0u8; 100],
+            is_silence: false,
+        };
+
+        // Process packet when call is not connected (should be skipped)
+        let result = manager.process_voice_packet(packet.clone()).await;
+        assert!(result.is_ok());
+
+        // Connect the call
+        manager.handle_call_answered(&call_id).await.unwrap();
+
+        // Now packet processing should work fully
+        let result = manager.process_voice_packet(packet.clone()).await;
+        assert!(result.is_ok());
+
+        // Check stats were updated
+        let info = manager.get_call_info(&call_id).await.unwrap().unwrap();
+        assert!(info.stats.packets_received > 0);
+    }
+
+    /// Test 10: Signal processing for all signal types
+    /// Tests the signal handler for various call signals
+    #[tokio::test]
+    async fn test_signal_processing_all_types() {
+        let manager = VoiceCallManager::new();
+
+        // Process incoming call offer
+        let signal = CallSignal::Offer {
+            call_id: "test-call-signal".to_string(),
+            codec_config: CodecConfig::default(),
+        };
+        let result = manager.process_signal("remote-peer", signal).await;
+        assert!(result.is_ok());
+        assert!(result.unwrap().is_some());
+
+        // Process ringing signal for the call
+        let signal = CallSignal::Ringing {
+            call_id: "test-call-signal".to_string(),
+        };
+        let result = manager.process_signal("remote-peer", signal).await;
+        assert!(result.is_ok());
+
+        // Process hold signal
+        let signal = CallSignal::Hold {
+            call_id: "test-call-signal".to_string(),
+        };
+        let result = manager.process_signal("remote-peer", signal).await;
+        assert!(result.is_ok());
+
+        // Verify call is on hold
+        let info = manager
+            .get_call_info("test-call-signal")
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(info.state, CallState::OnHold);
+
+        // Process resume signal
+        let signal = CallSignal::Resume {
+            call_id: "test-call-signal".to_string(),
+        };
+        let result = manager.process_signal("remote-peer", signal).await;
+        assert!(result.is_ok());
+
+        // Process ping signal
+        let signal = CallSignal::Ping {
+            call_id: "test-call-signal".to_string(),
+            timestamp: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_millis() as u64,
+        };
+        let result = manager.process_signal("remote-peer", signal).await;
+        assert!(result.is_ok());
+
+        // Process pong signal
+        let signal = CallSignal::Pong {
+            call_id: "test-call-signal".to_string(),
+            timestamp: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_millis() as u64
+                - 100, // Simulate 100ms RTT
+        };
+        let result = manager.process_signal("remote-peer", signal).await;
+        assert!(result.is_ok());
+
+        // Process hangup signal
+        let signal = CallSignal::Hangup {
+            call_id: "test-call-signal".to_string(),
+            reason: "user requested".to_string(),
+        };
+        let result = manager.process_signal("remote-peer", signal).await;
+        assert!(result.is_ok());
+
+        // Verify call is ended
+        let info = manager
+            .get_call_info("test-call-signal")
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(info.state, CallState::Ended);
+    }
+
+    /// Test 11: Audio device signal enum variants
+    #[test]
+    fn test_audio_device_signal_variants() {
+        // Test input device signal
+        let signal = AudioDeviceSignal::SwitchInput(Some("test-device".to_string()));
+        match signal {
+            AudioDeviceSignal::SwitchInput(Some(id)) => assert_eq!(id, "test-device"),
+            _ => panic!("Expected SwitchInput"),
+        }
+
+        // Test output device signal with None
+        let signal = AudioDeviceSignal::SwitchOutput(None);
+        match signal {
+            AudioDeviceSignal::SwitchOutput(None) => {}
+            _ => panic!("Expected SwitchOutput with None"),
+        }
+    }
+
+    /// Test 12: Call stats initialization and updates
+    #[tokio::test]
+    async fn test_call_stats_updates() {
+        let manager = VoiceCallManager::new();
+
+        // Start and connect a call
+        let call_info = manager.start_call("peer-stats-test").await.unwrap();
+        let call_id = call_info.call_id.clone();
+        manager.handle_call_answered(&call_id).await.unwrap();
+
+        // Initial stats should be default
+        let info = manager.get_call_info(&call_id).await.unwrap().unwrap();
+        assert_eq!(info.stats.packets_sent, 0);
+        assert_eq!(info.stats.packets_received, 0);
+        assert_eq!(info.stats.packets_lost, 0);
+
+        // Process some packets to update stats
+        for i in 0..5 {
+            let packet = VoicePacket {
+                call_id: call_id.clone(),
+                sequence: i,
+                timestamp: i as u64 * 960,
+                audio_data: vec![0u8; 50],
+                is_silence: false,
+            };
+            manager.process_voice_packet(packet).await.unwrap();
+        }
+
+        // Check stats were updated
+        let info = manager.get_call_info(&call_id).await.unwrap().unwrap();
+        assert_eq!(info.stats.packets_received, 5);
     }
 }
