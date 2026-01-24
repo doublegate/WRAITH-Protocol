@@ -352,6 +352,7 @@ mod tests {
             let result = test_function(&mut error_out);
             assert!(!result.is_null());
             assert!(error_out.is_null());
+            // SAFETY: Pointer validity verified by assert!(!result.is_null()) above
             assert_eq!(*result, 42);
 
             // Clean up

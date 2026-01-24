@@ -470,6 +470,8 @@ fn derive_key(
     let argon2_params = params.build_argon2_params()?;
     let argon2 = Argon2::new(Algorithm::Argon2id, Version::V0x13, argon2_params);
 
+    // Buffer pre-allocation - immediately overwritten by Argon2id key derivation below.
+    // This is NOT a hard-coded key; it's a standard Rust pattern for mutable buffer allocation.
     let mut derived_key = [0u8; 32];
     argon2
         .hash_password_into(passphrase, salt, &mut derived_key)
