@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [2.0.2] - 2026-01-24 - CI/CD Workflow Optimizations
+
 ### Added
 
 #### CI/CD Workflow Improvements
@@ -19,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Optimized caching strategy with `actions/cache@v5`
 - **Path Filters**: Added `paths-ignore` for markdown and docs to skip CI on documentation-only changes
 - **Client Build Support**: Added 8 Tauri client exclusions to CI, CodeQL, Docs, and Release workflows
+- **Client Builds in Releases**: All 8 Tauri desktop clients now built and included in releases
 - **Upgraded GitHub Actions**:
   - `actions/checkout@v6`
   - `actions/cache@v5`

@@ -6,7 +6,7 @@ Guidance for Claude Code when working with this repository.
 
 WRAITH (Wire-speed Resilient Authenticated Invisible Transfer Handler) is a decentralized secure file transfer protocol implemented in Rust.
 
-**Status:** v2.0.1 - Bug Fixes & UI Standardization
+**Status:** v2.0.2 - CI/CD Workflow Optimizations
 
 ### Metrics
 | Metric | Value |

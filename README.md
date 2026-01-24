@@ -9,7 +9,7 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
 [![CI Status](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/ci.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml)
 [![Release](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml)
-[![Version](https://img.shields.io/badge/version-2.0.1-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
+[![Version](https://img.shields.io/badge/version-2.0.2-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
 [![Security](https://img.shields.io/badge/security-audited-green.svg)](docs/security/SECURITY_AUDIT_v1.1.0.md)
 [![Rust](https://img.shields.io/badge/rust-1.85%2B-orange.svg)](https://www.rust-lang.org/)
 [![Edition](https://img.shields.io/badge/edition-2024-orange.svg)](https://doc.rust-lang.org/edition-guide/rust-2024/index.html)
@@ -17,7 +17,7 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
 
 ## Current Status
 
-**Version:** 2.0.1 | **Development Phase:** Phase 24 Complete
+**Version:** 2.0.2 | **Development Phase:** Phase 24 Complete
 
 WRAITH Protocol v2.0.0 is a major milestone release with 10 production-ready desktop/mobile applications. Version 2.0.0 delivers Phase 24 (WRAITH-Vault), a distributed secret storage application implementing Shamir's Secret Sharing with threshold cryptography, guardian-based key distribution, erasure coding for redundancy, and scheduled automatic backups.
 
@@ -646,7 +646,7 @@ WRAITH Protocol uses comprehensive automated workflows for quality assurance and
 - **MSRV:** Minimum Supported Rust Version (1.85) verification
 - **Path Filtering:** Skips CI runs for documentation-only changes
 
-### Workflow Optimizations (v2.0.1)
+### Workflow Optimizations (v2.0.2)
 - **Reusable Setup Workflow** (`setup.yml`): Common environment setup across all workflows
   - Cross-platform support (Ubuntu, macOS, Windows)
   - Rust toolchain with configurable components
@@ -809,6 +809,6 @@ WRAITH Protocol builds on the work of many excellent projects and technologies:
 
 **WRAITH Protocol** - *Secure. Fast. Invisible.*
 
-**Status:** v2.0.1 Phase 24 Complete | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 1,993 passing (4 ignored) | **Quality:** Production-ready, 0 vulnerabilities, zero warnings, 98/100 quality grade | **Clients:** 10 applications with full protocol integration, voice/video calling, group messaging, file synchronization, distributed file sharing, secure media streaming, IoT mesh networking, decentralized publishing, and distributed secret storage
+**Status:** v2.0.2 Phase 24 Complete | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 1,993 passing (4 ignored) | **Quality:** Production-ready, 0 vulnerabilities, zero warnings, 98/100 quality grade | **Clients:** 10 applications with full protocol integration, voice/video calling, group messaging, file synchronization, distributed file sharing, secure media streaming, IoT mesh networking, decentralized publishing, and distributed secret storage
 
 *Last Updated: 2026-01-24*

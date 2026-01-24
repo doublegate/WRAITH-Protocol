@@ -1,6 +1,6 @@
 [package]
 name = "wraith-transfer"
-version = "2.0.1"
+version = "2.0.2"
 description = "WRAITH Transfer - Secure peer-to-peer file transfer"
 authors = ["WRAITH Protocol Team"]
 license = "MIT OR Apache-2.0"
