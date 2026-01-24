@@ -73,6 +73,14 @@ This release introduces **WRAITH-Recon**, a Tier 3 network reconnaissance and da
 - Total test count increased to ~2,203 tests across all crates and clients
 - Updated release workflow to include WRAITH-Recon in CI/CD builds
 
+### Fixed
+
+- **WRAITH-Recon Wayland compatibility**: Added X11 fallback and GBM workarounds for KDE Plasma 6
+  - Fixes "Error 71 (Protocol error) dispatching to Wayland display" crash on launch
+  - Automatic detection of KDE Plasma sessions and graceful fallback to X11 via XWayland
+  - Disabled WebKitGTK compositing mode to prevent GBM buffer allocation failures
+  - See: https://github.com/tauri-apps/tauri/issues/10702
+
 ### Security
 
 - WRAITH-Recon includes comprehensive safety controls for authorized testing only
