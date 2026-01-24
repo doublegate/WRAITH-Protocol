@@ -1,0 +1,319 @@
+@import "tailwindcss";
+
+/* WRAITH Recon Design System - Dark Theme with Red/Orange Accent */
+:root {
+  /* Primary colors - Red/Orange spectrum (Security tool aesthetic) */
+  --color-primary-50: #fff5f5;
+  --color-primary-100: #fed7d7;
+  --color-primary-200: #feb2b2;
+  --color-primary-300: #fc8181;
+  --color-primary-400: #f56565;
+  --color-primary-500: #e53e3e;
+  --color-primary-600: #c53030;
+  --color-primary-700: #9b2c2c;
+  --color-primary-800: #822727;
+  --color-primary-900: #63171b;
+
+  /* Accent colors - Orange */
+  --color-accent-500: #ed8936;
+  --color-accent-600: #dd6b20;
+
+  /* Background colors - Dark slate */
+  --color-bg-primary: #0f1419;
+  --color-bg-secondary: #151b23;
+  --color-bg-tertiary: #1c2431;
+  --color-bg-elevated: #232d3d;
+  --color-bg-hover: #2a3649;
+
+  /* Text colors */
+  --color-text-primary: #e7edf5;
+  --color-text-secondary: #9ca8b7;
+  --color-text-muted: #6b7a8a;
+  --color-text-accent: #e53e3e;
+
+  /* Border colors */
+  --color-border-primary: #2a3649;
+  --color-border-secondary: #3a4a5f;
+  --color-border-accent: #e53e3e;
+
+  /* Status colors */
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-secondary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+/* Focus styles */
+*:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+}
+
+/* Button base styles */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
+  color: white;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--color-primary-400), var(--color-primary-500));
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background-color: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-primary);
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-bg-hover);
+  border-color: var(--color-border-secondary);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, var(--color-error), #dc2626);
+  color: white;
+}
+
+.btn-danger:hover {
+  background: linear-gradient(135deg, #f87171, var(--color-error));
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Input base styles */
+.input {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  background-color: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 0.5rem;
+  color: var(--color-text-primary);
+  transition: all 0.15s ease;
+}
+
+.input:hover {
+  border-color: var(--color-border-secondary);
+}
+
+.input:focus {
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.1);
+}
+
+.input::placeholder {
+  color: var(--color-text-muted);
+}
+
+/* Card styles */
+.card {
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.card:hover {
+  border-color: var(--color-border-secondary);
+}
+
+/* Modal styles */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  animation: fadeIn 0.15s ease;
+}
+
+.modal-content {
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 0.75rem;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow: auto;
+  animation: slideIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Sidebar styles */
+.sidebar {
+  width: 280px;
+  height: 100%;
+  background-color: var(--color-bg-secondary);
+  border-right: 1px solid var(--color-border-primary);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header styles */
+.header {
+  height: 64px;
+  background-color: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border-primary);
+  display: flex;
+  align-items: center;
+  padding: 0 1.5rem;
+}
+
+/* Progress bar */
+.progress-bar {
+  width: 100%;
+  height: 4px;
+  background-color: var(--color-bg-tertiary);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary-500), var(--color-accent-500));
+  border-radius: 2px;
+  transition: width 0.1s linear;
+}
+
+/* Empty state */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 3rem;
+  text-align: center;
+}
+
+.empty-state-icon {
+  width: 64px;
+  height: 64px;
+  color: var(--color-text-muted);
+}
+
+.empty-state-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.empty-state-description {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  max-width: 300px;
+}
+
+/* Kill switch animation */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+  }
+}
+
+.kill-switch-active {
+  animation: pulse-glow 2s infinite;
+}
+
+/* Prevent text selection on UI elements */
+button,
+nav {
+  user-select: none;
+}
+
+/* Tailwind CSS v4 color variable mappings */
+@theme {
+  --color-bg-primary: var(--color-bg-primary);
+  --color-bg-secondary: var(--color-bg-secondary);
+  --color-bg-tertiary: var(--color-bg-tertiary);
+  --color-bg-elevated: var(--color-bg-elevated);
+  --color-bg-hover: var(--color-bg-hover);
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-muted: var(--color-text-muted);
+  --color-text-accent: var(--color-text-accent);
+  --color-border-primary: var(--color-border-primary);
+  --color-border-secondary: var(--color-border-secondary);
+  --color-border-accent: var(--color-border-accent);
+  --color-primary-400: var(--color-primary-400);
+  --color-primary-500: var(--color-primary-500);
+  --color-primary-600: var(--color-primary-600);
+}

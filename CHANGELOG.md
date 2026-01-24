@@ -9,6 +9,79 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.2.0] - 2026-01-24 - WRAITH-Recon Client (Network Reconnaissance Platform)
+
+### Overview
+
+This release introduces **WRAITH-Recon**, a Tier 3 network reconnaissance and data exfiltration assessment platform for authorized security testing. This is the 9th production client application in the WRAITH Protocol ecosystem.
+
+### Added
+
+#### WRAITH-Recon Client (NEW)
+
+**Network reconnaissance and data exfiltration assessment platform** for authorized penetration testing:
+
+- **Rules of Engagement (RoE) Enforcement**
+  - Ed25519 signature verification for all RoE documents
+  - Target scope validation with CIDR whitelists and blacklists
+  - Time-bounded execution windows with automatic enforcement
+  - Kill switch mechanism with signed halt signals (<1ms activation latency)
+
+- **Tamper-Evident Audit Logging**
+  - Cryptographic Merkle chain for log integrity
+  - MITRE ATT&CK technique mapping in all audit log entries
+  - Full operation traceability for compliance
+
+- **Passive Reconnaissance Engine**
+  - AF_XDP kernel-bypass packet capture (10-40 Gbps, <1ms latency)
+  - Fallback to libpcap on unsupported systems
+  - OS fingerprinting via TCP/IP stack analysis (TTL, window size, options)
+  - Service detection via banner grabbing
+  - Traffic pattern analysis
+
+- **Active Reconnaissance**
+  - Stateless SYN/ACK/FIN/UDP/ICMP probing
+  - Timing obfuscation with Pareto/exponential jitter distributions
+  - Decoy IP support for evasion testing
+  - Rate limiting per RoE constraints
+
+- **Covert Channel Testing**
+  - DNS tunneling: Base32-encoded payloads in TXT records
+  - ICMP steganography: Data embedded in echo request padding
+  - TLS mimicry: JA3 fingerprint matching (Chrome, Firefox, Safari)
+  - WebSocket: Binary frames with proper masking
+  - DNS-over-HTTPS: Queries encoded as DoH requests
+
+- **Full WRAITH Protocol Stack Integration**
+  - wraith-core: Session management, stream multiplexing
+  - wraith-crypto: Noise_XX handshake, XChaCha20-Poly1305, Elligator2, ratcheting
+  - wraith-transport: AF_XDP, io_uring, UDP fallback
+  - wraith-obfuscation: Padding classes, timing jitter, protocol mimicry
+  - wraith-discovery: DHT-based relay discovery
+  - wraith-files: BLAKE3 chunking, integrity verification
+
+- **Technical Specifications**
+  - Backend: Tauri 2.0 + Rust (~7,037 lines)
+  - Frontend: React 18 + TypeScript + Tailwind CSS v4
+  - Database: SQLite with WAL mode
+  - Tests: 161 total (98 backend + 63 frontend)
+
+### Changed
+
+- Updated project version to 2.2.0
+- Client count increased to 9 production clients (Transfer, Android, iOS, Chat, Sync, Share, Stream, Mesh, Publish, Vault, Recon)
+- Total test count increased to ~2,203 tests across all crates and clients
+- Updated release workflow to include WRAITH-Recon in CI/CD builds
+
+### Security
+
+- WRAITH-Recon includes comprehensive safety controls for authorized testing only
+- All reconnaissance operations require cryptographically signed Rules of Engagement
+- Audit logs are tamper-evident with cryptographic chain verification
+- Kill switch provides immediate operation termination (<1ms latency)
+
+---
+
 ## [2.1.1] - 2026-01-24 - Technical Debt Remediation & Cross-Platform Fixes
 
 ### Overview

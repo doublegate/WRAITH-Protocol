@@ -1,6 +1,6 @@
 {
   "name": "wraith-vault-frontend",
-  "version": "1.7.2",
+  "version": "2.2.0",
   "description": "WRAITH-Vault React Frontend - Distributed Secret Storage",
   "type": "module",
   "scripts": {

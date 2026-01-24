@@ -9,7 +9,7 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
 [![CI Status](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/ci.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml)
 [![Release](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml)
-[![Version](https://img.shields.io/badge/version-2.1.1-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
+[![Version](https://img.shields.io/badge/version-2.2.0-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
 [![Security](https://img.shields.io/badge/security-audited-green.svg)](docs/security/SECURITY_AUDIT_v1.1.0.md)
 [![Rust](https://img.shields.io/badge/rust-1.85%2B-orange.svg)](https://www.rust-lang.org/)
 [![Edition](https://img.shields.io/badge/edition-2024-orange.svg)](https://doc.rust-lang.org/edition-guide/rust-2024/index.html)
@@ -408,7 +408,7 @@ See [CI Workflow](.github/workflows/ci.yml) and [Release Workflow](.github/workf
 
 ### Completed
 
-WRAITH Protocol v2.1.1 represents 2,685+ story points across 24 development phases:
+WRAITH Protocol v2.2.0 represents 2,685+ story points across 24 development phases:
 
 - Core protocol implementation (cryptography, transport, obfuscation, discovery)
 - 8 production-ready desktop client applications
@@ -489,6 +489,6 @@ WRAITH Protocol builds on excellent projects and research:
 
 **WRAITH Protocol** - *Secure. Fast. Invisible.*
 
-**Version:** 2.1.1 | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 2,042+ passing (99.2%) | **Clients:** 8 desktop applications
+**Version:** 2.2.0 | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 2,042+ passing (99.2%) | **Clients:** 9 desktop applications
 
 *Last Updated: 2026-01-24*

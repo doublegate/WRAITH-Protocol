@@ -1,6 +1,6 @@
 [package]
 name = "wraith-mesh"
-version = "2.1.1"
+version = "2.2.0"
 description = "WRAITH-Mesh - Network Topology Visualization and Diagnostics"
 authors = ["WRAITH Protocol Contributors"]
 license = "MIT OR Apache-2.0"

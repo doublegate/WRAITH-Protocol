@@ -1,6 +1,6 @@
 {
   "name": "wraith-stream-frontend",
-  "version": "1.7.2",
+  "version": "2.2.0",
   "description": "WRAITH-Stream React Frontend - Encrypted Media Streaming",
   "type": "module",
   "scripts": {

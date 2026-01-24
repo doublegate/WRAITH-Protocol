@@ -155,10 +155,10 @@ jobs:
           VERSION: ${{ needs.validate.outputs.version }}
         run: |
           echo "Running test suite for version $VERSION"
-          cargo test --workspace --all-features --exclude wraith-transfer --exclude wraith-chat --exclude wraith-sync --exclude wraith-share --exclude wraith-stream --exclude wraith-mesh --exclude wraith-publish --exclude wraith-vault --verbose
+          cargo test --workspace --all-features --exclude wraith-transfer --exclude wraith-chat --exclude wraith-sync --exclude wraith-share --exclude wraith-stream --exclude wraith-mesh --exclude wraith-publish --exclude wraith-vault --exclude wraith-recon --verbose
 
       - name: Run clippy checks
-        run: cargo clippy --workspace --all-features --exclude wraith-transfer --exclude wraith-chat --exclude wraith-sync --exclude wraith-share --exclude wraith-stream --exclude wraith-mesh --exclude wraith-publish --exclude wraith-vault -- -D warnings
+        run: cargo clippy --workspace --all-features --exclude wraith-transfer --exclude wraith-chat --exclude wraith-sync --exclude wraith-share --exclude wraith-stream --exclude wraith-mesh --exclude wraith-publish --exclude wraith-vault --exclude wraith-recon -- -D warnings
 
       - name: Check formatting
         run: cargo fmt --all -- --check
@@ -340,6 +340,7 @@ jobs:
           - wraith-mesh
           - wraith-publish
           - wraith-vault
+          - wraith-recon
         include:
           # Linux configuration
           - os: ubuntu-latest
@@ -693,6 +694,7 @@ jobs:
           echo "| WRAITH Mesh | AppImage, deb | dmg | msi |" >> $S
           echo "| WRAITH Publish | AppImage, deb | dmg | msi |" >> $S
           echo "| WRAITH Vault | AppImage, deb | dmg | msi |" >> $S
+          echo "| WRAITH Recon | AppImage, deb | dmg | msi |" >> $S
           echo "" >> $S
 
           echo "### Checksums" >> $S
