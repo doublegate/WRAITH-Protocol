@@ -5,14 +5,14 @@
 This document tracks the development journey of WRAITH Protocol client applications, from planning through implementation and release. Phases 15-24 delivered all 10 client applications: WRAITH-Transfer, WRAITH-Android, WRAITH-iOS, WRAITH-Chat, WRAITH-Sync, WRAITH-Share, WRAITH-Stream, WRAITH-Mesh, WRAITH-Publish, and WRAITH-Vault.
 
 [![Version](https://img.shields.io/badge/clients-10%20complete-green.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
-[![Protocol](https://img.shields.io/badge/protocol-v2.1.0-blue.svg)](../../README.md)
-[![Clients](https://img.shields.io/badge/clients-10%20production-brightgreen.svg)](../../to-dos/ROADMAP-clients.md)
+[![Protocol](https://img.shields.io/badge/protocol-v2.1.1-blue.svg)](../../README.md)
+[![Clients](https://img.shields.io/badge/clients-8%20desktop-brightgreen.svg)](../../to-dos/ROADMAP-clients.md)
 
 ---
 
 ## Overview
 
-WRAITH Protocol's client ecosystem encompasses **10 specialized applications** across **3 priority tiers**, providing comprehensive secure communication, file transfer, and collaboration capabilities. All clients share the same cryptographic foundation while offering specialized features for different use cases.
+WRAITH Protocol's client ecosystem encompasses **8 specialized desktop applications** across **3 priority tiers**, providing comprehensive secure communication, file transfer, and collaboration capabilities. All clients share the same cryptographic foundation while offering specialized features for different use cases.
 
 For the main project README, see [../../README.md](../../README.md).
 For protocol development history, see [README_Protocol-DEV.md](README_Protocol-DEV.md).
@@ -22,9 +22,9 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 ## Client Ecosystem Summary
 
 **Total Development Scope:**
-- **10 Client Applications** (8 standard + 2 security testing planned)
+- **8 Desktop Client Applications** (Tauri 2.0 + React 18)
 - **1,148 Story Points** delivered across all core clients
-- **All 10 core clients complete** (Phases 15-24)
+- **All 8 core clients complete** (Phases 15-24)
 
 **Development Strategy:**
 - **Tier 1:** High-priority core applications (Transfer, Android, iOS, Chat - ALL COMPLETE)
@@ -33,11 +33,9 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 - **Security Testing:** Authorized assessment tools (Recon, RedOps - PLANNED)
 
 **Current Status (2026-01-24):**
-- Protocol v2.1.0 complete (all 24 phases + infrastructure sprints delivered)
-- **All 10 Core Client Applications:** ✅ **COMPLETE** (1,148 SP total)
+- Protocol v2.1.1 complete (all 24 phases + infrastructure sprints delivered)
+- **All 8 Desktop Client Applications:** ✅ **COMPLETE** (1,148 SP total)
   - WRAITH-Transfer: Desktop P2P file transfer (68 tests)
-  - WRAITH-Android: Mobile protocol integration (96 tests)
-  - WRAITH-iOS: Mobile protocol integration (103 tests)
   - WRAITH-Chat: E2EE messaging with voice/video/groups (76 tests)
   - WRAITH-Sync: File synchronization with delta sync (17 tests)
   - WRAITH-Share: Distributed anonymous file sharing (24 tests)
@@ -45,9 +43,9 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
   - WRAITH-Mesh: IoT mesh networking (21 tests)
   - WRAITH-Publish: Decentralized content publishing (56 tests)
   - WRAITH-Vault: Distributed secret storage (99 tests)
-- **Development Status:** 10 of 10 core clients complete (1,148 SP delivered)
+- **Development Status:** 8 of 8 core clients complete (1,148 SP delivered)
 - **CI/CD:** GitHub Actions optimized with reusable setup.yml, path filters, client build support
-- **Test Coverage:** 587 client tests across all applications
+- **Test Coverage:** 388 client tests across all desktop applications
 
 ---
 
@@ -929,16 +927,16 @@ RedOps                                                          [=============]
 
 **Protocol Status (2026-01-24):**
 - ✅ All 24 protocol development phases complete (2,685 SP delivered)
-- ✅ 1,993 tests passing (4 ignored) - 100% pass rate
+- ✅ 2,042+ tests passing (16 ignored) - 99.2% pass rate
 - ✅ Zero vulnerabilities, zero clippy warnings
-- ✅ Grade A+ quality (98/100)
-- ✅ Production-ready architecture with v2.1.0 release
+- ✅ Grade A+ quality (98/100), TDR ~2.5%
+- ✅ Production-ready architecture with v2.1.1 release
 - ✅ Full WRAITH protocol integration in all clients
 - ✅ Secure key storage with platform-native keyring
 - ✅ AF_XDP socket configuration for kernel bypass
 - ✅ ICE signaling with RFC 8445 connectivity checks
 - ✅ DNS-based STUN resolution with caching
-- ✅ CI/CD optimized (reusable setup.yml, path filters, checkout@v6, cache@v5, upload-artifact@v6, download-artifact@v7)
+- ✅ CI/CD optimized (reusable setup.yml, path filters, checkout@v4, cache@v4, upload-artifact@v4, download-artifact@v4)
 
 **Client Development Status:**
 - ✅ Comprehensive planning complete (roadmap, specifications)
@@ -1058,8 +1056,8 @@ RedOps                                                          [=============]
 
 ---
 
-**WRAITH Protocol Client Applications Development History** - *From Planning to v2.0.0*
+**WRAITH Protocol Client Applications Development History** - *From Planning to v2.1.1*
 
-**Status:** Phases 15-24 Complete (All 10 Core Clients) | **Total Scope:** 10 clients, 1,148 SP | **Delivered:** 1,148 SP (100%) | **Protocol:** v2.1.0 Complete | **Tests:** 587 client tests | **CI/CD:** Optimized workflows with reusable setup and path filters
+**Status:** Phases 15-24 Complete (All 8 Desktop Clients) | **Total Scope:** 8 clients, 1,148 SP | **Delivered:** 1,148 SP (100%) | **Protocol:** v2.1.1 Complete | **Tests:** 388 client tests | **TDR:** ~2.5% (Grade A) | **CI/CD:** Optimized workflows with reusable setup and path filters
 
 *Last Updated: 2026-01-24*

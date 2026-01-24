@@ -4,7 +4,7 @@
 
 This document captures the complete development journey of WRAITH Protocol from inception through version 2.0.0, including detailed phase accomplishments, sprint summaries, and implementation milestones.
 
-[![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
+[![Version](https://img.shields.io/badge/version-2.1.1-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
 [![Security](https://img.shields.io/badge/security-audited-green.svg)](../security/DPI_EVASION_REPORT.md)
 [![Rust](https://img.shields.io/badge/rust-1.85%2B-orange.svg)](https://www.rust-lang.org/)
 
@@ -23,17 +23,19 @@ For the current production README, see [../../README.md](../../README.md).
 **Total Development Effort:** 2,685 story points delivered across 24 phases
 
 **Project Metrics (2026-01-24):**
-- **Code Volume:** ~87,000 lines of Rust code across protocol crates + ~30,000 lines in client applications (Kotlin/Swift/TypeScript)
-- **Test Coverage:** 1,993 tests passing (4 ignored) - 100% pass rate
+- **Code Volume:** ~265,000 lines of Rust code across protocol and client crates + ~7,000 lines TypeScript
+- **Test Coverage:** 2,042+ tests passing (16 ignored) - 99.2% pass rate
 - **Documentation:** 130+ markdown files, ~90,000+ lines of comprehensive documentation
 - **Dependencies:** 295 audited packages (zero vulnerabilities via cargo-audit)
 - **Security:** Grade A+ (EXCELLENT) - zero vulnerabilities, 100% unsafe documentation, comprehensive audits
-- **Client Applications:** 10 production-ready applications (4 Tier 1 + 3 Tier 2 + 3 Tier 3) with full protocol integration
-- **CI/CD:** GitHub Actions optimized with reusable setup.yml, path filters, and updated actions (checkout@v6, cache@v5, upload-artifact@v6, download-artifact@v7)
+- **Technical Debt Ratio:** ~2.5% (Grade A - Excellent)
+- **Client Applications:** 8 production-ready desktop applications with full protocol integration
+- **CI/CD:** GitHub Actions optimized with reusable setup.yml, path filters, and updated actions (checkout@v4, cache@v4, upload-artifact@v4, download-artifact@v4)
 
 **Quality Metrics:**
 - **Quality Grade:** 98/100 (Production-ready)
-- **Test Coverage:** 1,993 tests passing (4 ignored) - 100% pass rate
+- **Technical Debt Ratio:** ~2.5% (Grade A - Excellent)
+- **Test Coverage:** 2,042+ tests passing (16 ignored) - 99.2% pass rate
   - 414 wraith-core - frame parsing (SIMD), sessions, streams, BBR, migration, ring buffers, Node API
   - 127 wraith-crypto - Ed25519, X25519+Elligator2, AEAD, Noise_XX, Double Ratchet (+ test vectors + zeroization)
   - 130 wraith-transport - AF_XDP socket config, io_uring, UDP, worker pools, NUMA-aware allocation
@@ -55,7 +57,7 @@ For the current production README, see [../../README.md](../../README.md).
 - **Security Vulnerabilities:** Zero (295 dependencies scanned with cargo-audit, CodeQL verified)
 - **Clippy Warnings:** Zero (strict `-D warnings` enforcement)
 - **Compiler Warnings:** Zero
-- **Technical Debt Ratio:** 3.5% (reduced from 3.8% in v1.6.2)
+- **Technical Debt Ratio:** ~2.5% (reduced from 3.5% via v2.1.1 remediation)
 - **Fuzzing:** 5 libFuzzer targets continuously testing parser robustness
   - frame_parser: SIMD/scalar frame parsing with arbitrary bytes
   - dht_message: Kademlia message handling (FIND_NODE, FIND_VALUE, STORE)
@@ -1313,13 +1315,13 @@ This major phase delivers three production-ready client applications implementin
 
 ## Current Status & Next Steps
 
-**Version 2.1.0 Status (2026-01-24):**
+**Version 2.1.1 Status (2026-01-24):**
 - ✅ All 24 development phases complete (2,685 SP delivered)
-- ✅ 1,993 tests (4 ignored) - 100% pass rate
+- ✅ 2,042+ tests (16 ignored) - 99.2% pass rate
 - ✅ Zero vulnerabilities, zero warnings
 - ✅ Code quality: 98/100 (production-ready)
-- ✅ 10 production client applications deployed (Transfer, Android, iOS, Chat, Sync, Share, Stream, Mesh, Publish, Vault)
-- ✅ Technical debt ratio: 3.5% (healthy range)
+- ✅ 8 production desktop client applications deployed (Transfer, Chat, Sync, Share, Stream, Mesh, Publish, Vault)
+- ✅ Technical debt ratio: ~2.5% (Grade A - Excellent)
 - ✅ 100% unsafe block documentation coverage
 - ✅ Production-ready with comprehensive security audits (Grade A+)
 - ✅ Full Node API integration (PING/PONG, PATH_CHALLENGE/RESPONSE, chunk transfer)
@@ -1338,7 +1340,7 @@ This major phase delivers three production-ready client applications implementin
 - ✅ FFI bindings for C/C++ integration (wraith-ffi crate)
 - ✅ Cross-platform desktop application (Windows, macOS, Linux X11/Wayland)
 - ✅ Frontend test infrastructure (587 tests across all clients)
-- ✅ CI/CD optimized (reusable setup.yml, path filters, checkout@v6, cache@v5, upload-artifact@v6, download-artifact@v7)
+- ✅ CI/CD optimized (reusable setup.yml, path filters, checkout@v4, cache@v4, upload-artifact@v4, download-artifact@v4)
 
 **v1.7.1 WRAITH-Chat UI Redesign & UI/UX Standardization:**
 - Professional header with connection status, peer ID display, session stats
@@ -1385,8 +1387,8 @@ See [../../to-dos/ROADMAP.md](../../to-dos/ROADMAP.md) for detailed future plann
 
 ---
 
-**WRAITH Protocol Development History** - *From Foundation to v2.1.0 (Phases 1-24 + Infrastructure Sprints)*
+**WRAITH Protocol Development History** - *From Foundation to v2.1.1 (Phases 1-24 + Infrastructure Sprints)*
 
-**Development Period:** 2024 - 2026-01-24 | **Total Effort:** 2,685+ story points delivered across 24 phases + infrastructure sprints | **Quality:** Production-ready (98/100), 1,993 tests (100% pass rate), 0 vulnerabilities, Grade A+ security | **Clients:** 10 production applications | **CI/CD:** Optimized workflows with reusable setup and path filters | **v2.1.0:** RFC 8445 ICE implementation, AF_XDP kernel bypass networking
+**Development Period:** 2024 - 2026-01-24 | **Total Effort:** 2,685+ story points delivered across 24 phases + infrastructure sprints | **Quality:** Production-ready (98/100), 2,042+ tests (99.2% pass rate), 0 vulnerabilities, Grade A+ security | **Clients:** 8 desktop applications | **TDR:** ~2.5% (Grade A - Excellent) | **CI/CD:** Optimized workflows with reusable setup and path filters | **v2.1.1:** Technical debt remediation, cross-platform build fixes
 
 *Last Updated: 2026-01-24*

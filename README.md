@@ -25,18 +25,19 @@ WRAITH Protocol is a privacy-focused, high-performance file transfer protocol de
 - **End-to-end encryption** - Noise_XX handshake, XChaCha20-Poly1305, perfect forward secrecy
 - **Traffic analysis resistance** - Elligator2 key encoding, protocol mimicry, cover traffic
 - **Decentralized discovery** - Kademlia DHT, NAT traversal, relay fallback
-- **Production-ready ecosystem** - 10 client applications for desktop, mobile, and specialized use cases
+- **Production-ready ecosystem** - 8 desktop client applications for file transfer, messaging, and specialized use cases
 
 ### Project Metrics
 
 | Metric | Value |
 |--------|-------|
-| **Tests** | 1,993 passing (100% pass rate) |
-| **Code** | ~87,000 lines Rust (protocol) + ~30,000 lines (clients) |
+| **Tests** | 2,042+ passing (99.2% pass rate, 16 intentionally ignored) |
+| **Code** | ~265,000 lines Rust (protocol + clients) + ~7,000 lines TypeScript |
 | **Documentation** | 130+ files, ~90,000+ lines |
 | **Security** | Grade A+ (zero vulnerabilities, 295 audited dependencies) |
 | **Quality** | 98/100, zero clippy warnings |
-| **Applications** | 10 production-ready clients |
+| **TDR** | ~2.5% (Grade A - Excellent) |
+| **Applications** | 8 production-ready desktop clients |
 
 ---
 
@@ -91,23 +92,21 @@ WRAITH Protocol is a privacy-focused, high-performance file transfer protocol de
 
 ## Client Applications
 
-WRAITH Protocol powers a comprehensive ecosystem of 10 production-ready applications:
+WRAITH Protocol powers a comprehensive ecosystem of 8 production-ready desktop applications:
 
 ### Tier 1: Core Applications
 
 | Application | Platform | Description |
 |-------------|----------|-------------|
-| **[WRAITH-Transfer](clients/wraith-transfer/)** | Desktop | P2P file transfer with drag-and-drop GUI (Tauri 2.0 + React 18) |
-| **[WRAITH-Android](clients/wraith-android/)** | Mobile | Native Android client with JNI bindings and Material Design 3 |
-| **[WRAITH-iOS](clients/wraith-ios/)** | Mobile | Native iOS client with UniFFI bindings and SwiftUI |
+| **[WRAITH-Transfer](clients/wraith-transfer/)** | Desktop | Secure P2P file transfer with drag-and-drop GUI |
 | **[WRAITH-Chat](clients/wraith-chat/)** | Desktop | E2EE messaging with voice/video calls and group messaging |
 
 ### Tier 2: Specialized Applications
 
 | Application | Platform | Description |
 |-------------|----------|-------------|
-| **[WRAITH-Sync](clients/wraith-sync/)** | Desktop | File synchronization with delta transfers and version history |
-| **[WRAITH-Share](clients/wraith-share/)** | Desktop | Distributed file sharing with swarm transfers and link sharing |
+| **[WRAITH-Sync](clients/wraith-sync/)** | Desktop | Serverless file synchronization with delta transfers and version history |
+| **[WRAITH-Share](clients/wraith-share/)** | Desktop | Anonymous distributed file sharing with swarm transfers |
 | **[WRAITH-Stream](clients/wraith-stream/)** | Desktop | Secure media streaming with AV1/VP9/H.264 and adaptive bitrate |
 
 ### Tier 3: Advanced Applications
@@ -115,7 +114,7 @@ WRAITH Protocol powers a comprehensive ecosystem of 10 production-ready applicat
 | Application | Platform | Description |
 |-------------|----------|-------------|
 | **[WRAITH-Mesh](clients/wraith-mesh/)** | Desktop | IoT mesh networking with topology visualization and diagnostics |
-| **[WRAITH-Publish](clients/wraith-publish/)** | Desktop | Decentralized content publishing with Ed25519 signatures and RSS |
+| **[WRAITH-Publish](clients/wraith-publish/)** | Desktop | Censorship-resistant content publishing with Ed25519 signatures and RSS |
 | **[WRAITH-Vault](clients/wraith-vault/)** | Desktop | Distributed secret storage with Shamir's Secret Sharing |
 
 ### Application Highlights
@@ -309,7 +308,7 @@ For detailed architecture documentation, see [Protocol Overview](docs/architectu
 - 100% unsafe code documentation
 
 **Validation:**
-- Comprehensive test coverage (1,993 tests)
+- Comprehensive test coverage (2,042+ tests)
 - DPI evasion validation (Wireshark, Zeek, Suricata, nDPI)
 - 5 libFuzzer targets
 - Property-based tests
@@ -347,7 +346,7 @@ WRAITH-Protocol/
 |   |-- wraith-files/      # Chunking, integrity, transfer
 |   |-- wraith-cli/        # CLI
 |   +-- wraith-ffi/        # FFI bindings
-|-- clients/               # Client applications (10)
+|-- clients/               # Client applications (8)
 |-- docs/                  # Documentation (130+ files)
 |-- to-dos/                # Project planning
 |-- ref-docs/              # Protocol specifications
@@ -412,7 +411,7 @@ See [CI Workflow](.github/workflows/ci.yml) and [Release Workflow](.github/workf
 WRAITH Protocol v2.1.1 represents 2,685+ story points across 24 development phases:
 
 - Core protocol implementation (cryptography, transport, obfuscation, discovery)
-- 10 production-ready client applications
+- 8 production-ready desktop client applications
 - Comprehensive documentation and testing
 - CI/CD infrastructure with multi-platform releases
 
@@ -490,6 +489,6 @@ WRAITH Protocol builds on excellent projects and research:
 
 **WRAITH Protocol** - *Secure. Fast. Invisible.*
 
-**Version:** 2.1.1 | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 2,042 passing | **Clients:** 10 applications
+**Version:** 2.1.1 | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 2,042+ passing (99.2%) | **Clients:** 8 desktop applications
 
 *Last Updated: 2026-01-24*
