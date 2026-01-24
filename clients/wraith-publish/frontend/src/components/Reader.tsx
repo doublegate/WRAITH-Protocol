@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useUIStore } from '../stores/uiStore';
 import { VerifyBadge } from './VerifyBadge';
 import type { Article } from '../types';
@@ -12,16 +12,7 @@ export function Reader({ article }: ReaderProps) {
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
 
-  // Verify content signature on load
-  useEffect(() => {
-    if (article?.cid && article.status === 'published') {
-      verifyContent();
-    } else {
-      setIsVerified(null);
-    }
-  }, [article?.id, article?.cid]);
-
-  const verifyContent = async () => {
+  const verifyContent = useCallback(async () => {
     if (!article?.cid) return;
 
     setIsVerifying(true);
@@ -30,13 +21,21 @@ export function Reader({ article }: ReaderProps) {
       // For now, simulate verification
       await new Promise((resolve) => setTimeout(resolve, 500));
       setIsVerified(true);
-    } catch (error) {
+    } catch {
       setIsVerified(false);
-      console.error('Verification failed:', error);
     } finally {
       setIsVerifying(false);
     }
-  };
+  }, [article?.cid]);
+
+  // Verify content signature on load
+  useEffect(() => {
+    if (article?.cid && article.status === 'published') {
+      verifyContent();
+    } else {
+      setIsVerified(null);
+    }
+  }, [article?.id, article?.cid, article?.status, verifyContent]);
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp * 1000).toLocaleDateString(undefined, {
@@ -53,7 +52,7 @@ export function Reader({ article }: ReaderProps) {
 
   const getWordCount = (content: string) => {
     return content
-      .replace(/[#*`\[\]()]/g, '')
+      .replace(/[#*`[\]()]/g, '')
       .split(/\s+/)
       .filter((word) => word.length > 0).length;
   };
@@ -64,7 +63,7 @@ export function Reader({ article }: ReaderProps) {
     try {
       await navigator.clipboard.writeText(article.cid);
       showNotification({ type: 'success', message: 'CID copied to clipboard' });
-    } catch (error) {
+    } catch {
       showNotification({ type: 'error', message: 'Failed to copy CID' });
     }
   };
@@ -76,7 +75,7 @@ export function Reader({ article }: ReaderProps) {
     try {
       await navigator.clipboard.writeText(link);
       showNotification({ type: 'success', message: 'Link copied to clipboard' });
-    } catch (error) {
+    } catch {
       showNotification({ type: 'error', message: 'Failed to copy link' });
     }
   };
@@ -403,7 +402,7 @@ function InlineText({ text }: { text: string }) {
     }
 
     // Regular text
-    const nextSpecial = remaining.search(/[`*\[]/);
+    const nextSpecial = remaining.search(/[`*[]/);
     if (nextSpecial === -1) {
       parts.push(<span key={key++}>{remaining}</span>);
       break;

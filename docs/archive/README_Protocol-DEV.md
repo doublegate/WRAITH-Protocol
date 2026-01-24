@@ -4,7 +4,7 @@
 
 This document captures the complete development journey of WRAITH Protocol from inception through version 2.0.0, including detailed phase accomplishments, sprint summaries, and implementation milestones.
 
-[![Version](https://img.shields.io/badge/version-2.1.1-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
+[![Version](https://img.shields.io/badge/version-2.2.0-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
 [![Security](https://img.shields.io/badge/security-audited-green.svg)](../security/DPI_EVASION_REPORT.md)
 [![Rust](https://img.shields.io/badge/rust-1.85%2B-orange.svg)](https://www.rust-lang.org/)
 
@@ -23,19 +23,19 @@ For the current production README, see [../../README.md](../../README.md).
 **Total Development Effort:** 2,685 story points delivered across 24 phases
 
 **Project Metrics (2026-01-24):**
-- **Code Volume:** ~265,000 lines of Rust code across protocol and client crates + ~7,000 lines TypeScript
-- **Test Coverage:** 2,042+ tests passing (16 ignored) - 99.2% pass rate
+- **Code Volume:** ~272,000 lines of Rust code across protocol and client crates + ~10,000 lines TypeScript
+- **Test Coverage:** 2,124+ tests passing (16 ignored) - 99.2% pass rate
 - **Documentation:** 130+ markdown files, ~90,000+ lines of comprehensive documentation
 - **Dependencies:** 295 audited packages (zero vulnerabilities via cargo-audit)
 - **Security:** Grade A+ (EXCELLENT) - zero vulnerabilities, 100% unsafe documentation, comprehensive audits
 - **Technical Debt Ratio:** ~2.5% (Grade A - Excellent)
-- **Client Applications:** 8 production-ready desktop applications with full protocol integration
+- **Client Applications:** 9 production-ready desktop applications with full protocol integration
 - **CI/CD:** GitHub Actions optimized with reusable setup.yml, path filters, and updated actions (checkout@v4, cache@v4, upload-artifact@v4, download-artifact@v4)
 
 **Quality Metrics:**
 - **Quality Grade:** 98/100 (Production-ready)
 - **Technical Debt Ratio:** ~2.5% (Grade A - Excellent)
-- **Test Coverage:** 2,042+ tests passing (16 ignored) - 99.2% pass rate
+- **Test Coverage:** 2,124+ tests passing (16 ignored) - 99.2% pass rate
   - 414 wraith-core - frame parsing (SIMD), sessions, streams, BBR, migration, ring buffers, Node API
   - 127 wraith-crypto - Ed25519, X25519+Elligator2, AEAD, Noise_XX, Double Ratchet (+ test vectors + zeroization)
   - 130 wraith-transport - AF_XDP socket config, io_uring, UDP, worker pools, NUMA-aware allocation
@@ -54,6 +54,7 @@ For the current production README, see [../../README.md](../../README.md).
   - 21 wraith-mesh - IoT mesh networking (topology visualization, DHT inspection)
   - 56 wraith-publish - Decentralized content publishing (Ed25519 signatures, RSS feeds)
   - 99 wraith-vault - Distributed secret storage (Shamir SSS, erasure coding, guardians)
+  - 78 wraith-recon - Network reconnaissance (packet capture, protocol analysis, mapping)
 - **Security Vulnerabilities:** Zero (295 dependencies scanned with cargo-audit, CodeQL verified)
 - **Clippy Warnings:** Zero (strict `-D warnings` enforcement)
 - **Compiler Warnings:** Zero
@@ -1179,15 +1180,17 @@ This major phase delivers three production-ready client applications implementin
 | **wraith-android** | ✅ v2.1.0 | ~3,800 | - | - | 96 | Native Android client with Kotlin + Jetpack Compose (Material Design 3), **full WRAITH protocol integration** (not placeholders), **Android Keystore** secure storage, **DHT/NAT** mobile optimization, **FCM push notifications**, multi-architecture support (arm64/arm/x86_64/x86), background service, ProGuard/R8 optimization |
 | **wraith-ios** | ✅ v2.1.0 | ~2,650 | - | - | 93 | Native iOS client with Swift + SwiftUI (iOS 16.0+), **full WRAITH protocol integration** (not placeholders), **iOS Keychain** secure storage, **DHT/NAT** mobile optimization, **APNs push notifications**, UniFFI bindings, MVVM architecture, tab-based navigation, Swift Package Manager integration, background task support |
 | **wraith-chat** | ✅ v2.1.0 | ~5,200 | - | - | 38 | E2EE messaging application (Tauri 2.0 + React 18), **Signal Protocol Double Ratchet**, SQLCipher encrypted database (AES-256, 64K iterations), **voice calling** (Opus, RNNoise, echo cancellation), **video calling** (VP8/VP9, adaptive bitrate), **group messaging** (Sender Keys protocol), **49 IPC commands** (10 messaging + 16 voice + 16 video + 11 group), dark theme with Zustand stores |
+| **wraith-recon** | ✅ v2.2.0 | ~4,500 | - | - | 78 | Network reconnaissance platform (Tauri 2.0 + React 18), packet capture with pcap/BPF, protocol analysis and dissection, network mapping and visualization, device fingerprinting, traffic anomaly detection, 17 Tauri IPC commands, real-time dashboard with dark theme |
 | **wraith-xdp** | 📋 Planned | 0 | 0 | 0 | 0 | eBPF/XDP programs for in-kernel packet filtering (excluded from default build) |
 
-**Total Protocol:** ~61,500 lines Rust across protocol crates + ~11,650 lines in client applications (4,750 Rust, 2,400 Kotlin, 1,900 Swift, 2,600 TypeScript/React)
+**Total Protocol:** ~65,000 lines Rust across protocol crates + ~16,000 lines in client applications (5,500 Rust, 2,400 Kotlin, 1,900 Swift, 6,200 TypeScript/React)
 
-**Client Applications:** 4 production-ready applications with full protocol integration
+**Client Applications:** 5 production-ready applications with full protocol integration
 - WRAITH-Transfer: Desktop P2P file transfer (Tauri 2.0 + React 18)
 - WRAITH-Android: Native Android mobile client (Kotlin + Jetpack Compose + JNI, 96 tests, Keystore, FCM)
 - WRAITH-iOS: Native iOS mobile client (Swift + SwiftUI + UniFFI, 93 tests, Keychain, APNs)
 - WRAITH-Chat: E2EE messaging with voice/video/groups (Tauri 2.0 + React 18 + Double Ratchet + SQLCipher, 49 IPC commands)
+- WRAITH-Recon: Network reconnaissance platform (Tauri 2.0 + React 18, 78 tests, packet capture, protocol analysis)
 
 ---
 
@@ -1315,12 +1318,12 @@ This major phase delivers three production-ready client applications implementin
 
 ## Current Status & Next Steps
 
-**Version 2.1.1 Status (2026-01-24):**
-- ✅ All 24 development phases complete (2,685 SP delivered)
-- ✅ 2,042+ tests (16 ignored) - 99.2% pass rate
+**Version 2.2.0 Status (2026-01-24):**
+- ✅ All 24 development phases complete (2,740+ SP delivered)
+- ✅ 2,124+ tests (16 ignored) - 99.2% pass rate
 - ✅ Zero vulnerabilities, zero warnings
 - ✅ Code quality: 98/100 (production-ready)
-- ✅ 8 production desktop client applications deployed (Transfer, Chat, Sync, Share, Stream, Mesh, Publish, Vault)
+- ✅ 9 production desktop client applications deployed (Transfer, Chat, Sync, Share, Stream, Mesh, Publish, Vault, Recon)
 - ✅ Technical debt ratio: ~2.5% (Grade A - Excellent)
 - ✅ 100% unsafe block documentation coverage
 - ✅ Production-ready with comprehensive security audits (Grade A+)
@@ -1337,6 +1340,7 @@ This major phase delivers three production-ready client applications implementin
 - ✅ WRAITH Transfer desktop application (Tauri 2.0 + React 18)
 - ✅ WRAITH Chat with comprehensive UI redesign
 - ✅ WRAITH-Sync file synchronization with delta transfers
+- ✅ WRAITH-Recon network reconnaissance platform (packet capture, protocol analysis, network mapping)
 - ✅ FFI bindings for C/C++ integration (wraith-ffi crate)
 - ✅ Cross-platform desktop application (Windows, macOS, Linux X11/Wayland)
 - ✅ Frontend test infrastructure (587 tests across all clients)
@@ -1357,10 +1361,10 @@ This major phase delivers three production-ready client applications implementin
 - **JACK/ALSA Fix**: Resolved audio device enumeration errors in voice calls
 - **50+ Component Fixes**: Color palette (gray->slate), modal backdrops, accessibility
 
-**Completed Client Applications (10 Total):**
+**Completed Client Applications (11 Total):**
 - **Tier 1:** WRAITH-Transfer (102 SP), WRAITH-Android (~60 SP), WRAITH-iOS (~60 SP), WRAITH-Chat (182 SP)
 - **Tier 2:** WRAITH-Sync (136 SP), WRAITH-Share (123 SP), WRAITH-Stream (71 SP)
-- **Tier 3:** WRAITH-Mesh (60 SP), WRAITH-Publish (76 SP), WRAITH-Vault (94 SP)
+- **Tier 3:** WRAITH-Mesh (60 SP), WRAITH-Publish (76 SP), WRAITH-Vault (94 SP), WRAITH-Recon (55 SP)
 
 **Upcoming Work:**
 
@@ -1368,7 +1372,7 @@ This major phase delivers three production-ready client applications implementin
 - Post-quantum cryptography preparation (Kyber/Dilithium hybrid mode)
 - Formal verification of critical cryptographic paths
 - XDP/eBPF programs for in-kernel packet filtering (wraith-xdp crate)
-- Security testing tools: WRAITH-Recon (55 SP), WRAITH-RedOps (89 SP)
+- Security testing tools: WRAITH-RedOps (89 SP)
 
 See [../../to-dos/ROADMAP.md](../../to-dos/ROADMAP.md) for detailed future planning.
 
@@ -1387,8 +1391,8 @@ See [../../to-dos/ROADMAP.md](../../to-dos/ROADMAP.md) for detailed future plann
 
 ---
 
-**WRAITH Protocol Development History** - *From Foundation to v2.1.1 (Phases 1-24 + Infrastructure Sprints)*
+**WRAITH Protocol Development History** - *From Foundation to v2.2.0 (Phases 1-24 + Infrastructure Sprints)*
 
-**Development Period:** 2024 - 2026-01-24 | **Total Effort:** 2,685+ story points delivered across 24 phases + infrastructure sprints | **Quality:** Production-ready (98/100), 2,042+ tests (99.2% pass rate), 0 vulnerabilities, Grade A+ security | **Clients:** 8 desktop applications | **TDR:** ~2.5% (Grade A - Excellent) | **CI/CD:** Optimized workflows with reusable setup and path filters | **v2.1.1:** Technical debt remediation, cross-platform build fixes
+**Development Period:** 2024 - 2026-01-24 | **Total Effort:** 2,740+ story points delivered across 24 phases + infrastructure sprints | **Quality:** Production-ready (98/100), 2,124+ tests (99.2% pass rate), 0 vulnerabilities, Grade A+ security | **Clients:** 9 desktop applications | **TDR:** ~2.5% (Grade A - Excellent) | **CI/CD:** Optimized workflows with reusable setup and path filters | **v2.2.0:** WRAITH-Recon network reconnaissance platform
 
 *Last Updated: 2026-01-24*

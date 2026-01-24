@@ -235,6 +235,7 @@ export const useContentStore = create<ContentState>((set, get) => ({
   },
 
   // Set show publish modal (delegates to uiStore but kept for convenience)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setShowPublishModal: (_show: boolean) => {
     // This is a convenience method - actual state is in uiStore
     // Components should import from uiStore directly

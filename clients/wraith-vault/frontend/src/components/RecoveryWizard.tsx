@@ -1,7 +1,7 @@
 // RecoveryWizard Component for WRAITH Vault
 // Multi-step wizard for recovering secrets from guardian shards
 
-import { useState, useEffect, Fragment } from "react";
+import { useState, useEffect, Fragment, useRef } from "react";
 import { useRecoveryStore } from "../stores/recoveryStore";
 import { useGuardianStore } from "../stores/guardianStore";
 import { useSecretStore } from "../stores/secretStore";
@@ -47,27 +47,39 @@ export function RecoveryWizard({
   const [manualKeyInput, setManualKeyInput] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Track previous error to detect changes
+  const prevErrorRef = useRef(error);
+
+  // Sync error state from store - using ref comparison in render to avoid effect
+  // This is an intentional pattern to sync external state without effect cascades
+  /* eslint-disable react-hooks/refs */
+  if (error !== prevErrorRef.current) {
+    prevErrorRef.current = error;
+    if (error) {
+      // Schedule state update for next tick to avoid render-phase setState
+      queueMicrotask(() => {
+        setErrorMessage(error);
+        setStep("error");
+      });
+    }
+  }
+  /* eslint-enable react-hooks/refs */
+
   useEffect(() => {
     loadSecrets();
     loadGuardians();
   }, [loadSecrets, loadGuardians]);
 
+  // Handle preselected secret
   useEffect(() => {
-    if (preselectedSecretId) {
+    if (preselectedSecretId && secrets.length > 0 && !selectedSecret) {
       const secret = secrets.find((s) => s.id === preselectedSecretId);
       if (secret) {
         setSelectedSecret(secret);
         setStep("select-guardians");
       }
     }
-  }, [preselectedSecretId, secrets]);
-
-  useEffect(() => {
-    if (error) {
-      setErrorMessage(error);
-      setStep("error");
-    }
-  }, [error]);
+  }, [preselectedSecretId, secrets, selectedSecret]);
 
   const secretGuardians = selectedSecret
     ? guardians.filter((g) => selectedSecret.guardian_ids.includes(g.id))
@@ -146,7 +158,7 @@ export function RecoveryWizard({
       setManualShardInput("");
       setManualKeyInput("");
       setCurrentGuardianIndex((prev) => prev + 1);
-    } catch (err) {
+    } catch {
       setErrorMessage("Invalid shard data format");
     }
   };

@@ -1,6 +1,6 @@
 // PeerList Component - Connected Peers Sidebar
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useNetworkStore } from '../stores/networkStore';
 import type { PeerType } from '../types';
 
@@ -110,6 +110,13 @@ function PeerGroup({
   onSelect: (id: string | null) => void;
   getLinkInfo: (id: string) => { latency_ms: number; bandwidth_mbps: number; strength: number } | null | undefined;
 }) {
+  // Update time every 10 seconds to recalculate "last seen" values
+  const [now, setNow] = useState(() => Date.now() / 1000);
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now() / 1000), 10000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div>
       {/* Group Header */}
@@ -130,9 +137,7 @@ function PeerGroup({
         {peers.map((peer) => {
           const link = getLinkInfo(peer.id);
           const isSelected = selectedPeerId === peer.id;
-          const timeSinceLastSeen = Math.floor(
-            (Date.now() / 1000 - peer.last_seen)
-          );
+          const timeSinceLastSeen = Math.floor(now - peer.last_seen);
 
           return (
             <button

@@ -1,6 +1,6 @@
 // DhtViewer Component - DHT Routing Table and Key Lookup Interface
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNetworkStore } from '../stores/networkStore';
 import type { RoutingBucket, LookupResult, StoredKey } from '../types';
 
@@ -506,8 +506,9 @@ function LocalStorageView({
 
 function StoredKeyRow({ storedKey }: { storedKey: StoredKey }) {
   const [expanded, setExpanded] = useState(false);
+  const [now] = useState(() => Date.now()); // Capture time once at mount
   const expiresAt = new Date(storedKey.expires_at * 1000);
-  const isExpiring = expiresAt.getTime() - Date.now() < 3600000; // Less than 1 hour
+  const isExpiring = useMemo(() => expiresAt.getTime() - now < 3600000, [expiresAt, now]); // Less than 1 hour
 
   return (
     <div className="bg-slate-800/50 rounded-lg overflow-hidden">

@@ -104,6 +104,11 @@ export default function VideoPlayer() {
     setVideoRef(videoRef.current);
   }, [setVideoRef]);
 
+  const handleBack = useCallback(() => {
+    clearSelectedStream();
+    setCurrentView('browse');
+  }, [clearSelectedStream, setCurrentView]);
+
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -141,12 +146,7 @@ export default function VideoPlayer() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [togglePlay, toggleFullscreen, toggleMute, seek, setVolume, player]);
-
-  const handleBack = useCallback(() => {
-    clearSelectedStream();
-    setCurrentView('browse');
-  }, [clearSelectedStream, setCurrentView]);
+  }, [togglePlay, toggleFullscreen, toggleMute, seek, setVolume, player, handleBack]);
 
   const handleSeekBarClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();

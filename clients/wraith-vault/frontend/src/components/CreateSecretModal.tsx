@@ -44,12 +44,14 @@ export function CreateSecretModal({ onClose, onCreated }: CreateSecretModalProps
     loadAvailableGuardians();
   }, [loadGuardians, loadAvailableGuardians]);
 
-  useEffect(() => {
-    // Auto-adjust threshold if total shares changes
-    if (threshold > totalShares) {
-      setThreshold(Math.max(2, totalShares - 1));
+  // Handler to update totalShares and auto-adjust threshold
+  const handleTotalSharesChange = (newTotal: number) => {
+    setTotalShares(newTotal);
+    // Auto-adjust threshold if it exceeds new total
+    if (threshold > newTotal) {
+      setThreshold(Math.max(2, newTotal - 1));
     }
-  }, [totalShares, threshold]);
+  };
 
   const validateStep = (): boolean => {
     setValidationError(null);
@@ -347,7 +349,7 @@ export function CreateSecretModal({ onClose, onCreated }: CreateSecretModalProps
                   <input
                     type="number"
                     value={totalShares}
-                    onChange={(e) => setTotalShares(parseInt(e.target.value) || 2)}
+                    onChange={(e) => handleTotalSharesChange(parseInt(e.target.value) || 2)}
                     min={threshold}
                     max={20}
                     className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white focus:outline-none focus:ring-2 focus:ring-purple-500"

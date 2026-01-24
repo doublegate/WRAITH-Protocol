@@ -52,10 +52,17 @@ export function GuardianList({
     "all"
   );
   const [checkingHealth, setCheckingHealth] = useState<string | null>(null);
+  const [now, setNow] = useState(() => Date.now() / 1000);
 
   useEffect(() => {
     loadGuardians();
   }, [loadGuardians]);
+
+  // Update current time every 30 seconds for "last seen" calculations
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now() / 1000), 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSelect = (guardian: Guardian) => {
     if (selectable && onSelectionChange) {
@@ -77,7 +84,9 @@ export function GuardianList({
     setCheckingHealth(guardian.id);
 
     // Simulate health check (in real implementation, this would ping the guardian)
+    // eslint-disable-next-line react-hooks/purity -- This is an event handler, not render
     const success = Math.random() > 0.3; // 70% success rate for demo
+    // eslint-disable-next-line react-hooks/purity -- This is an event handler, not render
     const responseTime = success ? Math.floor(Math.random() * 200) + 50 : null;
     const errorMsg = success ? null : "Connection timeout";
 
@@ -99,7 +108,7 @@ export function GuardianList({
 
   const formatLastSeen = (timestamp: number | null) => {
     if (!timestamp) return "Never";
-    const diff = Date.now() / 1000 - timestamp;
+    const diff = now - timestamp;
     if (diff < 60) return "Just now";
     if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
     if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;

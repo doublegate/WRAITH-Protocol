@@ -42,7 +42,7 @@ export function ContentCard({ article, variant }: ContentCardProps) {
 
   const getWordCount = (content: string) => {
     return content
-      .replace(/[#*`\[\]()]/g, '')
+      .replace(/[#*`[\]()]/g, '')
       .split(/\s+/)
       .filter((word) => word.length > 0).length;
   };

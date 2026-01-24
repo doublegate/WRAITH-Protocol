@@ -25,19 +25,19 @@ WRAITH Protocol is a privacy-focused, high-performance file transfer protocol de
 - **End-to-end encryption** - Noise_XX handshake, XChaCha20-Poly1305, perfect forward secrecy
 - **Traffic analysis resistance** - Elligator2 key encoding, protocol mimicry, cover traffic
 - **Decentralized discovery** - Kademlia DHT, NAT traversal, relay fallback
-- **Production-ready ecosystem** - 8 desktop client applications for file transfer, messaging, and specialized use cases
+- **Production-ready ecosystem** - 9 desktop client applications for file transfer, messaging, and specialized use cases
 
 ### Project Metrics
 
 | Metric | Value |
 |--------|-------|
-| **Tests** | 2,042+ passing (99.2% pass rate, 16 intentionally ignored) |
-| **Code** | ~265,000 lines Rust (protocol + clients) + ~7,000 lines TypeScript |
+| **Tests** | 2,124+ passing (99.2% pass rate, 16 intentionally ignored) |
+| **Code** | ~272,000 lines Rust (protocol + clients) + ~10,000 lines TypeScript |
 | **Documentation** | 130+ files, ~90,000+ lines |
 | **Security** | Grade A+ (zero vulnerabilities, 295 audited dependencies) |
 | **Quality** | 98/100, zero clippy warnings |
 | **TDR** | ~2.5% (Grade A - Excellent) |
-| **Applications** | 8 production-ready desktop clients |
+| **Applications** | 9 production-ready desktop clients |
 
 ---
 
@@ -92,7 +92,7 @@ WRAITH Protocol is a privacy-focused, high-performance file transfer protocol de
 
 ## Client Applications
 
-WRAITH Protocol powers a comprehensive ecosystem of 8 production-ready desktop applications:
+WRAITH Protocol powers a comprehensive ecosystem of 9 production-ready desktop applications:
 
 ### Tier 1: Core Applications
 
@@ -116,6 +116,7 @@ WRAITH Protocol powers a comprehensive ecosystem of 8 production-ready desktop a
 | **[WRAITH-Mesh](clients/wraith-mesh/)** | Desktop | IoT mesh networking with topology visualization and diagnostics |
 | **[WRAITH-Publish](clients/wraith-publish/)** | Desktop | Censorship-resistant content publishing with Ed25519 signatures and RSS |
 | **[WRAITH-Vault](clients/wraith-vault/)** | Desktop | Distributed secret storage with Shamir's Secret Sharing |
+| **[WRAITH-Recon](clients/wraith-recon/)** | Desktop | Network reconnaissance platform for authorized security testing (RoE enforced) |
 
 ### Application Highlights
 
@@ -132,6 +133,13 @@ WRAITH Protocol powers a comprehensive ecosystem of 8 production-ready desktop a
 - Erasure coding (Reed-Solomon) for redundancy
 - AES-256-GCM encrypted backups with zstd compression
 - Scheduled automatic backups
+
+**WRAITH-Recon** features (authorized security testing only):
+- Rules of Engagement (RoE) enforcement with Ed25519 signatures
+- Passive reconnaissance with AF_XDP kernel-bypass capture (10-40 Gbps)
+- Covert channel testing (DNS tunneling, ICMP steganography, TLS mimicry)
+- Tamper-evident audit logging with MITRE ATT&CK mapping
+- Kill switch with <1ms activation latency
 
 For detailed client documentation, see the [Client Overview](docs/clients/overview.md).
 
@@ -308,7 +316,7 @@ For detailed architecture documentation, see [Protocol Overview](docs/architectu
 - 100% unsafe code documentation
 
 **Validation:**
-- Comprehensive test coverage (2,042+ tests)
+- Comprehensive test coverage (2,124+ tests)
 - DPI evasion validation (Wireshark, Zeek, Suricata, nDPI)
 - 5 libFuzzer targets
 - Property-based tests
@@ -337,7 +345,7 @@ cargo bench --workspace           # Benchmarks
 
 ```
 WRAITH-Protocol/
-|-- crates/                # Protocol crates (8)
+|-- crates/                # Protocol crates (9)
 |   |-- wraith-core/       # Frame, session, congestion, Node API
 |   |-- wraith-crypto/     # Noise, AEAD, Elligator2, ratcheting
 |   |-- wraith-transport/  # AF_XDP, io_uring, UDP
@@ -346,7 +354,7 @@ WRAITH-Protocol/
 |   |-- wraith-files/      # Chunking, integrity, transfer
 |   |-- wraith-cli/        # CLI
 |   +-- wraith-ffi/        # FFI bindings
-|-- clients/               # Client applications (8)
+|-- clients/               # Client applications (9)
 |-- docs/                  # Documentation (130+ files)
 |-- to-dos/                # Project planning
 |-- ref-docs/              # Protocol specifications
@@ -411,7 +419,7 @@ See [CI Workflow](.github/workflows/ci.yml) and [Release Workflow](.github/workf
 WRAITH Protocol v2.2.0 represents 2,685+ story points across 24 development phases:
 
 - Core protocol implementation (cryptography, transport, obfuscation, discovery)
-- 8 production-ready desktop client applications
+- 9 production-ready desktop client applications
 - Comprehensive documentation and testing
 - CI/CD infrastructure with multi-platform releases
 
@@ -489,6 +497,6 @@ WRAITH Protocol builds on excellent projects and research:
 
 **WRAITH Protocol** - *Secure. Fast. Invisible.*
 
-**Version:** 2.2.0 | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 2,042+ passing (99.2%) | **Clients:** 9 desktop applications
+**Version:** 2.2.0 | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 2,124+ passing (99.2%) | **Clients:** 9 desktop applications
 
 *Last Updated: 2026-01-24*

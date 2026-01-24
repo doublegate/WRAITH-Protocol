@@ -26,7 +26,7 @@ export function Editor({ article }: EditorProps) {
       setContent(article.content);
       setTags(article.tags);
     }
-  }, [article?.id]);
+  }, [article]);
 
   // Auto-save with debounce
   const debouncedSave = useCallback(async () => {
@@ -106,7 +106,7 @@ export function Editor({ article }: EditorProps) {
   };
 
   // Manual save
-  const handleManualSave = async () => {
+  const handleManualSave = useCallback(async () => {
     if (!article || article.status !== 'draft') return;
 
     setIsSaving(true);
@@ -114,12 +114,12 @@ export function Editor({ article }: EditorProps) {
       await saveDraft(article.id);
       setLastSaved(new Date());
       showNotification({ type: 'success', message: 'Draft saved' });
-    } catch (error) {
+    } catch {
       showNotification({ type: 'error', message: 'Failed to save draft' });
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [article, saveDraft, showNotification]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -464,7 +464,7 @@ function formatInlineText(text: string): React.ReactNode[] {
     }
 
     // Regular text - find next special character
-    const nextSpecial = remaining.search(/[`*\[]/);
+    const nextSpecial = remaining.search(/[`*[]/);
     if (nextSpecial === -1) {
       parts.push(<span key={key++}>{remaining}</span>);
       break;

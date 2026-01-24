@@ -20,7 +20,7 @@ interface AppState {
   setSelectedCategory: (category: string | null) => void;
 }
 
-export const useAppStore = create<AppState>((set, _get) => ({
+export const useAppStore = create<AppState>((set) => ({
   peerId: null,
   displayName: 'Anonymous',
   isInitialized: false,

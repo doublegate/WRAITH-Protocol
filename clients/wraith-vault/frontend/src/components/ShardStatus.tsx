@@ -1,7 +1,7 @@
 // ShardStatus Component for WRAITH Vault
 // Displays the distribution status of shards across guardians
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import type { SecretInfo, Guardian, ShardAssignment, DistributionStatus } from "../types";
 import * as tauri from "../lib/tauri";
 
@@ -23,11 +23,7 @@ export function ShardStatus({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadShardData();
-  }, [secret.id]);
-
-  const loadShardData = async () => {
+  const loadShardData = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -44,7 +40,11 @@ export function ShardStatus({
     } finally {
       setLoading(false);
     }
-  };
+  }, [secret.id]);
+
+  useEffect(() => {
+    loadShardData();
+  }, [loadShardData]);
 
   const getGuardianById = (id: string): Guardian | undefined => {
     return guardians.find((g) => g.id === id);

@@ -75,7 +75,7 @@ export function PublishModal({ article, onClose }: PublishModalProps) {
     try {
       await navigator.clipboard.writeText(publishedCid);
       showNotification({ type: 'success', message: 'CID copied to clipboard' });
-    } catch (e) {
+    } catch {
       showNotification({ type: 'error', message: 'Failed to copy CID' });
     }
   };
@@ -87,7 +87,7 @@ export function PublishModal({ article, onClose }: PublishModalProps) {
     try {
       await navigator.clipboard.writeText(link);
       showNotification({ type: 'success', message: 'Link copied to clipboard' });
-    } catch (e) {
+    } catch {
       showNotification({ type: 'error', message: 'Failed to copy link' });
     }
   };

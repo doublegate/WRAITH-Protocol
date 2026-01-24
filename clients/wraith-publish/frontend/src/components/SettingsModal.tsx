@@ -28,7 +28,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
       await api.setDisplayName(newDisplayName.trim());
       setDisplayName(newDisplayName.trim());
       showNotification({ type: 'success', message: 'Profile updated' });
-    } catch (error) {
+    } catch {
       showNotification({ type: 'error', message: 'Failed to update profile' });
     } finally {
       setIsSaving(false);
@@ -41,7 +41,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
     try {
       await navigator.clipboard.writeText(peerId);
       showNotification({ type: 'success', message: 'Peer ID copied to clipboard' });
-    } catch (error) {
+    } catch {
       showNotification({ type: 'error', message: 'Failed to copy Peer ID' });
     }
   };
