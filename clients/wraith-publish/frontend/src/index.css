@@ -1,56 +1,67 @@
 @import "tailwindcss";
 
-/* Custom theme overrides - WRAITH Design System */
-@theme {
-  /* WRAITH brand colors (aligned with design reference) */
-  --color-wraith-primary: #7c3aed;    /* Violet 600 - Primary actions */
-  --color-wraith-secondary: #4f46e5;  /* Indigo 600 - Secondary actions */
-  --color-wraith-accent: #06b6d4;     /* Cyan 500 - Highlights, progress */
-  --color-wraith-dark: #0f172a;       /* Slate 900 - Primary background */
-  --color-wraith-darker: #020617;     /* Slate 950 - Deepest background */
+/* WRAITH Design System - Dark Theme */
+:root {
+  /* Primary colors - Blue/Cyan spectrum (aligned with WRAITH-Stream) */
+  --color-primary-50: #e6f7ff;
+  --color-primary-100: #b3e5ff;
+  --color-primary-200: #80d4ff;
+  --color-primary-300: #4dc2ff;
+  --color-primary-400: #26b3ff;
+  --color-primary-500: #00a3ff;
+  --color-primary-600: #0082cc;
+  --color-primary-700: #006199;
+  --color-primary-800: #004166;
+  --color-primary-900: #002033;
 
-  /* Status colors (standardized) */
-  --color-success: #22c55e;   /* Green 500 - Connected, completed */
-  --color-warning: #f59e0b;   /* Amber 500 - Caution, pending */
-  --color-error: #ef4444;     /* Red 500 - Errors, disconnected */
+  /* Accent colors - Cyan/Teal */
+  --color-accent-500: #00d4aa;
+  --color-accent-600: #00a888;
 
-  /* Background colors for dark theme (aligned with design reference) */
-  --color-bg-primary: #0f172a;    /* Main content area */
-  --color-bg-secondary: #1e293b;  /* Sidebars, headers, cards */
-  --color-bg-tertiary: #334155;   /* Elevated elements, hovers */
+  /* Background colors - Dark slate */
+  --color-bg-primary: #0f1419;
+  --color-bg-secondary: #151b23;
+  --color-bg-tertiary: #1c2431;
+  --color-bg-elevated: #232d3d;
+  --color-bg-hover: #2a3649;
+
+  /* Text colors */
+  --color-text-primary: #e7edf5;
+  --color-text-secondary: #9ca8b7;
+  --color-text-muted: #6b7a8a;
+  --color-text-accent: #00a3ff;
+
+  /* Border colors */
+  --color-border-primary: #2a3649;
+  --color-border-secondary: #3a4a5f;
+  --color-border-accent: #00a3ff;
+
+  /* Status colors */
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
 }
 
-/* Base styles */
 * {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
 }
 
-html,
-body,
-#root {
+html, body, #root {
   height: 100%;
+  width: 100%;
   overflow: hidden;
 }
 
 body {
-  min-width: 320px;
-  min-height: 100vh;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: var(--color-bg-primary);
-  color: #e2e8f0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont,
-               'Segoe UI', Roboto, 'Oxygen', 'Ubuntu',
-               'Cantarell', 'Fira Sans', 'Droid Sans',
-               'Helvetica Neue', sans-serif;
+  color: var(--color-text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-/* Focus styles for accessibility */
-:focus-visible {
-  outline: 2px solid var(--color-wraith-accent);
-  outline-offset: 2px;
+  line-height: 1.5;
 }
 
 /* Custom scrollbar */
@@ -64,15 +75,166 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-wraith-primary);
+  background: var(--color-border-secondary);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-wraith-secondary);
+  background: var(--color-text-muted);
 }
 
-/* Markdown content styles */
+/* Focus styles */
+*:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+}
+
+/* Button base styles */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
+  color: white;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--color-primary-400), var(--color-primary-500));
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background-color: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-primary);
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-bg-hover);
+  border-color: var(--color-border-secondary);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, var(--color-error), #dc2626);
+  color: white;
+}
+
+.btn-danger:hover {
+  background: linear-gradient(135deg, #f87171, var(--color-error));
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Input base styles */
+.input {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  background-color: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 0.5rem;
+  color: var(--color-text-primary);
+  transition: all 0.15s ease;
+}
+
+.input:hover {
+  border-color: var(--color-border-secondary);
+}
+
+.input:focus {
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 3px rgba(0, 163, 255, 0.1);
+}
+
+.input::placeholder {
+  color: var(--color-text-muted);
+}
+
+/* Card styles */
+.card {
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.card:hover {
+  border-color: var(--color-border-secondary);
+}
+
+/* Modal styles */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  animation: fadeIn 0.15s ease;
+}
+
+.modal-content {
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 0.75rem;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow: auto;
+  animation: slideIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Sidebar styles */
+.sidebar {
+  width: 280px;
+  height: 100%;
+  background-color: var(--color-bg-secondary);
+  border-right: 1px solid var(--color-border-primary);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header styles */
+.header {
+  height: 64px;
+  background-color: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border-primary);
+  display: flex;
+  align-items: center;
+  padding: 0 1.5rem;
+}
+
+/* Publish-specific: Markdown content styles */
 .markdown-content {
   line-height: 1.75;
 }
@@ -116,10 +278,10 @@ body {
 }
 
 .markdown-content blockquote {
-  border-left: 4px solid var(--color-wraith-primary);
+  border-left: 4px solid var(--color-primary-500);
   padding-left: 1rem;
   margin: 1rem 0;
-  color: #94a3b8;
+  color: var(--color-text-secondary);
   font-style: italic;
 }
 
@@ -145,7 +307,7 @@ body {
 }
 
 .markdown-content a {
-  color: var(--color-wraith-accent);
+  color: var(--color-primary-500);
   text-decoration: none;
 }
 
@@ -161,7 +323,7 @@ body {
 
 .markdown-content th,
 .markdown-content td {
-  border: 1px solid var(--color-bg-tertiary);
+  border: 1px solid var(--color-border-primary);
   padding: 0.5rem 1rem;
   text-align: left;
 }
@@ -177,7 +339,7 @@ body {
   border-radius: 0.5rem;
 }
 
-/* Editor styles */
+/* Publish-specific: Editor styles */
 .editor-textarea {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.9375rem;
@@ -185,7 +347,7 @@ body {
   tab-size: 2;
 }
 
-/* Prose-like styles for markdown preview */
+/* Publish-specific: Prose-like styles for markdown preview */
 .prose-custom {
   line-height: 1.75;
 }
@@ -232,4 +394,39 @@ body {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Empty state */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 3rem;
+  text-align: center;
+}
+
+.empty-state-icon {
+  width: 64px;
+  height: 64px;
+  color: var(--color-text-muted);
+}
+
+.empty-state-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.empty-state-description {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  max-width: 300px;
+}
+
+/* Prevent text selection on UI elements */
+button,
+nav {
+  user-select: none;
 }
