@@ -595,7 +595,8 @@ impl AudioDeviceManager {
 
             let mut result = Vec::new();
             for device in devices {
-                if let Ok(name) = device.name() {
+                if let Ok(description) = device.description() {
+                    let name = description.name().to_string();
                     // Filter out virtual/null devices that aren't useful for voice
                     if !name.to_lowercase().contains("null")
                         && !name.to_lowercase().contains("dummy")
@@ -611,8 +612,9 @@ impl AudioDeviceManager {
 
             // Mark default device
             if let Some(default) = host.default_input_device()
-                && let Ok(default_name) = default.name()
+                && let Ok(default_description) = default.description()
             {
+                let default_name = default_description.name();
                 for device in &mut result {
                     if device.name == default_name {
                         device.is_default = true;
@@ -646,7 +648,8 @@ impl AudioDeviceManager {
 
             let mut result = Vec::new();
             for device in devices {
-                if let Ok(name) = device.name() {
+                if let Ok(description) = device.description() {
+                    let name = description.name().to_string();
                     // Filter out virtual/null devices that aren't useful for voice
                     if !name.to_lowercase().contains("null")
                         && !name.to_lowercase().contains("dummy")
@@ -662,8 +665,9 @@ impl AudioDeviceManager {
 
             // Mark default device
             if let Some(default) = host.default_output_device()
-                && let Ok(default_name) = default.name()
+                && let Ok(default_description) = default.description()
             {
+                let default_name = default_description.name();
                 for device in &mut result {
                     if device.name == default_name {
                         device.is_default = true;
@@ -708,8 +712,8 @@ impl AudioDeviceManager {
             let devices = host.input_devices().ok()?;
 
             for device in devices {
-                if let Ok(name) = device.name()
-                    && name == device_id
+                if let Ok(description) = device.description()
+                    && description.name() == device_id
                 {
                     return Some(device);
                 }
@@ -730,8 +734,8 @@ impl AudioDeviceManager {
             let devices = host.output_devices().ok()?;
 
             for device in devices {
-                if let Ok(name) = device.name()
-                    && name == device_id
+                if let Ok(description) = device.description()
+                    && description.name() == device_id
                 {
                     return Some(device);
                 }

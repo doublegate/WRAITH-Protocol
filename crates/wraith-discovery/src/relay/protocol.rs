@@ -92,12 +92,15 @@ pub enum RelayErrorCode {
 impl RelayMessage {
     /// Serialize message to bytes
     pub fn to_bytes(&self) -> Result<Vec<u8>, RelayError> {
-        bincode::serialize(self).map_err(|e| RelayError::Serialization(e.to_string()))
+        bincode::serde::encode_to_vec(self, bincode::config::standard())
+            .map_err(|e| RelayError::Serialization(e.to_string()))
     }
 
     /// Deserialize message from bytes
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, RelayError> {
-        bincode::deserialize(bytes).map_err(|e| RelayError::Deserialization(e.to_string()))
+        bincode::serde::decode_from_slice(bytes, bincode::config::standard())
+            .map(|(msg, _)| msg)
+            .map_err(|e| RelayError::Deserialization(e.to_string()))
     }
 
     /// Get the message type name

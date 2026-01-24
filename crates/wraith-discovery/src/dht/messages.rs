@@ -59,7 +59,8 @@ impl DhtMessage {
     /// assert!(!bytes.is_empty());
     /// ```
     pub fn to_bytes(&self) -> Result<Vec<u8>, MessageError> {
-        bincode::serialize(self).map_err(MessageError::Serialization)
+        bincode::serde::encode_to_vec(self, bincode::config::standard())
+            .map_err(MessageError::Serialization)
     }
 
     /// Deserialize message from bytes
@@ -87,7 +88,9 @@ impl DhtMessage {
     /// let decoded = DhtMessage::from_bytes(&bytes).unwrap();
     /// ```
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, MessageError> {
-        bincode::deserialize(bytes).map_err(MessageError::Serialization)
+        bincode::serde::decode_from_slice(bytes, bincode::config::standard())
+            .map(|(msg, _)| msg)
+            .map_err(MessageError::Deserialization)
     }
 
     /// Encrypt message for privacy
@@ -303,7 +306,11 @@ pub enum FoundValueResponse {
 pub enum MessageError {
     /// Serialization error
     #[error("Serialization failed: {0}")]
-    Serialization(bincode::Error),
+    Serialization(bincode::error::EncodeError),
+
+    /// Deserialization error
+    #[error("Deserialization failed: {0}")]
+    Deserialization(bincode::error::DecodeError),
 
     /// Encryption error
     #[error("Encryption failed")]

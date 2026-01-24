@@ -1146,7 +1146,7 @@ impl VoiceCallManager {
 
             let config = cpal::StreamConfig {
                 channels: 1,
-                sample_rate: cpal::SampleRate(48000),
+                sample_rate: cpal::SampleRate::from(48000u32),
                 buffer_size: cpal::BufferSize::Fixed(960),
             };
 
@@ -1212,8 +1212,8 @@ impl VoiceCallManager {
             // Try to find the specific device
             if let Ok(devices) = host.input_devices() {
                 for device in devices {
-                    if let Ok(name) = device.name()
-                        && name == id
+                    if let Ok(description) = device.description()
+                        && description.name() == id
                     {
                         return Some(device);
                     }
@@ -1333,7 +1333,7 @@ impl VoiceCallManager {
 
             let config = cpal::StreamConfig {
                 channels: 1,
-                sample_rate: cpal::SampleRate(48000),
+                sample_rate: cpal::SampleRate::from(48000u32),
                 buffer_size: cpal::BufferSize::Fixed(960),
             };
 
@@ -1399,8 +1399,8 @@ impl VoiceCallManager {
             // Try to find the specific device
             if let Ok(devices) = host.output_devices() {
                 for device in devices {
-                    if let Ok(name) = device.name()
-                        && name == id
+                    if let Ok(description) = device.description()
+                        && description.name() == id
                     {
                         return Some(device);
                     }

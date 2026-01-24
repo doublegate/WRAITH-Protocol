@@ -65,7 +65,7 @@ parking_lot = "0.12"
 hex = "0.4"
 
 # Markdown parsing
-pulldown-cmark = "0.12"
+pulldown-cmark = "0.13"
 
 # RSS feed generation
 rss = "2"

@@ -149,7 +149,8 @@ fn setup_app(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .map_err(|e| format!("Failed to open database: {}", e))?;
 
     // Get operator ID from environment or use default
-    let operator_id = std::env::var("WRAITH_OPERATOR_ID").unwrap_or_else(|_| whoami::username());
+    let operator_id = std::env::var("WRAITH_OPERATOR_ID")
+        .unwrap_or_else(|_| whoami::username().unwrap_or_else(|_| "unknown".to_string()));
 
     tracing::info!("Operator ID: {}", operator_id);
 

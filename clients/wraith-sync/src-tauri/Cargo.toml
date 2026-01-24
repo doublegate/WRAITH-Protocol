@@ -37,8 +37,8 @@ wraith-files = { path = "../../../crates/wraith-files" }
 tokio = { version = "1", features = ["full"] }
 
 # File system watching
-notify = "7"
-notify-debouncer-mini = "0.5"
+notify = "8"
+notify-debouncer-mini = "0.7"
 
 # Database
 rusqlite = { version = "0.38", features = ["bundled"] }
