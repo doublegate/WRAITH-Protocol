@@ -255,6 +255,8 @@ impl SegmentStorage {
         hasher.update(segment_name.as_bytes());
 
         let hash = hasher.finalize();
+        // Buffer pre-allocation - immediately filled with BLAKE3 keyed hash output.
+        // This is NOT a hard-coded key; the zeros are overwritten by copy_from_slice().
         let mut key = [0u8; 32];
         key.copy_from_slice(hash.as_bytes());
         key
