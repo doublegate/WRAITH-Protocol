@@ -9,6 +9,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.2.3] - 2026-01-24 - CI/CD Build Fixes
+
+### Overview
+
+This release fixes critical issues in the GitHub Release workflow that were causing incomplete macOS client bundles and improves Linux AppImage distribution.
+
+### Fixed
+
+- **macOS DMG Collection:** Fixed `find -exec cp` failing silently for filenames with spaces (e.g., 'WRAITH Transfer_2.2.3_aarch64.dmg')
+- **jq Installation Warning:** Added check for existing jq installation before brew install on macOS runners
+
+### Changed
+
+- **Linux AppImages:** AppImages now uploaded as individual downloadable files instead of being bundled in tar.gz
+- **Linux Client Bundle:** Now contains only .deb and .rpm packages (AppImages available as separate downloads)
+- **Artifact Collection:** Improved using null-terminated find output with proper quoting for filenames with spaces
+- **Release Diagnostics:** Added output showing collected DMG/AppImage counts for debugging
+
+### Technical Details
+
+#### macOS Bundle Fix
+
+The macOS client bundle was incomplete (4.45MB instead of ~100MB) because the `find -exec cp` command was silently failing for DMG files with spaces in their names.
+
+**Before (failing silently):**
+```bash
+find "$RUNNERS_DIR" -name "*.dmg" -type f -exec cp {} "$CLIENT_DIR/" \;
+```
+
+**After (handles spaces correctly):**
+```bash
+while IFS= read -r -d '' file; do
+  cp "$file" "$CLIENT_DIR/"
+done < <(find "$RUNNERS_DIR" -name "*.dmg" -type f -print0)
+```
+
+#### AppImage Separation
+
+- Individual AppImages are now direct download assets in GitHub Releases
+- Users can download just the AppImage they need without extracting archives
+- Checksums for AppImages included in SHA256SUMS-clients.txt
+
+---
+
 ## [2.2.2] - 2026-01-24 - Release Workflow Improvements
 
 ### Overview
