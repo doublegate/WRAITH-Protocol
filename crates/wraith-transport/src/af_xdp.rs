@@ -6,48 +6,135 @@
 //! ## Architecture
 //!
 //! AF_XDP provides kernel bypass for network I/O using shared memory regions (UMEM)
-//! and ring buffers for packet descriptors.
+//! and ring buffers for packet descriptors:
+//!
+//! ```text
+//! ┌─────────────────────────────────────────────────────────────────┐
+//! │                        User Space                                │
+//! │  ┌──────────────────────────────────────────────────────────┐  │
+//! │  │                      UMEM Buffer                          │  │
+//! │  │  ┌────────┬────────┬────────┬────────┬────────┬────────┐│  │
+//! │  │  │Frame 0 │Frame 1 │Frame 2 │Frame 3 │  ...   │Frame N ││  │
+//! │  │  └────────┴────────┴────────┴────────┴────────┴────────┘│  │
+//! │  └──────────────────────────────────────────────────────────┘  │
+//! │                                                                  │
+//! │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐           │
+//! │  │ RX Ring  │ │ TX Ring  │ │Fill Ring │ │Comp Ring │           │
+//! │  │(desc in) │ │(desc out)│ │(addr out)│ │(addr in) │           │
+//! │  └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘           │
+//! │       │            │            │            │                   │
+//! └───────┼────────────┼────────────┼────────────┼───────────────────┘
+//!         │            │            │            │
+//! ════════╪════════════╪════════════╪════════════╪════ mmap ════════
+//!         │            │            │            │
+//! ┌───────┼────────────┼────────────┼────────────┼───────────────────┐
+//! │       ▼            ▼            ▼            ▼                   │
+//! │  ┌─────────────────────────────────────────────────────────┐    │
+//! │  │                   XDP Socket (AF_XDP)                    │    │
+//! │  └─────────────────────────────────────────────────────────┘    │
+//! │                              │                                   │
+//! │  ┌───────────────────────────┴───────────────────────────┐      │
+//! │  │                    XDP Program (eBPF)                  │      │
+//! │  │            bpf_redirect_map(XSKMAP, queue_id)          │      │
+//! │  └───────────────────────────────────────────────────────┘      │
+//! │                              │                                   │
+//! │  ┌───────────────────────────┴───────────────────────────┐      │
+//! │  │                      NIC Driver                        │      │
+//! │  │              (Zero-copy if supported)                  │      │
+//! │  └───────────────────────────────────────────────────────┘      │
+//! │                        Kernel Space                              │
+//! └──────────────────────────────────────────────────────────────────┘
+//! ```
+//!
+//! ## Ring Buffer Protocol
+//!
+//! - **RX Ring**: Kernel writes received packet descriptors, user reads
+//! - **TX Ring**: User writes packet descriptors to transmit, kernel reads
+//! - **Fill Ring**: User provides buffer addresses for kernel to fill with RX packets
+//! - **Completion Ring**: Kernel returns completed TX buffer addresses
 //!
 //! ## Requirements
 //!
-//! - Linux kernel 5.3+ with AF_XDP support
-//! - XDP program loaded on the network interface
-//! - Sufficient locked memory limit (ulimit -l)
+//! - Linux kernel 6.2+ (for full AF_XDP features including busy polling)
+//! - XDP-capable NIC with driver support
+//! - XDP program attached to interface (can use libxdp or manual BPF loading)
+//! - Sufficient locked memory limit: `ulimit -l unlimited` or CAP_IPC_LOCK
+//! - CAP_NET_RAW or root privileges
 //!
-//! ## Performance
+//! ## Kernel Version Features
 //!
-//! - Target throughput: 10-40 Gbps (single core)
-//! - Target latency: <1μs (NIC to userspace)
-//! - Zero-copy packet processing
+//! | Kernel | Feature |
+//! |--------|---------|
+//! | 5.3+   | Basic AF_XDP support |
+//! | 5.4+   | need_wakeup optimization |
+//! | 5.10+  | Shared UMEM, better multi-queue |
+//! | 5.11+  | Busy polling |
+//! | 6.2+   | Full feature set for WRAITH |
+//!
+//! ## Performance Targets
+//!
+//! - **Throughput**: 10-40 Gbps (single core, zero-copy mode)
+//! - **Latency**: <1us (NIC to userspace with busy polling)
+//! - **Packet rate**: 10-20 Mpps (depending on packet size)
 //!
 //! ## Example
 //!
 //! ```no_run
 //! # #[cfg(target_os = "linux")]
 //! # {
-//! use wraith_transport::af_xdp::{AfXdpSocket, UmemConfig, SocketConfig};
+//! use wraith_transport::af_xdp::{AfXdpSocket, UmemConfig, SocketConfig, XDP_ZEROCOPY};
 //!
-//! // Create UMEM (shared memory region)
-//! let umem_config = UmemConfig::default();
+//! // Create UMEM (shared memory region) - 16MB with 4KB frames
+//! let umem_config = UmemConfig {
+//!     size: 16 * 1024 * 1024,
+//!     frame_size: 4096,
+//!     headroom: 256,
+//!     fill_ring_size: 4096,
+//!     comp_ring_size: 4096,
+//! };
 //! let umem = umem_config.create().unwrap();
 //!
-//! // Create AF_XDP socket
-//! let socket_config = SocketConfig::default();
+//! // Create AF_XDP socket with zero-copy mode
+//! let socket_config = SocketConfig {
+//!     rx_ring_size: 4096,
+//!     tx_ring_size: 4096,
+//!     bind_flags: XDP_ZEROCOPY,
+//!     queue_id: 0,
+//! };
 //! let mut socket = AfXdpSocket::new("eth0", 0, umem, socket_config).unwrap();
 //!
-//! // Receive packets
-//! let packets = socket.rx_batch(32).unwrap();
-//! for pkt in packets {
-//!     // Process packet data
-//!     println!("Received {} bytes", pkt.len);
+//! // Pre-fill RX buffers
+//! let fill_addrs: Vec<u64> = (0..1024).map(|i| i * 4096).collect();
+//! socket.fill_rx_buffers(&fill_addrs).unwrap();
+//!
+//! // Receive packets (batch)
+//! loop {
+//!     let packets = socket.rx_batch(32).unwrap();
+//!     for pkt in &packets {
+//!         if let Some(data) = socket.get_packet_data(pkt) {
+//!             // Process packet data
+//!             println!("Received {} bytes", data.len());
+//!         }
+//!     }
+//!
+//!     // Return buffers to fill ring
+//!     let addrs: Vec<u64> = packets.iter().map(|p| p.addr).collect();
+//!     socket.fill_rx_buffers(&addrs).unwrap();
 //! }
 //! # }
 //! ```
+//!
+//! ## See Also
+//!
+//! - [AF_XDP Kernel Documentation](https://docs.kernel.org/networking/af_xdp.html)
+//! - [DPDK AF_XDP PMD](https://doc.dpdk.org/guides/nics/af_xdp.html)
+//! - [libbpf xsk.h](https://github.com/libbpf/libbpf/blob/master/src/xsk.h)
 
 use std::io::{self, Error};
 use std::os::raw::{c_int, c_void};
 use std::ptr;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 use thiserror::Error;
 
 // XDP socket constants
@@ -301,7 +388,6 @@ mod xdp_config {
     }
 
     /// Get mmap offsets for ring buffers
-    /// Used for mmap-based ring buffer access (future implementation)
     #[allow(dead_code)]
     pub fn get_mmap_offsets(fd: c_int) -> Result<XdpMmapOffsets, AfXdpError> {
         let mut offsets = XdpMmapOffsets::default();
@@ -328,6 +414,550 @@ mod xdp_config {
         }
 
         Ok(offsets)
+    }
+
+    /// Mmap a ring buffer from the socket
+    ///
+    /// # Arguments
+    /// * `fd` - Socket file descriptor
+    /// * `offset` - Mmap offset for the ring
+    /// * `size` - Size of the ring in bytes
+    ///
+    /// # Safety
+    /// Returns a raw pointer to mmap'd memory. Caller must ensure proper cleanup.
+    pub fn mmap_ring(fd: c_int, offset: u64, size: usize) -> Result<*mut u8, AfXdpError> {
+        // SAFETY: mmap is a standard POSIX syscall. We request shared mapping
+        // of the socket's ring buffer region.
+        let ptr = unsafe {
+            libc::mmap(
+                ptr::null_mut(),
+                size,
+                libc::PROT_READ | libc::PROT_WRITE,
+                libc::MAP_SHARED | libc::MAP_POPULATE,
+                fd,
+                offset as libc::off_t,
+            )
+        };
+
+        if ptr == libc::MAP_FAILED {
+            return Err(AfXdpError::RingBufferError(format!(
+                "Failed to mmap ring buffer: {}",
+                Error::last_os_error()
+            )));
+        }
+
+        Ok(ptr as *mut u8)
+    }
+
+    /// Calculate ring buffer size including metadata
+    pub fn ring_size(ring_entries: u32, is_desc_ring: bool) -> usize {
+        // Ring format:
+        // - 4 bytes: producer index (cached)
+        // - 4 bytes: consumer index (cached)
+        // - 4 bytes: producer index (actual, atomic)
+        // - 4 bytes: consumer index (actual, atomic)
+        // - 4 bytes: flags
+        // - 4 bytes: padding
+        // - N * (8 or 16) bytes: descriptors
+        let header_size = 32; // 6 * 4 bytes + padding
+        let entry_size = if is_desc_ring {
+            std::mem::size_of::<XdpDesc>()
+        } else {
+            std::mem::size_of::<u64>() // Fill/completion rings use u64 addresses
+        };
+
+        header_size + (ring_entries as usize) * entry_size
+    }
+}
+
+/// Mmap-based ring buffer for AF_XDP
+///
+/// This provides direct access to kernel-shared ring buffers through mmap.
+/// Uses atomic operations for producer/consumer synchronization.
+#[cfg(target_os = "linux")]
+pub struct MmapRing {
+    /// Mmap'd ring buffer base address
+    ring_ptr: *mut u8,
+
+    /// Ring size (number of entries, must be power of 2)
+    size: u32,
+
+    /// Mask for wrapping indices (size - 1)
+    mask: u32,
+
+    /// Whether this is a descriptor ring (vs address ring)
+    is_desc_ring: bool,
+
+    /// Mmap size for cleanup
+    mmap_size: usize,
+}
+
+#[cfg(target_os = "linux")]
+impl MmapRing {
+    /// Create a new mmap ring from socket
+    ///
+    /// # Arguments
+    /// * `fd` - Socket file descriptor
+    /// * `offset` - Mmap offset from XdpMmapOffsets
+    /// * `size` - Number of ring entries
+    /// * `is_desc_ring` - True for RX/TX rings (XdpDesc), false for fill/completion (u64)
+    pub fn new(fd: c_int, offset: u64, size: u32, is_desc_ring: bool) -> Result<Self, AfXdpError> {
+        let mmap_size = xdp_config::ring_size(size, is_desc_ring);
+        let ring_ptr = xdp_config::mmap_ring(fd, offset, mmap_size)?;
+
+        Ok(Self {
+            ring_ptr,
+            size,
+            mask: size - 1,
+            is_desc_ring,
+            mmap_size,
+        })
+    }
+
+    /// Get producer index pointer
+    fn producer_ptr(&self) -> *mut AtomicU32 {
+        // Producer is at offset 8 (after cached indices)
+        unsafe { self.ring_ptr.add(8) as *mut AtomicU32 }
+    }
+
+    /// Get consumer index pointer
+    fn consumer_ptr(&self) -> *mut AtomicU32 {
+        // Consumer is at offset 12
+        unsafe { self.ring_ptr.add(12) as *mut AtomicU32 }
+    }
+
+    /// Get flags pointer
+    #[allow(dead_code)]
+    fn flags_ptr(&self) -> *mut u32 {
+        // Flags at offset 16
+        unsafe { self.ring_ptr.add(16) as *mut u32 }
+    }
+
+    /// Get descriptor array base
+    fn desc_base(&self) -> *mut u8 {
+        // Descriptors start at offset 32
+        unsafe { self.ring_ptr.add(32) }
+    }
+
+    /// Load producer index
+    pub fn load_producer(&self) -> u32 {
+        // SAFETY: Producer pointer is valid within mmap'd region
+        unsafe { (*self.producer_ptr()).load(Ordering::Acquire) }
+    }
+
+    /// Load consumer index
+    pub fn load_consumer(&self) -> u32 {
+        // SAFETY: Consumer pointer is valid within mmap'd region
+        unsafe { (*self.consumer_ptr()).load(Ordering::Acquire) }
+    }
+
+    /// Store producer index
+    pub fn store_producer(&self, value: u32) {
+        // SAFETY: Producer pointer is valid within mmap'd region
+        unsafe { (*self.producer_ptr()).store(value, Ordering::Release) }
+    }
+
+    /// Store consumer index
+    pub fn store_consumer(&self, value: u32) {
+        // SAFETY: Consumer pointer is valid within mmap'd region
+        unsafe { (*self.consumer_ptr()).store(value, Ordering::Release) }
+    }
+
+    /// Get number of entries available for production (to kernel)
+    pub fn available_for_production(&self) -> u32 {
+        let prod = self.load_producer();
+        let cons = self.load_consumer();
+        self.size - (prod - cons)
+    }
+
+    /// Get number of entries available for consumption (from kernel)
+    pub fn available_for_consumption(&self) -> u32 {
+        let prod = self.load_producer();
+        let cons = self.load_consumer();
+        prod - cons
+    }
+
+    /// Reserve entries for production
+    ///
+    /// Returns the starting index if successful.
+    pub fn reserve(&self, count: u32) -> Option<u32> {
+        if self.available_for_production() < count {
+            return None;
+        }
+        Some(self.load_producer())
+    }
+
+    /// Submit reserved entries
+    pub fn submit(&self, count: u32) {
+        let prod = self.load_producer();
+        self.store_producer(prod.wrapping_add(count));
+    }
+
+    /// Peek at entries ready for consumption
+    ///
+    /// Returns the starting index if entries are available.
+    pub fn peek(&self, count: u32) -> Option<u32> {
+        if self.available_for_consumption() < count {
+            return None;
+        }
+        Some(self.load_consumer())
+    }
+
+    /// Release consumed entries
+    pub fn release(&self, count: u32) {
+        let cons = self.load_consumer();
+        self.store_consumer(cons.wrapping_add(count));
+    }
+
+    /// Write a descriptor to the ring
+    ///
+    /// # Safety
+    /// Caller must ensure index is valid (within reserved range).
+    pub unsafe fn write_desc(&self, index: u32, desc: &XdpDesc) {
+        debug_assert!(self.is_desc_ring);
+        let slot = (index & self.mask) as usize;
+        // SAFETY: desc_base is valid mmap'd memory, slot is within ring bounds
+        unsafe {
+            let ptr = self.desc_base().add(slot * std::mem::size_of::<XdpDesc>()) as *mut XdpDesc;
+            ptr::write(ptr, *desc);
+        }
+    }
+
+    /// Read a descriptor from the ring
+    ///
+    /// # Safety
+    /// Caller must ensure index is valid (within consumable range).
+    pub unsafe fn read_desc(&self, index: u32) -> XdpDesc {
+        debug_assert!(self.is_desc_ring);
+        let slot = (index & self.mask) as usize;
+        // SAFETY: desc_base is valid mmap'd memory, slot is within ring bounds
+        unsafe {
+            let ptr = self.desc_base().add(slot * std::mem::size_of::<XdpDesc>()) as *const XdpDesc;
+            ptr::read(ptr)
+        }
+    }
+
+    /// Write an address to the ring (fill/completion rings)
+    ///
+    /// # Safety
+    /// Caller must ensure index is valid.
+    pub unsafe fn write_addr(&self, index: u32, addr: u64) {
+        debug_assert!(!self.is_desc_ring);
+        let slot = (index & self.mask) as usize;
+        // SAFETY: desc_base is valid mmap'd memory, slot is within ring bounds
+        unsafe {
+            let ptr = self.desc_base().add(slot * std::mem::size_of::<u64>()) as *mut u64;
+            ptr::write(ptr, addr);
+        }
+    }
+
+    /// Read an address from the ring (fill/completion rings)
+    ///
+    /// # Safety
+    /// Caller must ensure index is valid.
+    pub unsafe fn read_addr(&self, index: u32) -> u64 {
+        debug_assert!(!self.is_desc_ring);
+        let slot = (index & self.mask) as usize;
+        // SAFETY: desc_base is valid mmap'd memory, slot is within ring bounds
+        unsafe {
+            let ptr = self.desc_base().add(slot * std::mem::size_of::<u64>()) as *const u64;
+            ptr::read(ptr)
+        }
+    }
+}
+
+#[cfg(target_os = "linux")]
+impl Drop for MmapRing {
+    fn drop(&mut self) {
+        // SAFETY: Unmapping the mmap'd region with its original size
+        unsafe {
+            libc::munmap(self.ring_ptr as *mut c_void, self.mmap_size);
+        }
+    }
+}
+
+// SAFETY: MmapRing uses atomic operations for all shared state
+#[cfg(target_os = "linux")]
+unsafe impl Send for MmapRing {}
+#[cfg(target_os = "linux")]
+unsafe impl Sync for MmapRing {}
+
+/// XDP program loader for AF_XDP sockets
+///
+/// Loads a simple XDP program that redirects packets to an XSK socket.
+/// For production use, consider using libxdp or custom eBPF programs.
+#[cfg(target_os = "linux")]
+pub struct XdpProgram {
+    /// Program file descriptor (from bpf() syscall)
+    prog_fd: c_int,
+
+    /// Interface index where program is attached
+    ifindex: u32,
+
+    /// XDP attach flags (reserved for future use)
+    #[allow(dead_code)]
+    flags: u32,
+}
+
+#[cfg(target_os = "linux")]
+impl XdpProgram {
+    /// XDP attach flag: fail if program already attached
+    pub const XDP_FLAGS_UPDATE_IF_NOEXIST: u32 = 1 << 0;
+    /// XDP attach flag: use SKB (generic) mode
+    pub const XDP_FLAGS_SKB_MODE: u32 = 1 << 1;
+    /// XDP attach flag: use native driver mode
+    pub const XDP_FLAGS_DRV_MODE: u32 = 1 << 2;
+    /// XDP attach flag: use hardware offload mode
+    pub const XDP_FLAGS_HW_MODE: u32 = 1 << 3;
+
+    /// Create a placeholder XDP program (requires actual BPF loading)
+    ///
+    /// In production, you would either:
+    /// 1. Use libxdp to load a pre-compiled XDP program
+    /// 2. Use libbpf to load custom eBPF bytecode
+    /// 3. Use an existing XDP program already attached to the interface
+    ///
+    /// This placeholder returns an error indicating proper XDP setup is needed.
+    pub fn load_redirect_program(
+        ifname: &str,
+        _queue_id: u32,
+        flags: u32,
+    ) -> Result<Self, AfXdpError> {
+        let ifindex = xdp_config::get_ifindex(ifname)?;
+
+        // Check if there's already an XDP program attached
+        // In a full implementation, we would:
+        // 1. Load eBPF bytecode for a redirect program
+        // 2. Create the XSKMAP
+        // 3. Attach to interface
+        //
+        // For now, we assume an XDP program is already loaded or
+        // the NIC supports native AF_XDP without explicit program
+
+        tracing::info!(
+            "XDP program setup for interface {} (index {})",
+            ifname,
+            ifindex
+        );
+        tracing::warn!(
+            "Full XDP program loading requires libbpf integration. \
+            Assuming XDP program is pre-attached or using SKB mode."
+        );
+
+        Ok(Self {
+            prog_fd: -1, // Placeholder - real implementation would have valid FD
+            ifindex,
+            flags,
+        })
+    }
+
+    /// Get the program file descriptor
+    pub fn fd(&self) -> c_int {
+        self.prog_fd
+    }
+
+    /// Get the interface index
+    pub fn ifindex(&self) -> u32 {
+        self.ifindex
+    }
+}
+
+#[cfg(target_os = "linux")]
+impl Drop for XdpProgram {
+    fn drop(&mut self) {
+        if self.prog_fd >= 0 {
+            // Detach XDP program from interface
+            // SAFETY: bpf link detach via netlink would go here
+            // For now, we don't actually attach, so no cleanup needed
+            tracing::debug!("XDP program cleanup for interface index {}", self.ifindex);
+
+            // SAFETY: close is a standard POSIX syscall
+            unsafe {
+                libc::close(self.prog_fd);
+            }
+        }
+    }
+}
+
+/// AF_XDP socket statistics for performance monitoring
+///
+/// Tracks packet counts, bytes transferred, ring buffer utilization,
+/// and error conditions for capacity planning and debugging.
+#[derive(Debug, Default)]
+pub struct AfXdpStats {
+    /// Total packets received
+    rx_packets: AtomicU64,
+    /// Total bytes received
+    rx_bytes: AtomicU64,
+    /// Total packets transmitted
+    tx_packets: AtomicU64,
+    /// Total bytes transmitted
+    tx_bytes: AtomicU64,
+    /// RX ring full events (packets dropped)
+    rx_ring_full: AtomicU64,
+    /// TX ring full events (packets delayed)
+    tx_ring_full: AtomicU64,
+    /// Fill ring empty events (no buffers for kernel)
+    fill_ring_empty: AtomicU64,
+    /// TX completions processed
+    tx_completions: AtomicU64,
+    /// Invalid packet descriptors received
+    invalid_packets: AtomicU64,
+    /// Sendto wakeup calls
+    wakeup_calls: AtomicU64,
+}
+
+impl AfXdpStats {
+    /// Create new statistics tracker
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Record received packets
+    pub fn record_rx(&self, count: u64, bytes: u64) {
+        self.rx_packets.fetch_add(count, Ordering::Relaxed);
+        self.rx_bytes.fetch_add(bytes, Ordering::Relaxed);
+    }
+
+    /// Record transmitted packets
+    pub fn record_tx(&self, count: u64, bytes: u64) {
+        self.tx_packets.fetch_add(count, Ordering::Relaxed);
+        self.tx_bytes.fetch_add(bytes, Ordering::Relaxed);
+    }
+
+    /// Record TX completion
+    pub fn record_completion(&self, count: u64) {
+        self.tx_completions.fetch_add(count, Ordering::Relaxed);
+    }
+
+    /// Record RX ring full event
+    pub fn record_rx_ring_full(&self) {
+        self.rx_ring_full.fetch_add(1, Ordering::Relaxed);
+    }
+
+    /// Record TX ring full event
+    pub fn record_tx_ring_full(&self) {
+        self.tx_ring_full.fetch_add(1, Ordering::Relaxed);
+    }
+
+    /// Record fill ring empty event
+    pub fn record_fill_ring_empty(&self) {
+        self.fill_ring_empty.fetch_add(1, Ordering::Relaxed);
+    }
+
+    /// Record invalid packet
+    pub fn record_invalid_packet(&self) {
+        self.invalid_packets.fetch_add(1, Ordering::Relaxed);
+    }
+
+    /// Record wakeup call
+    pub fn record_wakeup(&self) {
+        self.wakeup_calls.fetch_add(1, Ordering::Relaxed);
+    }
+
+    /// Get snapshot of current statistics
+    pub fn snapshot(&self) -> AfXdpStatsSnapshot {
+        AfXdpStatsSnapshot {
+            rx_packets: self.rx_packets.load(Ordering::Relaxed),
+            rx_bytes: self.rx_bytes.load(Ordering::Relaxed),
+            tx_packets: self.tx_packets.load(Ordering::Relaxed),
+            tx_bytes: self.tx_bytes.load(Ordering::Relaxed),
+            rx_ring_full: self.rx_ring_full.load(Ordering::Relaxed),
+            tx_ring_full: self.tx_ring_full.load(Ordering::Relaxed),
+            fill_ring_empty: self.fill_ring_empty.load(Ordering::Relaxed),
+            tx_completions: self.tx_completions.load(Ordering::Relaxed),
+            invalid_packets: self.invalid_packets.load(Ordering::Relaxed),
+            wakeup_calls: self.wakeup_calls.load(Ordering::Relaxed),
+        }
+    }
+
+    /// Reset all statistics
+    pub fn reset(&self) {
+        self.rx_packets.store(0, Ordering::Relaxed);
+        self.rx_bytes.store(0, Ordering::Relaxed);
+        self.tx_packets.store(0, Ordering::Relaxed);
+        self.tx_bytes.store(0, Ordering::Relaxed);
+        self.rx_ring_full.store(0, Ordering::Relaxed);
+        self.tx_ring_full.store(0, Ordering::Relaxed);
+        self.fill_ring_empty.store(0, Ordering::Relaxed);
+        self.tx_completions.store(0, Ordering::Relaxed);
+        self.invalid_packets.store(0, Ordering::Relaxed);
+        self.wakeup_calls.store(0, Ordering::Relaxed);
+    }
+}
+
+/// Snapshot of AF_XDP statistics
+///
+/// Non-atomic copy of statistics for reporting and logging.
+#[derive(Debug, Clone, Default)]
+pub struct AfXdpStatsSnapshot {
+    /// Total packets received
+    pub rx_packets: u64,
+    /// Total bytes received
+    pub rx_bytes: u64,
+    /// Total packets transmitted
+    pub tx_packets: u64,
+    /// Total bytes transmitted
+    pub tx_bytes: u64,
+    /// RX ring full events
+    pub rx_ring_full: u64,
+    /// TX ring full events
+    pub tx_ring_full: u64,
+    /// Fill ring empty events
+    pub fill_ring_empty: u64,
+    /// TX completions processed
+    pub tx_completions: u64,
+    /// Invalid packet descriptors
+    pub invalid_packets: u64,
+    /// Sendto wakeup calls
+    pub wakeup_calls: u64,
+}
+
+impl AfXdpStatsSnapshot {
+    /// Calculate RX packet rate (packets per second)
+    pub fn rx_pps(&self, duration_secs: f64) -> f64 {
+        if duration_secs > 0.0 {
+            self.rx_packets as f64 / duration_secs
+        } else {
+            0.0
+        }
+    }
+
+    /// Calculate TX packet rate (packets per second)
+    pub fn tx_pps(&self, duration_secs: f64) -> f64 {
+        if duration_secs > 0.0 {
+            self.tx_packets as f64 / duration_secs
+        } else {
+            0.0
+        }
+    }
+
+    /// Calculate RX throughput (bits per second)
+    pub fn rx_bps(&self, duration_secs: f64) -> f64 {
+        if duration_secs > 0.0 {
+            (self.rx_bytes as f64 * 8.0) / duration_secs
+        } else {
+            0.0
+        }
+    }
+
+    /// Calculate TX throughput (bits per second)
+    pub fn tx_bps(&self, duration_secs: f64) -> f64 {
+        if duration_secs > 0.0 {
+            (self.tx_bytes as f64 * 8.0) / duration_secs
+        } else {
+            0.0
+        }
+    }
+
+    /// Calculate drop rate
+    pub fn drop_rate(&self) -> f64 {
+        let total = self.rx_packets + self.rx_ring_full;
+        if total > 0 {
+            self.rx_ring_full as f64 / total as f64
+        } else {
+            0.0
+        }
     }
 }
 
@@ -769,6 +1399,9 @@ pub struct AfXdpSocket {
 
     /// Interface name
     ifname: String,
+
+    /// Statistics tracker
+    stats: Arc<AfXdpStats>,
 }
 
 impl AfXdpSocket {
@@ -877,6 +1510,7 @@ impl AfXdpSocket {
             rx_ring: RingBuffer::new(config.rx_ring_size),
             tx_ring: RingBuffer::new(config.tx_ring_size),
             ifname: ifname.to_string(),
+            stats: Arc::new(AfXdpStats::new()),
         })
     }
 
@@ -899,6 +1533,7 @@ impl AfXdpSocket {
             // Read packet descriptors from RX ring
             // In a complete implementation, this would access mmap'ed ring buffers
             // For now, we simulate the structure
+            let mut total_bytes: u64 = 0;
             for i in 0..count {
                 let desc_idx = (idx + i) % self.config.rx_ring_size;
 
@@ -910,10 +1545,14 @@ impl AfXdpSocket {
                     options: 0,
                 };
 
+                total_bytes += desc.len as u64;
                 packets.push(desc);
             }
 
             self.rx_ring.release(count);
+
+            // Record statistics
+            self.stats.record_rx(count as u64, total_bytes);
         }
 
         Ok(packets)
@@ -930,6 +1569,7 @@ impl AfXdpSocket {
         // Check TX ring for available space
         let available = self.tx_ring.available();
         if available < count {
+            self.stats.record_tx_ring_full();
             return Err(AfXdpError::RingBufferError(format!(
                 "TX ring full: {available} available, {count} requested"
             )));
@@ -939,11 +1579,13 @@ impl AfXdpSocket {
             // Write packet descriptors to TX ring
             // In a complete implementation, this would write to mmap'ed ring buffers
             // For now, we validate the descriptors
+            let mut total_bytes: u64 = 0;
             for (i, packet) in packets.iter().enumerate() {
                 let desc_idx = (idx + i as u32) % self.config.tx_ring_size;
 
                 // Validate packet descriptor
                 if packet.addr >= self.umem.size() as u64 {
+                    self.stats.record_invalid_packet();
                     return Err(AfXdpError::RingBufferError(format!(
                         "Invalid packet address: {} (UMEM size: {})",
                         packet.addr,
@@ -952,6 +1594,7 @@ impl AfXdpSocket {
                 }
 
                 if packet.len as usize > self.umem.frame_size() {
+                    self.stats.record_invalid_packet();
                     return Err(AfXdpError::RingBufferError(format!(
                         "Packet length {} exceeds frame size {}",
                         packet.len,
@@ -959,12 +1602,17 @@ impl AfXdpSocket {
                     )));
                 }
 
+                total_bytes += packet.len as u64;
+
                 // In production, write descriptor to shared memory:
                 // ring_buffer[desc_idx] = *packet;
                 let _ = desc_idx; // Suppress unused warning
             }
 
             self.tx_ring.submit(count);
+
+            // Record statistics
+            self.stats.record_tx(count as u64, total_bytes);
 
             // Kick kernel to transmit
             self.kick_tx()?;
@@ -975,6 +1623,8 @@ impl AfXdpSocket {
 
     /// Kick kernel to process TX ring
     fn kick_tx(&self) -> Result<(), AfXdpError> {
+        self.stats.record_wakeup();
+
         // SAFETY: sendto() is a standard POSIX syscall. We pass null pointers for empty message
         // (0 bytes) with MSG_DONTWAIT flag. This is safe and used to wake the kernel.
         let ret =
@@ -1008,6 +1658,21 @@ impl AfXdpSocket {
         &self.ifname
     }
 
+    /// Get statistics reference
+    pub fn stats(&self) -> &Arc<AfXdpStats> {
+        &self.stats
+    }
+
+    /// Get a snapshot of current statistics
+    pub fn stats_snapshot(&self) -> AfXdpStatsSnapshot {
+        self.stats.snapshot()
+    }
+
+    /// Reset statistics
+    pub fn reset_stats(&self) {
+        self.stats.reset();
+    }
+
     /// Complete transmitted packets
     ///
     /// Returns addresses of completed TX buffers that can be reused.
@@ -1031,6 +1696,9 @@ impl AfXdpSocket {
                 completed.push(addr);
             }
         }
+
+        // Record completion statistics
+        self.stats.record_completion(completed.len() as u64);
 
         Ok(completed)
     }
@@ -1491,5 +2159,200 @@ mod tests {
 
         let data = socket.get_packet_data(&desc);
         assert!(data.is_none());
+    }
+
+    #[test]
+    fn test_stats_basic() {
+        let stats = AfXdpStats::new();
+
+        // Initial state
+        let snapshot = stats.snapshot();
+        assert_eq!(snapshot.rx_packets, 0);
+        assert_eq!(snapshot.tx_packets, 0);
+        assert_eq!(snapshot.rx_bytes, 0);
+        assert_eq!(snapshot.tx_bytes, 0);
+
+        // Record RX
+        stats.record_rx(10, 15000);
+        let snapshot = stats.snapshot();
+        assert_eq!(snapshot.rx_packets, 10);
+        assert_eq!(snapshot.rx_bytes, 15000);
+
+        // Record TX
+        stats.record_tx(5, 7500);
+        let snapshot = stats.snapshot();
+        assert_eq!(snapshot.tx_packets, 5);
+        assert_eq!(snapshot.tx_bytes, 7500);
+
+        // Record events
+        stats.record_tx_ring_full();
+        stats.record_rx_ring_full();
+        stats.record_fill_ring_empty();
+        stats.record_invalid_packet();
+        stats.record_wakeup();
+        stats.record_completion(3);
+
+        let snapshot = stats.snapshot();
+        assert_eq!(snapshot.tx_ring_full, 1);
+        assert_eq!(snapshot.rx_ring_full, 1);
+        assert_eq!(snapshot.fill_ring_empty, 1);
+        assert_eq!(snapshot.invalid_packets, 1);
+        assert_eq!(snapshot.wakeup_calls, 1);
+        assert_eq!(snapshot.tx_completions, 3);
+
+        // Reset
+        stats.reset();
+        let snapshot = stats.snapshot();
+        assert_eq!(snapshot.rx_packets, 0);
+        assert_eq!(snapshot.tx_packets, 0);
+        assert_eq!(snapshot.tx_completions, 0);
+    }
+
+    #[test]
+    fn test_stats_rates() {
+        let snapshot = AfXdpStatsSnapshot {
+            rx_packets: 1000,
+            rx_bytes: 1_500_000,
+            tx_packets: 500,
+            tx_bytes: 750_000,
+            rx_ring_full: 10,
+            tx_ring_full: 5,
+            fill_ring_empty: 2,
+            tx_completions: 500,
+            invalid_packets: 0,
+            wakeup_calls: 100,
+        };
+
+        // Test packet rates (1 second duration)
+        assert_eq!(snapshot.rx_pps(1.0), 1000.0);
+        assert_eq!(snapshot.tx_pps(1.0), 500.0);
+
+        // Test throughput (bits per second)
+        assert_eq!(snapshot.rx_bps(1.0), 12_000_000.0); // 1.5MB * 8
+        assert_eq!(snapshot.tx_bps(1.0), 6_000_000.0); // 750KB * 8
+
+        // Test with 10 second duration
+        assert_eq!(snapshot.rx_pps(10.0), 100.0);
+        assert_eq!(snapshot.tx_pps(10.0), 50.0);
+
+        // Test drop rate
+        let drop_rate = snapshot.drop_rate();
+        // 10 drops out of 1010 total (1000 rx + 10 dropped)
+        assert!((drop_rate - 0.0099).abs() < 0.001);
+
+        // Test with zero duration
+        assert_eq!(snapshot.rx_pps(0.0), 0.0);
+        assert_eq!(snapshot.tx_bps(0.0), 0.0);
+    }
+
+    #[test]
+    fn test_xdp_desc_layout() {
+        // Ensure XdpDesc matches kernel struct layout
+        assert_eq!(
+            std::mem::size_of::<XdpDesc>(),
+            16,
+            "XdpDesc should be 16 bytes to match kernel struct"
+        );
+        assert_eq!(
+            std::mem::align_of::<XdpDesc>(),
+            8,
+            "XdpDesc should have 8-byte alignment"
+        );
+    }
+
+    #[test]
+    fn test_ring_buffer_wraparound() {
+        let mut ring = RingBuffer::new(4);
+
+        // Fill ring
+        assert!(ring.reserve(4).is_some());
+        ring.submit(4);
+
+        // Consume all
+        assert!(ring.peek(4).is_some());
+        ring.release(4);
+
+        // Fill again (tests wraparound)
+        let idx = ring.reserve(4);
+        assert!(idx.is_some());
+        assert_eq!(idx.unwrap(), 4); // Index wraps around
+        ring.submit(4);
+
+        // Consume again
+        let idx = ring.peek(4);
+        assert!(idx.is_some());
+        assert_eq!(idx.unwrap(), 4);
+        ring.release(4);
+
+        // Verify indices continue to increment
+        let idx = ring.reserve(2);
+        assert!(idx.is_some());
+        assert_eq!(idx.unwrap(), 8);
+    }
+
+    #[test]
+    fn test_ring_size_calculation() {
+        #[cfg(target_os = "linux")]
+        {
+            // Test descriptor ring size (RX/TX rings use XdpDesc)
+            let desc_ring_size = xdp_config::ring_size(1024, true);
+            // 32 bytes header + 1024 * 16 bytes (XdpDesc)
+            assert_eq!(desc_ring_size, 32 + 1024 * 16);
+
+            // Test address ring size (fill/completion rings use u64)
+            let addr_ring_size = xdp_config::ring_size(1024, false);
+            // 32 bytes header + 1024 * 8 bytes (u64)
+            assert_eq!(addr_ring_size, 32 + 1024 * 8);
+        }
+    }
+
+    #[test]
+    fn test_umem_frame_access() {
+        let config = UmemConfig {
+            size: 8192,
+            frame_size: 2048,
+            headroom: 256,
+            fill_ring_size: 4,
+            comp_ring_size: 4,
+        };
+
+        let Ok(umem) = Umem::new(config) else {
+            eprintln!("Skipping umem_frame_access test (UMEM creation failed)");
+            return;
+        };
+
+        // Access valid frames
+        assert!(umem.get_frame(0).is_some());
+        assert!(umem.get_frame(1).is_some());
+        assert!(umem.get_frame(2).is_some());
+        assert!(umem.get_frame(3).is_some());
+
+        // Access out of bounds
+        assert!(umem.get_frame(4).is_none());
+        assert!(umem.get_frame(100).is_none());
+
+        // Verify frame size
+        if let Some(frame) = umem.get_frame(0) {
+            assert_eq!(frame.len(), 2048);
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn test_xdp_program_flags() {
+        // Verify XDP attach flag values
+        assert_eq!(XdpProgram::XDP_FLAGS_UPDATE_IF_NOEXIST, 1);
+        assert_eq!(XdpProgram::XDP_FLAGS_SKB_MODE, 2);
+        assert_eq!(XdpProgram::XDP_FLAGS_DRV_MODE, 4);
+        assert_eq!(XdpProgram::XDP_FLAGS_HW_MODE, 8);
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn test_bind_flags() {
+        // Verify bind flag values match kernel headers
+        assert_eq!(XDP_COPY, 2);
+        assert_eq!(XDP_ZEROCOPY, 4);
+        assert_eq!(XDP_USE_NEED_WAKEUP, 8);
     }
 }

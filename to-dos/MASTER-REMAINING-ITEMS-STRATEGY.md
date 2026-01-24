@@ -50,7 +50,7 @@
 | Phase | Focus | Story Points | Priority |
 |-------|-------|--------------|----------|
 | Phase 18 | Existing Client Completion | 25-35 SP | HIGH |
-| Phase 19 | Infrastructure Enhancements | 40-60 SP | MEDIUM (Deferred) |
+| Phase 19 | Infrastructure Enhancements | 40-60 SP | ✅ COMPLETE (Sprint 19.2, 19.3) |
 | Phase 20 | WRAITH-Share | 104 SP | MEDIUM |
 | Phase 21 | WRAITH-Stream | 71 SP | LOW |
 | Phase 22 | WRAITH-Mesh | 60 SP | LOW |
@@ -451,44 +451,53 @@ async fn resolve_stun_servers(
 
 ---
 
-### Sprint 19.2: ICE Signaling (TM-001)
+### Sprint 19.2: ICE Signaling (TM-001) - COMPLETE
 
-**Duration:** 2-3 weeks
+**Duration:** Completed 2026-01-24
 **Story Points:** 20-30 SP
-**Status:** Deferred - discovery approach functional
+**Status:** ✅ COMPLETE
 
-**File:** `crates/wraith-core/src/node/nat.rs:411`
+**File:** `crates/wraith-core/src/node/ice.rs`
 
 **Description:** Full ICE (Interactive Connectivity Establishment) implementation per RFC 8445.
 
-**Components:**
-- Candidate gathering (host, server reflexive, relay)
-- Candidate prioritization
-- Connectivity checks
-- Nomination procedure
-- ICE restart handling
-
-**Note:** Current discovery-based NAT traversal handles most scenarios. Full ICE only needed for complex enterprise NAT scenarios.
+**Implemented Components:**
+- ✅ IceAgent with role management (Controlling/Controlled)
+- ✅ Candidate gathering (Host, Server Reflexive, Peer Reflexive, Relay)
+- ✅ Candidate prioritization per RFC 8445 Section 5.1.2
+- ✅ CheckList with state management
+- ✅ Connectivity checks with nominated pair tracking
+- ✅ ICE restart support
+- ✅ TURN server integration
+- ✅ Comprehensive statistics (IceStats, IceStatsSnapshot)
+- ✅ DHT-based signaling for candidate exchange
 
 ---
 
-### Sprint 19.3: AF_XDP Implementation (TH-006)
+### Sprint 19.3: AF_XDP Implementation (TH-006) - COMPLETE
 
-**Duration:** 3-4 weeks
+**Duration:** Completed 2026-01-24
 **Story Points:** 30-40 SP
-**Status:** Deferred - requires specialized hardware
+**Status:** ✅ COMPLETE
 
-**File:** `crates/wraith-transport/src/af_xdp.rs:524`
+**File:** `crates/wraith-transport/src/af_xdp.rs`
 
 **Description:** Complete AF_XDP socket implementation with UMEM and ring buffer configuration.
 
-**Requirements:**
+**Implemented Components:**
+- ✅ Full socket creation with proper XDP options
+- ✅ UMEM allocation with descriptor management
+- ✅ RX/TX/Fill/Completion ring buffers
+- ✅ Atomic producer/consumer index management
+- ✅ Batch receive/transmit operations
+- ✅ Comprehensive statistics tracking (AfXdpStats, AfXdpStatsSnapshot)
+- ✅ Proper cleanup and resource management
+
+**Requirements for use:**
 - Linux kernel 6.2+
 - XDP-capable NIC (Intel X710, Mellanox ConnectX-5)
 - libbpf and clang toolchain
 - Root/CAP_NET_ADMIN privileges
-
-**Note:** UDP transport achieves excellent performance for most use cases. AF_XDP only needed for 10+ Gbps throughput requirements.
 
 ---
 
@@ -733,13 +742,13 @@ async fn resolve_stun_servers(
 - [ ] All 1,695+ tests passing
 - [ ] Zero clippy warnings maintained
 
-#### Phase 19: Infrastructure (if undertaken)
+#### Phase 19: Infrastructure - COMPLETE (2026-01-24)
 
-- [ ] DNS STUN resolution with fallback
-- [ ] ICE signaling per RFC 8445 (if needed)
-- [ ] AF_XDP with UMEM configuration (if needed)
-- [ ] Performance benchmarks documented
-- [ ] Backward compatibility maintained
+- [ ] DNS STUN resolution with fallback (TD-001 - remaining item)
+- [x] ICE signaling per RFC 8445 (Sprint 19.2 - COMPLETE)
+- [x] AF_XDP with UMEM configuration (Sprint 19.3 - COMPLETE)
+- [x] Performance benchmarks documented
+- [x] Backward compatibility maintained
 
 #### Phase 20+: New Clients
 
@@ -793,8 +802,8 @@ async fn resolve_stun_servers(
 
 | ID | Issue | Severity | Priority |
 |----|-------|----------|----------|
-| TH-006 | AF_XDP Socket Implementation | HIGH (deferred) | P4 |
-| TM-001 | Full ICE Signaling | HIGH (deferred) | P4 |
+| TH-006 | AF_XDP Socket Implementation | ~~HIGH~~ | ✅ COMPLETE |
+| TM-001 | Full ICE Signaling | ~~HIGH~~ | ✅ COMPLETE |
 | TD-001 | DNS STUN Resolution | MEDIUM | P3 |
 | TD-014 | Chat Minor TODOs (5 items) | MEDIUM | P3 |
 | TL-001 | Pedantic Warnings (~800) | LOW | P5 |

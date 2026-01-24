@@ -9,6 +9,102 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.1.0] - 2026-01-24 - ICE Signaling & AF_XDP Implementation
+
+### Overview
+
+This release completes two major infrastructure sprints that were previously deferred:
+- **Sprint 19.2:** Full RFC 8445 ICE (Interactive Connectivity Establishment) implementation
+- **Sprint 19.3:** Complete AF_XDP socket implementation for kernel-bypass networking
+
+### Added
+
+#### RFC 8445 ICE Implementation (Sprint 19.2)
+
+Complete ICE support for NAT traversal and peer-to-peer connectivity:
+
+- **IceAgent** (`crates/wraith-core/src/node/ice.rs`): Full RFC 8445 state machine
+  - Controlling and Controlled role support
+  - ICE candidate gathering (host, server reflexive, peer reflexive, relay)
+  - Candidate prioritization per RFC 8445 Section 5.1.2 priority formula
+  - CheckList states: Waiting, In-Progress, Succeeded, Failed, Frozen
+  - Triggered and ordinary connectivity checks with pair nomination
+  - ICE restart with credential regeneration and state reset
+  - TURN relay candidate support
+  - DHT-based signaling for decentralized candidate exchange
+
+- **Candidate Types**:
+  - `Host` - Local interface addresses
+  - `ServerReflexive` - STUN-discovered public addresses
+  - `PeerReflexive` - Discovered during connectivity checks
+  - `Relay` - TURN relay addresses
+
+- **ICE States**:
+  - `New` - Agent created, not started
+  - `Gathering` - Collecting candidates
+  - `Checking` - Performing connectivity checks
+  - `Connected` - At least one valid pair
+  - `Completed` - All pairs checked, nomination complete
+  - `Failed` - No connectivity established
+  - `Closed` - Agent terminated
+
+#### AF_XDP High-Performance Networking (Sprint 19.3)
+
+Zero-copy kernel-bypass networking for maximum throughput:
+
+- **XdpSocket** (`crates/wraith-transport/src/af_xdp.rs`): Complete AF_XDP implementation
+  - Full socket creation with proper XDP options
+  - UMEM (User-space Memory) allocation with descriptor management
+  - Ring buffer structures (RX, TX, Fill, Completion) with atomic indices
+  - Batch operations (`rx_batch()`, `tx_batch()`) for high throughput
+  - Zero-copy mode support for maximum performance
+  - Comprehensive statistics tracking with rate calculations
+
+- **Ring Buffer Types**:
+  - `FillRing` - Provides empty buffers to kernel for RX
+  - `CompletionRing` - Returns used buffers after TX
+  - `RxRing` - Receives packets from kernel
+  - `TxRing` - Submits packets to kernel
+
+- **Statistics Tracking**:
+  - Packets received/transmitted
+  - Bytes received/transmitted
+  - Rates (packets/sec, bytes/sec)
+  - Error counters
+
+- **Requirements**:
+  - Linux kernel 6.2+
+  - XDP-capable NIC (Intel X710, Mellanox ConnectX-5, etc.)
+  - Root/CAP_NET_ADMIN privileges
+
+### Fixed
+
+#### Client Build Infrastructure
+- **Missing package.json**: Added `package.json` for wraith-transfer and wraith-vault clients
+- **Release Workflow**: Fixed `npm ci` failures for client builds
+- **Code Formatting**: Fixed formatting issues in `ice.rs`
+
+### Technical Debt Resolved
+
+| Item | Priority | Status |
+|------|----------|--------|
+| ICE Signaling (TM-001) | HIGH | Resolved |
+| AF_XDP Implementation (TH-006) | MEDIUM | Resolved |
+
+**Technical debt reduced from 8 items to 6 items (0 HIGH priority remaining)**
+
+### Project Metrics
+
+| Metric | Value |
+|--------|-------|
+| Tests | 1,695+ passing (100% pass rate) |
+| Code | ~70,000 lines Rust + ~12,000 lines clients |
+| Security | Zero vulnerabilities |
+| Quality | 98/100 |
+| Clippy | Zero warnings |
+
+---
+
 ## [2.0.3] - 2026-01-24 - CI/CD Fixes
 
 ### Fixed

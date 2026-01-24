@@ -63,6 +63,7 @@ pub mod discovery;
 pub mod error;
 pub mod file_transfer;
 pub mod health;
+pub mod ice;
 pub mod identity;
 pub mod ip_reputation;
 pub mod multi_peer;
@@ -96,12 +97,17 @@ pub use discovery::{NatType, NodeCapabilities, PeerAnnouncement, PeerInfo};
 pub use error::{NodeError, Result};
 pub use file_transfer::{FileMetadata, FileTransferContext};
 pub use health::{HealthAction, HealthConfig, HealthMonitor};
+pub use ice::{
+    CandidatePair, CandidateType as IceCandidateType, CheckList, CheckState, IceAgent,
+    IceCandidate as FullIceCandidate, IceConfig, IceCredentials, IceError, IceResult, IceRole,
+    IceState, IceStats, IceStatsSnapshot, TransportProtocol, TurnServer,
+};
 pub use identity::{Identity, TransferId};
 pub use ip_reputation::{
     IpReputationConfig, IpReputationMetrics, IpReputationSystem, ReputationStatus,
 };
 pub use multi_peer::{ChunkAssignmentStrategy, MultiPeerCoordinator, PeerPerformance};
-pub use nat::{CandidateType, IceCandidate};
+pub use nat::{CandidateType, IceAgentDiagnostics, IceCandidate};
 pub use node::Node;
 pub use obfuscation::{ObfuscationStats, Protocol};
 pub use padding_strategy::{

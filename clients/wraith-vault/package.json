@@ -1,0 +1,16 @@
+{
+  "name": "wraith-vault",
+  "version": "2.0.3",
+  "description": "WRAITH-Vault - Distributed Secret Storage with Shamir's Secret Sharing",
+  "private": true,
+  "scripts": {
+    "dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0"
+  }
+}
