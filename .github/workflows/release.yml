@@ -390,7 +390,10 @@ jobs:
           if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
             sudo apt-get install -y jq
           elif [ "${{ matrix.os }}" = "macos-latest" ]; then
-            brew install jq
+            # Check if jq is already installed to avoid brew warning
+            if ! command -v jq &> /dev/null; then
+              brew install jq
+            fi
           fi
         shell: bash
 
@@ -573,20 +576,28 @@ jobs:
           BUNDLE_NAME="wraith-clients-${VERSION_NO_V}-linux-${ARCH}"
 
           mkdir -p "bundle-staging/$BUNDLE_NAME"
+          mkdir -p "appimage-staging"
 
           # Collect all client artifacts
           if [ -d "target/release/bundle" ]; then
-            # AppImages
-            find target/release/bundle -type f -name "*.AppImage" \
-              -exec cp {} "bundle-staging/$BUNDLE_NAME/" \; 2>/dev/null || true
+            # AppImages - collect separately for individual upload
+            while IFS= read -r -d '' file; do
+              # Copy to separate staging for individual upload
+              cp "$file" "appimage-staging/"
+              echo "Found AppImage: $(basename "$file")"
+            done < <(find target/release/bundle -type f -name "*.AppImage" -print0 2>/dev/null)
 
-            # Debian packages
-            find target/release/bundle -type f -name "*.deb" \
-              -exec cp {} "bundle-staging/$BUNDLE_NAME/" \; 2>/dev/null || true
+            # Debian packages - include in bundle
+            while IFS= read -r -d '' file; do
+              cp "$file" "bundle-staging/$BUNDLE_NAME/"
+              echo "Found DEB: $(basename "$file")"
+            done < <(find target/release/bundle -type f -name "*.deb" -print0 2>/dev/null)
 
-            # RPM packages (if any)
-            find target/release/bundle -type f -name "*.rpm" \
-              -exec cp {} "bundle-staging/$BUNDLE_NAME/" \; 2>/dev/null || true
+            # RPM packages - include in bundle
+            while IFS= read -r -d '' file; do
+              cp "$file" "bundle-staging/$BUNDLE_NAME/"
+              echo "Found RPM: $(basename "$file")"
+            done < <(find target/release/bundle -type f -name "*.rpm" -print0 2>/dev/null)
           fi
 
           # Create README for the bundle
@@ -595,20 +606,22 @@ jobs:
           Version: ${VERSION}
           Platform: Linux ${ARCH}
 
+          This bundle contains .deb and .rpm packages.
+          AppImages are available as separate downloads.
+
           Installation:
-          - AppImage: chmod +x *.AppImage && ./*.AppImage
           - Debian/Ubuntu: sudo dpkg -i *.deb
           - Fedora/RHEL: sudo rpm -i *.rpm
 
           For more information: https://github.com/doublegate/WRAITH-Protocol
           EOF
 
-          # Generate checksums
+          # Generate checksums for bundle
           cd "bundle-staging/$BUNDLE_NAME"
           sha256sum * > SHA256SUMS.txt 2>/dev/null || true
           cd ../..
 
-          # Create the bundle archive
+          # Create the bundle archive (deb + rpm only)
           mkdir -p client-bundle
           cd bundle-staging
           tar czf "../client-bundle/${BUNDLE_NAME}.tar.gz" "$BUNDLE_NAME"
@@ -619,8 +632,13 @@ jobs:
           sha256sum "${BUNDLE_NAME}.tar.gz" > "${BUNDLE_NAME}.tar.gz.sha256"
           cd ..
 
-          echo "Linux bundle created:"
+          echo ""
+          echo "Linux bundle created (deb + rpm):"
           ls -lh client-bundle/
+
+          echo ""
+          echo "AppImages staged for separate upload:"
+          ls -lh appimage-staging/ 2>/dev/null || echo "No AppImages found"
 
       - name: Collect and bundle macOS artifacts
         if: matrix.os == 'macos-latest'
@@ -633,11 +651,22 @@ jobs:
 
           mkdir -p "bundle-staging/$BUNDLE_NAME"
 
-          # Collect all DMG files
+          # Collect all DMG files - use while loop for proper handling of spaces in filenames
           if [ -d "target/release/bundle" ]; then
-            find target/release/bundle -type f -name "*.dmg" \
-              -exec cp {} "bundle-staging/$BUNDLE_NAME/" \; 2>/dev/null || true
+            DMG_COUNT=0
+            while IFS= read -r -d '' file; do
+              cp "$file" "bundle-staging/$BUNDLE_NAME/"
+              echo "Found DMG: $(basename "$file")"
+              DMG_COUNT=$((DMG_COUNT + 1))
+            done < <(find target/release/bundle -type f -name "*.dmg" -print0 2>/dev/null)
+
+            echo "Total DMGs found: $DMG_COUNT"
           fi
+
+          # List what was collected
+          echo ""
+          echo "Contents of bundle-staging/$BUNDLE_NAME:"
+          ls -la "bundle-staging/$BUNDLE_NAME/" || true
 
           # Create README for the bundle
           cat > "bundle-staging/$BUNDLE_NAME/README.txt" << EOF
@@ -668,6 +697,7 @@ jobs:
           shasum -a 256 "${BUNDLE_NAME}.tar.gz" > "${BUNDLE_NAME}.tar.gz.sha256"
           cd ..
 
+          echo ""
           echo "macOS bundle created:"
           ls -lh client-bundle/
 
@@ -735,6 +765,15 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
+      - name: Upload Linux AppImages separately
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: wraith-appimages-linux-${{ matrix.arch }}
+          path: appimage-staging/*.AppImage
+          if-no-files-found: warn
+          retention-days: 7
+
   #############################################################################
   # Job 5: Create GitHub Release
   #############################################################################
@@ -764,16 +803,21 @@ jobs:
           mkdir -p release-assets
 
           echo "Organizing artifacts for version $VERSION..."
+          echo ""
+          echo "Artifact structure:"
+          find artifacts -type f | head -50
 
           # Move protocol binary archives and checksums
           find artifacts -type f \
             \( -name "*.tar.gz" -o -name "*.zip" \) \
             ! -name "wraith-clients-*" \
+            ! -name "*.AppImage" \
             -exec mv {} release-assets/ \; 2>/dev/null || true
 
           # Move protocol binary checksums
           find artifacts -type f -name "*.sha256" \
             ! -name "wraith-clients-*" \
+            ! -name "wraith-appimages-*" \
             -exec mv {} release-assets/ \; 2>/dev/null || true
 
           # Move client bundle archives (tar.gz for Linux/macOS, zip for Windows)
@@ -785,6 +829,24 @@ jobs:
           # Move client bundle checksums
           find artifacts -type f -name "wraith-clients-*.sha256" \
             -exec mv {} release-assets/ \; 2>/dev/null || true
+
+          # Move AppImages as separate downloadable files (not in bundle)
+          # Handle filenames with spaces properly
+          echo ""
+          echo "Processing AppImages..."
+          while IFS= read -r -d '' file; do
+            basename_file=$(basename "$file")
+            # Rename with version if not already versioned
+            if [[ "$basename_file" != *"$VERSION_NO_V"* ]]; then
+              # Extract app name (remove _version_arch.AppImage)
+              app_name=$(echo "$basename_file" | sed 's/_[0-9]*\.[0-9]*\.[0-9]*_.*.AppImage$//')
+              new_name="${app_name}_${VERSION_NO_V}_amd64.AppImage"
+            else
+              new_name="$basename_file"
+            fi
+            mv "$file" "release-assets/$new_name"
+            echo "  Added AppImage: $new_name"
+          done < <(find artifacts -type f -name "*.AppImage" -print0 2>/dev/null)
 
           # Create combined checksums file
           cd release-assets
@@ -805,8 +867,17 @@ jobs:
             cat wraith-clients-*.sha256 >> SHA256SUMS-clients.txt 2>/dev/null || true
           fi
 
+          # Generate checksums for AppImages and add to clients file
+          echo "" >> SHA256SUMS-clients.txt
+          echo "# AppImages (Linux)" >> SHA256SUMS-clients.txt
+          for appimage in *.AppImage; do
+            if [ -f "$appimage" ]; then
+              sha256sum "$appimage" >> SHA256SUMS-clients.txt 2>/dev/null || true
+            fi
+          done
+
           # Remove individual .sha256 files (they're now in the combined files)
-          rm -f wraith-*.sha256 2>/dev/null || true
+          rm -f wraith-x86_64-*.sha256 wraith-aarch64-*.sha256 wraith-clients-*.sha256 2>/dev/null || true
 
           echo ""
           echo "Release assets:"
@@ -936,13 +1007,16 @@ jobs:
 
           echo "### Desktop Client Application Bundles" >> $S
           echo "" >> $S
-          echo "All client applications are bundled together per platform:" >> $S
+          echo "Client applications are bundled together per platform:" >> $S
           echo "" >> $S
           echo "| Platform | Bundle Archive | Contents |" >> $S
           echo "|----------|----------------|----------|" >> $S
-          echo "| Linux x86_64 | wraith-clients-${VERSION_NO_V}-linux-x86_64.tar.gz | AppImage, .deb packages |" >> $S
+          echo "| Linux x86_64 | wraith-clients-${VERSION_NO_V}-linux-x86_64.tar.gz | .deb and .rpm packages |" >> $S
           echo "| macOS | wraith-clients-${VERSION_NO_V}-macos-universal.tar.gz | .dmg installers |" >> $S
           echo "| Windows x86_64 | wraith-clients-${VERSION_NO_V}-windows-x86_64.zip | .msi installers |" >> $S
+          echo "" >> $S
+
+          echo "**Linux AppImages** are available as separate downloads (not bundled)." >> $S
           echo "" >> $S
 
           echo "**Included Clients:**" >> $S
@@ -955,7 +1029,7 @@ jobs:
           echo "### Checksums" >> $S
           echo "" >> $S
           echo "- **SHA256SUMS.txt** - Protocol CLI binary checksums" >> $S
-          echo "- **SHA256SUMS-clients.txt** - Client bundle checksums" >> $S
+          echo "- **SHA256SUMS-clients.txt** - Client bundle and AppImage checksums" >> $S
           echo "" >> $S
 
           echo "### Installation" >> $S
@@ -975,15 +1049,13 @@ jobs:
 
           echo "**Desktop Clients:**" >> $S
           echo '```bash' >> $S
-          echo "# Extract the bundle for your platform" >> $S
+          echo "# Linux (AppImage - download separately)" >> $S
+          echo "chmod +x 'WRAITH Transfer_${VERSION_NO_V}_amd64.AppImage'" >> $S
+          echo "./'WRAITH Transfer_${VERSION_NO_V}_amd64.AppImage'" >> $S
+          echo "" >> $S
+          echo "# Linux (Debian/Ubuntu - from bundle)" >> $S
           echo "tar xzf wraith-clients-${VERSION_NO_V}-linux-x86_64.tar.gz" >> $S
           echo "cd wraith-clients-${VERSION_NO_V}-linux-x86_64" >> $S
-          echo "" >> $S
-          echo "# Linux (AppImage)" >> $S
-          echo "chmod +x *.AppImage" >> $S
-          echo "./wraith-transfer_*.AppImage" >> $S
-          echo "" >> $S
-          echo "# Linux (Debian/Ubuntu)" >> $S
           echo "sudo dpkg -i *.deb" >> $S
           echo "" >> $S
           echo "# macOS - Extract and double-click the .dmg files" >> $S
