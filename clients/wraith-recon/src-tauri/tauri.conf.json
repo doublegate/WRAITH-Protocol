@@ -1,11 +1,11 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "WRAITH Recon",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "identifier": "io.wraith.recon",
   "build": {
     "frontendDist": "../frontend/dist",
-    "devUrl": "http://localhost:5175",
+    "devUrl": "http://localhost:1425",
     "beforeDevCommand": "npm run dev --prefix frontend",
     "beforeBuildCommand": "npm run build --prefix frontend"
   },
