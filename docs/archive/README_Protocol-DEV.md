@@ -1125,22 +1125,58 @@ This major phase delivers three production-ready client applications implementin
 
 ---
 
+### Infrastructure Sprints 19.2-19.3: ICE & AF_XDP Implementation - COMPLETE (2026-01-24)
+
+**Version:** 2.1.0
+**Focus:** RFC 8445 ICE implementation for NAT traversal and AF_XDP kernel-bypass networking
+
+**Sprint 19.2: RFC 8445 ICE Implementation - COMPLETE:**
+- **IceAgent** (`crates/wraith-core/src/node/ice.rs`): Full RFC 8445 state machine
+  - Controlling and Controlled role support
+  - ICE candidate gathering (host, server reflexive, peer reflexive, relay)
+  - Candidate prioritization per RFC 8445 Section 5.1.2 priority formula
+  - CheckList states: Waiting, In-Progress, Succeeded, Failed, Frozen
+  - Triggered and ordinary connectivity checks with pair nomination
+  - ICE restart with credential regeneration and state reset
+  - TURN relay candidate support
+  - DHT-based signaling for decentralized candidate exchange
+- **Candidate Types:** Host, ServerReflexive, PeerReflexive, Relay
+- **ICE States:** New, Gathering, Checking, Connected, Completed, Failed, Closed
+
+**Sprint 19.3: AF_XDP High-Performance Networking - COMPLETE:**
+- **XdpSocket** (`crates/wraith-transport/src/af_xdp.rs`): Complete AF_XDP implementation
+  - Full socket creation with proper XDP options
+  - UMEM (User-space Memory) allocation with descriptor management
+  - Ring buffer structures (RX, TX, Fill, Completion) with atomic indices
+  - Batch operations (`rx_batch()`, `tx_batch()`) for high throughput
+  - Zero-copy mode support for maximum performance
+  - Comprehensive statistics tracking with rate calculations
+- **Ring Buffer Types:** FillRing, CompletionRing, RxRing, TxRing
+- **Requirements:** Linux kernel 6.2+, XDP-capable NIC (Intel X710, Mellanox ConnectX-5, etc.)
+
+**Technical Debt Resolved:**
+- ICE Signaling (TM-001): HIGH priority - Resolved
+- AF_XDP Implementation (TH-006): MEDIUM priority - Resolved
+- **Technical debt reduced from 8 items to 6 items (0 HIGH priority remaining)**
+
+---
+
 ## Crate Implementation Status
 
 | Crate | Status | LOC | Code | Comments | Tests | Completion Details |
 |-------|--------|-----|------|----------|-------|-------------------|
-| **wraith-core** | ✅ v1.6.3 | 17,081 | 12,841 | 1,124 | 420 | Frame parsing (SIMD AVX2/SSE4.2/NEON, 172M frames/sec), **lock-free ring buffers** (SPSC 100M ops/sec, MPSC 20M ops/sec), session state machine (7 states), stream multiplexing, BBR congestion control, **connection health monitoring** (failed ping detection, migration), **Node API orchestration layer** (9 modules, lifecycle, session, file transfer, DHT/NAT/obfuscation integration), rate limiting (token bucket), circuit breakers, multi-peer (4 strategies) |
-| **wraith-crypto** | ✅ v1.6.3 | 4,435 | 3,249 | 306 | 179 | Ed25519 signatures, X25519 + Elligator2 encoding, XChaCha20-Poly1305 AEAD (3.2 GB/s), BLAKE3 hashing (8.5 GB/s), Noise_XX handshake, Double Ratchet (with responder initialization fix), replay protection (64-bit window), key encryption at rest (Argon2id + XChaCha20-Poly1305) |
-| **wraith-files** | ✅ v1.6.3 | 1,680 | 1,257 | 102 | 44 | io_uring async file I/O, file chunking (14.85 GiB/s), reassembly (5.42 GiB/s, O(m) algorithm), BLAKE3 tree hashing (4.71 GiB/s), chunk verification (4.78 GiB/s) |
-| **wraith-obfuscation** | ✅ v1.6.3 | 2,789 | 2,096 | 156 | 167 | **DPI-validated** - Padding (5 modes), timing (5 distributions), protocol mimicry (TLS/WebSocket/DoH), adaptive threat-level profiles (Low/Medium/High/Paranoid) - See [DPI Evasion Report](../security/DPI_EVASION_REPORT.md) |
-| **wraith-discovery** | ✅ v1.6.3 | 5,971 | 4,634 | 292 | 292 | Kademlia DHT (BLAKE3 NodeIds, S/Kademlia Sybil resistance), **5 STUN servers from 4 providers** (Cloudflare, Twilio, Nextcloud, Google), ICE candidate gathering, DERP-style relay (4 strategies), unified DiscoveryManager, **mobile network optimization** (battery-efficient DHT, cellular keep-alive) |
-| **wraith-transport** | ✅ v1.6.3 | 4,050 | 2,999 | 330 | 174 | AF_XDP zero-copy sockets, worker pools (CPU pinning), UDP transport (SO_REUSEPORT), MTU discovery, NUMA-aware allocation, io_uring integration |
-| **wraith-cli** | ✅ v1.6.3 | ~1,100 | - | - | 87 | CLI interface (send, receive, daemon, status, peers, keygen, **ping**, **config show/set**), **multi-peer transfer support**, progress display (indicatif), TOML configuration (6 sections) |
-| **wraith-ffi** | ✅ v1.6.3 | ~1,500 | - | - | 111 | C-compatible FFI API, **JNI bindings for Android**, **UniFFI for iOS**, Node lifecycle, session management, file transfer, automatic C header generation (cbindgen), FFI-safe error handling, comprehensive tests validating boundary safety |
-| **wraith-transfer** | ✅ v1.6.3 | ~12,500 | - | - | 6 | Tauri 2.0 desktop application with **capability-based permissions**, React 18 + TypeScript frontend, 10 IPC commands, 5 React components, 3 Zustand stores, cross-platform (Windows/macOS/Linux) |
-| **wraith-android** | ✅ v1.6.3 | ~3,800 | - | - | 96 | Native Android client with Kotlin + Jetpack Compose (Material Design 3), **full WRAITH protocol integration** (not placeholders), **Android Keystore** secure storage, **DHT/NAT** mobile optimization, **FCM push notifications**, multi-architecture support (arm64/arm/x86_64/x86), background service, ProGuard/R8 optimization |
-| **wraith-ios** | ✅ v1.6.3 | ~2,650 | - | - | 93 | Native iOS client with Swift + SwiftUI (iOS 16.0+), **full WRAITH protocol integration** (not placeholders), **iOS Keychain** secure storage, **DHT/NAT** mobile optimization, **APNs push notifications**, UniFFI bindings, MVVM architecture, tab-based navigation, Swift Package Manager integration, background task support |
-| **wraith-chat** | ✅ v1.6.3 | ~5,200 | - | - | 38 | E2EE messaging application (Tauri 2.0 + React 18), **Signal Protocol Double Ratchet**, SQLCipher encrypted database (AES-256, 64K iterations), **voice calling** (Opus, RNNoise, echo cancellation), **video calling** (VP8/VP9, adaptive bitrate), **group messaging** (Sender Keys protocol), **49 IPC commands** (10 messaging + 16 voice + 16 video + 11 group), dark theme with Zustand stores |
+| **wraith-core** | ✅ v2.1.0 | 17,081 | 12,841 | 1,124 | 420 | Frame parsing (SIMD AVX2/SSE4.2/NEON, 172M frames/sec), **lock-free ring buffers** (SPSC 100M ops/sec, MPSC 20M ops/sec), session state machine (7 states), stream multiplexing, BBR congestion control, **connection health monitoring** (failed ping detection, migration), **Node API orchestration layer** (9 modules, lifecycle, session, file transfer, DHT/NAT/obfuscation integration), rate limiting (token bucket), circuit breakers, multi-peer (4 strategies) |
+| **wraith-crypto** | ✅ v2.1.0 | 4,435 | 3,249 | 306 | 179 | Ed25519 signatures, X25519 + Elligator2 encoding, XChaCha20-Poly1305 AEAD (3.2 GB/s), BLAKE3 hashing (8.5 GB/s), Noise_XX handshake, Double Ratchet (with responder initialization fix), replay protection (64-bit window), key encryption at rest (Argon2id + XChaCha20-Poly1305) |
+| **wraith-files** | ✅ v2.1.0 | 1,680 | 1,257 | 102 | 44 | io_uring async file I/O, file chunking (14.85 GiB/s), reassembly (5.42 GiB/s, O(m) algorithm), BLAKE3 tree hashing (4.71 GiB/s), chunk verification (4.78 GiB/s) |
+| **wraith-obfuscation** | ✅ v2.1.0 | 2,789 | 2,096 | 156 | 167 | **DPI-validated** - Padding (5 modes), timing (5 distributions), protocol mimicry (TLS/WebSocket/DoH), adaptive threat-level profiles (Low/Medium/High/Paranoid) - See [DPI Evasion Report](../security/DPI_EVASION_REPORT.md) |
+| **wraith-discovery** | ✅ v2.1.0 | 5,971 | 4,634 | 292 | 292 | Kademlia DHT (BLAKE3 NodeIds, S/Kademlia Sybil resistance), **5 STUN servers from 4 providers** (Cloudflare, Twilio, Nextcloud, Google), ICE candidate gathering, DERP-style relay (4 strategies), unified DiscoveryManager, **mobile network optimization** (battery-efficient DHT, cellular keep-alive) |
+| **wraith-transport** | ✅ v2.1.0 | 4,050 | 2,999 | 330 | 174 | AF_XDP zero-copy sockets, worker pools (CPU pinning), UDP transport (SO_REUSEPORT), MTU discovery, NUMA-aware allocation, io_uring integration |
+| **wraith-cli** | ✅ v2.1.0 | ~1,100 | - | - | 87 | CLI interface (send, receive, daemon, status, peers, keygen, **ping**, **config show/set**), **multi-peer transfer support**, progress display (indicatif), TOML configuration (6 sections) |
+| **wraith-ffi** | ✅ v2.1.0 | ~1,500 | - | - | 111 | C-compatible FFI API, **JNI bindings for Android**, **UniFFI for iOS**, Node lifecycle, session management, file transfer, automatic C header generation (cbindgen), FFI-safe error handling, comprehensive tests validating boundary safety |
+| **wraith-transfer** | ✅ v2.1.0 | ~12,500 | - | - | 6 | Tauri 2.0 desktop application with **capability-based permissions**, React 18 + TypeScript frontend, 10 IPC commands, 5 React components, 3 Zustand stores, cross-platform (Windows/macOS/Linux) |
+| **wraith-android** | ✅ v2.1.0 | ~3,800 | - | - | 96 | Native Android client with Kotlin + Jetpack Compose (Material Design 3), **full WRAITH protocol integration** (not placeholders), **Android Keystore** secure storage, **DHT/NAT** mobile optimization, **FCM push notifications**, multi-architecture support (arm64/arm/x86_64/x86), background service, ProGuard/R8 optimization |
+| **wraith-ios** | ✅ v2.1.0 | ~2,650 | - | - | 93 | Native iOS client with Swift + SwiftUI (iOS 16.0+), **full WRAITH protocol integration** (not placeholders), **iOS Keychain** secure storage, **DHT/NAT** mobile optimization, **APNs push notifications**, UniFFI bindings, MVVM architecture, tab-based navigation, Swift Package Manager integration, background task support |
+| **wraith-chat** | ✅ v2.1.0 | ~5,200 | - | - | 38 | E2EE messaging application (Tauri 2.0 + React 18), **Signal Protocol Double Ratchet**, SQLCipher encrypted database (AES-256, 64K iterations), **voice calling** (Opus, RNNoise, echo cancellation), **video calling** (VP8/VP9, adaptive bitrate), **group messaging** (Sender Keys protocol), **49 IPC commands** (10 messaging + 16 voice + 16 video + 11 group), dark theme with Zustand stores |
 | **wraith-xdp** | 📋 Planned | 0 | 0 | 0 | 0 | eBPF/XDP programs for in-kernel packet filtering (excluded from default build) |
 
 **Total Protocol:** ~61,500 lines Rust across protocol crates + ~11,650 lines in client applications (4,750 Rust, 2,400 Kotlin, 1,900 Swift, 2,600 TypeScript/React)
@@ -1277,7 +1313,7 @@ This major phase delivers three production-ready client applications implementin
 
 ## Current Status & Next Steps
 
-**Version 2.0.2 Status (2026-01-24):**
+**Version 2.1.0 Status (2026-01-24):**
 - ✅ All 24 development phases complete (2,685 SP delivered)
 - ✅ 1,993 tests (4 ignored) - 100% pass rate
 - ✅ Zero vulnerabilities, zero warnings
@@ -1349,8 +1385,8 @@ See [../../to-dos/ROADMAP.md](../../to-dos/ROADMAP.md) for detailed future plann
 
 ---
 
-**WRAITH Protocol Development History** - *From Foundation to v2.0.2 (Phases 1-24)*
+**WRAITH Protocol Development History** - *From Foundation to v2.1.0 (Phases 1-24 + Infrastructure Sprints)*
 
-**Development Period:** 2024 - 2026-01-24 | **Total Effort:** 2,685 story points delivered across 24 phases | **Quality:** Production-ready (98/100), 1,993 tests (100% pass rate), 0 vulnerabilities, Grade A+ security | **Clients:** 10 production applications | **CI/CD:** Optimized workflows with reusable setup and path filters
+**Development Period:** 2024 - 2026-01-24 | **Total Effort:** 2,685+ story points delivered across 24 phases + infrastructure sprints | **Quality:** Production-ready (98/100), 1,993 tests (100% pass rate), 0 vulnerabilities, Grade A+ security | **Clients:** 10 production applications | **CI/CD:** Optimized workflows with reusable setup and path filters | **v2.1.0:** RFC 8445 ICE implementation, AF_XDP kernel bypass networking
 
 *Last Updated: 2026-01-24*

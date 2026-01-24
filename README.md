@@ -809,6 +809,6 @@ WRAITH Protocol builds on the work of many excellent projects and technologies:
 
 **WRAITH Protocol** - *Secure. Fast. Invisible.*
 
-**Status:** v2.0.3 Phase 24 Complete | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 1,993 passing (4 ignored) | **Quality:** Production-ready, 0 vulnerabilities, zero warnings, 98/100 quality grade | **Clients:** 10 applications with full protocol integration, voice/video calling, group messaging, file synchronization, distributed file sharing, secure media streaming, IoT mesh networking, decentralized publishing, and distributed secret storage
+**Status:** v2.1.0 Phase 24 Complete + ICE & AF_XDP | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 1,993 passing (4 ignored) | **Quality:** Production-ready, 0 vulnerabilities, zero warnings, 98/100 quality grade | **Clients:** 10 applications with full protocol integration, voice/video calling, group messaging, file synchronization, distributed file sharing, secure media streaming, IoT mesh networking, decentralized publishing, and distributed secret storage
 
 *Last Updated: 2026-01-24*
