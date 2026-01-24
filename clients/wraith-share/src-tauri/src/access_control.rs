@@ -83,8 +83,10 @@ impl AccessController {
             .get_signing_key()
             .ok_or_else(|| ShareError::Crypto("Signing key not available".to_string()))?;
 
-        // Generate random file key
-        let file_key: [u8; KEY_SIZE] = rand::thread_rng().gen();
+        // Generate random file key - buffer pre-allocation immediately filled with CSPRNG bytes.
+        // This is NOT a hard-coded key; the zero-initialization is overwritten by fill_bytes().
+        let mut file_key = [0u8; KEY_SIZE];
+        rand::thread_rng().fill_bytes(&mut file_key);
 
         // Generate random nonce
         let mut nonce_bytes = [0u8; NONCE_SIZE];
