@@ -7,7 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_No changes yet._
+### Added
+
+#### CI/CD Workflow Improvements
+- **Reusable Setup Workflow** (`setup.yml`): New reusable workflow for common environment setup
+  - Cross-platform support (Ubuntu, macOS, Windows)
+  - Rust toolchain installation with configurable components and targets
+  - Node.js setup with caching
+  - Tauri CLI installation with system dependencies
+  - SQLCipher installation for all platforms
+  - Optimized caching strategy with `actions/cache@v5`
+- **Path Filters**: Added `paths-ignore` for markdown and docs to skip CI on documentation-only changes
+- **Client Build Support**: Added 8 Tauri client exclusions to CI, CodeQL, Docs, and Release workflows
+- **Upgraded GitHub Actions**:
+  - `actions/checkout@v6`
+  - `actions/cache@v5`
+  - `actions/upload-artifact@v6`
+  - `actions/download-artifact@v7`
+
+### Changed
+
+- **CI Workflow Optimization**: Restructured job dependencies for faster failure detection
+  - `fmt` runs immediately (no dependencies)
+  - `check` runs as early gate before expensive test matrix
+  - `clippy` depends on `check` to reuse build artifacts
+- **EXCLUDE_CLIENTS Environment Variable**: Centralized client exclusions in CI workflow
+
+### Documentation
+
+- Comprehensive README.md updates for v2.0.1
+- Updated Protocol Development History (README_Protocol-DEV.md)
+- Updated Client Development History (README_Clients-DEV.md)
+- Updated CLAUDE.md project instructions
 
 ---
 

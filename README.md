@@ -21,7 +21,7 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
 
 WRAITH Protocol v2.0.0 is a major milestone release with 10 production-ready desktop/mobile applications. Version 2.0.0 delivers Phase 24 (WRAITH-Vault), a distributed secret storage application implementing Shamir's Secret Sharing with threshold cryptography, guardian-based key distribution, erasure coding for redundancy, and scheduled automatic backups.
 
-**Project Metrics (2026-01-23):**
+**Project Metrics (2026-01-24):**
 - **Code Volume:** ~87,000 lines of Rust code across protocol crates + ~30,000 lines in client applications (Kotlin/Swift/TypeScript)
 - **Test Coverage:** 1,993 tests passing (4 ignored) - 100% pass rate
 - **Documentation:** 130+ markdown files, ~90,000+ lines of comprehensive documentation
@@ -644,6 +644,20 @@ WRAITH Protocol uses comprehensive automated workflows for quality assurance and
 - **Code Quality:** Clippy linting and rustfmt formatting checks
 - **Documentation:** Automated doc generation and link validation
 - **MSRV:** Minimum Supported Rust Version (1.85) verification
+- **Path Filtering:** Skips CI runs for documentation-only changes
+
+### Workflow Optimizations (v2.0.1)
+- **Reusable Setup Workflow** (`setup.yml`): Common environment setup across all workflows
+  - Cross-platform support (Ubuntu, macOS, Windows)
+  - Rust toolchain with configurable components
+  - Node.js and Tauri CLI installation
+  - SQLCipher support for all platforms
+- **Optimized Job Dependencies:** Fast failure detection with early gates
+  - `fmt` runs immediately (no dependencies)
+  - `check` runs before expensive test matrix
+  - `clippy` reuses build artifacts from `check`
+- **Client Exclusions:** 8 Tauri clients excluded from protocol-level CI
+- **Updated GitHub Actions:** checkout@v6, cache@v5, upload-artifact@v6, download-artifact@v7
 
 ### Security Scanning
 - **Dependabot:** Automated dependency updates with security prioritization
@@ -658,8 +672,9 @@ WRAITH Protocol uses comprehensive automated workflows for quality assurance and
 - **Artifact Generation:** Automated binary builds with SHA256 checksums
 - **GitHub Releases:** Automatic release creation from version tags
 - **Changelog Integration:** Automated release notes from CHANGELOG.md
+- **Client Builds:** Tauri desktop application packaging for all platforms
 
-See [CI Workflow](.github/workflows/ci.yml), [CodeQL Workflow](.github/workflows/codeql.yml), [Fuzz Workflow](.github/workflows/fuzz.yml), and [Release Workflow](.github/workflows/release.yml) for configuration details.
+See [CI Workflow](.github/workflows/ci.yml), [Setup Workflow](.github/workflows/setup.yml), [CodeQL Workflow](.github/workflows/codeql.yml), [Fuzz Workflow](.github/workflows/fuzz.yml), and [Release Workflow](.github/workflows/release.yml) for configuration details.
 
 ## Security
 
@@ -794,6 +809,6 @@ WRAITH Protocol builds on the work of many excellent projects and technologies:
 
 **WRAITH Protocol** - *Secure. Fast. Invisible.*
 
-**Status:** v2.0.0 Phase 24 Complete | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 1,993 passing (4 ignored) | **Quality:** Production-ready, 0 vulnerabilities, zero warnings, 98/100 quality grade | **Clients:** 10 applications with full protocol integration, voice/video calling, group messaging, file synchronization, distributed file sharing, secure media streaming, IoT mesh networking, decentralized publishing, and distributed secret storage
+**Status:** v2.0.1 Phase 24 Complete | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 1,993 passing (4 ignored) | **Quality:** Production-ready, 0 vulnerabilities, zero warnings, 98/100 quality grade | **Clients:** 10 applications with full protocol integration, voice/video calling, group messaging, file synchronization, distributed file sharing, secure media streaming, IoT mesh networking, decentralized publishing, and distributed secret storage
 
-*Last Updated: 2026-01-23*
+*Last Updated: 2026-01-24*

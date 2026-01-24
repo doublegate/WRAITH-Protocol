@@ -8,8 +8,18 @@ name: "CodeQL Security Scan"
 "on":
   push:
     branches: [main, develop]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.github/workflows/docs.yml'
+      - '.github/workflows/mdbook-gh-pages.yml'
   pull_request:
     branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.github/workflows/docs.yml'
+      - '.github/workflows/mdbook-gh-pages.yml'
   schedule:
     # Run weekly on Monday at 09:00 UTC
     - cron: '0 9 * * 1'
