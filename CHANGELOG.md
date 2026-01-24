@@ -9,6 +9,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.3] - 2026-01-24 - CI/CD Fixes
+
+### Fixed
+
+#### GitHub Actions Version Corrections
+- **Non-existent Action Versions**: Fixed all workflows using non-existent action versions
+  - `actions/checkout@v6` -> `actions/checkout@v4` (v6 does not exist)
+  - `actions/cache@v5` -> `actions/cache@v4` (v5 does not exist)
+  - `actions/upload-artifact@v6` -> `actions/upload-artifact@v4` (v6 does not exist)
+  - `actions/download-artifact@v7` -> `actions/download-artifact@v4` (v7 does not exist)
+- **Affected Workflows**: CI, CodeQL, Documentation, mdBook (GH Pages), Fuzz Testing, Release
+
+#### Fuzz Workspace Dependency Fix
+- **fuzz/Cargo.toml**: Fixed clap dependency using workspace inheritance
+  - The fuzz directory is excluded from the workspace, so it cannot use `workspace = true`
+  - Changed from `clap.workspace = true` to explicit `clap = "4.4"`
+
+#### Release Workflow Improvement
+- **npm ci Fallback**: Added fallback from `npm ci` to `npm install` for client frontends
+  - Handles cases where `package-lock.json` is gitignored
+  - Ensures client builds succeed without lock files
+
+### Changed
+
+- All CI/CD workflows now passing and verified
+
+---
+
 ## [2.0.2] - 2026-01-24 - CI/CD Workflow Optimizations
 
 ### Added
