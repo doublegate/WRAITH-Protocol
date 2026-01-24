@@ -59,7 +59,7 @@ jobs:
     name: Format
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -73,7 +73,7 @@ jobs:
     name: Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Install system dependencies
         run: |
@@ -92,7 +92,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Cache Cargo registry and target
-        uses: actions/cache@v5
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
@@ -130,7 +130,7 @@ jobs:
             cache_suffix: "windows"
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Install system dependencies (Ubuntu)
         if: matrix.os == 'ubuntu-latest'
@@ -169,7 +169,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Cache Cargo registry and target
-        uses: actions/cache@v5
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
@@ -203,7 +203,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: check
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Install system dependencies
         run: |
@@ -224,7 +224,7 @@ jobs:
           components: clippy
 
       - name: Cache Cargo registry and target
-        uses: actions/cache@v5
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
@@ -257,7 +257,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: check
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Install system dependencies
         run: |
@@ -276,7 +276,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Cache Cargo registry and target
-        uses: actions/cache@v5
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
@@ -310,7 +310,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: fmt
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Install system dependencies
         run: |
@@ -329,7 +329,7 @@ jobs:
         uses: dtolnay/rust-toolchain@1.85
 
       - name: Cache Cargo registry and target
-        uses: actions/cache@v5
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
@@ -360,7 +360,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: test
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Install system dependencies
         run: |
@@ -384,7 +384,7 @@ jobs:
         uses: taiki-e/install-action@cargo-llvm-cov
 
       - name: Cache Cargo registry and target
-        uses: actions/cache@v5
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry

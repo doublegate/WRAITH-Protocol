@@ -52,7 +52,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Install Rust nightly
         uses: dtolnay/rust-toolchain@nightly
@@ -63,7 +63,7 @@ jobs:
         run: cargo install cargo-fuzz
 
       - name: Cache cargo registry
-        uses: actions/cache@v5
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
@@ -78,7 +78,7 @@ jobs:
 
       - name: Download existing corpus (if available)
         continue-on-error: true
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v4
         with:
           name: corpus-${{ matrix.target }}
           path: fuzz/corpus/${{ matrix.target }}
@@ -105,7 +105,7 @@ jobs:
 
       - name: Upload corpus
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: corpus-${{ matrix.target }}
           path: fuzz/corpus/${{ matrix.target }}
@@ -113,7 +113,7 @@ jobs:
 
       - name: Upload crash artifacts
         if: failure()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: crashes-${{ matrix.target }}
           path: |
@@ -145,7 +145,7 @@ jobs:
     if: github.event_name == 'schedule'
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Install Rust nightly
         uses: dtolnay/rust-toolchain@nightly
@@ -168,7 +168,7 @@ jobs:
 
       - name: Upload all artifacts
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: extended-fuzz-results
           path: |

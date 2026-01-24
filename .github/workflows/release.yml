@@ -59,7 +59,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Extract version from tag or input
         id: extract
@@ -128,7 +128,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Install system dependencies (Ubuntu)
         run: |
@@ -139,7 +139,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Cache cargo registry
-        uses: actions/cache@v5
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
@@ -219,7 +219,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -232,7 +232,7 @@ jobs:
           cargo install cross --git https://github.com/cross-rs/cross
 
       - name: Cache cargo registry
-        uses: actions/cache@v5
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
@@ -308,7 +308,7 @@ jobs:
         shell: bash
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
           path: |
@@ -356,7 +356,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Install system dependencies (Ubuntu)
         if: matrix.os == 'ubuntu-latest'
@@ -400,7 +400,7 @@ jobs:
           node-version: '22'
 
       - name: Cache Cargo registry
-        uses: actions/cache@v5
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
@@ -415,7 +415,7 @@ jobs:
             ${{ matrix.os }}-cargo-
 
       - name: Cache Node modules
-        uses: actions/cache@v5
+        uses: actions/cache@v4
         with:
           path: |
             ~/.npm
@@ -433,7 +433,7 @@ jobs:
 
       - name: Install frontend dependencies
         working-directory: clients/${{ matrix.client }}/frontend
-        run: npm ci
+        run: npm ci || npm install
 
       - name: Install root dependencies (if exists)
         working-directory: clients/${{ matrix.client }}
@@ -492,7 +492,7 @@ jobs:
           Get-ChildItem client-artifacts
 
       - name: Upload client artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.client }}-${{ matrix.platform }}
           path: client-artifacts/*
@@ -511,12 +511,12 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Fetch all history for changelog generation
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v4
         with:
           path: artifacts
 

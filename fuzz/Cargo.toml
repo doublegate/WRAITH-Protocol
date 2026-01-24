@@ -17,7 +17,7 @@ wraith-crypto = { path = "../crates/wraith-crypto" }
 wraith-discovery = { path = "../crates/wraith-discovery" }
 wraith-obfuscation = { path = "../crates/wraith-obfuscation" }
 wraith-files = { path = "../crates/wraith-files" }
-clap = { workspace = true }
+clap = { version = "4.4", features = ["derive"] }
 toml = "0.8"
 hex = "0.4"
 
