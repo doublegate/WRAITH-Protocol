@@ -500,7 +500,7 @@ impl MmapRing {
     /// * `fd` - Socket file descriptor
     /// * `offset` - Mmap offset from XdpMmapOffsets
     /// * `size` - Number of ring entries
-    /// * `is_desc_ring` - True for RX/TX rings (XdpDesc), false for fill/completion (u64)
+    /// * `is_desc_ring` - `true` for RX/TX rings (`XdpDesc`), `false` for fill/completion (`u64`)
     pub fn new(fd: c_int, offset: u64, size: u32, is_desc_ring: bool) -> Result<Self, AfXdpError> {
         let mmap_size = xdp_config::ring_size(size, is_desc_ring);
         let ring_ptr = xdp_config::mmap_ring(fd, offset, mmap_size)?;

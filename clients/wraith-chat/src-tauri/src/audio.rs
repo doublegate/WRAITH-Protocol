@@ -7,6 +7,7 @@ use audiopus::{
     coder::{Decoder as OpusDecoder, Encoder as OpusEncoder},
     packet::Packet,
 };
+#[cfg(target_os = "linux")]
 use nnnoiseless::DenoiseState;
 use std::collections::VecDeque;
 use thiserror::Error;
@@ -140,8 +141,10 @@ impl Default for AudioConfig {
 pub struct VoiceEncoder {
     encoder: OpusEncoder,
     config: AudioConfig,
+    #[cfg(target_os = "linux")]
     denoise: Option<Box<DenoiseState<'static>>>,
     /// Buffer for resampling (for noise suppression at 48kHz)
+    #[cfg(target_os = "linux")]
     resample_buffer: Vec<f32>,
 }
 
@@ -174,7 +177,8 @@ impl VoiceEncoder {
             .set_dtx(true)
             .map_err(|e| AudioError::EncoderError(format!("Failed to enable DTX: {:?}", e)))?;
 
-        // Initialize noise suppression if enabled
+        // Initialize noise suppression if enabled (Linux only - uses nnnoiseless/RNNoise)
+        #[cfg(target_os = "linux")]
         let denoise = if config.enable_noise_suppression {
             Some(DenoiseState::new())
         } else {
@@ -182,12 +186,15 @@ impl VoiceEncoder {
         };
 
         // RNNoise requires 480 samples at 48kHz (10ms frames)
+        #[cfg(target_os = "linux")]
         let resample_buffer = vec![0.0f32; 480];
 
         Ok(Self {
             encoder,
             config,
+            #[cfg(target_os = "linux")]
             denoise,
+            #[cfg(target_os = "linux")]
             resample_buffer,
         })
     }
@@ -201,7 +208,8 @@ impl VoiceEncoder {
     /// # Returns
     /// Number of bytes written to output, or 0 if VAD detected silence
     pub fn encode(&mut self, pcm: &[i16], output: &mut [u8]) -> Result<usize, AudioError> {
-        // Apply noise suppression if enabled
+        // Apply noise suppression if enabled (Linux only - uses nnnoiseless/RNNoise)
+        #[cfg(target_os = "linux")]
         let processed_pcm: Vec<i16> = if self.denoise.is_some() {
             // We need to take denoise out temporarily to avoid borrow issues
             let mut denoise = self.denoise.take().unwrap();
@@ -211,6 +219,10 @@ impl VoiceEncoder {
         } else {
             pcm.to_vec()
         };
+
+        // On non-Linux platforms, noise suppression is not available
+        #[cfg(not(target_os = "linux"))]
+        let processed_pcm: Vec<i16> = pcm.to_vec();
 
         let pcm_to_encode = &processed_pcm;
 
@@ -233,7 +245,8 @@ impl VoiceEncoder {
         Ok(len)
     }
 
-    /// Apply RNNoise noise suppression to PCM samples
+    /// Apply RNNoise noise suppression to PCM samples (Linux only)
+    #[cfg(target_os = "linux")]
     fn apply_noise_suppression(&mut self, pcm: &[i16], denoise: &mut DenoiseState) -> Vec<i16> {
         let mut output = Vec::with_capacity(pcm.len());
 

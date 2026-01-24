@@ -199,7 +199,7 @@ impl BbrState {
 
     /// Check if sending is allowed based on pacing
     ///
-    /// Returns true if enough time has elapsed since the last send
+    /// Returns `true` if enough time has elapsed since the last send
     /// based on the pacing rate.
     #[must_use]
     pub fn can_send_paced(&self, _bytes: usize) -> bool {
@@ -451,7 +451,7 @@ impl BbrState {
 
     /// Check if connection is bandwidth-limited
     ///
-    /// Returns true if we're in ProbeBw phase and not application-limited.
+    /// Returns `true` if we're in `ProbeBw` phase and not application-limited.
     /// This indicates the connection is limited by network bandwidth rather
     /// than application send rate.
     #[must_use]

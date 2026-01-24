@@ -18,7 +18,7 @@ use tracing::{debug, warn};
 /// * `cpu` - CPU core ID
 ///
 /// # Returns
-/// The NUMA node ID, or None if unable to determine
+/// The NUMA node ID, or `None` if unable to determine
 ///
 /// # Examples
 /// ```no_run
@@ -57,7 +57,7 @@ pub fn get_numa_node_for_cpu(cpu: usize) -> Option<usize> {
 
 /// Get the NUMA node for a given CPU core (non-Linux platforms)
 ///
-/// Always returns None on non-Linux platforms.
+/// Always returns `None` on non-Linux platforms.
 #[cfg(not(target_os = "linux"))]
 pub fn get_numa_node_for_cpu(_cpu: usize) -> Option<usize> {
     None
@@ -91,7 +91,7 @@ pub fn get_numa_node_count() -> usize {
 /// * `node` - NUMA node ID
 ///
 /// # Returns
-/// Pointer to allocated memory, or None on failure
+/// Pointer to allocated memory, or `None` on failure
 ///
 /// # Safety
 /// The caller is responsible for:

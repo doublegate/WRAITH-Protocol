@@ -22,6 +22,7 @@ pub struct SharedSecret(x25519_dalek::SharedSecret);
 
 impl PrivateKey {
     /// Generate a new random private key with RFC 7748 clamping.
+    #[must_use]
     pub fn generate<R: RngCore + CryptoRng>(rng: &mut R) -> Self {
         Self(x25519_dalek::StaticSecret::random_from_rng(rng))
     }

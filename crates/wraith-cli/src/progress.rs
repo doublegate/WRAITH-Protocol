@@ -10,6 +10,11 @@ pub struct TransferProgress {
 
 impl TransferProgress {
     /// Create a new progress tracker
+    ///
+    /// # Panics
+    ///
+    /// Panics if the progress bar template is invalid (this should never happen
+    /// as the template is hardcoded and verified at compile-time).
     #[must_use]
     pub fn new(total_bytes: u64, filename: &str) -> Self {
         let bar = ProgressBar::new(total_bytes);

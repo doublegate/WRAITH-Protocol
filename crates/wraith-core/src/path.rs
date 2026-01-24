@@ -47,7 +47,7 @@ impl PathMtuDiscovery {
 
     /// Start probing for larger MTU
     ///
-    /// Returns the size to probe, or None if we're already at MAX_MTU
+    /// Returns the size to probe, or `None` if we're already at `MAX_MTU`
     pub fn start_probe(&mut self) -> Option<u16> {
         // Don't start new probe if already probing
         if self.probe_size.is_some() {
@@ -103,7 +103,7 @@ impl PathMtuDiscovery {
 
     /// Check if we should send a probe
     ///
-    /// Returns true if:
+    /// Returns `true` if:
     /// - We're currently probing and it's time for a retry, or
     /// - Enough time has passed since last probe attempt
     #[must_use]

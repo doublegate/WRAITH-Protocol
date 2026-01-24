@@ -2194,7 +2194,7 @@ async fn test_discovery_node_integration() {
 /// 4. Wait for transfer completion
 /// 5. Verify file integrity
 #[tokio::test]
-#[ignore = "Sprint 14.4+: Requires complete file transfer pipeline (chunks not sent yet)"]
+#[ignore = "Placeholder: Requires chunk-based file data transmission implementation"]
 async fn test_end_to_end_file_transfer() {
     use std::fs;
     use tempfile::TempDir;
@@ -2399,7 +2399,7 @@ async fn test_discovery_and_peer_finding() {
 /// 2. Initiate multi-peer send
 /// 3. Verify all transfers complete
 #[tokio::test]
-#[ignore = "Sprint 14.4+: Requires complete file transfer pipeline (chunks not sent yet)"]
+#[ignore = "Placeholder: Requires chunk-based file data transmission implementation"]
 async fn test_multi_path_transfer_node_api() {
     use std::fs;
     use tempfile::TempDir;
@@ -2547,7 +2547,7 @@ async fn test_error_recovery_node_api() {
 /// 2. Verify isolation between transfers
 /// 3. Test concurrent execution and completion
 #[tokio::test]
-#[ignore = "Sprint 14.4+: Requires complete file transfer pipeline (chunks not sent yet)"]
+#[ignore = "Placeholder: Requires chunk-based file data transmission implementation"]
 async fn test_concurrent_transfers_node_api() {
     use std::fs;
     use tempfile::TempDir;

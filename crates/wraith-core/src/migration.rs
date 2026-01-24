@@ -52,7 +52,11 @@ impl PathValidator {
 
     /// Generate challenge for new path
     ///
-    /// Returns 8-byte challenge data to send to peer
+    /// Returns 8-byte challenge data to send to peer.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the CSPRNG fails to generate random bytes (extremely unlikely).
     pub fn initiate_challenge(&mut self, path_id: u64) -> [u8; 8] {
         let mut challenge = [0u8; 8];
         getrandom::getrandom(&mut challenge).expect("getrandom failed");

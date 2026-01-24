@@ -97,6 +97,7 @@ impl BufferPool {
     /// // Create a pool suitable for UDP packets (MTU 1500 - IP/UDP headers)
     /// let pool = BufferPool::new(1472, 256);
     /// ```
+    #[must_use]
     pub fn new(buffer_size: usize, pool_size: usize) -> Self {
         let pool = Arc::new(ArrayQueue::new(pool_size));
 
@@ -131,6 +132,7 @@ impl BufferPool {
     /// let buffer = pool.acquire();
     /// assert_eq!(buffer.len(), 1024);
     /// ```
+    #[must_use]
     pub fn acquire(&self) -> Vec<u8> {
         self.pool.pop().unwrap_or_else(|| {
             // Pool exhausted - allocate new buffer
@@ -212,6 +214,7 @@ impl BufferPool {
     /// let _buf2 = pool.acquire();
     /// assert_eq!(pool.available(), 8);
     /// ```
+    #[must_use]
     pub fn available(&self) -> usize {
         self.pool.len()
     }
@@ -228,6 +231,7 @@ impl BufferPool {
     /// let pool = BufferPool::new(1024, 10);
     /// assert_eq!(pool.buffer_size(), 1024);
     /// ```
+    #[must_use]
     pub fn buffer_size(&self) -> usize {
         self.buffer_size
     }
@@ -245,6 +249,7 @@ impl BufferPool {
     /// let pool = BufferPool::new(1024, 10);
     /// assert_eq!(pool.capacity(), 10);
     /// ```
+    #[must_use]
     pub fn capacity(&self) -> usize {
         self.pool.capacity()
     }

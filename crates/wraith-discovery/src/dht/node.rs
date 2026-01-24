@@ -238,7 +238,7 @@ impl DhtNode {
     ///
     /// # Returns
     ///
-    /// Cloned value data if found and not expired, None otherwise
+    /// Cloned value data if found and not expired, `None` otherwise
     ///
     /// # Examples
     ///

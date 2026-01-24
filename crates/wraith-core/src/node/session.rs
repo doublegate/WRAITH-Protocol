@@ -140,6 +140,10 @@ impl PeerConnection {
     /// Get the current peer address
     ///
     /// Thread-safe read access to the peer address.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the `peer_addr` RwLock is poisoned (another thread panicked while holding the lock).
     #[inline]
     pub fn peer_addr(&self) -> SocketAddr {
         *self.peer_addr.read().expect("peer_addr lock poisoned")
@@ -318,6 +322,10 @@ impl PeerConnection {
     /// # Arguments
     ///
     /// * `new_addr` - The new validated peer address
+    ///
+    /// # Panics
+    ///
+    /// Panics if the `peer_addr` RwLock is poisoned (another thread panicked while holding the lock).
     ///
     /// # Thread Safety
     ///

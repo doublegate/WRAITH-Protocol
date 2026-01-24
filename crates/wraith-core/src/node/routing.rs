@@ -116,7 +116,7 @@ impl RoutingTable {
     ///
     /// # Returns
     ///
-    /// Returns the removed connection if it existed, or None if not found.
+    /// Returns the removed connection if it existed, or `None` if not found.
     pub fn remove_route(&self, connection_id: u64) -> Option<Arc<PeerConnection>> {
         tracing::debug!("Removing route: connection_id={:016x}", connection_id);
         self.routes.remove(&connection_id).map(|(_, v)| v)
@@ -133,7 +133,7 @@ impl RoutingTable {
     ///
     /// # Returns
     ///
-    /// Returns the peer connection if found, or None if not routed.
+    /// Returns the peer connection if found, or `None` if not routed.
     pub fn lookup(&self, connection_id: u64) -> Option<Arc<PeerConnection>> {
         self.total_lookups.fetch_add(1, Ordering::Relaxed);
 
@@ -230,7 +230,7 @@ impl RoutingStats {
 ///
 /// # Returns
 ///
-/// Returns the Connection ID as u64, or None if packet is too short.
+/// Returns the Connection ID as `u64`, or `None` if packet is too short.
 pub fn extract_connection_id(packet: &[u8]) -> Option<u64> {
     if packet.len() < 8 {
         return None;

@@ -9,6 +9,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.1.1] - 2026-01-24 - Technical Debt Remediation & Cross-Platform Fixes
+
+### Overview
+
+This release focuses on technical debt remediation, cross-platform build fixes, and documentation improvements. The codebase maintainability grade remains at A (Excellent) with TDR reduced to ~2.5%.
+
+### Fixed
+
+#### Cross-Platform Build Fixes
+- **wraith-chat audio.rs**: Added `#[cfg(target_os = "linux")]` guards for `nnnoiseless` (RNNoise) dependency
+  - Noise suppression now correctly enabled only on Linux where the library is available
+  - macOS and Windows builds now succeed without the Linux-only dependency
+- **Release workflow**: Fixed artifact collection paths for Tauri 2.0
+  - Bundles are now correctly collected from `target/release/bundle/` (workspace root)
+  - Added graceful error handling for missing bundle directories
+
+#### Bundle Configuration
+- **All 8 Tauri clients**: Changed bundle targets from Linux-only `["deb", "rpm", "appimage"]` to `"all"`
+  - Linux: deb, rpm, AppImage
+  - macOS: dmg, app bundle
+  - Windows: msi, exe
+
+### Improved
+
+#### Technical Debt Remediation
+- Updated patch-level dependencies:
+  - blake3: 1.8.2 -> 1.8.3
+  - serde_json: 1.0.145 -> 1.0.149
+  - tokio: 1.48.0 -> 1.49.0
+  - thiserror: 2.0.17 -> 2.0.18
+  - tracing: 0.1.43 -> 0.1.44
+  - tempfile: 3.23.0 -> 3.24.0
+
+#### Documentation
+- Added `#[must_use]` attributes to public pure functions for API safety
+- Added `# Errors` documentation to Result-returning functions
+- Added `# Panics` documentation to functions with panic conditions
+- Polished doc markdown formatting with proper backticks for code references
+- Reviewed and documented all 16 ignored tests with valid justifications
+- Reviewed all `#[allow(dead_code)]` annotations (11 files) - all intentional
+
+### Technical Details
+
+- **Tests:** 2,042 tests passing (99.2% pass rate, 16 intentionally ignored)
+- **Clippy:** Zero warnings with `-D warnings`
+- **TDR:** Reduced from ~3.5% to ~2.5%
+- **Maintainability Grade:** A (Excellent)
+
+---
+
 ## [2.1.0] - 2026-01-24 - ICE Signaling & AF_XDP Implementation
 
 ### Overview

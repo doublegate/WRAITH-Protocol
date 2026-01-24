@@ -705,6 +705,33 @@ impl Database {
         Ok(hashes)
     }
 
+    /// Get all unique chunk hashes for a backup
+    ///
+    /// Returns a list of unique chunk hashes referenced by this backup.
+    /// Used for decrementing chunk references when deleting a backup.
+    pub fn get_backup_chunk_hashes(&self, backup_id: &str) -> VaultResult<Vec<[u8; 32]>> {
+        let conn = self.conn.lock();
+        let mut stmt = conn
+            .prepare(
+                "SELECT DISTINCT chunk_hash FROM backup_chunks
+                 WHERE backup_id = ?1",
+            )
+            .map_err(|e| VaultError::Database(e.to_string()))?;
+
+        let hashes = stmt
+            .query_map(params![backup_id], |row| {
+                let hash_bytes: Vec<u8> = row.get(0)?;
+                let mut hash_arr = [0u8; 32];
+                hash_arr.copy_from_slice(&hash_bytes);
+                Ok(hash_arr)
+            })
+            .map_err(|e| VaultError::Database(e.to_string()))?
+            .filter_map(|r| r.ok())
+            .collect();
+
+        Ok(hashes)
+    }
+
     // =========================================================================
     // Snapshot Operations
     // =========================================================================

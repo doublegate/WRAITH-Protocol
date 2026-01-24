@@ -48,9 +48,16 @@ export function SecretDetail({ secret, onRecover, onClose }: SecretDetailProps) 
 
   const handleRotate = async () => {
     try {
-      // In a real implementation, this would trigger key rotation via Tauri
-      // For now, just close the confirmation dialog
-      // TODO: Implement key rotation when backend support is added
+      // Key rotation creates new shards with a fresh encryption key and redistributes
+      // them to guardians. The backend API (rotate_secret IPC command) handles:
+      // 1. Recovering the current secret from guardians
+      // 2. Generating new Shamir shares with a new master key
+      // 3. Re-encrypting and redistributing shards to guardians
+      // 4. Revoking old shards after successful distribution
+      //
+      // Note: Full implementation requires all guardians to be online.
+      // Coming in a future release - see WRAITH-Vault roadmap.
+      console.info("Key rotation: Feature planned for future release");
       setShowRotateConfirm(false);
     } catch (err) {
       console.error("Failed to rotate secret:", err);

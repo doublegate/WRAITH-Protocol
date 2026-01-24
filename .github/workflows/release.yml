@@ -459,12 +459,15 @@ jobs:
           CLIENT_NAME: ${{ matrix.client }}
         run: |
           mkdir -p client-artifacts
-          # Find and copy AppImage, deb, rpm files
-          find clients/$CLIENT_NAME/src-tauri/target/release/bundle -type f \
-            \( -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" \) \
-            -exec cp {} client-artifacts/ \;
+          # Find and copy AppImage, deb, rpm files from workspace target
+          # Tauri clients share the workspace target directory
+          if [ -d "target/release/bundle" ]; then
+            find target/release/bundle -type f \
+              \( -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" \) \
+              -exec cp {} client-artifacts/ \; || true
+          fi
           echo "Linux artifacts:"
-          ls -lh client-artifacts/
+          ls -lh client-artifacts/ || echo "No artifacts found"
 
       - name: Collect macOS artifacts
         if: matrix.os == 'macos-latest'
@@ -472,12 +475,15 @@ jobs:
           CLIENT_NAME: ${{ matrix.client }}
         run: |
           mkdir -p client-artifacts
-          # Find and copy dmg files
-          find clients/$CLIENT_NAME/src-tauri/target/release/bundle -type f \
-            -name "*.dmg" \
-            -exec cp {} client-artifacts/ \;
+          # Find and copy dmg and app files from workspace target
+          # Tauri clients share the workspace target directory
+          if [ -d "target/release/bundle" ]; then
+            find target/release/bundle -type f \
+              -name "*.dmg" \
+              -exec cp {} client-artifacts/ \; || true
+          fi
           echo "macOS artifacts:"
-          ls -lh client-artifacts/
+          ls -lh client-artifacts/ || echo "No artifacts found"
 
       - name: Collect Windows artifacts
         if: matrix.os == 'windows-latest'
@@ -486,10 +492,13 @@ jobs:
           CLIENT_NAME: ${{ matrix.client }}
         run: |
           New-Item -ItemType Directory -Force -Path client-artifacts
-          # Find and copy msi and exe files
-          Get-ChildItem -Path "clients\$env:CLIENT_NAME\src-tauri\target\release\bundle" -Recurse -Include "*.msi","*.exe" | Copy-Item -Destination client-artifacts
+          # Find and copy msi and exe files from workspace target
+          # Tauri clients share the workspace target directory
+          if (Test-Path "target\release\bundle") {
+            Get-ChildItem -Path "target\release\bundle" -Recurse -Include "*.msi","*.exe" -ErrorAction SilentlyContinue | Copy-Item -Destination client-artifacts -ErrorAction SilentlyContinue
+          }
           Write-Host "Windows artifacts:"
-          Get-ChildItem client-artifacts
+          Get-ChildItem client-artifacts -ErrorAction SilentlyContinue
 
       - name: Upload client artifacts
         uses: actions/upload-artifact@v4

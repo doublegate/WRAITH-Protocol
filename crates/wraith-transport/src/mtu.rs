@@ -152,7 +152,7 @@ impl MtuDiscovery {
     /// * `target` - Destination address
     ///
     /// # Returns
-    /// Cached MTU if available and not expired, None otherwise
+    /// Cached MTU if available and not expired, `None` otherwise
     pub fn get_cached(&self, target: &SocketAddr) -> Option<usize> {
         self.cache.get(target).and_then(|cached| {
             if cached.discovered_at.elapsed() < self.cache_ttl {

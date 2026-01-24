@@ -82,7 +82,19 @@ fn main() -> anyhow::Result<()> {
         Commands::BuildXdp => {
             println!("Building XDP program...");
             println!("Note: This requires the wraith-xdp crate and eBPF toolchain");
-            // TODO: Implement XDP build
+            // XDP build is deferred until wraith-xdp crate is included in the workspace.
+            // The wraith-xdp crate is currently excluded because it requires:
+            // - Linux kernel 5.4+ with XDP support enabled
+            // - libbpf-dev for eBPF compilation
+            // - clang/LLVM for BPF bytecode generation
+            // - Root privileges or CAP_BPF capability to load XDP programs
+            //
+            // To enable XDP support:
+            // 1. Install dependencies: apt install libbpf-dev clang llvm
+            // 2. Add "crates/wraith-xdp" to workspace members in Cargo.toml
+            // 3. Implement the build steps here using cargo-bpf or similar
+            eprintln!("XDP build not yet implemented - wraith-xdp crate is currently excluded");
+            eprintln!("See crates/wraith-xdp/README.md for setup instructions");
         }
         Commands::Doc => {
             run_command("cargo", &["doc", "--workspace", "--no-deps", "--open"])?;

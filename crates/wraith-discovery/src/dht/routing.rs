@@ -196,7 +196,7 @@ impl KBucket {
     ///
     /// # Returns
     ///
-    /// Reference to the peer if found, None otherwise
+    /// Reference to the peer if found, `None` otherwise
     #[must_use]
     pub fn get(&self, id: &NodeId) -> Option<&DhtPeer> {
         self.peers.iter().find(|p| p.id == *id)
@@ -313,7 +313,7 @@ impl RoutingTable {
     ///
     /// # Returns
     ///
-    /// Bucket index (0-255), or None if peer_id equals local_id
+    /// Bucket index (0-255), or `None` if `peer_id` equals `local_id`
     #[must_use]
     fn bucket_index(&self, peer_id: &NodeId) -> Option<usize> {
         peer_id.bucket_index(&self.local_id)
@@ -404,7 +404,7 @@ impl RoutingTable {
     ///
     /// # Returns
     ///
-    /// Cloned peer if found, None otherwise
+    /// Cloned peer if found, `None` otherwise
     #[must_use]
     pub fn get_peer(&self, id: &NodeId) -> Option<DhtPeer> {
         let bucket_idx = self.bucket_index(id)?;

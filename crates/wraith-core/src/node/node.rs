@@ -130,18 +130,30 @@ pub struct Node {
 
 impl Node {
     /// Create node with random identity
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if key generation fails due to insufficient entropy.
     pub async fn new_random() -> Result<Self> {
         let identity = Identity::generate()?;
         Self::new_from_identity(identity, NodeConfig::default()).await
     }
 
     /// Create node with custom configuration
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if key generation fails due to insufficient entropy.
     pub async fn new_with_config(config: NodeConfig) -> Result<Self> {
         let identity = Identity::generate()?;
         Self::new_from_identity(identity, config).await
     }
 
     /// Create node with specific port (useful for testing)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if key generation fails due to insufficient entropy.
     pub async fn new_random_with_port(port: u16) -> Result<Self> {
         use std::net::{Ipv4Addr, SocketAddrV4};
 
@@ -217,6 +229,12 @@ impl Node {
     }
 
     /// Get node's actual listening address
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - The transport has not been initialized (node not started)
+    /// - The transport fails to return a local address
     pub async fn listen_addr(&self) -> Result<SocketAddr> {
         let transport = self.inner.transport.lock().await;
         match transport.as_ref() {
@@ -246,6 +264,15 @@ impl Node {
 
 impl Node {
     /// Start the node
+    ///
+    /// Initializes the transport layer, discovery manager, and packet receive loop.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - The node is already running
+    /// - The transport fails to bind to the configured address
+    /// - The discovery manager fails to initialize or start
     pub async fn start(&self) -> Result<()> {
         if self
             .inner
@@ -307,6 +334,12 @@ impl Node {
     }
 
     /// Stop the node
+    ///
+    /// Closes all sessions, clears the routing table, and shuts down the transport.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the node is not currently running.
     pub async fn stop(&self) -> Result<()> {
         if self
             .inner
@@ -970,6 +1003,10 @@ impl Node {
     }
 
     /// Generate random transfer ID
+    ///
+    /// # Panics
+    ///
+    /// Panics if the CSPRNG fails to generate random bytes (extremely unlikely).
     pub(crate) fn generate_transfer_id() -> TransferId {
         let mut id = [0u8; 32];
         getrandom(&mut id).expect("Failed to generate transfer ID");

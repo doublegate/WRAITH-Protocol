@@ -327,7 +327,7 @@ impl NodeId {
     ///
     /// # Returns
     ///
-    /// Bucket index (0-255), or None if NodeIds are identical
+    /// Bucket index (0-255), or `None` if `NodeId`s are identical
     ///
     /// # Examples
     ///

@@ -64,6 +64,10 @@ impl TransferManager {
     }
 
     /// Generate a random transfer ID
+    ///
+    /// # Panics
+    ///
+    /// Panics if the CSPRNG fails to generate random bytes (extremely unlikely).
     pub fn generate_transfer_id() -> TransferId {
         let mut id = [0u8; 32];
         getrandom(&mut id).expect("Failed to generate transfer ID");

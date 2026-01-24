@@ -21,8 +21,8 @@ pub fn ct_eq(a: &[u8], b: &[u8]) -> bool {
 
 /// Constant-time conditional copy.
 ///
-/// If `condition` is true, copies `a` to `out`.
-/// If `condition` is false, copies `b` to `out`.
+/// If `condition` is `true`, copies `a` to `out`.
+/// If `condition` is `false`, copies `b` to `out`.
 ///
 /// # Panics
 ///
@@ -72,8 +72,8 @@ pub fn verify_64(a: &[u8; 64], b: &[u8; 64]) -> bool {
 
 /// Constant-time conditional assignment.
 ///
-/// If `condition` is true, assigns `value` to `target`.
-/// If `condition` is false, `target` remains unchanged.
+/// If `condition` is `true`, assigns `value` to `target`.
+/// If `condition` is `false`, `target` remains unchanged.
 ///
 /// # Panics
 ///

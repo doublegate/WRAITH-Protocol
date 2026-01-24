@@ -358,14 +358,42 @@ impl BackupEngine {
     }
 
     /// Delete a backup
+    ///
+    /// This method removes the backup configuration and decrements reference counts
+    /// for all chunks associated with the backup. Chunks whose reference count drops
+    /// to zero are automatically removed from storage.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - The database operation fails
+    /// - The backup ID does not exist
     pub fn delete_backup(&self, backup_id: &str) -> VaultResult<()> {
-        // TODO: Decrement chunk references
+        // Get all unique chunk hashes for this backup before deletion
+        let chunk_hashes = self
+            .db
+            .get_backup_chunk_hashes(backup_id)
+            .map_err(|e| VaultError::Backup(format!("Failed to get backup chunks: {}", e)))?;
 
+        // Decrement reference count for each chunk
+        let mut deleted_chunks = 0;
+        for hash in &chunk_hashes {
+            if self.dedup.remove_chunk_ref(hash)? {
+                deleted_chunks += 1;
+            }
+        }
+
+        // Delete the backup record (cascades to backup_chunks table)
         self.db
             .delete_backup(backup_id)
             .map_err(|e| VaultError::Backup(e.to_string()))?;
 
-        info!("Deleted backup {}", backup_id);
+        info!(
+            "Deleted backup {}: {} chunks dereferenced, {} chunks removed",
+            backup_id,
+            chunk_hashes.len(),
+            deleted_chunks
+        );
         Ok(())
     }
 

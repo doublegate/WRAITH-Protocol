@@ -134,7 +134,7 @@ pub enum NodeError {
 }
 
 impl NodeError {
-    /// Returns true if this error is transient and may succeed on retry
+    /// Returns `true` if this error is transient and may succeed on retry
     ///
     /// Transient errors include:
     /// - Network timeouts
@@ -153,7 +153,7 @@ impl NodeError {
         )
     }
 
-    /// Returns true if this error is permanent and will not succeed on retry
+    /// Returns `true` if this error is permanent and will not succeed on retry
     ///
     /// Permanent errors include:
     /// - Invalid configuration
@@ -173,7 +173,7 @@ impl NodeError {
         )
     }
 
-    /// Returns true if this error should trigger a retry with exponential backoff
+    /// Returns `true` if this error should trigger a retry with exponential backoff
     #[must_use]
     pub fn should_retry(&self) -> bool {
         self.is_transient() && !matches!(self, NodeError::Timeout(_))
