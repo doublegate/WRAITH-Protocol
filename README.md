@@ -4,7 +4,9 @@
 
 A decentralized secure file transfer protocol optimized for high-throughput, low-latency operation with strong security guarantees and traffic analysis resistance.
 
-![WRAITH Protocol Banner](images/wraith-protocol_banner-graphic.jpg)
+<p align="center">
+  <img src="images/wraith-protocol_round-patch.jpg" alt="WRAITH Protocol" width="300">
+</p>
 
 [![CI Status](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/ci.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml)
@@ -38,6 +40,8 @@ WRAITH Protocol is a privacy-focused, high-performance file transfer protocol de
 | **Quality** | 98/100, zero clippy warnings |
 | **TDR** | ~2.5% (Grade A - Excellent) |
 | **Applications** | 9 production-ready desktop clients |
+
+![WRAITH Protocol Banner](images/wraith-protocol_banner-graphic.jpg)
 
 ---
 
@@ -87,6 +91,28 @@ WRAITH Protocol is a privacy-focused, high-performance file transfer protocol de
 - Chunk verification (<1us per chunk)
 
 ![WRAITH Protocol Architecture](images/wraith-protocol_arch-infographic.jpg)
+
+---
+
+## History
+
+WRAITH Protocol draws inspiration from the rich history of network reconnaissance, tracing a lineage from the analog telephone era to modern internet-scale discovery.
+
+### The Wardialing Era (1980s-1990s)
+
+In the formative decades of the digital age, the Public Switched Telephone Network (PSTN) was the primary gateway to computer systems. **Wardialing**—the systematic automated dialing of telephone numbers to identify responding modems—became the foundational reconnaissance technique. The 1980 release of Zoom Telephonics' **Demon Dialer** introduced automated dialing to consumers, while the 1983 film *WarGames* popularized the technique and directly influenced national security policy, leading to NSDD-145 and the modern information security state.
+
+Tools like **ToneLoc** (1990s) pioneered randomized dialing to evade detection, while **THC-Scan** added European PBX support. The commercial **PhoneSweep** (1998) legitimized wardialing as a professional security audit practice, with banner fingerprinting databases identifying over 470 system types.
+
+### The Digital Evolution (2000s-Present)
+
+As dial-up faded, the wardialing philosophy migrated to new mediums. **Wardriving** applied the same brute-force discovery to Wi-Fi networks. **WarVOX** (2009) leveraged VoIP and audio fingerprinting for cloud-scale telephone scanning. Today, stateless scanners like **Masscan** can enumerate the entire IPv4 address space in minutes, while **Shodan** continuously indexes every internet-connected device—the ultimate evolution of reconnaissance from the 10,000-number telephone exchange to the 4.3 billion-address IPv4 space.
+
+WRAITH Protocol embodies this evolution: the same philosophy of systematic discovery and secure communication, implemented with modern cryptography and kernel-bypass networking for the contemporary threat landscape.
+
+*For the complete history of automated reconnaissance from the Demon Dialer to Shodan, see [The Dial-Up Frontier](ref-docs/Wardialing_Then-Now_History.md).*
+
+![Wardialing History](images/wardialing_then-now_history-graphic.jpg)
 
 ---
 
