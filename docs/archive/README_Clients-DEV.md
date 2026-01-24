@@ -5,7 +5,7 @@
 This document tracks the development journey of WRAITH Protocol client applications, from planning through implementation and release. Phases 15-24 delivered all 11 client applications: WRAITH-Transfer, WRAITH-Android, WRAITH-iOS, WRAITH-Chat, WRAITH-Sync, WRAITH-Share, WRAITH-Stream, WRAITH-Mesh, WRAITH-Publish, WRAITH-Vault, and WRAITH-Recon.
 
 [![Version](https://img.shields.io/badge/clients-11%20complete-green.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
-[![Protocol](https://img.shields.io/badge/protocol-v2.2.0-blue.svg)](../../README.md)
+[![Protocol](https://img.shields.io/badge/protocol-v2.2.1-blue.svg)](../../README.md)
 [![Clients](https://img.shields.io/badge/clients-9%20desktop-brightgreen.svg)](../../to-dos/ROADMAP-clients.md)
 
 ---
@@ -33,7 +33,7 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 - **Security Testing:** Authorized assessment tools (RedOps - PLANNED)
 
 **Current Status (2026-01-24):**
-- Protocol v2.2.0 complete (all 24 phases + infrastructure sprints delivered)
+- Protocol v2.2.1 complete (all 24 phases + infrastructure sprints delivered)
 - **All 9 Desktop Client Applications:** ✅ **COMPLETE** (1,203 SP total)
   - WRAITH-Transfer: Desktop P2P file transfer (68 tests)
   - WRAITH-Chat: E2EE messaging with voice/video/groups (76 tests)
@@ -962,10 +962,10 @@ RedOps                                                          [=============]
 
 **Protocol Status (2026-01-24):**
 - ✅ All 24 protocol development phases complete (2,740+ SP delivered)
-- ✅ 2,124+ tests passing (16 ignored) - 99.2% pass rate
+- ✅ 1,733 tests passing (4 ignored) - 100% pass rate
 - ✅ Zero vulnerabilities, zero clippy warnings
 - ✅ Grade A+ quality (98/100), TDR ~2.5%
-- ✅ Production-ready architecture with v2.2.0 release
+- ✅ Production-ready architecture with v2.2.1 release
 - ✅ Full WRAITH protocol integration in all clients
 - ✅ Secure key storage with platform-native keyring
 - ✅ AF_XDP socket configuration for kernel bypass
@@ -1093,6 +1093,6 @@ RedOps                                                          [=============]
 
 **WRAITH Protocol Client Applications Development History** - *From Planning to v2.2.0*
 
-**Status:** Phases 15-24 Complete (All 9 Desktop Clients) | **Total Scope:** 9 clients, 1,203 SP | **Delivered:** 1,203 SP (100%) | **Protocol:** v2.2.0 Complete | **Tests:** 466 client tests | **TDR:** ~2.5% (Grade A) | **CI/CD:** Optimized workflows with reusable setup and path filters
+**Status:** Phases 15-24 Complete (All 9 Desktop Clients) | **Total Scope:** 9 clients, 1,203 SP | **Delivered:** 1,203 SP (100%) | **Protocol:** v2.2.1 Complete | **Tests:** 466 client tests | **TDR:** ~2.5% (Grade A) | **CI/CD:** Optimized workflows with reusable setup and path filters
 
 *Last Updated: 2026-01-24*

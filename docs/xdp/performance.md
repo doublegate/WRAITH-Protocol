@@ -53,7 +53,7 @@ This document provides performance expectations, benchmarking methodology, and o
 **Software**:
 - OS: Ubuntu 22.04 LTS (kernel 6.2.0)
 - WRAITH: 0.9.0 Beta
-- Rust: 1.85
+- Rust: 1.88
 
 ### Benchmark 1: Maximum Throughput
 

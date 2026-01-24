@@ -28,7 +28,7 @@ This runbook provides step-by-step instructions for deploying WRAITH Protocol no
 - Architecture: x86_64 or aarch64
 
 **Software:**
-- Rust: 1.85+ (MSRV)
+- Rust: 1.88+ (MSRV)
 - Build tools: gcc, make, pkg-config
 - Libraries: libpcap-dev (optional for packet capture)
 

@@ -2,7 +2,7 @@
 name = "wraith-android"
 version = "1.7.0"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.88"
 
 # This is an independent package, not part of the main workspace
 [workspace]

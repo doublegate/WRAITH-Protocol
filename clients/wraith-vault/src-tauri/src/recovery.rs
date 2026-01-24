@@ -743,28 +743,27 @@ impl RecoveryManager {
             // Check if guardian request exists, if not add one dynamically
             {
                 let mut sessions = self.sessions.write().await;
-                if let Some(session) = sessions.get_mut(session_id) {
-                    if !session
+                if let Some(session) = sessions.get_mut(session_id)
+                    && !session
                         .requests
                         .iter()
                         .any(|r| r.guardian_id == shard.guardian_id)
-                    {
-                        // Dynamically add a guardian request
-                        session.requests.push(ShardRequest {
-                            guardian_id: shard.guardian_id.clone(),
-                            guardian_peer_id: String::new(), // Unknown for dynamic registration
-                            share_index: shard.share_index,
-                            requested_at: chrono::Utc::now().timestamp(),
-                            received: false,
-                            received_at: None,
-                            response_time_ms: None,
-                            error: None,
-                        });
-                        // Start collecting if not already
-                        if session.state == RecoveryState::Initialized {
-                            session.state = RecoveryState::CollectingShards;
-                            session.started_at = Some(chrono::Utc::now().timestamp());
-                        }
+                {
+                    // Dynamically add a guardian request
+                    session.requests.push(ShardRequest {
+                        guardian_id: shard.guardian_id.clone(),
+                        guardian_peer_id: String::new(), // Unknown for dynamic registration
+                        share_index: shard.share_index,
+                        requested_at: chrono::Utc::now().timestamp(),
+                        received: false,
+                        received_at: None,
+                        response_time_ms: None,
+                        error: None,
+                    });
+                    // Start collecting if not already
+                    if session.state == RecoveryState::Initialized {
+                        session.state = RecoveryState::CollectingShards;
+                        session.started_at = Some(chrono::Utc::now().timestamp());
                     }
                 }
             }

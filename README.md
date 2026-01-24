@@ -8,15 +8,17 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
   <img src="images/wraith-protocol_round-patch.jpg" alt="WRAITH Protocol" width="450">
 </p>
 
-[![CI Status](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/ci.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml)
-[![Release](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml/badge.svg)](https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml)
-<br>
-[![Version](https://img.shields.io/badge/version-2.2.0-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
-[![Security](https://img.shields.io/badge/security-audited-green.svg)](docs/security/SECURITY_AUDIT_v1.1.0.md)
-[![Rust](https://img.shields.io/badge/rust-1.85%2B-orange.svg)](https://www.rust-lang.org/)
-[![Edition](https://img.shields.io/badge/edition-2024-orange.svg)](https://doc.rust-lang.org/edition-guide/rust-2024/index.html)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+<p align="center">
+  <a href="https://github.com/doublegate/WRAITH-Protocol/actions/workflows/ci.yml"><img src="https://github.com/doublegate/WRAITH-Protocol/actions/workflows/ci.yml/badge.svg" alt="CI Status"></a>
+  <a href="https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml"><img src="https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml/badge.svg" alt="CodeQL"></a>
+  <a href="https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml"><img src="https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml/badge.svg" alt="Release"></a>
+  <br>
+  <a href="https://github.com/doublegate/WRAITH-Protocol/releases"><img src="https://img.shields.io/badge/version-2.2.1-blue.svg" alt="Version"></a>
+  <a href="docs/security/SECURITY_AUDIT_v1.1.0.md"><img src="https://img.shields.io/badge/security-audited-green.svg" alt="Security"></a>
+  <a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/rust-1.88%2B-orange.svg" alt="Rust"></a>
+  <a href="https://doc.rust-lang.org/edition-guide/rust-2024/index.html"><img src="https://img.shields.io/badge/edition-2024-orange.svg" alt="Edition"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License"></a>
+</p>
 
 ---
 
@@ -34,7 +36,7 @@ WRAITH Protocol is a privacy-focused, high-performance file transfer protocol de
 
 | Metric | Value |
 |--------|-------|
-| **Tests** | 2,124+ passing (99.2% pass rate, 16 intentionally ignored) |
+| **Tests** | 1,733 passing (100% pass rate, 4 intentionally ignored) |
 | **Code** | ~272,000 lines Rust (protocol + clients) + ~10,000 lines TypeScript |
 | **Documentation** | 130+ files, ~90,000+ lines |
 | **Security** | Grade A+ (zero vulnerabilities, 295 audited dependencies) |
@@ -210,7 +212,7 @@ cargo test --workspace
 ```
 
 **Requirements:**
-- Rust 1.85+ (Rust 2024 edition)
+- Rust 1.88+ (Rust 2024 edition)
 - Linux 6.2+ recommended (for AF_XDP and io_uring)
 - x86_64 or aarch64 architecture
 
@@ -343,7 +345,7 @@ For detailed architecture documentation, see [Protocol Overview](docs/architectu
 - 100% unsafe code documentation
 
 **Validation:**
-- Comprehensive test coverage (2,124+ tests)
+- Comprehensive test coverage (1,733+ tests)
 - DPI evasion validation (Wireshark, Zeek, Suricata, nDPI)
 - 5 libFuzzer targets
 - Property-based tests
@@ -524,6 +526,6 @@ WRAITH Protocol builds on excellent projects and research:
 
 **WRAITH Protocol** - *Secure. Fast. Invisible.*
 
-**Version:** 2.2.0 | **License:** MIT | **Language:** Rust 2024 (MSRV 1.85) | **Tests:** 2,124+ passing (99.2%) | **Clients:** 9 desktop applications
+**Version:** 2.2.1 | **License:** MIT | **Language:** Rust 2024 (MSRV 1.88) | **Tests:** 1,733 passing (100%) | **Clients:** 9 desktop applications
 
 *Last Updated: 2026-01-24*

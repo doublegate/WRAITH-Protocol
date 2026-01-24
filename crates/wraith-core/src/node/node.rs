@@ -365,10 +365,10 @@ impl Node {
         self.inner.routing.clear();
 
         // Close transport
-        if let Some(transport) = self.inner.transport.lock().await.take() {
-            if let Err(e) = transport.close().await {
-                tracing::warn!("Error closing transport: {}", e);
-            }
+        if let Some(transport) = self.inner.transport.lock().await.take()
+            && let Err(e) = transport.close().await
+        {
+            tracing::warn!("Error closing transport: {}", e);
         }
 
         tracing::info!("Node stopped");
@@ -985,12 +985,12 @@ impl Node {
                     .build(64) // Minimum size with padding
                     .ok();
 
-                if let Some(frame) = close_frame {
-                    if let Ok(encrypted) = session.encrypt_frame(&frame).await {
-                        // Send CLOSE frame (best-effort - don't fail cancellation if send fails)
-                        if let Some(transport) = self.inner.transport.lock().await.as_ref() {
-                            let _ = transport.send_to(&encrypted, session.peer_addr()).await;
-                        }
+                if let Some(frame) = close_frame
+                    && let Ok(encrypted) = session.encrypt_frame(&frame).await
+                {
+                    // Send CLOSE frame (best-effort - don't fail cancellation if send fails)
+                    if let Some(transport) = self.inner.transport.lock().await.as_ref() {
+                        let _ = transport.send_to(&encrypted, session.peer_addr()).await;
                     }
                 }
             }

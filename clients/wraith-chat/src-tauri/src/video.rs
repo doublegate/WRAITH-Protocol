@@ -321,8 +321,10 @@ impl VideoEncoder {
     ///
     /// Returns the encoded data or an error.
     pub fn encode(&mut self, frame: &VideoFrame) -> Result<EncodedVideoFrame, VideoError> {
-        let is_keyframe =
-            self.frame_count == 0 || (self.frame_count % self.config.keyframe_interval as u64) == 0;
+        let is_keyframe = self.frame_count == 0
+            || self
+                .frame_count
+                .is_multiple_of(self.config.keyframe_interval as u64);
 
         // Calculate simulated encoded size based on bitrate
         // Real VP9 would compress significantly more

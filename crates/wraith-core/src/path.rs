@@ -73,13 +73,13 @@ impl PathMtuDiscovery {
     ///
     /// Called when a probe packet is successfully acknowledged
     pub fn probe_acked(&mut self, size: u16) {
-        if let Some(probe_size) = self.probe_size {
-            if size == probe_size {
-                // Probe succeeded, update confirmed MTU
-                self.current_mtu = size;
-                self.probe_size = None;
-                self.probe_count = 0;
-            }
+        if let Some(probe_size) = self.probe_size
+            && size == probe_size
+        {
+            // Probe succeeded, update confirmed MTU
+            self.current_mtu = size;
+            self.probe_size = None;
+            self.probe_count = 0;
         }
     }
 

@@ -92,7 +92,7 @@
 - ✅ All quality gates passing (1,177 tests, zero clippy warnings)
 
 **Required Resources:**
-- Rust 1.85+ (2024 Edition, MSRV: 1.85)
+- Rust 1.88+ (2024 Edition, MSRV: 1.88)
 - Development environment: Linux 6.2+ (for AF_XDP, io_uring testing)
 - SIMD-capable hardware: x86_64 with AVX2/SSE4.2
 - Performance profiling tools: perf, flamegraph, criterion

@@ -412,10 +412,8 @@ impl Worker {
 
                 // Set up NUMA-aware allocation if enabled
                 #[cfg(target_os = "linux")]
-                if numa_aware {
-                    if let Some(node) = crate::numa::get_numa_node_for_cpu(id) {
-                        debug!("Worker {} on NUMA node {}", id, node);
-                    }
+                if numa_aware && let Some(node) = crate::numa::get_numa_node_for_cpu(id) {
+                    debug!("Worker {} on NUMA node {}", id, node);
                 }
 
                 // Worker event loop

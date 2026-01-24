@@ -98,10 +98,10 @@ impl TimingManager {
         }
 
         // Check manual override
-        if let Some(override_until) = self.manual_override_until {
-            if Utc::now() < override_until {
-                return true;
-            }
+        if let Some(override_until) = self.manual_override_until
+            && Utc::now() < override_until
+        {
+            return true;
         }
 
         let (start, end) = match (self.start_time, self.end_time) {

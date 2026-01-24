@@ -25,7 +25,7 @@ on:
         required: true
         type: string
       rust-toolchain:
-        description: 'Rust toolchain version (stable, nightly, 1.85, etc.)'
+        description: 'Rust toolchain version (stable, nightly, 1.88, etc.)'
         required: false
         type: string
         default: 'stable'

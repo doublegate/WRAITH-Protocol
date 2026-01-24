@@ -147,12 +147,11 @@ impl SystemInfo {
 
         if let Ok(meminfo) = fs::read_to_string("/proc/meminfo") {
             for line in meminfo.lines() {
-                if line.starts_with("MemTotal:") {
-                    if let Some(kb_str) = line.split_whitespace().nth(1) {
-                        if let Ok(kb) = kb_str.parse::<u64>() {
-                            return kb * 1024; // Convert KB to bytes
-                        }
-                    }
+                if line.starts_with("MemTotal:")
+                    && let Some(kb_str) = line.split_whitespace().nth(1)
+                    && let Ok(kb) = kb_str.parse::<u64>()
+                {
+                    return kb * 1024; // Convert KB to bytes
                 }
             }
         }
@@ -205,14 +204,14 @@ impl SystemInfo {
                         }
                     }
                 }
-            } else if line.starts_with("MemAvailable:") {
-                if let Some(kb_str) = line.split_whitespace().nth(1) {
-                    match kb_str.parse::<u64>() {
-                        Ok(kb) => mem_available = kb * 1024,
-                        Err(e) => {
-                            warn!("Failed to parse MemAvailable '{}': {}", kb_str, e);
-                            return None;
-                        }
+            } else if line.starts_with("MemAvailable:")
+                && let Some(kb_str) = line.split_whitespace().nth(1)
+            {
+                match kb_str.parse::<u64>() {
+                    Ok(kb) => mem_available = kb * 1024,
+                    Err(e) => {
+                        warn!("Failed to parse MemAvailable '{}': {}", kb_str, e);
+                        return None;
                     }
                 }
             }

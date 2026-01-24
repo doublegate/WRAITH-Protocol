@@ -317,7 +317,7 @@ Check WRAITH logs:
 ### Build Dependencies
 
 **Required** (for building WRAITH):
-- Rust 1.85+ (2024 Edition)
+- Rust 1.88+ (2024 Edition)
 - Cargo (Rust package manager)
 - GCC or Clang (C compiler for linking)
 

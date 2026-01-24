@@ -323,12 +323,12 @@ impl Transcoder {
                 }
 
                 // Parse progress from FFmpeg output
-                if line.contains("time=") {
-                    if let Some(time_str) = extract_time(&line) {
-                        let current_time = parse_time_to_seconds(&time_str);
-                        let progress = (current_time / duration).min(1.0);
-                        debug!("Transcode progress: {:.1}%", progress * 100.0);
-                    }
+                if line.contains("time=")
+                    && let Some(time_str) = extract_time(&line)
+                {
+                    let current_time = parse_time_to_seconds(&time_str);
+                    let progress = (current_time / duration).min(1.0);
+                    debug!("Transcode progress: {:.1}%", progress * 100.0);
                 }
 
                 // Log errors

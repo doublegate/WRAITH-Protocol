@@ -284,14 +284,14 @@ impl ResumeManager {
             let path = entry.path();
             if path.extension().and_then(|s| s.to_str()) == Some("json") {
                 // Read state to check age
-                if let Ok(json) = fs::read_to_string(&path).await {
-                    if let Ok(state) = serde_json::from_str::<ResumeState>(&json) {
-                        let age = now.saturating_sub(state.last_active);
-                        if age > self.max_age {
-                            fs::remove_file(&path).await?;
-                            to_remove.push(state.transfer_id);
-                            removed += 1;
-                        }
+                if let Ok(json) = fs::read_to_string(&path).await
+                    && let Ok(state) = serde_json::from_str::<ResumeState>(&json)
+                {
+                    let age = now.saturating_sub(state.last_active);
+                    if age > self.max_age {
+                        fs::remove_file(&path).await?;
+                        to_remove.push(state.transfer_id);
+                        removed += 1;
                     }
                 }
             }
@@ -315,12 +315,11 @@ impl ResumeManager {
 
         while let Some(entry) = entries.next_entry().await? {
             let path = entry.path();
-            if path.extension().and_then(|s| s.to_str()) == Some("json") {
-                if let Ok(json) = fs::read_to_string(&path).await {
-                    if let Ok(state) = serde_json::from_str::<ResumeState>(&json) {
-                        states.push(state);
-                    }
-                }
+            if path.extension().and_then(|s| s.to_str()) == Some("json")
+                && let Ok(json) = fs::read_to_string(&path).await
+                && let Ok(state) = serde_json::from_str::<ResumeState>(&json)
+            {
+                states.push(state);
             }
         }
 

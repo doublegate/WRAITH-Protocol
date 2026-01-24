@@ -469,6 +469,7 @@ pub fn check_api_compatibility(
 | v1.6 | 1.75 | 2021 | async_fn_in_trait |
 | v2.0 | 1.85 | 2024 | New edition |
 | v2.1 | 1.85 | 2024 | Same as v2.0 |
+| v2.2 | 1.88 | 2024 | MSRV upgrade |
 
 ### Key Dependencies
 

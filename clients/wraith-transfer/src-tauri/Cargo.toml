@@ -6,7 +6,7 @@ authors = ["WRAITH Protocol Team"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/doublegate/WRAITH-Protocol"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.88"
 
 [lib]
 name = "wraith_transfer_lib"

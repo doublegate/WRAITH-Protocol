@@ -322,7 +322,7 @@ manager.migrate(TransportType::Quic).await?;
 
 ## Compatibility
 
-- **Minimum Rust Version**: 1.85
+- **Minimum Rust Version**: 1.88
 - **v1 Compatibility**: Supported (deprecated, removal in v3.0)
 - **v2.0 Compatibility**: Full
 

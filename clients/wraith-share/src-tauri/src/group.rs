@@ -309,12 +309,12 @@ impl GroupManager {
         }
 
         // If invitation was for a specific peer, verify it matches
-        if let Some(target_peer) = &payload.invited_peer_id {
-            if target_peer != &peer_id {
-                return Err(ShareError::InvalidInvitation(
-                    "Invitation is for a different peer".to_string(),
-                ));
-            }
+        if let Some(target_peer) = &payload.invited_peer_id
+            && target_peer != &peer_id
+        {
+            return Err(ShareError::InvalidInvitation(
+                "Invitation is for a different peer".to_string(),
+            ));
         }
 
         // Check if already a member

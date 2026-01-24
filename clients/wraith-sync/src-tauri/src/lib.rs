@@ -94,12 +94,11 @@ fn setup_app<R: Runtime>(app: &mut tauri::App<R>) -> Result<(), Box<dyn std::err
     }
 
     // Start watching folders if auto-start is enabled
-    if let Ok(settings) = app_state.get_settings() {
-        if settings.auto_start {
-            if let Err(e) = app_state.start_watching() {
-                tracing::warn!("Failed to start watching folders: {}", e);
-            }
-        }
+    if let Ok(settings) = app_state.get_settings()
+        && settings.auto_start
+        && let Err(e) = app_state.start_watching()
+    {
+        tracing::warn!("Failed to start watching folders: {}", e);
     }
 
     app.manage(app_state);

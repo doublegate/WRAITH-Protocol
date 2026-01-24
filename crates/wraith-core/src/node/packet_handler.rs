@@ -194,15 +194,15 @@ impl Node {
             .map(|entry| *entry.key());
 
         // If there's a pending handshake, forward the packet
-        if let Some(addr) = matching_addr {
-            if let Some((_addr, tx)) = self.inner.pending_handshakes.remove(&addr) {
-                let packet = HandshakePacket {
-                    data: unwrapped.clone(),
-                    from,
-                };
-                let _ = tx.send(packet);
-                return Ok(());
-            }
+        if let Some(addr) = matching_addr
+            && let Some((_addr, tx)) = self.inner.pending_handshakes.remove(&addr)
+        {
+            let packet = HandshakePacket {
+                data: unwrapped.clone(),
+                from,
+            };
+            let _ = tx.send(packet);
+            return Ok(());
         }
 
         // Route by Connection ID
@@ -342,10 +342,10 @@ impl Node {
         connection.transition_to(SessionState::Established).await?;
 
         // Check for existing session
-        if self.inner.sessions.contains_key(&peer_id) {
-            if let Some(existing) = self.inner.sessions.get(&peer_id) {
-                return Ok(existing.session_id);
-            }
+        if self.inner.sessions.contains_key(&peer_id)
+            && let Some(existing) = self.inner.sessions.get(&peer_id)
+        {
+            return Ok(existing.session_id);
         }
 
         // Store session and route

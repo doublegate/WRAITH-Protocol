@@ -22,33 +22,33 @@ fn main() {
         // Only set GDK_BACKEND if not already configured by user
         if env::var("GDK_BACKEND").is_err() {
             // Check if we're in a Wayland session
-            if let Ok(session_type) = env::var("XDG_SESSION_TYPE") {
-                if session_type == "wayland" {
-                    // Check for KDE Plasma (common source of Error 71)
-                    let is_kde = env::var("KDE_SESSION_VERSION").is_ok()
-                        || env::var("KDE_FULL_SESSION").is_ok()
-                        || env::var("DESKTOP_SESSION")
-                            .map(|s| s.contains("plasma") || s.contains("kde"))
-                            .unwrap_or(false);
+            if let Ok(session_type) = env::var("XDG_SESSION_TYPE")
+                && session_type == "wayland"
+            {
+                // Check for KDE Plasma (common source of Error 71)
+                let is_kde = env::var("KDE_SESSION_VERSION").is_ok()
+                    || env::var("KDE_FULL_SESSION").is_ok()
+                    || env::var("DESKTOP_SESSION")
+                        .map(|s| s.contains("plasma") || s.contains("kde"))
+                        .unwrap_or(false);
 
-                    if is_kde {
-                        eprintln!(
-                            "Detected KDE Plasma on Wayland - forcing X11 backend to avoid Error 71"
-                        );
-                        eprintln!("See: https://github.com/tauri-apps/tauri/issues/10702");
-                        // SAFETY: We're in main() before any threads are spawned,
-                        // so there's no risk of data races with other threads reading env vars
-                        unsafe {
-                            env::set_var("GDK_BACKEND", "x11");
-                        }
-                    } else {
-                        // For other Wayland compositors, prefer Wayland but fallback to X11
-                        // This allows GDK to try Wayland first, then X11 if issues occur
-                        // SAFETY: We're in main() before any threads are spawned,
-                        // so there's no risk of data races with other threads reading env vars
-                        unsafe {
-                            env::set_var("GDK_BACKEND", "wayland,x11");
-                        }
+                if is_kde {
+                    eprintln!(
+                        "Detected KDE Plasma on Wayland - forcing X11 backend to avoid Error 71"
+                    );
+                    eprintln!("See: https://github.com/tauri-apps/tauri/issues/10702");
+                    // SAFETY: We're in main() before any threads are spawned,
+                    // so there's no risk of data races with other threads reading env vars
+                    unsafe {
+                        env::set_var("GDK_BACKEND", "x11");
+                    }
+                } else {
+                    // For other Wayland compositors, prefer Wayland but fallback to X11
+                    // This allows GDK to try Wayland first, then X11 if issues occur
+                    // SAFETY: We're in main() before any threads are spawned,
+                    // so there's no risk of data races with other threads reading env vars
+                    unsafe {
+                        env::set_var("GDK_BACKEND", "wayland,x11");
                     }
                 }
             }

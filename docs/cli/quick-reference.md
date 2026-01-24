@@ -304,7 +304,7 @@ sudo journalctl -u wraith -f
 ### Dockerfile
 
 ```dockerfile
-FROM rust:1.85-slim as builder
+FROM rust:1.88-slim as builder
 WORKDIR /build
 COPY . .
 RUN cargo build --release

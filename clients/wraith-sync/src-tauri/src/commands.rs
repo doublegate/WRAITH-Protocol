@@ -193,10 +193,10 @@ pub async fn add_folder(
 #[tauri::command]
 pub async fn remove_folder(state: State<'_, Arc<AppState>>, folder_id: i64) -> CmdResult<()> {
     // Stop watching first
-    if let Some(folder) = state.db.get_sync_folder(folder_id)? {
-        if let Some(watcher) = state.watcher.write().as_mut() {
-            let _ = watcher.unwatch_path(&PathBuf::from(&folder.local_path));
-        }
+    if let Some(folder) = state.db.get_sync_folder(folder_id)?
+        && let Some(watcher) = state.watcher.write().as_mut()
+    {
+        let _ = watcher.unwatch_path(&PathBuf::from(&folder.local_path));
     }
 
     state.sync_engine.read().remove_folder(folder_id)?;
@@ -290,10 +290,10 @@ pub async fn pause_folder(state: State<'_, Arc<AppState>>, folder_id: i64) -> Cm
     state.sync_engine.read().pause_folder(folder_id)?;
 
     // Stop watching this folder
-    if let Some(folder) = state.db.get_sync_folder(folder_id)? {
-        if let Some(watcher) = state.watcher.write().as_mut() {
-            let _ = watcher.unwatch_path(&PathBuf::from(&folder.local_path));
-        }
+    if let Some(folder) = state.db.get_sync_folder(folder_id)?
+        && let Some(watcher) = state.watcher.write().as_mut()
+    {
+        let _ = watcher.unwatch_path(&PathBuf::from(&folder.local_path));
     }
 
     info!("Paused folder: {}", folder_id);
@@ -306,10 +306,10 @@ pub async fn resume_folder(state: State<'_, Arc<AppState>>, folder_id: i64) -> C
     state.sync_engine.read().resume_folder(folder_id)?;
 
     // Resume watching this folder
-    if let Some(folder) = state.db.get_sync_folder(folder_id)? {
-        if let Some(watcher) = state.watcher.write().as_mut() {
-            watcher.watch_path(&PathBuf::from(&folder.local_path))?;
-        }
+    if let Some(folder) = state.db.get_sync_folder(folder_id)?
+        && let Some(watcher) = state.watcher.write().as_mut()
+    {
+        watcher.watch_path(&PathBuf::from(&folder.local_path))?;
     }
 
     info!("Resumed folder: {}", folder_id);

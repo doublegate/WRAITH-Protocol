@@ -69,7 +69,7 @@ All performance targets for file operations exceed expectations, with BLAKE3 tre
 
 ### Software
 - **Operating System:** Linux 6.17.9-2-cachyos
-- **Rust Version:** 1.85 (2024 Edition)
+- **Rust Version:** 1.88 (2024 Edition)
 - **Build Profile:** Release (optimized)
   - LTO: thin
   - Codegen units: 1
@@ -457,7 +457,7 @@ Recent optimizations delivered measurable improvements:
    - Impact: Better SSD utilization
 
 3. **Tree Hashing:** +2.2% improvement
-   - Cause: Code generation improvements (Rust 1.85)
+   - Cause: Code generation improvements (Rust 1.88)
    - Impact: Consistent across all file sizes
 
 ---
@@ -754,7 +754,7 @@ file_reassembly/10000000
 OS: Linux 6.17.9-2-cachyos
 Kernel: 6.17.9-2-cachyos
 Arch: x86_64
-Rust: 1.85 (2024 Edition)
+Rust: 1.88 (2024 Edition)
 ```
 
 ### Compiler Flags

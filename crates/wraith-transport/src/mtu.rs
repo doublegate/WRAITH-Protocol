@@ -120,11 +120,11 @@ impl MtuDiscovery {
     /// ```
     pub fn discover(&mut self, socket: &UdpSocket, target: SocketAddr) -> Result<usize, MtuError> {
         // Check cache first
-        if let Some(cached) = self.cache.get(&target) {
-            if cached.discovered_at.elapsed() < self.cache_ttl {
-                debug!("Using cached MTU {} for {}", cached.mtu, target);
-                return Ok(cached.mtu);
-            }
+        if let Some(cached) = self.cache.get(&target)
+            && cached.discovered_at.elapsed() < self.cache_ttl
+        {
+            debug!("Using cached MTU {} for {}", cached.mtu, target);
+            return Ok(cached.mtu);
         }
 
         info!("Starting MTU discovery for {}", target);

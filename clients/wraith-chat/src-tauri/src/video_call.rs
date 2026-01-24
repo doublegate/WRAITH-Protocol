@@ -1271,11 +1271,11 @@ impl VideoCallManager {
             };
 
             // Send packet
-            if let Some(packet) = packet {
-                if video_tx.send(packet).await.is_err() {
-                    log::error!("Failed to send video packet");
-                    break;
-                }
+            if let Some(packet) = packet
+                && video_tx.send(packet).await.is_err()
+            {
+                log::error!("Failed to send video packet");
+                break;
             }
 
             // Sleep for remaining frame time

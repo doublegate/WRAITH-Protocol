@@ -98,7 +98,7 @@
 - ✅ All quality gates passing (1,157 tests, zero clippy warnings)
 
 **Required Resources:**
-- Rust 1.85+ (2024 Edition)
+- Rust 1.88+ (2024 Edition)
 - Development environment: Linux 6.2+ (for AF_XDP, io_uring testing)
 - Benchmarking hardware: x86_64 with AF_XDP-capable NIC
 - Code coverage tools: cargo-tarpaulin or cargo-llvm-cov
@@ -1187,7 +1187,7 @@ fn test_multihop_timing_correlation() { ... }
 ### External Dependencies
 
 **Tooling:**
-- Rust 1.85+ (2024 Edition) - **AVAILABLE**
+- Rust 1.88+ (2024 Edition) - **AVAILABLE**
 - cargo-fuzz 0.12+ - **AVAILABLE**
 - cargo-llvm-cov 0.6+ - **AVAILABLE**
 - cargo-audit 0.20+ - **AVAILABLE**

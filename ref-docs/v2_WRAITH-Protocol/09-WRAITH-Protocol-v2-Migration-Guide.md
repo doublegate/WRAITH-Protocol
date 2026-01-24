@@ -120,7 +120,7 @@ Phase 3: Disable compatibility mode
 
 ### System Requirements
 
-- [ ] Rust 1.85+ installed (MSRV for v2)
+- [ ] Rust 1.88+ installed (MSRV for v2)
 - [ ] Linux 6.2+ kernel (for AF_XDP support)
 - [ ] 16GB+ RAM recommended for build
 - [ ] Network access for crate downloads

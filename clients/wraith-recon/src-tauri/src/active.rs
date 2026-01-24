@@ -514,7 +514,7 @@ fn simulate_probe(target: &str, port: u16, _probe_type: ProbeType) -> bool {
     // For testing, simulate some open ports
     let common_open_ports = [22, 80, 443, 8080, 3389, 3306, 5432];
     let hash = target.as_bytes().iter().map(|&b| b as u64).sum::<u64>() + port as u64;
-    common_open_ports.contains(&port) && (hash % 3 == 0)
+    common_open_ports.contains(&port) && hash.is_multiple_of(3)
 }
 
 /// Identify common services by port number

@@ -574,10 +574,10 @@ impl SyncEngine {
                     .map(|p| p.to_string_lossy().to_string())
                     .ok();
 
-                if let Some(from_rel) = from_relative {
-                    if let Some(meta) = self.db.get_file_metadata(folder_id, &from_rel)? {
-                        self.db.mark_file_deleted(meta.id)?;
-                    }
+                if let Some(from_rel) = from_relative
+                    && let Some(meta) = self.db.get_file_metadata(folder_id, &from_rel)?
+                {
+                    self.db.mark_file_deleted(meta.id)?;
                 }
 
                 // Process "to" as new file

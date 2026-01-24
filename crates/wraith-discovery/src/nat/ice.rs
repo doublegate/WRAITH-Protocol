@@ -252,14 +252,13 @@ impl IceGatherer {
 
         // Gather server reflexive candidates from STUN
         for stun_server in &self.stun_servers {
-            if let Ok(client) = StunClient::bind("0.0.0.0:0").await {
-                if let Ok(mapped_addr) = client.get_mapped_address(*stun_server).await {
-                    // Only add if different from host candidate
-                    if mapped_addr != local_addr {
-                        let srflx_cand = IceCandidate::server_reflexive(mapped_addr, local_addr);
-                        candidates.push(srflx_cand.into());
-                    }
-                }
+            if let Ok(client) = StunClient::bind("0.0.0.0:0").await
+                && let Ok(mapped_addr) = client.get_mapped_address(*stun_server).await
+                && mapped_addr != local_addr
+            {
+                // Only add if different from host candidate
+                let srflx_cand = IceCandidate::server_reflexive(mapped_addr, local_addr);
+                candidates.push(srflx_cand.into());
             }
         }
 

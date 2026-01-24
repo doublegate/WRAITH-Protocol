@@ -91,7 +91,7 @@ paru -S wraith-protocol
 ### From Source (All Platforms)
 
 **Requirements:**
-- Rust 1.85+ (install via https://rustup.rs)
+- Rust 1.88+ (install via https://rustup.rs)
 - Linux kernel 6.2+ (for AF_XDP support)
 - Build tools: `build-essential`, `pkg-config`, `libssl-dev`
 

@@ -29,7 +29,7 @@ Before installing WRAITH Protocol, ensure your system meets these requirements:
 - Windows 10+ (experimental UDP support)
 
 **Software Requirements:**
-- Rust 1.85+ (for building from source)
+- Rust 1.88+ (for building from source)
 - Build tools: gcc/clang, pkg-config, make
 - libssl-dev (Ubuntu/Debian) or openssl-devel (RHEL/Fedora)
 
@@ -58,7 +58,7 @@ sudo dpkg -i wraith_0.9.0_amd64.deb
 
 # Verify installation
 wraith --version
-# Output: wraith 0.9.0 (Rust 1.85, 2024 Edition)
+# Output: wraith 0.9.0 (Rust 1.88, 2024 Edition)
 ```
 
 **Linux (RHEL/Fedora/CentOS):**
@@ -130,10 +130,10 @@ For the latest features or platform-specific optimizations, build from source:
 # Install Rust using rustup
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
-# Ensure Rust 1.85+ is installed
+# Ensure Rust 1.88+ is installed
 rustup update stable
 rustc --version
-# Should show: rustc 1.85.0 or higher
+# Should show: rustc 1.88.0 or higher
 ```
 
 **2. Install System Dependencies:**

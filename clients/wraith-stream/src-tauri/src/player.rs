@@ -182,10 +182,10 @@ impl Player {
         });
 
         // Update player state
-        if let Some(state) = self.player_states.write().get_mut(stream_id) {
-            if !state.buffered_segments.contains(&segment_name.to_string()) {
-                state.buffered_segments.push(segment_name.to_string());
-            }
+        if let Some(state) = self.player_states.write().get_mut(stream_id)
+            && !state.buffered_segments.contains(&segment_name.to_string())
+        {
+            state.buffered_segments.push(segment_name.to_string());
         }
 
         // Limit buffer size (keep last 10 segments)

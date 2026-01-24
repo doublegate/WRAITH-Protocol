@@ -510,20 +510,19 @@ impl DiscoveryManager {
         }
 
         // 4. Try hole punching
-        if let Some(hole_puncher) = &self.hole_puncher {
-            if let Some(conn) = self
+        if let Some(hole_puncher) = &self.hole_puncher
+            && let Some(conn) = self
                 .try_hole_punch(hole_puncher.clone(), &peer_addrs, &local_candidates)
                 .await
-            {
-                return Ok(conn);
-            }
+        {
+            return Ok(conn);
         }
 
         // 5. Fall back to relay
-        if self.config.relay_enabled {
-            if let Some(conn) = self.connect_via_relay(peer_id).await {
-                return Ok(conn);
-            }
+        if self.config.relay_enabled
+            && let Some(conn) = self.connect_via_relay(peer_id).await
+        {
+            return Ok(conn);
         }
 
         Err(DiscoveryError::ConnectionFailed)

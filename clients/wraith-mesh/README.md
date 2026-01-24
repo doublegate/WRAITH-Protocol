@@ -14,7 +14,7 @@ Network topology visualization and diagnostics tool for the WRAITH Protocol.
 
 ### Prerequisites
 
-- Rust 1.85+
+- Rust 1.88+
 - Node.js 18+
 - npm 9+
 

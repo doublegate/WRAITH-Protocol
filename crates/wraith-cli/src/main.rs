@@ -257,10 +257,10 @@ async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt().with_env_filter(log_level).init();
 
     // Keygen command doesn't need config - handle it separately
-    if matches!(cli.command, Commands::Keygen { .. }) {
-        if let Commands::Keygen { output } = cli.command {
-            return generate_keypair(output, &Config::default()).await;
-        }
+    if matches!(cli.command, Commands::Keygen { .. })
+        && let Commands::Keygen { output } = cli.command
+    {
+        return generate_keypair(output, &Config::default()).await;
     }
 
     // Load configuration (expand tilde if present)
@@ -776,10 +776,10 @@ async fn run_daemon(_bind: String, _relay: bool, config: &Config) -> anyhow::Res
     println!("Node ID: {}", hex::encode(node.node_id()));
     println!("Listening on: {}", listen_addr);
     println!("XDP: {}", config.network.enable_xdp);
-    if config.network.enable_xdp {
-        if let Some(iface) = &config.network.xdp_interface {
-            println!("XDP interface: {iface}");
-        }
+    if config.network.enable_xdp
+        && let Some(iface) = &config.network.xdp_interface
+    {
+        println!("XDP interface: {iface}");
     }
     println!();
     println!("Daemon ready. Press Ctrl+C to stop");
@@ -937,10 +937,10 @@ async fn show_status(
 
     println!("Network:");
     println!("  XDP: {}", config.network.enable_xdp);
-    if config.network.enable_xdp {
-        if let Some(iface) = &config.network.xdp_interface {
-            println!("  XDP interface: {}", iface);
-        }
+    if config.network.enable_xdp
+        && let Some(iface) = &config.network.xdp_interface
+    {
+        println!("  XDP interface: {}", iface);
     }
     println!("  UDP fallback: {}", config.network.udp_fallback);
     println!();
@@ -1117,10 +1117,10 @@ async fn show_health(config: &Config) -> anyhow::Result<()> {
         }
     );
     println!("  XDP: {} ", config.network.enable_xdp);
-    if config.network.enable_xdp {
-        if let Some(iface) = &config.network.xdp_interface {
-            println!("  XDP interface: {}", iface);
-        }
+    if config.network.enable_xdp
+        && let Some(iface) = &config.network.xdp_interface
+    {
+        println!("  XDP interface: {}", iface);
     }
     println!();
 

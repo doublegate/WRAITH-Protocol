@@ -882,7 +882,7 @@ Configuration:
 
 Protocol Version: 0.9.0
 Build: v0.9.0-beta-g0123456 (2025-12-06)
-Rust Version: 1.85.0
+Rust Version: 1.88.0
 Platform: x86_64-unknown-linux-gnu
 ```
 

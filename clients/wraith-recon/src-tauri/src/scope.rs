@@ -81,14 +81,15 @@ impl FromStr for Target {
         }
 
         // Try to parse as port spec (IP:port)
-        if let Some((ip_part, port_part)) = s.rsplit_once(':') {
-            if ip_part.parse::<IpAddr>().is_ok() && port_part.parse::<u16>().is_ok() {
-                return Ok(Self::new(
-                    id,
-                    TargetType::PortSpec(s.to_string()),
-                    s.to_string(),
-                ));
-            }
+        if let Some((ip_part, port_part)) = s.rsplit_once(':')
+            && ip_part.parse::<IpAddr>().is_ok()
+            && port_part.parse::<u16>().is_ok()
+        {
+            return Ok(Self::new(
+                id,
+                TargetType::PortSpec(s.to_string()),
+                s.to_string(),
+            ));
         }
 
         // Default to domain
@@ -309,15 +310,15 @@ impl ScopeManager {
                     };
                 }
                 TargetType::CidrRange(cidr) => {
-                    if let Ok(network) = IpNetwork::from_str(cidr) {
-                        if network.contains(ip_addr) {
-                            return ScopeValidationResult {
-                                in_scope: true,
-                                reason: "IP is in custom CIDR range".to_string(),
-                                is_excluded: false,
-                                matching_rule: Some(target.id.clone()),
-                            };
-                        }
+                    if let Ok(network) = IpNetwork::from_str(cidr)
+                        && network.contains(ip_addr)
+                    {
+                        return ScopeValidationResult {
+                            in_scope: true,
+                            reason: "IP is in custom CIDR range".to_string(),
+                            is_excluded: false,
+                            matching_rule: Some(target.id.clone()),
+                        };
                     }
                 }
                 _ => {}
@@ -396,12 +397,12 @@ impl ScopeManager {
         }
 
         // Try to parse as CIDR
-        if target.contains('/') {
-            if let Ok(network) = IpNetwork::from_str(target) {
-                // For CIDR validation, check if the network is within scope
-                let ip = network.network();
-                return self.validate_ip(&ip.to_string());
-            }
+        if target.contains('/')
+            && let Ok(network) = IpNetwork::from_str(target)
+        {
+            // For CIDR validation, check if the network is within scope
+            let ip = network.network();
+            return self.validate_ip(&ip.to_string());
         }
 
         // Treat as domain

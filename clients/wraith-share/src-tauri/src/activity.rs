@@ -261,10 +261,10 @@ impl ActivityLogger {
     /// Resolve actor name from database
     fn resolve_actor_name(&self, group_id: &str, actor_id: &str) -> Option<String> {
         // Check if actor is the local user
-        if let Some(local_peer_id) = self.state.get_peer_id() {
-            if actor_id == local_peer_id {
-                return Some(self.state.get_display_name());
-            }
+        if let Some(local_peer_id) = self.state.get_peer_id()
+            && actor_id == local_peer_id
+        {
+            return Some(self.state.get_display_name());
         }
 
         // Look up member name
@@ -347,10 +347,10 @@ impl ActivityLogger {
         let mut file_counts: std::collections::HashMap<String, usize> =
             std::collections::HashMap::new();
         for event in &events {
-            if let Some(target_id) = &event.target_id {
-                if event.event_type.starts_with("file_") {
-                    *file_counts.entry(target_id.clone()).or_insert(0) += 1;
-                }
+            if let Some(target_id) = &event.target_id
+                && event.event_type.starts_with("file_")
+            {
+                *file_counts.entry(target_id.clone()).or_insert(0) += 1;
             }
         }
         let most_accessed_file = file_counts

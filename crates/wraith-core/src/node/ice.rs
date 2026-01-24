@@ -1083,22 +1083,20 @@ impl IceAgent {
         let mut addresses = Vec::new();
 
         for stun_server in &self.config.stun_servers {
-            if let Ok(()) = socket.connect(stun_server).await {
-                if let Ok(local_addr) = socket.local_addr() {
-                    if !addresses.contains(&local_addr) {
-                        addresses.push(local_addr);
-                    }
-                }
+            if let Ok(()) = socket.connect(stun_server).await
+                && let Ok(local_addr) = socket.local_addr()
+                && !addresses.contains(&local_addr)
+            {
+                addresses.push(local_addr);
             }
         }
 
         // Fallback: try to connect to a public DNS server
-        if addresses.is_empty() {
-            if let Ok(()) = socket.connect("8.8.8.8:53").await {
-                if let Ok(local_addr) = socket.local_addr() {
-                    addresses.push(local_addr);
-                }
-            }
+        if addresses.is_empty()
+            && let Ok(()) = socket.connect("8.8.8.8:53").await
+            && let Ok(local_addr) = socket.local_addr()
+        {
+            addresses.push(local_addr);
         }
 
         // Last fallback: use 0.0.0.0 with the bound port

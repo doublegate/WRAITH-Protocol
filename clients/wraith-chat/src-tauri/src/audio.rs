@@ -557,10 +557,10 @@ impl AudioDeviceManager {
 
             // Try to get ALSA host explicitly
             for host_id in cpal::available_hosts() {
-                if host_id == HostId::Alsa {
-                    if let Ok(host) = cpal::host_from_id(host_id) {
-                        return host;
-                    }
+                if host_id == HostId::Alsa
+                    && let Ok(host) = cpal::host_from_id(host_id)
+                {
+                    return host;
                 }
             }
 
@@ -610,13 +610,13 @@ impl AudioDeviceManager {
             }
 
             // Mark default device
-            if let Some(default) = host.default_input_device() {
-                if let Ok(default_name) = default.name() {
-                    for device in &mut result {
-                        if device.name == default_name {
-                            device.is_default = true;
-                            break;
-                        }
+            if let Some(default) = host.default_input_device()
+                && let Ok(default_name) = default.name()
+            {
+                for device in &mut result {
+                    if device.name == default_name {
+                        device.is_default = true;
+                        break;
                     }
                 }
             }
@@ -661,13 +661,13 @@ impl AudioDeviceManager {
             }
 
             // Mark default device
-            if let Some(default) = host.default_output_device() {
-                if let Ok(default_name) = default.name() {
-                    for device in &mut result {
-                        if device.name == default_name {
-                            device.is_default = true;
-                            break;
-                        }
+            if let Some(default) = host.default_output_device()
+                && let Ok(default_name) = default.name()
+            {
+                for device in &mut result {
+                    if device.name == default_name {
+                        device.is_default = true;
+                        break;
                     }
                 }
             }
@@ -708,10 +708,10 @@ impl AudioDeviceManager {
             let devices = host.input_devices().ok()?;
 
             for device in devices {
-                if let Ok(name) = device.name() {
-                    if name == device_id {
-                        return Some(device);
-                    }
+                if let Ok(name) = device.name()
+                    && name == device_id
+                {
+                    return Some(device);
                 }
             }
             None
@@ -730,10 +730,10 @@ impl AudioDeviceManager {
             let devices = host.output_devices().ok()?;
 
             for device in devices {
-                if let Ok(name) = device.name() {
-                    if name == device_id {
-                        return Some(device);
-                    }
+                if let Ok(name) = device.name()
+                    && name == device_id
+                {
+                    return Some(device);
                 }
             }
             None

@@ -128,11 +128,11 @@ impl IpReputation {
         let now = Instant::now();
 
         // Check if temp ban has expired
-        if let ReputationStatus::TempBanned { until } = self.status {
-            if now >= until {
-                self.status = ReputationStatus::Good;
-                self.failures = 0; // Reset on temp ban expiry
-            }
+        if let ReputationStatus::TempBanned { until } = self.status
+            && now >= until
+        {
+            self.status = ReputationStatus::Good;
+            self.failures = 0; // Reset on temp ban expiry
         }
 
         // Don't update if permanently banned

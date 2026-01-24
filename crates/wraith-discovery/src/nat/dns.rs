@@ -140,15 +140,15 @@ impl StunDnsResolver {
         // Check cache first
         {
             let cache = self.cache.read().await;
-            if let Some(entry) = cache.get(hostname) {
-                if entry.expires_at > Instant::now() {
-                    let addrs: Vec<SocketAddr> = entry
-                        .addresses
-                        .iter()
-                        .map(|ip| SocketAddr::new(*ip, port))
-                        .collect();
-                    return Ok(addrs);
-                }
+            if let Some(entry) = cache.get(hostname)
+                && entry.expires_at > Instant::now()
+            {
+                let addrs: Vec<SocketAddr> = entry
+                    .addresses
+                    .iter()
+                    .map(|ip| SocketAddr::new(*ip, port))
+                    .collect();
+                return Ok(addrs);
             }
         }
 

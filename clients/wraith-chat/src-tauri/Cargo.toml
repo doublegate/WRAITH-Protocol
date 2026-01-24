@@ -4,7 +4,7 @@ version = "2.2.0"
 description = "WRAITH-Chat - Secure E2E Encrypted Messaging"
 authors = ["WRAITH Protocol Contributors"]
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.88"
 
 [lib]
 name = "wraith_chat_lib"

@@ -322,10 +322,10 @@ impl BbrState {
             }
             BbrPhase::ProbeRtt => {
                 // Stay in `ProbeRtt` for at least `PROBE_RTT_DURATION`
-                if let Some(start) = self.probe_rtt_start {
-                    if now.duration_since(start) >= PROBE_RTT_DURATION {
-                        self.exit_probe_rtt();
-                    }
+                if let Some(start) = self.probe_rtt_start
+                    && now.duration_since(start) >= PROBE_RTT_DURATION
+                {
+                    self.exit_probe_rtt();
                 }
             }
         }
@@ -395,7 +395,7 @@ impl BbrState {
     /// Advance `ProbeBw` cycle
     fn advance_probe_bw_cycle(&mut self) {
         self.round_count += 1;
-        if self.round_count % 8 == 0 {
+        if self.round_count.is_multiple_of(8) {
             self.probe_bw_cycle_idx = (self.probe_bw_cycle_idx + 1) % 8;
             self.set_probe_bw_gains();
         }

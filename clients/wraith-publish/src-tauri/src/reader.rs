@@ -69,16 +69,16 @@ impl ContentReader {
     /// Fetch an article by CID
     pub async fn fetch(&self, cid: &str) -> PublishResult<Option<FetchedArticle>> {
         // Check local database first (cache)
-        if self.config.cache_enabled {
-            if let Some(article) = self.db.get_article_by_cid(cid)? {
-                debug!("Found article in cache: {}", cid);
-                return Ok(Some(FetchedArticle {
-                    article,
-                    signature_info: None, // Already verified when cached
-                    from_cache: true,
-                    fetched_at: Utc::now().timestamp(),
-                }));
-            }
+        if self.config.cache_enabled
+            && let Some(article) = self.db.get_article_by_cid(cid)?
+        {
+            debug!("Found article in cache: {}", cid);
+            return Ok(Some(FetchedArticle {
+                article,
+                signature_info: None, // Already verified when cached
+                from_cache: true,
+                fetched_at: Utc::now().timestamp(),
+            }));
         }
 
         // Fetch from DHT storage
@@ -115,10 +115,10 @@ impl ContentReader {
         let article = self.parse_article(&stored.signed_content, cid)?;
 
         // Cache if enabled
-        if self.config.cache_enabled {
-            if let Err(e) = self.cache_article(&article) {
-                warn!("Failed to cache article {}: {}", cid, e);
-            }
+        if self.config.cache_enabled
+            && let Err(e) = self.cache_article(&article)
+        {
+            warn!("Failed to cache article {}: {}", cid, e);
         }
 
         info!("Fetched article from DHT: {}", cid);
@@ -200,10 +200,10 @@ impl ContentReader {
     /// Cache article in local database
     fn cache_article(&self, article: &Article) -> PublishResult<()> {
         // Check if already cached
-        if let Some(cid) = &article.cid {
-            if self.db.get_article_by_cid(cid)?.is_some() {
-                return Ok(()); // Already cached
-            }
+        if let Some(cid) = &article.cid
+            && self.db.get_article_by_cid(cid)?.is_some()
+        {
+            return Ok(()); // Already cached
         }
 
         self.db.create_article(article)?;

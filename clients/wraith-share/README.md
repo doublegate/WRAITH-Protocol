@@ -69,7 +69,7 @@ Each file is encrypted with a unique symmetric key (file capability). This key i
 
 ### Prerequisites
 
-- Rust 1.85+ (2024 Edition)
+- Rust 1.88+ (2024 Edition)
 - Node.js 18+
 - Tauri CLI 2.x
 

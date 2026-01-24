@@ -331,11 +331,11 @@ impl TransferSession {
     /// Get ETA in seconds
     #[must_use]
     pub fn eta(&self) -> Option<f64> {
-        if let Some(speed) = self.speed() {
-            if speed > 0.0 {
-                let remaining = self.file_size - self.bytes_transferred;
-                return Some(remaining as f64 / speed);
-            }
+        if let Some(speed) = self.speed()
+            && speed > 0.0
+        {
+            let remaining = self.file_size - self.bytes_transferred;
+            return Some(remaining as f64 / speed);
         }
         None
     }
@@ -423,11 +423,11 @@ impl TransferSession {
 
     /// Mark chunk as downloaded from peer
     pub fn mark_peer_chunk_downloaded(&mut self, peer_id: &PeerId, chunk_index: u64) {
-        if let Some(peer) = self.peers.get_mut(peer_id) {
-            if peer.assigned_chunks.remove(&chunk_index) {
-                peer.downloaded_chunks += 1;
-                peer.last_activity = Instant::now();
-            }
+        if let Some(peer) = self.peers.get_mut(peer_id)
+            && peer.assigned_chunks.remove(&chunk_index)
+        {
+            peer.downloaded_chunks += 1;
+            peer.last_activity = Instant::now();
         }
     }
 

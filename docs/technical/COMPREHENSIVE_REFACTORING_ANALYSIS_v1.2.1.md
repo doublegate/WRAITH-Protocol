@@ -633,7 +633,7 @@ cargo clippy --workspace -- -D warnings
 ### 5.7 Rust Edition and MSRV
 
 **Edition:** 2024 ✅
-**MSRV:** 1.85 ✅
+**MSRV:** 1.88 ✅
 
 **Modern Features:**
 - `let-else` statements
@@ -641,7 +641,7 @@ cargo clippy --workspace -- -D warnings
 - `#[must_use]` on builders
 - Const generics
 
-**Recommendation:** **P1 priority** - Review new Rust 1.85+ clippy lints and idioms
+**Recommendation:** **P1 priority** - Review new Rust 1.88+ clippy lints and idioms
 
 ### Code Quality Summary
 
@@ -795,7 +795,7 @@ Prepare migration plan for rand 0.8 → 0.9 ecosystem update (TD-008).
 **Impact:** Code quality, modern Rust patterns
 
 **Description:**
-Review and adopt new Rust 1.85+ clippy lints and idiomatic patterns.
+Review and adopt new Rust 1.88+ clippy lints and idiomatic patterns.
 
 **Completion Summary:**
 Applied Rust 2024 best practices across the codebase:

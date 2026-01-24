@@ -43,7 +43,7 @@ WRAITH-Chat is a desktop messaging application that provides:
 
 ### Prerequisites
 
-- Rust 1.85+ (2024 Edition)
+- Rust 1.88+ (2024 Edition)
 - Node.js 18+
 - Tauri CLI
 

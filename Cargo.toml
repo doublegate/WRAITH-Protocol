@@ -35,7 +35,7 @@ exclude = ["crates/wraith-xdp", "fuzz"]
 [workspace.package]
 version = "2.2.0"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.88"
 license = "MIT"
 repository = "https://github.com/doublegate/WRAITH-Protocol"
 homepage = "https://github.com/doublegate/WRAITH-Protocol"

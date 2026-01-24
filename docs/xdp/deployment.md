@@ -13,7 +13,7 @@ This guide covers deploying WRAITH with XDP acceleration in production environme
 - [ ] Multi-queue NIC (check: `ethtool -l eth0`)
 - [ ] Locked memory limit set (check: `ulimit -l` = unlimited)
 - [ ] Capabilities granted or running as root
-- [ ] Build dependencies installed (Rust 1.85+)
+- [ ] Build dependencies installed (Rust 1.88+)
 
 ### Network Requirements
 

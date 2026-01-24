@@ -104,7 +104,7 @@ Six-layer design (bottom to top):
 ### Target Platform
 - Linux 6.2+ (for AF_XDP, io_uring)
 - Primary: x86_64, Secondary: aarch64
-- Rust 1.85+ (2024 Edition, MSRV: 1.85)
+- Rust 1.88+ (2024 Edition, MSRV: 1.88)
 
 ### Key Dependencies
 - `chacha20poly1305`, `x25519-dalek`, `blake3` - Cryptography

@@ -4,9 +4,9 @@
 
 This document captures the complete development journey of WRAITH Protocol from inception through version 2.0.0, including detailed phase accomplishments, sprint summaries, and implementation milestones.
 
-[![Version](https://img.shields.io/badge/version-2.2.0-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
+[![Version](https://img.shields.io/badge/version-2.2.1-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
 [![Security](https://img.shields.io/badge/security-audited-green.svg)](../security/DPI_EVASION_REPORT.md)
-[![Rust](https://img.shields.io/badge/rust-1.85%2B-orange.svg)](https://www.rust-lang.org/)
+[![Rust](https://img.shields.io/badge/rust-1.88%2B-orange.svg)](https://www.rust-lang.org/)
 
 ---
 
@@ -24,7 +24,7 @@ For the current production README, see [../../README.md](../../README.md).
 
 **Project Metrics (2026-01-24):**
 - **Code Volume:** ~272,000 lines of Rust code across protocol and client crates + ~10,000 lines TypeScript
-- **Test Coverage:** 2,124+ tests passing (16 ignored) - 99.2% pass rate
+- **Test Coverage:** 1,733 tests passing (4 ignored) - 100% pass rate
 - **Documentation:** 130+ markdown files, ~90,000+ lines of comprehensive documentation
 - **Dependencies:** 295 audited packages (zero vulnerabilities via cargo-audit)
 - **Security:** Grade A+ (EXCELLENT) - zero vulnerabilities, 100% unsafe documentation, comprehensive audits
@@ -35,7 +35,7 @@ For the current production README, see [../../README.md](../../README.md).
 **Quality Metrics:**
 - **Quality Grade:** 98/100 (Production-ready)
 - **Technical Debt Ratio:** ~2.5% (Grade A - Excellent)
-- **Test Coverage:** 2,124+ tests passing (16 ignored) - 99.2% pass rate
+- **Test Coverage:** 1,733 tests passing (4 ignored) - 100% pass rate
   - 414 wraith-core - frame parsing (SIMD), sessions, streams, BBR, migration, ring buffers, Node API
   - 127 wraith-crypto - Ed25519, X25519+Elligator2, AEAD, Noise_XX, Double Ratchet (+ test vectors + zeroization)
   - 130 wraith-transport - AF_XDP socket config, io_uring, UDP, worker pools, NUMA-aware allocation
@@ -1318,9 +1318,9 @@ This major phase delivers three production-ready client applications implementin
 
 ## Current Status & Next Steps
 
-**Version 2.2.0 Status (2026-01-24):**
+**Version 2.2.1 Status (2026-01-24):**
 - ✅ All 24 development phases complete (2,740+ SP delivered)
-- ✅ 2,124+ tests (16 ignored) - 99.2% pass rate
+- ✅ 1,733 tests (4 ignored) - 100% pass rate
 - ✅ Zero vulnerabilities, zero warnings
 - ✅ Code quality: 98/100 (production-ready)
 - ✅ 9 production desktop client applications deployed (Transfer, Chat, Sync, Share, Stream, Mesh, Publish, Vault, Recon)
@@ -1391,8 +1391,8 @@ See [../../to-dos/ROADMAP.md](../../to-dos/ROADMAP.md) for detailed future plann
 
 ---
 
-**WRAITH Protocol Development History** - *From Foundation to v2.2.0 (Phases 1-24 + Infrastructure Sprints)*
+**WRAITH Protocol Development History** - *From Foundation to v2.2.1 (Phases 1-24 + Infrastructure Sprints)*
 
-**Development Period:** 2024 - 2026-01-24 | **Total Effort:** 2,740+ story points delivered across 24 phases + infrastructure sprints | **Quality:** Production-ready (98/100), 2,124+ tests (99.2% pass rate), 0 vulnerabilities, Grade A+ security | **Clients:** 9 desktop applications | **TDR:** ~2.5% (Grade A - Excellent) | **CI/CD:** Optimized workflows with reusable setup and path filters | **v2.2.0:** WRAITH-Recon network reconnaissance platform
+**Development Period:** 2024 - 2026-01-24 | **Total Effort:** 2,740+ story points delivered across 24 phases + infrastructure sprints | **Quality:** Production-ready (98/100), 1,733 tests (100% pass rate), 0 vulnerabilities, Grade A+ security | **Clients:** 9 desktop applications | **TDR:** ~2.5% (Grade A - Excellent) | **CI/CD:** Optimized workflows with reusable setup and path filters | **v2.2.1:** MSRV 1.88, 58 clippy warnings resolved
 
 *Last Updated: 2026-01-24*

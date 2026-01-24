@@ -28,7 +28,7 @@ TODOs for full implementation.
 
 ### Prerequisites
 
-- **Rust:** 1.85+ (2024 edition) - check with `rustc --version`
+- **Rust:** 1.88+ (2024 edition) - check with `rustc --version`
 - **OS:** Linux (some crates use Linux-specific APIs like io_uring)
 
 ### Build Order
@@ -58,7 +58,7 @@ The GitHub Actions CI (.github/workflows/ci.yml) runs these jobs:
 3. **clippy** - `cargo clippy --workspace --all-features -- -D warnings`
 4. **fmt** - `cargo fmt --all -- --check`
 5. **docs** - `cargo doc --workspace --no-deps` with `RUSTDOCFLAGS=-Dwarnings`
-6. **msrv** - `cargo check --workspace` with Rust 1.85
+6. **msrv** - `cargo check --workspace` with Rust 1.88
 
 To run the main CI checks locally, use: `cargo xtask ci`
 
@@ -91,7 +91,7 @@ WRAITH-Protocol/
 │   └── wraith-cli/         # CLI binary (wraith)
 ├── xtask/                  # Build automation (fmt, lint, test, ci, doc commands)
 ├── rustfmt.toml            # Formatter config (edition = "2021", max_width = 100)
-├── clippy.toml             # Clippy config (msrv = "1.85")
+├── clippy.toml             # Clippy config (msrv = "1.88")
 └── .github/workflows/
     ├── ci.yml              # Main CI: check, test, clippy, fmt, docs, msrv
     └── codeql.yml          # Security scanning with CodeQL + cargo-audit
@@ -107,7 +107,7 @@ WRAITH-Protocol/
 
 - `Cargo.toml` - Workspace definition with shared dependencies (edition="2024")
 - `rustfmt.toml` - Code formatting rules (edition="2021", max_width=100)
-- `clippy.toml` - Linter settings (msrv="1.85")
+- `clippy.toml` - Linter settings (msrv="1.88")
 - `.gitignore` - Excludes /target/, Cargo.lock, coverage files
 
 **Note:** The rustfmt.toml uses edition="2021" for formatting rules while

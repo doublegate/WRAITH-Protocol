@@ -239,17 +239,17 @@ impl LinkShareManager {
         }
 
         // Check expiration
-        if let Some(expires_at) = link.expires_at {
-            if Utc::now().timestamp() > expires_at {
-                return Err(ShareError::LinkExpired);
-            }
+        if let Some(expires_at) = link.expires_at
+            && Utc::now().timestamp() > expires_at
+        {
+            return Err(ShareError::LinkExpired);
         }
 
         // Check download limit
-        if let Some(max_downloads) = link.max_downloads {
-            if link.download_count >= max_downloads {
-                return Err(ShareError::DownloadLimitExceeded);
-            }
+        if let Some(max_downloads) = link.max_downloads
+            && link.download_count >= max_downloads
+        {
+            return Err(ShareError::DownloadLimitExceeded);
         }
 
         // Verify password if required
@@ -295,17 +295,17 @@ impl LinkShareManager {
         }
 
         // Check expiration
-        if let Some(expires_at) = link.expires_at {
-            if Utc::now().timestamp() > expires_at {
-                return Ok(false);
-            }
+        if let Some(expires_at) = link.expires_at
+            && Utc::now().timestamp() > expires_at
+        {
+            return Ok(false);
         }
 
         // Check download limit
-        if let Some(max_downloads) = link.max_downloads {
-            if link.download_count >= max_downloads {
-                return Ok(false);
-            }
+        if let Some(max_downloads) = link.max_downloads
+            && link.download_count >= max_downloads
+        {
+            return Ok(false);
         }
 
         Ok(true)

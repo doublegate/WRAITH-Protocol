@@ -631,15 +631,13 @@ impl VoiceCallManager {
         };
 
         // Signal the output stream to switch devices if the call is active
-        if call.info.state == CallState::Connected {
-            if let Some(ref signal_tx) = call.output_device_signal {
-                if let Err(e) = signal_tx
-                    .send(AudioDeviceSignal::SwitchOutput(new_device_id))
-                    .await
-                {
-                    log::warn!("Failed to send output device switch signal: {}", e);
-                }
-            }
+        if call.info.state == CallState::Connected
+            && let Some(ref signal_tx) = call.output_device_signal
+            && let Err(e) = signal_tx
+                .send(AudioDeviceSignal::SwitchOutput(new_device_id))
+                .await
+        {
+            log::warn!("Failed to send output device switch signal: {}", e);
         }
 
         Ok(call.info.speaker_on)
@@ -816,15 +814,13 @@ impl VoiceCallManager {
         let calls = self.calls.read().await;
         for call_arc in calls.values() {
             let call = call_arc.lock().await;
-            if call.info.state == CallState::Connected {
-                if let Some(ref signal_tx) = call.input_device_signal {
-                    if let Err(e) = signal_tx
-                        .send(AudioDeviceSignal::SwitchInput(device_id.clone()))
-                        .await
-                    {
-                        log::warn!("Failed to send input device switch signal: {}", e);
-                    }
-                }
+            if call.info.state == CallState::Connected
+                && let Some(ref signal_tx) = call.input_device_signal
+                && let Err(e) = signal_tx
+                    .send(AudioDeviceSignal::SwitchInput(device_id.clone()))
+                    .await
+            {
+                log::warn!("Failed to send input device switch signal: {}", e);
             }
         }
 
@@ -846,15 +842,13 @@ impl VoiceCallManager {
         let calls = self.calls.read().await;
         for call_arc in calls.values() {
             let call = call_arc.lock().await;
-            if call.info.state == CallState::Connected {
-                if let Some(ref signal_tx) = call.output_device_signal {
-                    if let Err(e) = signal_tx
-                        .send(AudioDeviceSignal::SwitchOutput(device_id.clone()))
-                        .await
-                    {
-                        log::warn!("Failed to send output device switch signal: {}", e);
-                    }
-                }
+            if call.info.state == CallState::Connected
+                && let Some(ref signal_tx) = call.output_device_signal
+                && let Err(e) = signal_tx
+                    .send(AudioDeviceSignal::SwitchOutput(device_id.clone()))
+                    .await
+            {
+                log::warn!("Failed to send output device switch signal: {}", e);
             }
         }
 
@@ -989,10 +983,10 @@ impl VoiceCallManager {
 
             // Try to get ALSA host explicitly
             for host_id in cpal::available_hosts() {
-                if host_id == HostId::Alsa {
-                    if let Ok(host) = cpal::host_from_id(host_id) {
-                        return host;
-                    }
+                if host_id == HostId::Alsa
+                    && let Ok(host) = cpal::host_from_id(host_id)
+                {
+                    return host;
                 }
             }
 
@@ -1218,10 +1212,10 @@ impl VoiceCallManager {
             // Try to find the specific device
             if let Ok(devices) = host.input_devices() {
                 for device in devices {
-                    if let Ok(name) = device.name() {
-                        if name == id {
-                            return Some(device);
-                        }
+                    if let Ok(name) = device.name()
+                        && name == id
+                    {
+                        return Some(device);
                     }
                 }
             }
@@ -1405,10 +1399,10 @@ impl VoiceCallManager {
             // Try to find the specific device
             if let Ok(devices) = host.output_devices() {
                 for device in devices {
-                    if let Ok(name) = device.name() {
-                        if name == id {
-                            return Some(device);
-                        }
+                    if let Ok(name) = device.name()
+                        && name == id
+                    {
+                        return Some(device);
                     }
                 }
             }

@@ -6,7 +6,7 @@ authors = ["WRAITH Protocol Contributors"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/doublegate/WRAITH-Protocol"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.88"
 
 [lib]
 name = "wraith_recon_lib"
@@ -50,7 +50,7 @@ rand = "0.8"
 zeroize = { version = "1", features = ["derive"] }
 
 # Networking
-ipnetwork = "0.20"
+ipnetwork = "0.21"
 socket2 = "0.6"
 pnet = "0.35"
 
