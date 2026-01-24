@@ -1,6 +1,7 @@
 // GuardianList Component for WRAITH Vault
 
-import React, { useEffect, useState } from "react";
+import type { MouseEvent } from "react";
+import { useEffect, useState } from "react";
 import { useGuardianStore } from "../stores/guardianStore";
 import type { Guardian, GuardianStatus, TrustLevel } from "../types";
 
@@ -69,14 +70,13 @@ export function GuardianList({
   };
 
   const handleHealthCheck = async (
-    e: React.MouseEvent,
+    e: MouseEvent,
     guardian: Guardian
   ) => {
     e.stopPropagation();
     setCheckingHealth(guardian.id);
 
     // Simulate health check (in real implementation, this would ping the guardian)
-    const startTime = Date.now();
     const success = Math.random() > 0.3; // 70% success rate for demo
     const responseTime = success ? Math.floor(Math.random() * 200) + 50 : null;
     const errorMsg = success ? null : "Connection timeout";

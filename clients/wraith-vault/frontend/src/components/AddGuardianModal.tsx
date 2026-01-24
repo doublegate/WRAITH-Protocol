@@ -1,7 +1,7 @@
 // AddGuardianModal Component for WRAITH Vault
 // Modal for adding new guardians to the vault
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { useGuardianStore } from "../stores/guardianStore";
 
 interface AddGuardianModalProps {
@@ -10,7 +10,7 @@ interface AddGuardianModalProps {
 }
 
 export function AddGuardianModal({ onClose, onAdded }: AddGuardianModalProps) {
-  const { addGuardian, loading, error, clearError } = useGuardianStore();
+  const { addGuardian, loading, error } = useGuardianStore();
 
   const [name, setName] = useState("");
   const [peerId, setPeerId] = useState("");

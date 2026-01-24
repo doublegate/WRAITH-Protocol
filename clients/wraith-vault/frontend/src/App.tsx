@@ -1,7 +1,7 @@
 // WRAITH Vault - Main Application Component
 // Distributed Secret Storage with Shamir's Secret Sharing
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { SecretList } from "./components/SecretList";
 import { GuardianList } from "./components/GuardianList";
 import { RecoveryWizard } from "./components/RecoveryWizard";

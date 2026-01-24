@@ -1,10 +1,10 @@
 // CreateSecretModal Component for WRAITH Vault
 // Modal for creating new secrets with Shamir configuration
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { useSecretStore } from "../stores/secretStore";
 import { useGuardianStore } from "../stores/guardianStore";
-import type { SecretType, Guardian } from "../types";
+import type { SecretType } from "../types";
 
 interface CreateSecretModalProps {
   onClose: () => void;
@@ -24,7 +24,7 @@ const SECRET_TYPES: { value: SecretType; label: string; description: string }[] 
 ];
 
 export function CreateSecretModal({ onClose, onCreated }: CreateSecretModalProps) {
-  const { createSecret, loading, error, clearError } = useSecretStore();
+  const { createSecret, loading, error } = useSecretStore();
   const { guardians, availableGuardians, loadGuardians, loadAvailableGuardians } = useGuardianStore();
 
   const [step, setStep] = useState<"details" | "config" | "guardians" | "confirm">("details");
@@ -145,13 +145,13 @@ export function CreateSecretModal({ onClose, onCreated }: CreateSecretModalProps
 
       await createSecret(
         name,
-        description || null,
-        Array.from(secretBytes),
+        secretBytes,
         secretType,
+        description || null,
         threshold,
         totalShares,
-        selectedGuardianIds,
-        tagList
+        tagList,
+        null // password
       );
 
       onCreated();
@@ -186,7 +186,7 @@ export function CreateSecretModal({ onClose, onCreated }: CreateSecretModalProps
                 const isPast = steps.indexOf(step) > index;
 
                 return (
-                  <React.Fragment key={label}>
+                  <Fragment key={label}>
                     <div
                       className={`flex items-center gap-2 ${
                         isActive
@@ -216,7 +216,7 @@ export function CreateSecretModal({ onClose, onCreated }: CreateSecretModalProps
                         }`}
                       />
                     )}
-                  </React.Fragment>
+                  </Fragment>
                 );
               }
             )}

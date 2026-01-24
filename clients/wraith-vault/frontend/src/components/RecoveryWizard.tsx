@@ -1,11 +1,11 @@
 // RecoveryWizard Component for WRAITH Vault
 // Multi-step wizard for recovering secrets from guardian shards
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { useRecoveryStore } from "../stores/recoveryStore";
 import { useGuardianStore } from "../stores/guardianStore";
 import { useSecretStore } from "../stores/secretStore";
-import type { SecretInfo, Guardian, EncryptedShard, RecoveryProgress } from "../types";
+import type { SecretInfo, Guardian, EncryptedShard } from "../types";
 import * as tauri from "../lib/tauri";
 
 type WizardStep = "select-secret" | "select-guardians" | "collect-shards" | "recovering" | "complete" | "error";
@@ -32,7 +32,6 @@ export function RecoveryWizard({
     startRecovery,
     addShard,
     completeRecovery,
-    getProgress,
     cancelRecovery,
     clearResult,
     clearError,
@@ -96,7 +95,7 @@ export function RecoveryWizard({
     if (!selectedSecret) return;
 
     try {
-      const sessionId = await startRecovery(selectedSecret.id);
+      await startRecovery(selectedSecret.id);
       setCurrentGuardianIndex(0);
       setStep("collect-shards");
     } catch (err) {
@@ -249,7 +248,7 @@ export function RecoveryWizard({
                 step === "complete";
 
               return (
-                <React.Fragment key={label}>
+                <Fragment key={label}>
                   <div
                     className={`flex items-center gap-2 ${
                       isActive
@@ -279,7 +278,7 @@ export function RecoveryWizard({
                       }`}
                     />
                   )}
-                </React.Fragment>
+                </Fragment>
               );
             }
           )}

@@ -1,7 +1,7 @@
 // ShardStatus Component for WRAITH Vault
 // Displays the distribution status of shards across guardians
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import type { SecretInfo, Guardian, ShardAssignment, DistributionStatus } from "../types";
 import * as tauri from "../lib/tauri";
 

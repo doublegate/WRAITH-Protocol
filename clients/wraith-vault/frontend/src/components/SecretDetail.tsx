@@ -1,7 +1,7 @@
 // SecretDetail Component for WRAITH Vault
 // Displays detailed information about a selected secret
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { useSecretStore } from "../stores/secretStore";
 import type { SecretInfo, SecretType } from "../types";
 
@@ -36,7 +36,7 @@ interface SecretDetailProps {
 }
 
 export function SecretDetail({ secret, onRecover, onClose }: SecretDetailProps) {
-  const { rotateSecret, deleteSecret, loading, error } = useSecretStore();
+  const { deleteSecret, loading, error } = useSecretStore();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showRotateConfirm, setShowRotateConfirm] = useState(false);
 
@@ -48,9 +48,9 @@ export function SecretDetail({ secret, onRecover, onClose }: SecretDetailProps) 
 
   const handleRotate = async () => {
     try {
-      // In a real implementation, you would prompt for the new secret data
-      // For now, we'll just show a placeholder
-      await rotateSecret(secret.id, []);
+      // In a real implementation, this would trigger key rotation via Tauri
+      // For now, just close the confirmation dialog
+      // TODO: Implement key rotation when backend support is added
       setShowRotateConfirm(false);
     } catch (err) {
       console.error("Failed to rotate secret:", err);

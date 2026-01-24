@@ -1,6 +1,6 @@
 // SecretList Component for WRAITH Vault
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSecretStore } from "../stores/secretStore";
 import type { SecretInfo, SecretType } from "../types";
 
