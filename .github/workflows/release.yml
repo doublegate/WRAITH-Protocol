@@ -273,87 +273,71 @@ jobs:
           fi
         shell: bash
 
-      - name: Generate checksum
+      - name: Generate versioned archive
         env:
           TARGET: ${{ matrix.target }}
           BINARY_NAME: ${{ matrix.binary_name }}
           ARTIFACT_NAME: ${{ matrix.artifact_name }}
+          VERSION: ${{ needs.validate.outputs.version }}
           OS_TYPE: ${{ matrix.os }}
         run: |
-          cd "target/$TARGET/release"
-          if [ "$OS_TYPE" = "windows-latest" ]; then
-            certutil -hashfile "$BINARY_NAME" SHA256 > "${ARTIFACT_NAME}.sha256"
-          else
-            shasum -a 256 "$BINARY_NAME" > "${ARTIFACT_NAME}.sha256"
-          fi
-        shell: bash
+          VERSION_NO_V="${VERSION#v}"
+          VERSIONED_NAME="${ARTIFACT_NAME}-${VERSION_NO_V}"
 
-      - name: Create archive
-        env:
-          TARGET: ${{ matrix.target }}
-          BINARY_NAME: ${{ matrix.binary_name }}
-          ARTIFACT_NAME: ${{ matrix.artifact_name }}
-          OS_TYPE: ${{ matrix.os }}
-        run: |
+          mkdir -p release-staging
           cd "target/$TARGET/release"
+
+          # Generate checksum
           if [ "$OS_TYPE" = "windows-latest" ]; then
-            7z a "${ARTIFACT_NAME}.zip" "$BINARY_NAME"
-            ASSET="target/$TARGET/release/${ARTIFACT_NAME}.zip"
-            echo "ASSET_PATH=$ASSET" >> $GITHUB_ENV
+            certutil -hashfile "$BINARY_NAME" SHA256 > "../../../release-staging/${VERSIONED_NAME}.sha256"
           else
-            tar czf "${ARTIFACT_NAME}.tar.gz" "$BINARY_NAME"
-            ASSET="target/$TARGET/release/${ARTIFACT_NAME}.tar.gz"
-            echo "ASSET_PATH=$ASSET" >> $GITHUB_ENV
+            shasum -a 256 "$BINARY_NAME" | sed "s/$BINARY_NAME/${VERSIONED_NAME}/" > "../../../release-staging/${VERSIONED_NAME}.sha256"
           fi
+
+          # Create archive with version in filename
+          if [ "$OS_TYPE" = "windows-latest" ]; then
+            7z a "../../../release-staging/${VERSIONED_NAME}.zip" "$BINARY_NAME"
+          else
+            tar czf "../../../release-staging/${VERSIONED_NAME}.tar.gz" "$BINARY_NAME"
+          fi
+
+          cd ../../..
+          echo "Release staging contents:"
+          ls -lh release-staging/
         shell: bash
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact_name }}
-          path: |
-            ${{ env.ASSET_PATH }}
-            target/${{ matrix.target }}/release/${{
-              matrix.artifact_name
-            }}.sha256
+          name: ${{ matrix.artifact_name }}-${{ needs.validate.outputs.version }}
+          path: release-staging/*
           if-no-files-found: error
           retention-days: 7
 
   #############################################################################
-  # Job 4: Build Tauri Client Applications
+  # Job 4: Build All Tauri Client Applications (Bundled Per Platform)
   #############################################################################
   build-clients:
-    name: Build ${{ matrix.client }} (${{ matrix.os }})
+    name: Build All Clients (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     needs: [validate, test]
 
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        client:
-          - wraith-transfer
-          - wraith-chat
-          - wraith-sync
-          - wraith-share
-          - wraith-stream
-          - wraith-mesh
-          - wraith-publish
-          - wraith-vault
-          - wraith-recon
         include:
-          # Linux configuration
+          # Linux x86_64 configuration
           - os: ubuntu-latest
             platform: linux
-            bundle_ext: "AppImage,deb"
-          # macOS configuration
+            arch: x86_64
+          # macOS configuration (universal binary)
           - os: macos-latest
             platform: macos
-            bundle_ext: "dmg"
-          # Windows configuration
+            arch: universal
+          # Windows x86_64 configuration
           - os: windows-latest
             platform: windows
-            bundle_ext: "msi,exe"
+            arch: x86_64
 
     steps:
       - name: Checkout repository
@@ -400,6 +384,16 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Install jq (for JSON manipulation)
+        if: matrix.os != 'windows-latest'
+        run: |
+          if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+            sudo apt-get install -y jq
+          elif [ "${{ matrix.os }}" = "macos-latest" ]; then
+            brew install jq
+          fi
+        shell: bash
+
       - name: Cache Cargo registry
         uses: actions/cache@v4
         with:
@@ -408,104 +402,336 @@ jobs:
             ~/.cargo/git
             target
           key: >-
-            ${{ matrix.os }}-cargo-tauri-${{ matrix.client }}-
+            ${{ matrix.os }}-cargo-tauri-all-clients-
             ${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ matrix.os }}-cargo-tauri-${{ matrix.client }}-
+            ${{ matrix.os }}-cargo-tauri-all-clients-
             ${{ matrix.os }}-cargo-tauri-
             ${{ matrix.os }}-cargo-
-
-      - name: Cache Node modules
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.npm
-            clients/${{ matrix.client }}/node_modules
-            clients/${{ matrix.client }}/frontend/node_modules
-          key: >-
-            ${{ matrix.os }}-node-${{ matrix.client }}-
-            ${{ hashFiles('clients/${{ matrix.client }}/**/package-lock.json') }}
-          restore-keys: |
-            ${{ matrix.os }}-node-${{ matrix.client }}-
-            ${{ matrix.os }}-node-
 
       - name: Install Tauri CLI
         run: npm install -g @tauri-apps/cli@^2.0.0
 
-      - name: Install frontend dependencies
-        working-directory: clients/${{ matrix.client }}/frontend
-        run: npm ci || npm install
-
-      - name: Install root dependencies (if exists)
-        working-directory: clients/${{ matrix.client }}
+      - name: Update Tauri config versions to match release tag
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
         run: |
-          if [ -f "package.json" ]; then
-            npm ci || npm install
-          fi
+          VERSION_NO_V="${VERSION#v}"
+          echo "Setting all client versions to $VERSION_NO_V"
+
+          # List of all Tauri clients
+          CLIENTS=(
+            "wraith-transfer"
+            "wraith-chat"
+            "wraith-sync"
+            "wraith-share"
+            "wraith-stream"
+            "wraith-mesh"
+            "wraith-publish"
+            "wraith-vault"
+            "wraith-recon"
+          )
+
+          for client in "${CLIENTS[@]}"; do
+            CONFIG_FILE="clients/$client/src-tauri/tauri.conf.json"
+            if [ -f "$CONFIG_FILE" ]; then
+              echo "Updating $CONFIG_FILE to version $VERSION_NO_V"
+              # Use jq on Unix, or sed as fallback
+              if command -v jq &> /dev/null; then
+                jq --arg ver "$VERSION_NO_V" '.version = $ver' "$CONFIG_FILE" > tmp.json && mv tmp.json "$CONFIG_FILE"
+              else
+                sed -i.bak "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION_NO_V\"/" "$CONFIG_FILE"
+                rm -f "${CONFIG_FILE}.bak"
+              fi
+            fi
+          done
+
+          echo "✓ All Tauri configs updated to version $VERSION_NO_V"
         shell: bash
 
-      - name: Build Tauri application
-        working-directory: clients/${{ matrix.client }}
+      - name: Update Tauri config versions (Windows)
+        if: matrix.os == 'windows-latest'
         env:
-          CLIENT_NAME: ${{ matrix.client }}
+          VERSION: ${{ needs.validate.outputs.version }}
+        shell: pwsh
+        run: |
+          $VERSION_NO_V = $env:VERSION -replace '^v', ''
+          Write-Host "Setting all client versions to $VERSION_NO_V"
+
+          $clients = @(
+            "wraith-transfer",
+            "wraith-chat",
+            "wraith-sync",
+            "wraith-share",
+            "wraith-stream",
+            "wraith-mesh",
+            "wraith-publish",
+            "wraith-vault",
+            "wraith-recon"
+          )
+
+          foreach ($client in $clients) {
+            $configFile = "clients/$client/src-tauri/tauri.conf.json"
+            if (Test-Path $configFile) {
+              Write-Host "Updating $configFile to version $VERSION_NO_V"
+              $json = Get-Content $configFile -Raw | ConvertFrom-Json
+              $json.version = $VERSION_NO_V
+              $json | ConvertTo-Json -Depth 10 | Set-Content $configFile -Encoding UTF8
+            }
+          }
+
+          Write-Host "All Tauri configs updated to version $VERSION_NO_V"
+
+      - name: Build all Tauri clients
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
           PLATFORM: ${{ matrix.platform }}
         run: |
-          echo "Building $CLIENT_NAME for $PLATFORM"
-          npm run tauri build
+          VERSION_NO_V="${VERSION#v}"
+          echo "Building all clients for $PLATFORM (version $VERSION_NO_V)"
+
+          # List of production-ready clients to build
+          # Note: Some clients may not have complete frontends yet
+          CLIENTS=(
+            "wraith-transfer"
+            "wraith-chat"
+            "wraith-sync"
+          )
+
+          # Clients that are planned but may not build yet
+          OPTIONAL_CLIENTS=(
+            "wraith-share"
+            "wraith-stream"
+            "wraith-mesh"
+            "wraith-publish"
+            "wraith-vault"
+            "wraith-recon"
+          )
+
+          # Build production clients (fail on error)
+          for client in "${CLIENTS[@]}"; do
+            echo ""
+            echo "=========================================="
+            echo "Building $client..."
+            echo "=========================================="
+            cd "clients/$client"
+
+            # Install dependencies
+            if [ -f "package.json" ]; then
+              npm ci || npm install
+            fi
+            if [ -d "frontend" ] && [ -f "frontend/package.json" ]; then
+              cd frontend && npm ci || npm install && cd ..
+            fi
+
+            # Build
+            npm run tauri build || {
+              echo "ERROR: Failed to build $client"
+              exit 1
+            }
+
+            cd ../..
+          done
+
+          # Build optional clients (continue on error)
+          for client in "${OPTIONAL_CLIENTS[@]}"; do
+            echo ""
+            echo "=========================================="
+            echo "Building $client (optional)..."
+            echo "=========================================="
+            if [ -d "clients/$client" ]; then
+              cd "clients/$client"
+
+              # Install dependencies
+              if [ -f "package.json" ]; then
+                npm ci || npm install || true
+              fi
+              if [ -d "frontend" ] && [ -f "frontend/package.json" ]; then
+                cd frontend && (npm ci || npm install || true) && cd ..
+              fi
+
+              # Build (continue on failure)
+              npm run tauri build || echo "WARNING: $client build failed (optional)"
+
+              cd ../..
+            else
+              echo "Skipping $client (directory not found)"
+            fi
+          done
+
+          echo ""
+          echo "✓ Client builds complete"
         shell: bash
 
-      - name: Collect Linux artifacts
+      - name: Collect and bundle Linux artifacts
         if: matrix.os == 'ubuntu-latest'
         env:
-          CLIENT_NAME: ${{ matrix.client }}
+          VERSION: ${{ needs.validate.outputs.version }}
+          ARCH: ${{ matrix.arch }}
         run: |
-          mkdir -p client-artifacts
-          # Find and copy AppImage, deb, rpm files from workspace target
-          # Tauri clients share the workspace target directory
-          if [ -d "target/release/bundle" ]; then
-            find target/release/bundle -type f \
-              \( -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" \) \
-              -exec cp {} client-artifacts/ \; || true
-          fi
-          echo "Linux artifacts:"
-          ls -lh client-artifacts/ || echo "No artifacts found"
+          VERSION_NO_V="${VERSION#v}"
+          BUNDLE_NAME="wraith-clients-${VERSION_NO_V}-linux-${ARCH}"
 
-      - name: Collect macOS artifacts
+          mkdir -p "bundle-staging/$BUNDLE_NAME"
+
+          # Collect all client artifacts
+          if [ -d "target/release/bundle" ]; then
+            # AppImages
+            find target/release/bundle -type f -name "*.AppImage" \
+              -exec cp {} "bundle-staging/$BUNDLE_NAME/" \; 2>/dev/null || true
+
+            # Debian packages
+            find target/release/bundle -type f -name "*.deb" \
+              -exec cp {} "bundle-staging/$BUNDLE_NAME/" \; 2>/dev/null || true
+
+            # RPM packages (if any)
+            find target/release/bundle -type f -name "*.rpm" \
+              -exec cp {} "bundle-staging/$BUNDLE_NAME/" \; 2>/dev/null || true
+          fi
+
+          # Create README for the bundle
+          cat > "bundle-staging/$BUNDLE_NAME/README.txt" << EOF
+          WRAITH Protocol Client Applications
+          Version: ${VERSION}
+          Platform: Linux ${ARCH}
+
+          Installation:
+          - AppImage: chmod +x *.AppImage && ./*.AppImage
+          - Debian/Ubuntu: sudo dpkg -i *.deb
+          - Fedora/RHEL: sudo rpm -i *.rpm
+
+          For more information: https://github.com/doublegate/WRAITH-Protocol
+          EOF
+
+          # Generate checksums
+          cd "bundle-staging/$BUNDLE_NAME"
+          sha256sum * > SHA256SUMS.txt 2>/dev/null || true
+          cd ../..
+
+          # Create the bundle archive
+          mkdir -p client-bundle
+          cd bundle-staging
+          tar czf "../client-bundle/${BUNDLE_NAME}.tar.gz" "$BUNDLE_NAME"
+          cd ..
+
+          # Also create individual checksums for the bundle
+          cd client-bundle
+          sha256sum "${BUNDLE_NAME}.tar.gz" > "${BUNDLE_NAME}.tar.gz.sha256"
+          cd ..
+
+          echo "Linux bundle created:"
+          ls -lh client-bundle/
+
+      - name: Collect and bundle macOS artifacts
         if: matrix.os == 'macos-latest'
         env:
-          CLIENT_NAME: ${{ matrix.client }}
+          VERSION: ${{ needs.validate.outputs.version }}
+          ARCH: ${{ matrix.arch }}
         run: |
-          mkdir -p client-artifacts
-          # Find and copy dmg and app files from workspace target
-          # Tauri clients share the workspace target directory
+          VERSION_NO_V="${VERSION#v}"
+          BUNDLE_NAME="wraith-clients-${VERSION_NO_V}-macos-${ARCH}"
+
+          mkdir -p "bundle-staging/$BUNDLE_NAME"
+
+          # Collect all DMG files
           if [ -d "target/release/bundle" ]; then
-            find target/release/bundle -type f \
-              -name "*.dmg" \
-              -exec cp {} client-artifacts/ \; || true
+            find target/release/bundle -type f -name "*.dmg" \
+              -exec cp {} "bundle-staging/$BUNDLE_NAME/" \; 2>/dev/null || true
           fi
-          echo "macOS artifacts:"
-          ls -lh client-artifacts/ || echo "No artifacts found"
 
-      - name: Collect Windows artifacts
+          # Create README for the bundle
+          cat > "bundle-staging/$BUNDLE_NAME/README.txt" << EOF
+          WRAITH Protocol Client Applications
+          Version: ${VERSION}
+          Platform: macOS ${ARCH}
+
+          Installation:
+          - Double-click the .dmg file
+          - Drag the application to your Applications folder
+
+          For more information: https://github.com/doublegate/WRAITH-Protocol
+          EOF
+
+          # Generate checksums
+          cd "bundle-staging/$BUNDLE_NAME"
+          shasum -a 256 * > SHA256SUMS.txt 2>/dev/null || true
+          cd ../..
+
+          # Create the bundle archive
+          mkdir -p client-bundle
+          cd bundle-staging
+          tar czf "../client-bundle/${BUNDLE_NAME}.tar.gz" "$BUNDLE_NAME"
+          cd ..
+
+          # Also create individual checksums for the bundle
+          cd client-bundle
+          shasum -a 256 "${BUNDLE_NAME}.tar.gz" > "${BUNDLE_NAME}.tar.gz.sha256"
+          cd ..
+
+          echo "macOS bundle created:"
+          ls -lh client-bundle/
+
+      - name: Collect and bundle Windows artifacts
         if: matrix.os == 'windows-latest'
-        shell: pwsh
         env:
-          CLIENT_NAME: ${{ matrix.client }}
+          VERSION: ${{ needs.validate.outputs.version }}
+          ARCH: ${{ matrix.arch }}
+        shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path client-artifacts
-          # Find and copy msi and exe files from workspace target
-          # Tauri clients share the workspace target directory
-          if (Test-Path "target\release\bundle") {
-            Get-ChildItem -Path "target\release\bundle" -Recurse -Include "*.msi","*.exe" -ErrorAction SilentlyContinue | Copy-Item -Destination client-artifacts -ErrorAction SilentlyContinue
-          }
-          Write-Host "Windows artifacts:"
-          Get-ChildItem client-artifacts -ErrorAction SilentlyContinue
+          $VERSION_NO_V = $env:VERSION -replace '^v', ''
+          $BUNDLE_NAME = "wraith-clients-$VERSION_NO_V-windows-$env:ARCH"
 
-      - name: Upload client artifacts
+          New-Item -ItemType Directory -Force -Path "bundle-staging\$BUNDLE_NAME"
+
+          # Collect all MSI and EXE installers
+          if (Test-Path "target\release\bundle") {
+            Get-ChildItem -Path "target\release\bundle" -Recurse -Include "*.msi" -ErrorAction SilentlyContinue |
+              Copy-Item -Destination "bundle-staging\$BUNDLE_NAME" -ErrorAction SilentlyContinue
+
+            # Only include NSIS installers, not the actual executables
+            Get-ChildItem -Path "target\release\bundle\nsis" -Recurse -Include "*.exe" -ErrorAction SilentlyContinue |
+              Copy-Item -Destination "bundle-staging\$BUNDLE_NAME" -ErrorAction SilentlyContinue
+          }
+
+          # Create README for the bundle
+          @"
+          WRAITH Protocol Client Applications
+          Version: $env:VERSION
+          Platform: Windows $env:ARCH
+
+          Installation:
+          - MSI: Double-click the .msi file to install
+          - EXE: Run the .exe installer
+
+          For more information: https://github.com/doublegate/WRAITH-Protocol
+          "@ | Out-File -FilePath "bundle-staging\$BUNDLE_NAME\README.txt" -Encoding UTF8
+
+          # Generate checksums
+          Push-Location "bundle-staging\$BUNDLE_NAME"
+          Get-ChildItem -File | ForEach-Object {
+            $hash = (Get-FileHash $_.Name -Algorithm SHA256).Hash.ToLower()
+            "$hash  $($_.Name)" | Out-File -Append -FilePath "SHA256SUMS.txt" -Encoding UTF8
+          }
+          Pop-Location
+
+          # Create the bundle archive
+          New-Item -ItemType Directory -Force -Path "client-bundle"
+          Compress-Archive -Path "bundle-staging\$BUNDLE_NAME" -DestinationPath "client-bundle\$BUNDLE_NAME.zip"
+
+          # Create checksum for the bundle
+          Push-Location "client-bundle"
+          $hash = (Get-FileHash "$BUNDLE_NAME.zip" -Algorithm SHA256).Hash.ToLower()
+          "$hash  $BUNDLE_NAME.zip" | Out-File -FilePath "$BUNDLE_NAME.zip.sha256" -Encoding UTF8
+          Pop-Location
+
+          Write-Host "Windows bundle created:"
+          Get-ChildItem client-bundle
+
+      - name: Upload client bundle
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.client }}-${{ matrix.platform }}
-          path: client-artifacts/*
+          name: wraith-clients-${{ matrix.platform }}-${{ matrix.arch }}
+          path: client-bundle/*
           if-no-files-found: warn
           retention-days: 7
 
@@ -531,34 +757,58 @@ jobs:
           path: artifacts
 
       - name: Organize release assets
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
         run: |
+          VERSION_NO_V="${VERSION#v}"
           mkdir -p release-assets
+
+          echo "Organizing artifacts for version $VERSION..."
 
           # Move protocol binary archives and checksums
           find artifacts -type f \
-            \( -name "*.tar.gz" -o -name "*.zip" \
-               -o -name "*.sha256" \) \
-            -exec mv {} release-assets/ \;
+            \( -name "*.tar.gz" -o -name "*.zip" \) \
+            ! -name "wraith-clients-*" \
+            -exec mv {} release-assets/ \; 2>/dev/null || true
 
-          # Move client application bundles
-          find artifacts -type f \
-            \( -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" \
-               -o -name "*.dmg" -o -name "*.msi" -o -name "*.exe" \) \
-            -exec mv {} release-assets/ \;
+          # Move protocol binary checksums
+          find artifacts -type f -name "*.sha256" \
+            ! -name "wraith-clients-*" \
+            -exec mv {} release-assets/ \; 2>/dev/null || true
 
-          # Create combined checksums file for protocol binaries
+          # Move client bundle archives (tar.gz for Linux/macOS, zip for Windows)
+          find artifacts -type f -name "wraith-clients-*.tar.gz" \
+            -exec mv {} release-assets/ \; 2>/dev/null || true
+          find artifacts -type f -name "wraith-clients-*.zip" \
+            -exec mv {} release-assets/ \; 2>/dev/null || true
+
+          # Move client bundle checksums
+          find artifacts -type f -name "wraith-clients-*.sha256" \
+            -exec mv {} release-assets/ \; 2>/dev/null || true
+
+          # Create combined checksums file
           cd release-assets
-          if ls *.sha256 1> /dev/null 2>&1; then
-            cat *.sha256 > SHA256SUMS.txt
+
+          # Protocol binary checksums
+          echo "# WRAITH Protocol CLI Binaries - SHA256 Checksums" > SHA256SUMS.txt
+          echo "# Version: $VERSION" >> SHA256SUMS.txt
+          echo "" >> SHA256SUMS.txt
+          if ls wraith-x86_64-*.sha256 wraith-aarch64-*.sha256 1> /dev/null 2>&1; then
+            cat wraith-x86_64-*.sha256 wraith-aarch64-*.sha256 >> SHA256SUMS.txt 2>/dev/null || true
           fi
 
-          # Generate checksums for client artifacts
-          for file in *.AppImage *.deb *.rpm *.dmg *.msi; do
-            if [ -f "$file" ]; then
-              shasum -a 256 "$file" >> SHA256SUMS-clients.txt
-            fi
-          done
+          # Client bundle checksums
+          echo "# WRAITH Client Application Bundles - SHA256 Checksums" > SHA256SUMS-clients.txt
+          echo "# Version: $VERSION" >> SHA256SUMS-clients.txt
+          echo "" >> SHA256SUMS-clients.txt
+          if ls wraith-clients-*.sha256 1> /dev/null 2>&1; then
+            cat wraith-clients-*.sha256 >> SHA256SUMS-clients.txt 2>/dev/null || true
+          fi
 
+          # Remove individual .sha256 files (they're now in the combined files)
+          rm -f wraith-*.sha256 2>/dev/null || true
+
+          echo ""
           echo "Release assets:"
           ls -lh
 
@@ -663,7 +913,9 @@ jobs:
           VERSION: ${{ needs.validate.outputs.version }}
           IS_PRERELEASE: ${{ needs.validate.outputs.is_prerelease }}
         run: |
+          VERSION_NO_V="${VERSION#v}"
           S=$GITHUB_STEP_SUMMARY
+
           echo "## Release Created Successfully" >> $S
           echo "" >> $S
           echo "**Version:** $VERSION" >> $S
@@ -674,33 +926,36 @@ jobs:
           echo "" >> $S
           echo "| Platform | Artifact |" >> $S
           echo "|----------|----------|" >> $S
-          echo "| Linux x86_64 (glibc) | wraith-x86_64-linux-gnu.tar.gz |" >> $S
-          echo "| Linux x86_64 (musl) | wraith-x86_64-linux-musl.tar.gz |" >> $S
-          echo "| Linux aarch64 | wraith-aarch64-linux-gnu.tar.gz |" >> $S
-          echo "| macOS x86_64 | wraith-x86_64-macos.tar.gz |" >> $S
-          echo "| macOS Apple Silicon | wraith-aarch64-macos.tar.gz |" >> $S
-          echo "| Windows x86_64 | wraith-x86_64-windows.zip |" >> $S
+          echo "| Linux x86_64 (glibc) | wraith-x86_64-linux-gnu-${VERSION_NO_V}.tar.gz |" >> $S
+          echo "| Linux x86_64 (musl) | wraith-x86_64-linux-musl-${VERSION_NO_V}.tar.gz |" >> $S
+          echo "| Linux aarch64 | wraith-aarch64-linux-gnu-${VERSION_NO_V}.tar.gz |" >> $S
+          echo "| macOS x86_64 | wraith-x86_64-macos-${VERSION_NO_V}.tar.gz |" >> $S
+          echo "| macOS Apple Silicon | wraith-aarch64-macos-${VERSION_NO_V}.tar.gz |" >> $S
+          echo "| Windows x86_64 | wraith-x86_64-windows-${VERSION_NO_V}.zip |" >> $S
           echo "" >> $S
 
-          echo "### Desktop Client Applications" >> $S
+          echo "### Desktop Client Application Bundles" >> $S
           echo "" >> $S
-          echo "| Client | Linux | macOS | Windows |" >> $S
-          echo "|--------|-------|-------|---------|" >> $S
-          echo "| WRAITH Transfer | AppImage, deb | dmg | msi |" >> $S
-          echo "| WRAITH Chat | AppImage, deb | dmg | msi |" >> $S
-          echo "| WRAITH Sync | AppImage, deb | dmg | msi |" >> $S
-          echo "| WRAITH Share | AppImage, deb | dmg | msi |" >> $S
-          echo "| WRAITH Stream | AppImage, deb | dmg | msi |" >> $S
-          echo "| WRAITH Mesh | AppImage, deb | dmg | msi |" >> $S
-          echo "| WRAITH Publish | AppImage, deb | dmg | msi |" >> $S
-          echo "| WRAITH Vault | AppImage, deb | dmg | msi |" >> $S
-          echo "| WRAITH Recon | AppImage, deb | dmg | msi |" >> $S
+          echo "All client applications are bundled together per platform:" >> $S
+          echo "" >> $S
+          echo "| Platform | Bundle Archive | Contents |" >> $S
+          echo "|----------|----------------|----------|" >> $S
+          echo "| Linux x86_64 | wraith-clients-${VERSION_NO_V}-linux-x86_64.tar.gz | AppImage, .deb packages |" >> $S
+          echo "| macOS | wraith-clients-${VERSION_NO_V}-macos-universal.tar.gz | .dmg installers |" >> $S
+          echo "| Windows x86_64 | wraith-clients-${VERSION_NO_V}-windows-x86_64.zip | .msi installers |" >> $S
+          echo "" >> $S
+
+          echo "**Included Clients:**" >> $S
+          echo "- WRAITH Transfer - Secure file transfer" >> $S
+          echo "- WRAITH Chat - Encrypted messaging with voice/video" >> $S
+          echo "- WRAITH Sync - File synchronization" >> $S
+          echo "- WRAITH Share, Stream, Mesh, Publish, Vault, Recon (when available)" >> $S
           echo "" >> $S
 
           echo "### Checksums" >> $S
           echo "" >> $S
-          echo "- **SHA256SUMS.txt** - Protocol binary checksums" >> $S
-          echo "- **SHA256SUMS-clients.txt** - Client application checksums" >> $S
+          echo "- **SHA256SUMS.txt** - Protocol CLI binary checksums" >> $S
+          echo "- **SHA256SUMS-clients.txt** - Client bundle checksums" >> $S
           echo "" >> $S
 
           echo "### Installation" >> $S
@@ -708,28 +963,29 @@ jobs:
           echo "**Protocol CLI:**" >> $S
           echo '```bash' >> $S
           echo "# Linux/macOS" >> $S
-          echo "tar xzf wraith-<platform>.tar.gz" >> $S
+          echo "tar xzf wraith-x86_64-linux-gnu-${VERSION_NO_V}.tar.gz" >> $S
           echo "chmod +x wraith" >> $S
           echo "./wraith --version" >> $S
           echo "" >> $S
           echo "# Windows (PowerShell)" >> $S
-          echo "Expand-Archive wraith-x86_64-windows.zip" >> $S
+          echo "Expand-Archive wraith-x86_64-windows-${VERSION_NO_V}.zip" >> $S
           echo ".\\wraith.exe --version" >> $S
           echo '```' >> $S
           echo "" >> $S
 
           echo "**Desktop Clients:**" >> $S
           echo '```bash' >> $S
+          echo "# Extract the bundle for your platform" >> $S
+          echo "tar xzf wraith-clients-${VERSION_NO_V}-linux-x86_64.tar.gz" >> $S
+          echo "cd wraith-clients-${VERSION_NO_V}-linux-x86_64" >> $S
+          echo "" >> $S
           echo "# Linux (AppImage)" >> $S
-          echo "chmod +x wraith-transfer_*.AppImage" >> $S
+          echo "chmod +x *.AppImage" >> $S
           echo "./wraith-transfer_*.AppImage" >> $S
           echo "" >> $S
           echo "# Linux (Debian/Ubuntu)" >> $S
-          echo "sudo dpkg -i wraith-transfer_*.deb" >> $S
+          echo "sudo dpkg -i *.deb" >> $S
           echo "" >> $S
-          echo "# macOS" >> $S
-          echo "# Double-click the .dmg file and drag to Applications" >> $S
-          echo "" >> $S
-          echo "# Windows" >> $S
-          echo "# Run the .msi installer" >> $S
+          echo "# macOS - Extract and double-click the .dmg files" >> $S
+          echo "# Windows - Extract and run the .msi installers" >> $S
           echo '```' >> $S
