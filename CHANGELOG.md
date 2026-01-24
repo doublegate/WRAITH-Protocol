@@ -11,6 +11,39 @@ _No changes yet._
 
 ---
 
+## [2.0.1] - 2026-01-24 - Bug Fixes & UI Standardization
+
+### Fixed
+
+#### WRAITH-Vault White Screen
+- Resolved TypeScript compilation errors causing white screen on startup
+- Fixed unused imports in React components (App.tsx, AddGuardianModal.tsx, CreateSecretModal.tsx, etc.)
+- Fixed createSecret function signature in CreateSecretModal
+- Fixed MouseEvent type in GuardianList component
+- Removed non-existent rotateSecret call from SecretDetail
+
+#### Wayland Compatibility
+- Added GDK_BACKEND fixes for WRAITH-Stream, WRAITH-Mesh, WRAITH-Vault
+- KDE Plasma detection forces X11 backend
+- Wayland fallback (wayland,x11) for other compositors
+- GBM buffer workaround (WEBKIT_DISABLE_COMPOSITING_MODE)
+
+### Changed
+
+#### UI/UX Standardization
+- Applied WRAITH Design System across all 8 client applications
+- Consistent color palette (violet primary, indigo secondary, cyan accent)
+- Standardized button sizing (0.5rem 1rem padding, 0.875rem font)
+- Consistent layout dimensions (280px sidebar, 64px header)
+- Dark theme backgrounds (slate 900/950)
+
+### Improved
+
+- All 8 client frontends rebuilt with updated styling
+- Comprehensive documentation updates for v2.0.0 release
+
+---
+
 ## [2.0.0] - 2026-01-22 - Phase 24 Complete: WRAITH-Vault Distributed Secret Storage
 
 ### Phase 24 - Distributed Secret Storage Application

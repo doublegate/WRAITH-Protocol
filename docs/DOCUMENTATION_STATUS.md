@@ -1,7 +1,7 @@
 # WRAITH Protocol Documentation Status
 
-**Date:** 2026-01-23
-**Status:** Complete (v2.0.0)
+**Date:** 2026-01-24
+**Status:** Complete (v2.0.1)
 
 ---
 

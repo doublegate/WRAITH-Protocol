@@ -1,6 +1,6 @@
 [package]
 name = "wraith-chat"
-version = "1.7.2"
+version = "2.0.1"
 description = "WRAITH-Chat - Secure E2E Encrypted Messaging"
 authors = ["WRAITH Protocol Contributors"]
 edition = "2024"
