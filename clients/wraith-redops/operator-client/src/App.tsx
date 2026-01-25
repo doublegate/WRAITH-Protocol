@@ -44,6 +44,7 @@ function App() {
   const [showCreateCampaign, setShowCreateCampaign] = useState(false)
   const [newCampaignName, setNewCampaignName] = useState('')
   const [newCampaignDesc, setNewCampaignDesc] = useState('')
+  const [serverAddress, setServerAddress] = useState('127.0.0.1:50051')
 
   const handleCreateCampaign = async () => {
     try {
@@ -57,10 +58,10 @@ function App() {
     }
   }
   
-  const connect = async () => {
+  const connect = async (addr = serverAddress) => {
     try {
       setServerStatus('Connecting...')
-      await invoke('connect_to_server', { address: '127.0.0.1:50051' })
+      await invoke('connect_to_server', { address: addr })
       setServerStatus('Connected')
       refreshAll()
     } catch (e) {
@@ -131,7 +132,7 @@ function App() {
         <nav className="w-48 border-r border-slate-800 bg-slate-950 p-2 text-xs">
           <div className="mb-2 px-2 text-slate-500 uppercase">Operations</div>
           <ul className="space-y-1">
-            {['Dashboard', 'Campaigns', 'Beacons', 'Listeners', 'Artifacts'].map(tab => (
+            {['Dashboard', 'Campaigns', 'Beacons', 'Listeners', 'Artifacts', 'Settings'].map(tab => (
               <li key={tab}>
                 <button 
                   onClick={() => setActiveTab(tab.toLowerCase())}
@@ -147,6 +148,24 @@ function App() {
         {/* Content Area */}
         <main className="flex-1 overflow-auto bg-slate-950 p-4">
           
+          {/* Settings */}
+          {activeTab === 'settings' && (
+            <div className="flex flex-col h-full gap-4">
+                <div className="rounded border border-slate-800 bg-slate-900 p-4">
+                    <h3 className="text-sm font-bold text-white mb-4">CONNECTION SETTINGS</h3>
+                    <div className="grid gap-2">
+                        <label className="text-xs text-slate-500">TEAM SERVER ADDRESS</label>
+                        <input 
+                            value={serverAddress}
+                            onChange={(e) => setServerAddress(e.target.value)}
+                            className="bg-slate-950 border border-slate-800 p-2 text-xs text-white focus:outline-none focus:border-red-500"
+                        />
+                        <button onClick={() => connect(serverAddress)} className="bg-red-600 text-white px-4 py-2 text-xs font-bold w-fit hover:bg-red-500">RECONNECT</button>
+                    </div>
+                </div>
+            </div>
+          )}
+
           {/* Dashboard - Placeholder */}
           {activeTab === 'dashboard' && (
              <div className="flex flex-col h-full gap-4">
