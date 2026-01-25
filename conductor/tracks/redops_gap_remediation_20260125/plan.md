@@ -1,0 +1,63 @@
+# Implementation Plan: WRAITH-RedOps Remediation (Gap Analysis v2.2.5)
+
+This plan outlines the methodical remediation of WRAITH-RedOps according to the Gap Analysis findings, following a strict Section-by-Section approach.
+
+## Phase 1: Team Server Remediation (Gap Analysis Section 1)
+
+- [x] Task: 1.1 - Implement Operator ID extraction from gRPC metadata in `operator.rs` b32156e
+    - [x] Write tests for gRPC metadata extraction
+    - [x] Implement metadata interceptor/extraction logic
+- [ ] Task: 1.2 - Implement full DNS Tunneling Listener
+    - [ ] Write tests for DNS protocol handling (TXT/A/AAAA)
+    - [ ] Implement DNS server logic and protocol handler in `dns.rs`
+- [ ] Task: 1.3 - Implement SMB Named Pipe Listener
+    - [ ] Write tests for SMB named pipe communication
+    - [ ] Implement SMB server logic in `smb.rs`
+- [ ] Task: 1.4 - Implement Implant Service Decryption and Binary Retrieval
+    - [ ] Write tests for command/payload decryption
+    - [ ] Implement decryption logic and builder integration in `implant.rs`
+- [ ] Task: 1.5 - Connect HTTP Listener to Database and Tasks
+    - [ ] Write tests for task queuing and delivery via HTTP
+    - [ ] Implement DB query logic and Frame construction in `http.rs`
+- [ ] Task: 1.9 - Implement Full Implant Build Pipeline
+    - [ ] Write tests for dynamic implant compilation
+    - [ ] Implement LLVM build pipeline and obfuscation in `builder/mod.rs`
+- [ ] Task: Conductor - User Manual Verification 'Phase 1: Team Server' (Protocol in workflow.md)
+
+## Phase 2: Spectre Implant Remediation (Gap Analysis Section 2)
+
+- [ ] Task: 2.1 - Implement Process Injection Modules
+    - [ ] Write tests for reflective injection, hollowing, and thread hijacking
+    - [ ] Implement logic in `modules/injection.rs`
+- [ ] Task: 2.2 - Implement BOF Loader
+    - [ ] Write tests for COFF loading and symbol resolution
+    - [ ] Implement full loader in `modules/bof_loader.rs`
+- [ ] Task: 2.3 - Implement SOCKS Proxy
+    - [ ] Write tests for SOCKS4a/5 authentication and proxying
+    - [ ] Implement logic in `modules/socks.rs`
+- [ ] Task: 2.4 - Implement PTY Shell and Fix C2 Hardcodings
+    - [ ] Write tests for interactive shell execution
+    - [ ] Implement PTY shell in `c2/mod.rs` and remove hardcoded IPs
+- [ ] Task: 2.5 - Implement Halo's Gate SSN Resolution
+    - [ ] Write tests for syscall resolution
+    - [ ] Implement Halo's Gate logic in `utils/syscalls.rs`
+- [ ] Task: 2.6 - 2.9 - Complete Shell Module and Heap Discovery
+    - [ ] Write tests for shell command execution and runtime heap discovery
+    - [ ] Implement modules in `modules/shell.rs` and `utils/obfuscation.rs`
+- [ ] Task: Conductor - User Manual Verification 'Phase 2: Spectre Implant' (Protocol in workflow.md)
+
+## Phase 3: Operator Client & Integration (Gap Analysis Section 3)
+
+- [ ] Task: 3.1 - Implement Dashboard Metrics Backend Integration
+    - [ ] Write tests for metrics aggregation and retrieval
+    - [ ] Implement data flows in `App.tsx` and Tauri handlers
+- [ ] Task: 3.4 - Implement Actual IPC Data Retrieval
+    - [ ] Write tests for all IPC commands (list beacons, listeners, etc.)
+    - [ ] Replace `vec![]` stubs with real data in `operator-client/src-tauri/src/lib.rs`
+- [ ] Task: Integration - End-to-End Command Encryption
+    - [ ] Write integration tests for E2E encrypted tasking
+    - [ ] Implement encryption at rest in DB and delivery to implant
+- [ ] Task: Integration - Kill Switch Logic Implementation
+    - [ ] Write tests for kill switch triggers
+    - [ ] Implement verification logic in `killswitch.rs`
+- [ ] Task: Conductor - User Manual Verification 'Phase 3: Operator Client & Integration' (Protocol in workflow.md)
