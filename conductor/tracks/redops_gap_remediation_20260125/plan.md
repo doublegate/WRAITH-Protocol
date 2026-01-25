@@ -16,9 +16,9 @@ This plan outlines the methodical remediation of WRAITH-RedOps according to the 
 - [x] Task: 1.4 - Implement Implant Service Decryption and Binary Retrieval ab235f1
     - [x] Write tests for command/payload decryption
     - [x] Implement decryption logic and builder integration in `implant.rs`
-- [ ] Task: 1.5 - Connect HTTP Listener to Database and Tasks
-    - [ ] Write tests for task queuing and delivery via HTTP
-    - [ ] Implement DB query logic and Frame construction in `http.rs`
+- [x] Task: 1.5 - Connect HTTP Listener to Database and Tasks a0e7a89
+    - [x] Write tests for task queuing and delivery via HTTP
+    - [x] Implement DB query logic and Frame construction in `http.rs`
 - [ ] Task: 1.9 - Implement Full Implant Build Pipeline
     - [ ] Write tests for dynamic implant compilation
     - [ ] Implement LLVM build pipeline and obfuscation in `builder/mod.rs`
