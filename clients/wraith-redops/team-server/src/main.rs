@@ -2,7 +2,7 @@ use tonic::transport::Server;
 use sqlx::postgres::PgPoolOptions;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use tracing::{info, error};
+use tracing::info;
 
 // Import generated protos
 pub mod wraith {

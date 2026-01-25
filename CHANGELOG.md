@@ -9,6 +9,72 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.2.5] - 2026-01-24 - WRAITH-RedOps Client (Red Team Operations Platform)
+
+### Overview
+
+This release introduces **WRAITH-RedOps**, a Tier 3 red team operations platform for authorized adversary emulation. This is the 12th client application in the WRAITH Protocol ecosystem (9 desktop + 2 mobile + 1 server platform).
+
+### Added
+
+#### WRAITH-RedOps Client (NEW)
+
+**Red team operations platform** for authorized penetration testing and adversary emulation:
+
+- **Team Server** (`team-server/`)
+  - Rust backend with Axum web framework and Tonic gRPC services
+  - PostgreSQL database with SQLx and full migration support
+  - Listener management: Create/Start/Stop C2 listeners (UDP, HTTP, HTTPS, DNS, TCP)
+  - Implant registry: Track active beacons, health status, metadata
+  - Task queue: Priority-based command scheduling with result collection
+  - Campaign lifecycle management (planning -> active -> completed)
+  - Multi-operator support with role-based access control (RBAC)
+
+- **Operator Client** (`operator-client/`)
+  - Tauri 2.0 desktop application with React + TypeScript frontend
+  - Real-time dashboard with beacon status and campaign statistics
+  - Interactive terminal for command execution
+  - gRPC-over-HTTP bridge to Team Server
+  - Wayland compatibility (X11 fallback for KDE Plasma 6)
+
+- **Spectre Implant** (`spectre-implant/`)
+  - `no_std` Rust binary for minimal footprint
+  - C2 loop: Polling, task execution, result submission
+  - MiniHeap custom allocator for controlled memory management
+  - Sleep mask stub for evasion timing obfuscation
+  - Hash-based API resolution for import hiding
+  - Silent panic handling for operational security
+
+- **Technical Specifications**
+  - Backend: ~1,135 lines Rust (Team Server + Spectre Implant)
+  - Frontend: ~141 lines TypeScript/React (Operator Client)
+  - Protocol: gRPC with protobuf definitions
+  - Database: PostgreSQL (Team Server), isolated from main workspace
+
+### Changed
+
+- Updated project version to 2.2.5
+- Client count increased to 12 total applications (9 desktop + 2 mobile + 1 server platform)
+- Updated README.md with WRAITH-RedOps in client applications table
+- Updated documentation files with current project state
+
+### Fixed
+
+- Wayland display compatibility for WRAITH-RedOps operator client
+  - Automatic X11 fallback for KDE Plasma 6 sessions
+  - Disabled WebKitGTK compositing mode for GBM buffer compatibility
+- TypeScript configuration for Vite build system
+- Protobuf serialization for IPC communication
+
+### Security
+
+- WRAITH-RedOps requires signed authorization for deployment
+- All operations subject to Rules of Engagement (RoE) enforcement
+- Audit logging for compliance and forensic review
+- Excluded from main workspace to isolate dependencies
+
+---
+
 ## [2.2.4] - 2026-01-24 - Templates Directory & Documentation Update
 
 ### Overview

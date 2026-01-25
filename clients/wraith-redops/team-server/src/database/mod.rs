@@ -1,7 +1,7 @@
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
 use anyhow::Result;
-use crate::models::{Campaign, Implant, Command, Operator};
+use crate::models::{Campaign, Implant, Command};
 use crate::models::listener::Listener;
 
 pub struct Database {

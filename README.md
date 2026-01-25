@@ -13,7 +13,7 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
   <a href="https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml"><img src="https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml/badge.svg" alt="CodeQL"></a>
   <a href="https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml"><img src="https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml/badge.svg" alt="Release"></a>
   <br>
-  <a href="https://github.com/doublegate/WRAITH-Protocol/releases"><img src="https://img.shields.io/badge/version-2.2.4-blue.svg" alt="Version"></a>
+  <a href="https://github.com/doublegate/WRAITH-Protocol/releases"><img src="https://img.shields.io/badge/version-2.2.5-blue.svg" alt="Version"></a>
   <a href="docs/security/SECURITY_AUDIT_v1.1.0.md"><img src="https://img.shields.io/badge/security-audited-green.svg" alt="Security"></a>
   <a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/rust-1.88%2B-orange.svg" alt="Rust"></a>
   <a href="https://doc.rust-lang.org/edition-guide/rust-2024/index.html"><img src="https://img.shields.io/badge/edition-2024-orange.svg" alt="Edition"></a>
@@ -42,7 +42,7 @@ WRAITH Protocol is a privacy-focused, high-performance file transfer protocol de
 | **Security** | Grade A+ (zero vulnerabilities, 295 audited dependencies) |
 | **Quality** | 98/100, zero clippy warnings |
 | **TDR** | ~2.5% (Grade A - Excellent) |
-| **Applications** | 9 production-ready desktop clients |
+| **Applications** | 12 production-ready clients (9 desktop + 2 mobile + 1 server platform) |
 | **Templates** | 17 configuration/ROE templates |
 
 ![WRAITH Protocol Banner](images/wraith-protocol_banner-graphic.jpg)
@@ -122,7 +122,7 @@ WRAITH Protocol embodies this evolution: the same philosophy of systematic disco
 
 ## Client Applications
 
-WRAITH Protocol powers a comprehensive ecosystem of 9 production-ready desktop applications:
+WRAITH Protocol powers a comprehensive ecosystem of 12 production-ready applications:
 
 ### Tier 1: Core Applications
 
@@ -147,6 +147,7 @@ WRAITH Protocol powers a comprehensive ecosystem of 9 production-ready desktop a
 | **[WRAITH-Publish](clients/wraith-publish/)** | Desktop | Censorship-resistant content publishing with Ed25519 signatures and RSS |
 | **[WRAITH-Vault](clients/wraith-vault/)** | Desktop | Distributed secret storage with Shamir's Secret Sharing |
 | **[WRAITH-Recon](clients/wraith-recon/)** | Desktop | Network reconnaissance platform for authorized security testing (RoE enforced) |
+| **[WRAITH-RedOps](clients/wraith-redops/)** | Server + Desktop | Red team operations platform with C2 infrastructure, implant framework |
 
 ### Application Highlights
 
@@ -170,6 +171,13 @@ WRAITH Protocol powers a comprehensive ecosystem of 9 production-ready desktop a
 - Covert channel testing (DNS tunneling, ICMP steganography, TLS mimicry)
 - Tamper-evident audit logging with MITRE ATT&CK mapping
 - Kill switch with <1ms activation latency
+
+**WRAITH-RedOps** features (authorized red team operations only):
+- Team Server with PostgreSQL persistence, campaign management, gRPC API
+- Operator Client (Tauri 2.0) with real-time dashboard and interactive terminal
+- Spectre Implant framework (no_std Rust) with C2 loop, sleep obfuscation, API hashing
+- Multi-operator support with role-based access control (RBAC)
+- Listener management for HTTP, HTTPS, DNS, TCP protocols
 
 For detailed client documentation, see the [Client Overview](docs/clients/overview.md).
 

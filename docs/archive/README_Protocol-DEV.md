@@ -4,7 +4,7 @@
 
 This document captures the complete development journey of WRAITH Protocol from inception through version 2.0.0, including detailed phase accomplishments, sprint summaries, and implementation milestones.
 
-[![Version](https://img.shields.io/badge/version-2.2.4-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
+[![Version](https://img.shields.io/badge/version-2.2.5-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
 [![Security](https://img.shields.io/badge/security-audited-green.svg)](../security/DPI_EVASION_REPORT.md)
 [![Rust](https://img.shields.io/badge/rust-1.88%2B-orange.svg)](https://www.rust-lang.org/)
 
@@ -29,7 +29,7 @@ For the current production README, see [../../README.md](../../README.md).
 - **Dependencies:** 295 audited packages (zero vulnerabilities via cargo-audit)
 - **Security:** Grade A+ (EXCELLENT) - zero vulnerabilities, 100% unsafe documentation, comprehensive audits
 - **Technical Debt Ratio:** ~2.5% (Grade A - Excellent)
-- **Client Applications:** 9 production-ready desktop applications with full protocol integration
+- **Client Applications:** 12 production-ready applications (9 desktop + 2 mobile + 1 server platform)
 - **Templates:** 17 configuration/ROE templates in centralized `templates/` directory
 - **CI/CD:** GitHub Actions optimized with reusable setup.yml, path filters, and updated actions (checkout@v4, cache@v4, upload-artifact@v4, download-artifact@v4)
 
