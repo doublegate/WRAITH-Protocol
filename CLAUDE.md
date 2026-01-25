@@ -6,17 +6,18 @@ Guidance for Claude Code when working with this repository.
 
 WRAITH (Wire-speed Resilient Authenticated Invisible Transfer Handler) is a decentralized secure file transfer protocol implemented in Rust.
 
-**Status:** v2.2.3 - CI/CD Build Fixes
+**Status:** v2.2.4 - Templates Directory & Documentation Update
 
 ### Metrics
 | Metric | Value |
 |--------|-------|
-| Tests | 1,695 passing (16 ignored) - 100% pass rate |
-| Code | ~68,000 lines Rust (protocol) + ~12,000 lines (clients) across 11 crates |
-| Documentation | 120+ files, 72,000+ lines |
+| Tests | 2,124 passing (16 ignored) - 100% pass rate |
+| Code | ~272,000 lines Rust (protocol + clients) + ~10,000 lines TypeScript |
+| Documentation | 130+ files, ~90,000+ lines |
+| Templates | 17 configuration/ROE templates |
 | Security | Zero vulnerabilities - EXCELLENT ([v1.1.0 audit](docs/security/SECURITY_AUDIT_v1.1.0.md), 295 deps) |
 | Performance | File chunking 14.85 GiB/s, tree hashing 4.71 GiB/s, verification 4.78 GiB/s, reassembly 5.42 GiB/s |
-| Quality | 98/100, technical debt 3.5%, zero clippy warnings |
+| Quality | 98/100, technical debt 2.5%, zero clippy warnings |
 
 ## Build & Development
 
@@ -45,6 +46,11 @@ WRAITH-Protocol/
 │   ├── wraith-cli/         # CLI (wraith binary)
 │   └── wraith-xdp/         # eBPF/XDP (Linux-only, excluded)
 ├── clients/                # Desktop applications (Tauri)
+├── templates/              # Configuration and ROE templates (17)
+│   ├── recon/              # WRAITH-Recon ROE templates (7)
+│   ├── config/             # CLI and node configuration (2)
+│   ├── transfer/           # Transfer profile templates (1)
+│   └── integration/        # Docker Compose, systemd service (2)
 ├── xtask/                  # Build automation
 ├── docs/                   # Comprehensive documentation
 │   ├── architecture/       # System architecture
@@ -138,5 +144,12 @@ Thread-per-core with no locks in hot path. Sessions pinned to cores, NUMA-aware 
 | wraith-chat | ✅ Complete | 76 | E2EE messaging, voice/video calls, groups |
 | wraith-android | ✅ Complete | 96 | Kotlin + JNI, Keystore, FCM push |
 | wraith-ios | ✅ Complete | 103 | Swift + UniFFI, Keychain, APNs push |
+| wraith-sync | ✅ Complete | 17 | Delta sync, version history |
+| wraith-share | ✅ Complete | 24 | Swarm transfers, link sharing |
+| wraith-stream | ✅ Complete | 27 | AV1/VP9/H.264, adaptive bitrate |
+| wraith-mesh | ✅ Complete | 21 | Topology visualization, DHT inspection |
+| wraith-publish | ✅ Complete | 56 | Ed25519 signatures, RSS feeds |
+| wraith-vault | ✅ Complete | 99 | Shamir SSS, erasure coding, guardians |
+| wraith-recon | ✅ Complete | 78 | Packet capture, protocol analysis |
 
-**Total:** 1,695 tests passing (16 ignored)
+**Total:** 2,124 tests passing (16 ignored)

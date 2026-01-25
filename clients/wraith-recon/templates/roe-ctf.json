@@ -1,0 +1,71 @@
+{
+  "id": "ROE-2026-CTF-001",
+  "version": "1.0",
+  "organization": "CTF Event Organizers",
+  "title": "Capture The Flag Competition - Spring 2026",
+  "description": "Rules of Engagement for CTF competition environment. All systems within scope are intentionally vulnerable and designed for exploitation. Participants are encouraged to use any techniques to capture flags. This is a controlled competition environment with no production systems.",
+  "authorized_operators": [
+    "team-red-001",
+    "team-red-002",
+    "team-blue-001",
+    "team-purple-001",
+    "participant-wildcard"
+  ],
+  "client_name": "CTF Event - Lab Environment",
+  "start_time": "2026-03-15T08:00:00Z",
+  "end_time": "2026-03-17T20:00:00Z",
+  "authorized_cidrs": [
+    "10.13.37.0/24",
+    "10.13.38.0/24",
+    "10.13.39.0/24",
+    "172.20.0.0/16"
+  ],
+  "authorized_domains": [
+    "*.ctf.local",
+    "*.challenge.ctf.local",
+    "*.target.ctf.local",
+    "scoreboard.ctf.local"
+  ],
+  "excluded_targets": [
+    "10.13.37.1/32",
+    "10.13.38.1/32",
+    "10.13.39.1/32",
+    "172.20.0.1/32",
+    "infra.ctf.local",
+    "scoring.ctf.local",
+    "vpn.ctf.local"
+  ],
+  "authorized_techniques": [],
+  "prohibited_techniques": [
+    "T1499",
+    "T1498"
+  ],
+  "max_exfil_rate": null,
+  "max_exfil_total": null,
+  "emergency_contacts": [
+    {
+      "name": "CTF Admin Team",
+      "role": "Event Organizers",
+      "phone": "+1-555-0300",
+      "email": "admin@ctf.local"
+    },
+    {
+      "name": "Infrastructure Team",
+      "role": "Technical Support",
+      "phone": "+1-555-0301",
+      "email": "infra@ctf.local"
+    }
+  ],
+  "constraints": [
+    "Do not attack infrastructure systems (VPN, scoreboard, DNS)",
+    "No denial of service attacks against shared resources",
+    "Do not interfere with other participants access",
+    "Report infrastructure issues to admin team immediately",
+    "All captured data stays within the CTF environment",
+    "Collaboration between teams is prohibited unless specified",
+    "Automated tools are permitted within rate limits"
+  ],
+  "created_at": "2026-03-01T12:00:00Z",
+  "signer_public_key": "",
+  "signature": ""
+}

@@ -1,0 +1,84 @@
+{
+  "id": "ROE-2026-BB-001",
+  "version": "1.0",
+  "organization": "Independent Security Researcher",
+  "title": "Bug Bounty Program Assessment",
+  "description": "Rules of Engagement for participating in a public bug bounty program. All testing must comply with the program policy and legal safe harbor provisions. Focus on finding and responsibly disclosing security vulnerabilities.",
+  "authorized_operators": [
+    "researcher-primary"
+  ],
+  "client_name": "Bug Bounty Target Corp",
+  "start_time": "2026-01-01T00:00:00Z",
+  "end_time": "2026-12-31T23:59:59Z",
+  "authorized_cidrs": [],
+  "authorized_domains": [
+    "www.bbtarget.test",
+    "api.bbtarget.test",
+    "app.bbtarget.test",
+    "*.staging.bbtarget.test",
+    "mobile-api.bbtarget.test"
+  ],
+  "excluded_targets": [
+    "corporate.bbtarget.test",
+    "mail.bbtarget.test",
+    "vpn.bbtarget.test",
+    "*.internal.bbtarget.test",
+    "blog.bbtarget.test",
+    "status.bbtarget.test",
+    "docs.bbtarget.test"
+  ],
+  "authorized_techniques": [
+    "T1595",
+    "T1592",
+    "T1589",
+    "T1590",
+    "T1593",
+    "T1594",
+    "T1046",
+    "T1016",
+    "T1082",
+    "T1083",
+    "T1190",
+    "T1133",
+    "T1189"
+  ],
+  "prohibited_techniques": [
+    "T1486",
+    "T1485",
+    "T1561",
+    "T1490",
+    "T1529",
+    "T1499",
+    "T1498",
+    "T1565",
+    "T1566",
+    "T1534",
+    "T1111"
+  ],
+  "max_exfil_rate": 1048576,
+  "max_exfil_total": 10485760,
+  "emergency_contacts": [
+    {
+      "name": "Bug Bounty Program",
+      "role": "Program Manager",
+      "phone": "",
+      "email": "security@bbtarget.test"
+    }
+  ],
+  "constraints": [
+    "Follow responsible disclosure guidelines",
+    "Do not access other users data beyond proof of concept",
+    "Do not perform denial of service testing",
+    "Do not use social engineering or phishing",
+    "Do not test on production systems during peak hours",
+    "Do not chain exploits without program approval",
+    "Report findings through official program channels only",
+    "Do not publicly disclose findings until authorized",
+    "Automated scanning must be rate-limited (max 10 req/sec)",
+    "Do not access or modify customer data",
+    "Stop testing immediately if you access sensitive data accidentally"
+  ],
+  "created_at": "2026-01-01T00:00:00Z",
+  "signer_public_key": "",
+  "signature": ""
+}

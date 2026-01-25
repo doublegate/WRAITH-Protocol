@@ -1,0 +1,34 @@
+# WRAITH Protocol Docker Deployment
+# Usage: docker-compose up -d
+
+version: '3.8'
+
+services:
+  wraith-node:
+    image: ghcr.io/doublegate/wraith-protocol:latest
+    container_name: wraith-node
+    restart: unless-stopped
+    ports:
+      - "9000:9000/udp"
+      - "9000:9000/tcp"
+    volumes:
+      - wraith-data:/data
+      - wraith-config:/config
+    environment:
+      - WRAITH_LOG_LEVEL=info
+      - WRAITH_DHT_ENABLED=true
+    networks:
+      - wraith-network
+    healthcheck:
+      test: ["CMD", "wraith", "health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  wraith-data:
+  wraith-config:
+
+networks:
+  wraith-network:
+    driver: bridge

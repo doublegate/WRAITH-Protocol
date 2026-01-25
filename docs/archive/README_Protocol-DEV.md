@@ -4,7 +4,7 @@
 
 This document captures the complete development journey of WRAITH Protocol from inception through version 2.0.0, including detailed phase accomplishments, sprint summaries, and implementation milestones.
 
-[![Version](https://img.shields.io/badge/version-2.2.1-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
+[![Version](https://img.shields.io/badge/version-2.2.4-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
 [![Security](https://img.shields.io/badge/security-audited-green.svg)](../security/DPI_EVASION_REPORT.md)
 [![Rust](https://img.shields.io/badge/rust-1.88%2B-orange.svg)](https://www.rust-lang.org/)
 
@@ -24,18 +24,19 @@ For the current production README, see [../../README.md](../../README.md).
 
 **Project Metrics (2026-01-24):**
 - **Code Volume:** ~272,000 lines of Rust code across protocol and client crates + ~10,000 lines TypeScript
-- **Test Coverage:** 1,733 tests passing (4 ignored) - 100% pass rate
+- **Test Coverage:** 2,124 tests passing (16 ignored) - 100% pass rate
 - **Documentation:** 130+ markdown files, ~90,000+ lines of comprehensive documentation
 - **Dependencies:** 295 audited packages (zero vulnerabilities via cargo-audit)
 - **Security:** Grade A+ (EXCELLENT) - zero vulnerabilities, 100% unsafe documentation, comprehensive audits
 - **Technical Debt Ratio:** ~2.5% (Grade A - Excellent)
 - **Client Applications:** 9 production-ready desktop applications with full protocol integration
+- **Templates:** 17 configuration/ROE templates in centralized `templates/` directory
 - **CI/CD:** GitHub Actions optimized with reusable setup.yml, path filters, and updated actions (checkout@v4, cache@v4, upload-artifact@v4, download-artifact@v4)
 
 **Quality Metrics:**
 - **Quality Grade:** 98/100 (Production-ready)
 - **Technical Debt Ratio:** ~2.5% (Grade A - Excellent)
-- **Test Coverage:** 1,733 tests passing (4 ignored) - 100% pass rate
+- **Test Coverage:** 2,124 tests passing (16 ignored) - 100% pass rate
   - 414 wraith-core - frame parsing (SIMD), sessions, streams, BBR, migration, ring buffers, Node API
   - 127 wraith-crypto - Ed25519, X25519+Elligator2, AEAD, Noise_XX, Double Ratchet (+ test vectors + zeroization)
   - 130 wraith-transport - AF_XDP socket config, io_uring, UDP, worker pools, NUMA-aware allocation

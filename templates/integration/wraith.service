@@ -1,0 +1,29 @@
+# WRAITH Protocol Systemd Service
+# Install to: /etc/systemd/system/wraith.service
+# Enable: sudo systemctl enable --now wraith
+
+[Unit]
+Description=WRAITH Protocol Node
+Documentation=https://github.com/doublegate/WRAITH-Protocol
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=wraith
+Group=wraith
+ExecStart=/usr/local/bin/wraith node start
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=65535
+
+# Security hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=yes
+ReadWritePaths=/var/lib/wraith /var/log/wraith
+
+[Install]
+WantedBy=multi-user.target

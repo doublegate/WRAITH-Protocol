@@ -8,13 +8,43 @@
 ## 1. Pre-Engagement Setup
 
 ### 1.1 Authorization & Scoping
-Before deploying WRAITH-Recon, you **MUST** generate a signed governance file.
-1.  Define the Scope (CIDRs, Domains).
-2.  Define the Engagement Window (Start/End dates).
-3.  Sign the configuration using the offline CA key:
-    ```bash
-    wraith-recon-signer sign --config engagement.toml --key private.pem --out scope.sig
-    ```
+Before deploying WRAITH-Recon, you **MUST** generate a signed Rules of Engagement (RoE) document.
+
+#### Using ROE Templates
+
+WRAITH-Recon provides pre-built ROE templates for common engagement types. Templates are located in `clients/wraith-recon/templates/`:
+
+| Template | Use Case |
+|----------|----------|
+| `roe-minimal.json` | Quick internal assessments |
+| `roe-standard.json` | Typical penetration tests |
+| `roe-comprehensive.json` | Formal enterprise engagements |
+| `roe-ctf.json` | Capture The Flag competitions |
+| `roe-bug-bounty.json` | Bug bounty program participation |
+| `roe-red-team.json` | Advanced adversary simulation |
+
+#### Creating Your ROE
+
+1. **Choose a template:**
+   ```bash
+   cp clients/wraith-recon/templates/roe-standard.json my-engagement-roe.json
+   ```
+
+2. **Customize the template:**
+   - Update `id`, `organization`, `title`, `description`
+   - Set `start_time` and `end_time` (RFC 3339 format)
+   - Define `authorized_cidrs` and `authorized_domains`
+   - List `excluded_targets` for off-limits systems
+   - Configure `authorized_techniques` (MITRE ATT&CK IDs)
+   - Set `prohibited_techniques` (destructive techniques)
+   - Add `emergency_contacts` and `constraints`
+
+3. **Sign the RoE using Ed25519:**
+   ```bash
+   wraith-recon-signer sign --config my-engagement-roe.json --key private.pem --out my-engagement-roe-signed.json
+   ```
+
+See `clients/wraith-recon/templates/README.md` for complete field documentation and the JSON schema at `clients/wraith-recon/templates/roe-schema.json` for validation.
 
 ### 1.2 Infrastructure
 *   **Listener Node:** If testing exfiltration, set up a listener on an external VPS (AWS/Azure/DigitalOcean) running `wraith-server --mode listener`.

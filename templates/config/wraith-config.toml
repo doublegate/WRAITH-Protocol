@@ -1,0 +1,52 @@
+# WRAITH Protocol CLI Configuration
+# Copy this file to ~/.config/wraith/config.toml and customize
+
+[node]
+# Node identity (auto-generated if not specified)
+# node_id = "your-node-id-here"
+
+# Listen address for incoming connections
+listen_address = "0.0.0.0:9000"
+
+# Enable/disable DHT discovery
+dht_enabled = true
+
+# Bootstrap nodes for DHT (leave empty for default)
+bootstrap_nodes = []
+
+[crypto]
+# Key storage path
+key_path = "~/.config/wraith/keys"
+
+# Enable hardware key storage if available
+use_hardware_key = false
+
+[transfer]
+# Default chunk size (bytes)
+chunk_size = 1048576  # 1 MiB
+
+# Maximum concurrent transfers
+max_concurrent = 4
+
+# Enable compression
+compression = true
+
+[network]
+# Connection timeout (seconds)
+connect_timeout = 30
+
+# Keep-alive interval (seconds)
+keepalive_interval = 15
+
+# Maximum retries for failed connections
+max_retries = 3
+
+[logging]
+# Log level: trace, debug, info, warn, error
+level = "info"
+
+# Log file path (stdout if not specified)
+# file = "/var/log/wraith/wraith.log"
+
+# Enable JSON logging
+json_format = false

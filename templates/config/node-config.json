@@ -1,0 +1,28 @@
+{
+  "$schema": "https://wraith-protocol.io/schemas/node-config.json",
+  "version": "1.0",
+  "node": {
+    "name": "my-wraith-node",
+    "description": "Personal WRAITH node",
+    "listen_port": 9000,
+    "max_connections": 100,
+    "enable_relay": false
+  },
+  "discovery": {
+    "dht_enabled": true,
+    "mdns_enabled": true,
+    "bootstrap_nodes": [],
+    "announce_interval_secs": 300
+  },
+  "security": {
+    "require_authentication": true,
+    "allowed_peers": [],
+    "blocked_peers": [],
+    "rate_limit_rps": 1000
+  },
+  "storage": {
+    "data_dir": "~/.local/share/wraith",
+    "max_cache_size_mb": 1024,
+    "cleanup_interval_secs": 3600
+  }
+}

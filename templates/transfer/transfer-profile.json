@@ -1,0 +1,27 @@
+{
+  "$schema": "https://wraith-protocol.io/schemas/transfer-profile.json",
+  "version": "1.0",
+  "profile": {
+    "name": "default",
+    "description": "Default transfer profile"
+  },
+  "settings": {
+    "chunk_size": 1048576,
+    "compression": "zstd",
+    "compression_level": 3,
+    "encryption": "xchacha20-poly1305",
+    "verify_integrity": true,
+    "resume_enabled": true
+  },
+  "bandwidth": {
+    "max_upload_kbps": 0,
+    "max_download_kbps": 0,
+    "throttle_on_battery": true
+  },
+  "retry": {
+    "max_attempts": 5,
+    "initial_delay_ms": 1000,
+    "max_delay_ms": 30000,
+    "backoff_multiplier": 2.0
+  }
+}

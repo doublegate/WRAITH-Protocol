@@ -13,7 +13,7 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
   <a href="https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml"><img src="https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml/badge.svg" alt="CodeQL"></a>
   <a href="https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml"><img src="https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml/badge.svg" alt="Release"></a>
   <br>
-  <a href="https://github.com/doublegate/WRAITH-Protocol/releases"><img src="https://img.shields.io/badge/version-2.2.3-blue.svg" alt="Version"></a>
+  <a href="https://github.com/doublegate/WRAITH-Protocol/releases"><img src="https://img.shields.io/badge/version-2.2.4-blue.svg" alt="Version"></a>
   <a href="docs/security/SECURITY_AUDIT_v1.1.0.md"><img src="https://img.shields.io/badge/security-audited-green.svg" alt="Security"></a>
   <a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/rust-1.88%2B-orange.svg" alt="Rust"></a>
   <a href="https://doc.rust-lang.org/edition-guide/rust-2024/index.html"><img src="https://img.shields.io/badge/edition-2024-orange.svg" alt="Edition"></a>
@@ -36,13 +36,14 @@ WRAITH Protocol is a privacy-focused, high-performance file transfer protocol de
 
 | Metric | Value |
 |--------|-------|
-| **Tests** | 1,733 passing (100% pass rate, 4 intentionally ignored) |
+| **Tests** | 2,124 passing (100% pass rate, 16 intentionally ignored) |
 | **Code** | ~272,000 lines Rust (protocol + clients) + ~10,000 lines TypeScript |
 | **Documentation** | 130+ files, ~90,000+ lines |
 | **Security** | Grade A+ (zero vulnerabilities, 295 audited dependencies) |
 | **Quality** | 98/100, zero clippy warnings |
 | **TDR** | ~2.5% (Grade A - Excellent) |
 | **Applications** | 9 production-ready desktop clients |
+| **Templates** | 17 configuration/ROE templates |
 
 ![WRAITH Protocol Banner](images/wraith-protocol_banner-graphic.jpg)
 
@@ -384,6 +385,11 @@ WRAITH-Protocol/
 |   |-- wraith-cli/        # CLI
 |   +-- wraith-ffi/        # FFI bindings
 |-- clients/               # Client applications (9)
+|-- templates/             # Configuration and ROE templates (17)
+|   |-- recon/             # WRAITH-Recon ROE templates (7)
+|   |-- config/            # CLI and node configuration (2)
+|   |-- transfer/          # Transfer profile templates (1)
+|   +-- integration/       # Docker Compose, systemd service (2)
 |-- docs/                  # Documentation (130+ files)
 |-- to-dos/                # Project planning
 |-- ref-docs/              # Protocol specifications
@@ -434,6 +440,12 @@ See [CI Workflow](.github/workflows/ci.yml) and [Release Workflow](.github/workf
 - [Client Overview](docs/clients/overview.md)
 - [UI/UX Design Reference](docs/clients/UI-UX-DESIGN-REFERENCE.md)
 - [Client Roadmap](to-dos/ROADMAP-clients.md)
+
+### Templates
+- [Templates Overview](templates/README.md)
+- [ROE Templates for WRAITH-Recon](templates/recon/README.md)
+- [Configuration Templates](templates/config/README.md)
+- [Integration Templates](templates/integration/README.md)
 
 ### Development History
 - [Protocol Development History](docs/archive/README_Protocol-DEV.md)

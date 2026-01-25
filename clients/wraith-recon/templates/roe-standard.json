@@ -1,0 +1,83 @@
+{
+  "id": "ROE-2026-STD-001",
+  "version": "1.0",
+  "organization": "Acme Security Consulting",
+  "title": "Network Penetration Test - Q1 2026",
+  "description": "Standard penetration testing engagement for network infrastructure assessment. Includes active and passive reconnaissance, vulnerability scanning, and controlled exploitation within defined scope.",
+  "authorized_operators": [
+    "operator-primary-001",
+    "operator-backup-001"
+  ],
+  "client_name": "Target Corporation",
+  "start_time": "2026-01-24T09:00:00Z",
+  "end_time": "2026-02-07T17:00:00Z",
+  "authorized_cidrs": [
+    "10.0.0.0/8",
+    "172.16.0.0/12",
+    "192.168.1.0/24"
+  ],
+  "authorized_domains": [
+    "staging.targetcorp.test",
+    "dev.targetcorp.test",
+    "*.qa.targetcorp.test"
+  ],
+  "excluded_targets": [
+    "10.0.0.1/32",
+    "172.16.0.1/32",
+    "192.168.1.1/32",
+    "prod.targetcorp.test"
+  ],
+  "authorized_techniques": [
+    "T1046",
+    "T1040",
+    "T1018",
+    "T1016",
+    "T1049",
+    "T1082",
+    "T1083",
+    "T1057",
+    "T1518",
+    "T1012"
+  ],
+  "prohibited_techniques": [
+    "T1486",
+    "T1485",
+    "T1561",
+    "T1490",
+    "T1529",
+    "T1495",
+    "T1531"
+  ],
+  "max_exfil_rate": 10485760,
+  "max_exfil_total": 1073741824,
+  "emergency_contacts": [
+    {
+      "name": "John Smith",
+      "role": "Client Security Director",
+      "phone": "+1-555-0101",
+      "email": "jsmith@targetcorp.test"
+    },
+    {
+      "name": "Jane Doe",
+      "role": "Lead Penetration Tester",
+      "phone": "+1-555-0102",
+      "email": "jdoe@acmesecurity.test"
+    },
+    {
+      "name": "SOC Team",
+      "role": "Security Operations Center",
+      "phone": "+1-555-0103",
+      "email": "soc@targetcorp.test"
+    }
+  ],
+  "constraints": [
+    "Testing only during business hours (09:00-17:00 local time)",
+    "No denial of service attacks",
+    "No social engineering of employees",
+    "Notify SOC before any exploitation attempts",
+    "Stop immediately if production systems are affected"
+  ],
+  "created_at": "2026-01-20T14:30:00Z",
+  "signer_public_key": "",
+  "signature": ""
+}
