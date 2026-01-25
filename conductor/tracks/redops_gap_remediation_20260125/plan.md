@@ -48,12 +48,12 @@ This plan outlines the methodical remediation of WRAITH-RedOps according to the 
 
 ## Phase 3: Operator Client & Integration (Gap Analysis Section 3)
 
-- [ ] Task: 3.1 - Implement Dashboard Metrics Backend Integration
-    - [ ] Write tests for metrics aggregation and retrieval
-    - [ ] Implement data flows in `App.tsx` and Tauri handlers
-- [ ] Task: 3.4 - Implement Actual IPC Data Retrieval
-    - [ ] Write tests for all IPC commands (list beacons, listeners, etc.)
-    - [ ] Replace `vec![]` stubs with real data in `operator-client/src-tauri/src/lib.rs`
+- [x] Task: 3.1 - Implement Dashboard Metrics Backend Integration b3c5e9d
+    - [x] Write tests for metrics aggregation and retrieval
+    - [x] Implement data flows in `App.tsx` and Tauri handlers
+- [x] Task: 3.4 - Implement Actual IPC Data Retrieval b3c5e9d
+    - [x] Write tests for all IPC commands (list beacons, listeners, etc.)
+    - [x] Replace `vec![]` stubs with real data in `operator-client/src-tauri/src/lib.rs`
 - [ ] Task: Integration - End-to-End Command Encryption
     - [ ] Write integration tests for E2E encrypted tasking
     - [ ] Implement encryption at rest in DB and delivery to implant
