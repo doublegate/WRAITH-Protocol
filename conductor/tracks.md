@@ -8,10 +8,6 @@ This file tracks all major work tracks for the WRAITH Protocol project. Each tra
 
 ## Active Tracks
 
-- [x] **Track: Achieving a zero-warning, zero-stub state for WRAITH-RedOps by fully implementing all stubs and resolving technical debt.**
-  *Type: Refactor | Created: 2026-01-25*
-  *Link: [./tracks/redops_zero_warning_cleanup_20260125/](./tracks/redops_zero_warning_cleanup_20260125/)*
-
 - [~] **Track: Remediate WRAITH-RedOps Implementation (Gap Analysis v3.0.0)**
   *Type: Feature | Created: 2026-01-25*
   *Link: [./tracks/wraith_redops_finish_20260125/](./tracks/wraith_redops_finish_20260125/)*
