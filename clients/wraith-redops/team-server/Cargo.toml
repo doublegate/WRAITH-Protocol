@@ -24,7 +24,8 @@ prost = "0.13"
 prost-types = "0.13"
 
 # Database - Updated to 0.8.1 to fix CVE (Dependabot alert #3)
-sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json", "macros", "migrate"] }
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json", "macros", "migrate", "ipnetwork"] }
+ipnetwork = "0.20"
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
