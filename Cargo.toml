@@ -26,11 +26,14 @@ members = [
     "clients/wraith-recon/src-tauri",
     "xtask",
     "tests",
+    # Excluded: "clients/wraith-redops/*" due to dependency conflicts (sqlite vs postgres)
 ]
 
 # XDP crate excluded from default - requires special build
-# Fuzz targets excluded - cargo-fuzz manages its own workspace
-exclude = ["crates/wraith-xdp", "fuzz"]
+exclude = [
+    "crates/wraith-xdp",
+    "clients/wraith-redops",
+]
 
 [workspace.package]
 version = "2.2.4"

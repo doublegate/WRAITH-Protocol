@@ -1,0 +1,388 @@
+syntax = "proto3";
+
+package wraith.redops;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+// Operator service for human interaction
+service OperatorService {
+    // Authentication
+    rpc Authenticate(AuthRequest) returns (AuthResponse);
+    rpc RefreshToken(RefreshRequest) returns (AuthResponse);
+
+    // Campaign management
+    rpc CreateCampaign(CreateCampaignRequest) returns (Campaign);
+    rpc GetCampaign(GetCampaignRequest) returns (Campaign);
+    rpc ListCampaigns(ListCampaignsRequest) returns (ListCampaignsResponse);
+    rpc UpdateCampaign(UpdateCampaignRequest) returns (Campaign);
+
+    // Implant management
+    rpc ListImplants(ListImplantsRequest) returns (ListImplantsResponse);
+    rpc GetImplant(GetImplantRequest) returns (Implant);
+    rpc KillImplant(KillImplantRequest) returns (google.protobuf.Empty);
+
+    // Command execution
+    rpc SendCommand(SendCommandRequest) returns (Command);
+    rpc GetCommandResult(GetCommandResultRequest) returns (CommandResult);
+    rpc ListCommands(ListCommandsRequest) returns (ListCommandsResponse);
+    rpc CancelCommand(CancelCommandRequest) returns (google.protobuf.Empty);
+
+    // Real-time events
+    rpc StreamEvents(StreamEventsRequest) returns (stream Event);
+
+    // Artifacts
+    rpc ListArtifacts(ListArtifactsRequest) returns (ListArtifactsResponse);
+    rpc DownloadArtifact(DownloadArtifactRequest) returns (stream ArtifactChunk);
+
+    // Credentials
+    rpc ListCredentials(ListCredentialsRequest) returns (ListCredentialsResponse);
+
+    // Listeners
+    rpc CreateListener(CreateListenerRequest) returns (Listener);
+    rpc ListListeners(ListListenersRequest) returns (ListListenersResponse);
+    rpc StartListener(ListenerActionRequest) returns (Listener);
+    rpc StopListener(ListenerActionRequest) returns (Listener);
+}
+
+// Implant service (C2 protocol)
+service ImplantService {
+    // Registration and check-in
+    rpc Register(RegisterRequest) returns (RegisterResponse);
+    rpc CheckIn(CheckInRequest) returns (CheckInResponse);
+
+    // Command retrieval and results
+    rpc GetPendingCommands(GetPendingCommandsRequest) returns (stream Command);
+    rpc SubmitResult(SubmitResultRequest) returns (google.protobuf.Empty);
+
+    // File transfer
+    rpc UploadArtifact(stream ArtifactChunk) returns (UploadArtifactResponse);
+    rpc DownloadPayload(DownloadPayloadRequest) returns (stream PayloadChunk);
+}
+
+// Messages
+message AuthRequest {
+    string username = 1;
+    bytes signature = 2;
+    bytes challenge = 3;
+}
+
+message AuthResponse {
+    string token = 1;
+    google.protobuf.Timestamp expires_at = 2;
+    Operator operator = 3;
+}
+
+message Operator {
+    string id = 1;
+    string username = 2;
+    string display_name = 3;
+    string role = 4;
+    google.protobuf.Timestamp last_active = 5;
+}
+
+message Campaign {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    string status = 4;
+    google.protobuf.Timestamp start_date = 5;
+    google.protobuf.Timestamp end_date = 6;
+    RoeDocument roe = 7;
+    int32 implant_count = 8;
+    int32 active_implant_count = 9;
+}
+
+message RoeDocument {
+    string id = 1;
+    bytes document_json = 2;
+    bytes signature = 3;
+    google.protobuf.Timestamp valid_from = 4;
+    google.protobuf.Timestamp valid_until = 5;
+}
+
+message Implant {
+    string id = 1;
+    string campaign_id = 2;
+    string hostname = 3;
+    string internal_ip = 4;
+    string external_ip = 5;
+    string os_type = 6;
+    string os_version = 7;
+    string architecture = 8;
+    string username = 9;
+    string domain = 10;
+    string privileges = 11;
+    string implant_version = 12;
+    google.protobuf.Timestamp first_seen = 13;
+    google.protobuf.Timestamp last_checkin = 14;
+    int32 checkin_interval = 15;
+    int32 jitter_percent = 16;
+    string status = 17;
+    repeated NetworkInterface interfaces = 18;
+    map<string, string> metadata = 19;
+}
+
+message NetworkInterface {
+    string name = 1;
+    string ip_address = 2;
+    string mac_address = 3;
+    bool is_primary = 4;
+}
+
+message Command {
+    string id = 1;
+    string implant_id = 2;
+    string operator_id = 3;
+    string command_type = 4;
+    bytes payload = 5;
+    int32 priority = 6;
+    string status = 7;
+    google.protobuf.Timestamp created_at = 8;
+    int32 timeout_seconds = 9;
+}
+
+message CommandResult {
+    string id = 1;
+    string command_id = 2;
+    bytes output = 3;
+    int32 exit_code = 4;
+    string error_message = 5;
+    int32 execution_time_ms = 6;
+    google.protobuf.Timestamp received_at = 7;
+}
+
+message Event {
+    string id = 1;
+    string type = 2;
+    google.protobuf.Timestamp timestamp = 3;
+    string campaign_id = 4;
+    string implant_id = 5;
+    map<string, string> data = 6;
+}
+
+message ArtifactChunk {
+    string artifact_id = 1;
+    int64 offset = 2;
+    bytes data = 3;
+    bool is_last = 4;
+}
+
+// Request/Response messages
+message CreateCampaignRequest {
+    string name = 1;
+    string description = 2;
+    bytes roe_document = 3;
+    bytes roe_signature = 4;
+}
+
+message GetCampaignRequest {
+    string id = 1;
+}
+
+message ListCampaignsRequest {
+    string status_filter = 1;
+    int32 page_size = 2;
+    string page_token = 3;
+}
+
+message ListCampaignsResponse {
+    repeated Campaign campaigns = 1;
+    string next_page_token = 2;
+}
+
+message UpdateCampaignRequest {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    string status = 4;
+}
+
+message ListImplantsRequest {
+    string campaign_id = 1;
+    string status_filter = 2;
+    int32 page_size = 3;
+    string page_token = 4;
+}
+
+message ListImplantsResponse {
+    repeated Implant implants = 1;
+    string next_page_token = 2;
+}
+
+message GetImplantRequest {
+    string id = 1;
+}
+
+message KillImplantRequest {
+    string id = 1;
+    bool clean_artifacts = 2;
+}
+
+message SendCommandRequest {
+    string implant_id = 1;
+    string command_type = 2;
+    bytes payload = 3;
+    int32 priority = 4;
+    int32 timeout_seconds = 5;
+}
+
+message GetCommandResultRequest {
+    string command_id = 1;
+}
+
+message ListCommandsRequest {
+    string implant_id = 1;
+    string status_filter = 2;
+    int32 page_size = 3;
+    string page_token = 4;
+}
+
+message ListCommandsResponse {
+    repeated Command commands = 1;
+    string next_page_token = 2;
+}
+
+message CancelCommandRequest {
+    string command_id = 1;
+}
+
+message StreamEventsRequest {
+    string campaign_id = 1;
+    repeated string event_types = 2;
+}
+
+message ListArtifactsRequest {
+    string implant_id = 1;
+    string campaign_id = 2;
+    int32 page_size = 3;
+    string page_token = 4;
+}
+
+message ListArtifactsResponse {
+    repeated Artifact artifacts = 1;
+    string next_page_token = 2;
+}
+
+message Artifact {
+    string id = 1;
+    string implant_id = 2;
+    string filename = 3;
+    string original_path = 4;
+    bytes hash_sha256 = 5;
+    int64 file_size = 6;
+    string mime_type = 7;
+    google.protobuf.Timestamp collected_at = 8;
+}
+
+message DownloadArtifactRequest {
+    string artifact_id = 1;
+}
+
+message ListCredentialsRequest {
+    string campaign_id = 1;
+    string implant_id = 2;
+    string credential_type = 3;
+    int32 page_size = 4;
+    string page_token = 5;
+}
+
+message ListCredentialsResponse {
+    repeated Credential credentials = 1;
+    string next_page_token = 2;
+}
+
+message Credential {
+    string id = 1;
+    string implant_id = 2;
+    string source = 3;
+    string credential_type = 4;
+    string domain = 5;
+    string username = 6;
+    google.protobuf.Timestamp collected_at = 7;
+    bool validated = 8;
+}
+
+message Listener {
+    string id = 1;
+    string name = 2;
+    string type = 3; // "http", "udp", "smb"
+    string bind_address = 4;
+    int32 port = 5;
+    string status = 6; // "active", "stopped"
+    map<string, string> config = 7;
+}
+
+message CreateListenerRequest {
+    string name = 1;
+    string type = 2;
+    string bind_address = 3;
+    int32 port = 4;
+    map<string, string> config = 5;
+}
+
+message ListListenersRequest {}
+
+message ListListenersResponse {
+    repeated Listener listeners = 1;
+}
+
+message ListenerActionRequest {
+    string id = 1;
+}
+
+// Implant-side messages
+message RegisterRequest {
+    bytes encrypted_registration = 1;
+    bytes ephemeral_public = 2;
+}
+
+message RegisterResponse {
+    string implant_id = 1;
+    bytes encrypted_config = 2;
+    int32 checkin_interval = 3;
+    int32 jitter_percent = 4;
+}
+
+message CheckInRequest {
+    string implant_id = 1;
+    bytes session_data = 2;
+}
+
+message CheckInResponse {
+    bool has_commands = 1;
+    int32 command_count = 2;
+    int32 next_checkin_seconds = 3;
+    bytes metadata = 4;
+}
+
+message GetPendingCommandsRequest {
+    string implant_id = 1;
+    int32 max_commands = 2;
+}
+
+message SubmitResultRequest {
+    string command_id = 1;
+    bytes encrypted_result = 2;
+}
+
+message UploadArtifactResponse {
+    string artifact_id = 1;
+    bool success = 2;
+    string error = 3;
+}
+
+message DownloadPayloadRequest {
+    string payload_id = 1;
+    int64 offset = 2;
+}
+
+message PayloadChunk {
+    bytes data = 1;
+    int64 offset = 2;
+    bool is_last = 3;
+}
+
+message RefreshRequest {
+    string token = 1;
+}

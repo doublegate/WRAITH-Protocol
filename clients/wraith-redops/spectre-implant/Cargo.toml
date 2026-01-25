@@ -1,0 +1,24 @@
+[package]
+name = "spectre-implant"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# No std dependencies
+# wraith-core and crypto removed to ensure pure no_std
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+# winapi for raw windows definitions if needed, but we prefer manual definitions for stealth
+# winapi = { version = "0.3", features = ["winnt"] }
+
+[profile.release]
+opt-level = "z"     # Optimize for size
+lto = true          # Link Time Optimization
+panic = "abort"     # Abort on panic
+strip = true        # Strip symbols
+codegen-units = 1   # Maximize optimization
+
+[profile.dev]
+panic = "abort"

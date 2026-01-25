@@ -1,0 +1,21 @@
+[package]
+name = "wraith-redops-client"
+version = "0.0.0"
+description = "WRAITH RedOps Operator Console"
+authors = ["you"]
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "1.5", features = [] }
+tonic-build = "0.10"
+
+[dependencies]
+tauri = { version = "1.5", features = ["shell-open"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tonic = "0.10"
+prost = "0.12"
+tokio = { version = "1", features = ["full"] }
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]
