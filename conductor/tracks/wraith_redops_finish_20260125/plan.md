@@ -1,6 +1,6 @@
 # Implementation Plan - Remediate WRAITH-RedOps
 
-## Phase 1: Team Server Core & Protocol Integration (Gap 1.1, 1.4, 1.5)
+## Phase 1: Team Server Core & Protocol Integration (Gap 1.1, 1.4, 1.5) [checkpoint: 4b9b3a9]
 - [x] Task: Integrate WRAITH Protocol (Gap 1.1) [13c1beb]
     - [x] Sub-task: Add `wraith-crypto` and `wraith-transport` dependencies to `team-server`.
     - [x] Sub-task: Implement `Noise_XX` session management in `services/mod.rs` (or appropriate location).
