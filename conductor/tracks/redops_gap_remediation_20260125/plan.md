@@ -38,9 +38,9 @@ This plan outlines the methodical remediation of WRAITH-RedOps according to the 
 - [x] Task: 2.4 - Implement PTY Shell and Fix C2 Hardcodings 5af2461
     - [x] Write tests for interactive shell execution
     - [x] Implement PTY shell in `c2/mod.rs` and remove hardcoded IPs
-- [ ] Task: 2.5 - Implement Halo's Gate SSN Resolution
-    - [ ] Write tests for syscall resolution
-    - [ ] Implement Halo's Gate logic in `utils/syscalls.rs`
+- [x] Task: 2.5 - Implement Halo's Gate SSN Resolution 253d070
+    - [x] Write tests for syscall resolution
+    - [x] Implement Halo's Gate logic in `utils/syscalls.rs`
 - [ ] Task: 2.6 - 2.9 - Complete Shell Module and Heap Discovery
     - [ ] Write tests for shell command execution and runtime heap discovery
     - [ ] Implement modules in `modules/shell.rs` and `utils/obfuscation.rs`
