@@ -29,9 +29,9 @@ This plan outlines the methodical remediation of WRAITH-RedOps according to the 
 - [x] Task: 2.1 - Implement Process Injection Modules 6918dd0
     - [x] Write tests for reflective injection, hollowing, and thread hijacking
     - [x] Implement logic in `modules/injection.rs`
-- [ ] Task: 2.2 - Implement BOF Loader
-    - [ ] Write tests for COFF loading and symbol resolution
-    - [ ] Implement full loader in `modules/bof_loader.rs`
+- [x] Task: 2.2 - Implement BOF Loader 2ed4b90
+    - [x] Write tests for COFF loading and symbol resolution
+    - [x] Implement full loader in `modules/bof_loader.rs`
 - [ ] Task: 2.3 - Implement SOCKS Proxy
     - [ ] Write tests for SOCKS4a/5 authentication and proxying
     - [ ] Implement logic in `modules/socks.rs`
