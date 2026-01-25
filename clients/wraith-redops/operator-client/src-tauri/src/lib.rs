@@ -559,17 +559,32 @@ pub fn run() {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[test]
-    fn test_module_compiles() {
-        // This test verifies that the module compiles correctly
-        // by checking that the JSON wrapper types can be instantiated
-        let _ = super::CampaignJson {
-            id: String::new(),
-            name: String::new(),
-            description: String::new(),
-            status: String::new(),
-            implant_count: 0,
-            active_implant_count: 0,
+    fn test_ipc_types_serialization() {
+        // Campaign
+        let campaign = CampaignJson {
+            id: "123".to_string(),
+            name: "Op".to_string(),
+            description: "Desc".to_string(),
+            status: "active".to_string(),
+            implant_count: 5,
+            active_implant_count: 2,
         };
+        let json = serde_json::to_string(&campaign).unwrap();
+        assert!(json.contains("implant_count"));
+
+        // Listener
+        let listener = ListenerJson {
+            id: "456".to_string(),
+            name: "HTTP".to_string(),
+            type_: "http".to_string(),
+            bind_address: "0.0.0.0".to_string(),
+            port: 8080,
+            status: "running".to_string(),
+        };
+        let json = serde_json::to_string(&listener).unwrap();
+        assert!(json.contains("bind_address"));
     }
 }
