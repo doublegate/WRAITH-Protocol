@@ -54,9 +54,9 @@ This plan outlines the methodical remediation of WRAITH-RedOps according to the 
 - [x] Task: 3.4 - Implement Actual IPC Data Retrieval b3c5e9d
     - [x] Write tests for all IPC commands (list beacons, listeners, etc.)
     - [x] Replace `vec![]` stubs with real data in `operator-client/src-tauri/src/lib.rs`
-- [ ] Task: Integration - End-to-End Command Encryption
-    - [ ] Write integration tests for E2E encrypted tasking
-    - [ ] Implement encryption at rest in DB and delivery to implant
+- [x] Task: Integration - End-to-End Command Encryption d3a5254
+    - [x] Write integration tests for E2E encrypted tasking
+    - [x] Implement encryption at rest in DB and delivery to implant
 - [ ] Task: Integration - Kill Switch Logic Implementation
     - [ ] Write tests for kill switch triggers
     - [ ] Implement verification logic in `killswitch.rs`
