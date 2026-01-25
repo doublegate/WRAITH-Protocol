@@ -34,7 +34,7 @@ This plan focuses on achieving a zero-warning and zero-stub state for all WRAITH
 
 ## Phase 4: Final Validation
 
-- [ ] Task: Global Zero-Warning Verification
+- [~] Task: Global Zero-Warning Verification
     - [ ] Verify `cargo check` returns no warnings for all crates
     - [ ] Verify `grep` returns no functional TODOs or `unimplemented!` markers
 - [ ] Task: Conductor - User Manual Verification 'Phase 4: Final Validation' (Protocol in workflow.md)
