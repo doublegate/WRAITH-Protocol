@@ -43,16 +43,16 @@
     - [x] Sub-task: Create `modules/socks.rs` and implement SOCKS proxy state machine (Gap 3.6).
 - [~] Task: Conductor - User Manual Verification 'Advanced Implant Features' (Protocol in workflow.md)
 
-## Phase 5: Operator Client Enhancements (Gap 2.1 - 2.4)
-- [ ] Task: Interactive Console (Gap 2.1)
-    - [ ] Sub-task: Implement `xterm.js` component in `operator-client/src/components/Console.tsx`.
-    - [ ] Sub-task: Wire up console input to `SendCommand` IPC.
-- [ ] Task: Graph Visualization (Gap 2.2)
-    - [ ] Sub-task: Implement D3.js beacon graph in `operator-client/src/components/NetworkGraph.tsx`.
-- [ ] Task: Campaign & IPC (Gap 2.3, 2.4)
-    - [ ] Sub-task: Create Campaign Wizard UI.
-    - [ ] Sub-task: Implement missing IPC commands (`download_artifact`, listener controls) in `lib.rs` and frontend.
-- [ ] Task: Conductor - User Manual Verification 'Operator Client Enhancements' (Protocol in workflow.md)
+## Phase 5: Operator Client Enhancements (Gap 2.1 - 2.4) [checkpoint: 6272284]
+- [x] Task: Interactive Console (Gap 2.1)
+    - [x] Sub-task: Implement `xterm.js` component in `operator-client/src/components/Console.tsx`.
+    - [x] Sub-task: Wire up console input to `SendCommand` IPC.
+- [x] Task: Graph Visualization (Gap 2.2)
+    - [x] Sub-task: Implement D3.js beacon graph in `operator-client/src/components/NetworkGraph.tsx`.
+- [x] Task: Campaign & IPC (Gap 2.3, 2.4)
+    - [x] Sub-task: Create Campaign Wizard UI.
+    - [x] Sub-task: Implement missing IPC commands (`download_artifact`, listener controls) in `lib.rs` and frontend.
+- [~] Task: Conductor - User Manual Verification 'Operator Client Enhancements' (Protocol in workflow.md)
 
 ## Phase 6: Builder Pipeline (Gap 1.3)
 - [ ] Task: Builder Implementation
