@@ -26,7 +26,6 @@ members = [
     "clients/wraith-recon/src-tauri",
     "xtask",
     "tests",
-    # Excluded: "clients/wraith-redops/*" due to dependency conflicts (sqlite vs postgres)
 ]
 
 # XDP crate excluded from default - requires special build
