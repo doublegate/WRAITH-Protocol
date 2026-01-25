@@ -22,15 +22,15 @@ This plan focuses on achieving a zero-warning and zero-stub state for all WRAITH
     - [x] Resolve any remaining unused variable warnings
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Team Server' (Protocol in workflow.md) 9598cde
 
-## Phase 3: Spectre Implant Remediation
+## Phase 3: Spectre Implant Remediation [checkpoint: 504a290]
 
-- [~] Task: Address all Spectre Implant warnings
-    - [ ] Use or gate unused constants/structs in `bof_loader.rs` (e.g., `IMAGE_FILE_MACHINE_AMD64`)
-    - [ ] Resolve `dead_code` for fields like `BofLoader::raw_data` and `MiniHeap::heap_start`
-    - [ ] Eliminate unused import warnings in `injection.rs`, `socks.rs`, etc.
-- [ ] Task: Refactor `static_mut_refs` usage
-    - [ ] Update `GLOBAL_CONFIG` access in `c2/mod.rs` to use safe raw pointer access patterns to satisfy Rust 2024 requirements
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Spectre Implant' (Protocol in workflow.md)
+- [x] Task: Address all Spectre Implant warnings
+    - [x] Use or gate unused constants/structs in `bof_loader.rs` (e.g., `IMAGE_FILE_MACHINE_AMD64`)
+    - [x] Resolve `dead_code` for fields like `BofLoader::raw_data` and `MiniHeap::heap_start`
+    - [x] Eliminate unused import warnings in `injection.rs`, `socks.rs`, etc.
+- [x] Task: Refactor `static_mut_refs` usage
+    - [x] Update `GLOBAL_CONFIG` access in `c2/mod.rs` to use safe raw pointer access patterns to satisfy Rust 2024 requirements
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Spectre Implant' (Protocol in workflow.md) 504a290
 
 ## Phase 4: Final Validation
 
