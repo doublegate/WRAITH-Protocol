@@ -57,6 +57,9 @@ wraith-crypto = { path = "../../../crates/wraith-crypto" }
 wraith-transport = { path = "../../../crates/wraith-transport" }
 dashmap = "5.5"
 
+[dev-dependencies]
+tempfile = "3.8"
+
 [workspace]
 
 [build-dependencies]
