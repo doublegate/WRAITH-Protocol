@@ -1,15 +1,15 @@
 # Implementation Plan - Remediate WRAITH-RedOps
 
 ## Phase 1: Team Server Core & Protocol Integration (Gap 1.1, 1.4, 1.5)
-- [x] Task: Integrate WRAITH Protocol (Gap 1.1)
+- [x] Task: Integrate WRAITH Protocol (Gap 1.1) [13c1beb]
     - [x] Sub-task: Add `wraith-crypto` and `wraith-transport` dependencies to `team-server`.
     - [x] Sub-task: Implement `Noise_XX` session management in `services/mod.rs` (or appropriate location).
     - [x] Sub-task: Update `http.rs` listener to handle encrypted WRAITH frames (mimicry).
     - [x] Sub-task: Implement UDP listener in `listeners/udp.rs` using `wraith-transport`.
-- [x] Task: Listener Management (Gap 1.4)
+- [x] Task: Listener Management (Gap 1.4) [13c1beb]
     - [x] Sub-task: Create `listeners/dns.rs` (stub/basic impl) and `listeners/smb.rs` (stub/basic impl) to satisfy architecture.
     - [x] Sub-task: Implement full lifecycle management (start/stop) for all listener types in `OperatorService`.
-- [x] Task: Real-time Events (Gap 1.5)
+- [x] Task: Real-time Events (Gap 1.5) [13c1beb]
     - [x] Sub-task: Connect `broadcast::Sender` to `ImplantService` actions (check-in, task result).
     - [x] Sub-task: Ensure `stream_events` gRPC endpoint correctly yields these events.
 - [~] Task: Conductor - User Manual Verification 'Team Server Core & Protocol Integration' (Protocol in workflow.md)
