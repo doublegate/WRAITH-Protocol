@@ -32,9 +32,9 @@ This plan outlines the methodical remediation of WRAITH-RedOps according to the 
 - [x] Task: 2.2 - Implement BOF Loader 2ed4b90
     - [x] Write tests for COFF loading and symbol resolution
     - [x] Implement full loader in `modules/bof_loader.rs`
-- [ ] Task: 2.3 - Implement SOCKS Proxy
-    - [ ] Write tests for SOCKS4a/5 authentication and proxying
-    - [ ] Implement logic in `modules/socks.rs`
+- [x] Task: 2.3 - Implement SOCKS Proxy 102d755
+    - [x] Write tests for SOCKS4a/5 authentication and proxying
+    - [x] Implement logic in `modules/socks.rs`
 - [ ] Task: 2.4 - Implement PTY Shell and Fix C2 Hardcodings
     - [ ] Write tests for interactive shell execution
     - [ ] Implement PTY shell in `c2/mod.rs` and remove hardcoded IPs
