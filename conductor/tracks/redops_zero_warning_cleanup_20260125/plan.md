@@ -9,18 +9,18 @@ This plan focuses on achieving a zero-warning and zero-stub state for all WRAITH
     - [x] Run `grep -rn "TODO" clients/wraith-redops` to list all remaining implementation gaps
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Discovery' (Protocol in workflow.md) 65e9df9
 
-## Phase 2: Team Server Remediation
+## Phase 2: Team Server Remediation [checkpoint: 9598cde]
 
-- [~] Task: Resolve all TODOs in Team Server
-    - [ ] Implement Frame header metadata in `protocol.rs` (currently marked TODO)
-    - [ ] Address any other TODOs found in Phase 1
-- [ ] Task: Integrate and Validate `compile_implant`
-    - [ ] Ensure the function is called or exposed via an active gRPC endpoint logic
-    - [ ] Fix the `dead_code` warning by providing a functional path to this logic
-- [ ] Task: Clean up all Team Server warnings
-    - [ ] Remove unused imports in `listeners/smb.rs` and `services/implant.rs`
-    - [ ] Resolve any remaining unused variable warnings
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Team Server' (Protocol in workflow.md)
+- [x] Task: Resolve all TODOs in Team Server
+    - [x] Implement Frame header metadata in `protocol.rs` (currently marked TODO)
+    - [x] Address any other TODOs found in Phase 1
+- [x] Task: Integrate and Validate `compile_implant`
+    - [x] Ensure the function is called or exposed via an active gRPC endpoint logic
+    - [x] Fix the `dead_code` warning by providing a functional path to this logic
+- [x] Task: Clean up all Team Server warnings
+    - [x] Remove unused imports in `listeners/smb.rs` and `services/implant.rs`
+    - [x] Resolve any remaining unused variable warnings
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Team Server' (Protocol in workflow.md) 9598cde
 
 ## Phase 3: Spectre Implant Remediation
 
