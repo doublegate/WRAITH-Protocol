@@ -1,5 +1,5 @@
 use crate::models::listener::Listener;
-use crate::models::{Campaign, Command, Implant};
+use crate::models::{Artifact, Campaign, Command, CommandResult, Credential, Implant};
 use anyhow::Result;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
@@ -42,6 +42,55 @@ impl Database {
         Ok(recs)
     }
 
+    pub async fn get_campaign(&self, id: Uuid) -> Result<Campaign> {
+        let rec = sqlx::query_as::<_, Campaign>(
+            "SELECT id, name, description, status, start_date, end_date, created_at FROM campaigns WHERE id = $1"
+        )
+        .bind(id)
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(rec)
+    }
+
+    pub async fn update_campaign(
+        &self,
+        id: Uuid,
+        name: Option<&str>,
+        description: Option<&str>,
+        status: Option<&str>,
+    ) -> Result<Campaign> {
+        // Build dynamic query or just update fields if present. For simplicity, let's update all provided fields.
+        // This is a bit simplified; a real implementation might be more granular.
+        let mut query_builder = sqlx::QueryBuilder::new("UPDATE campaigns SET ");
+        let mut separated = query_builder.separated(", ");
+
+        if let Some(n) = name {
+            separated.push("name = ");
+            separated.push_bind_unseparated(n);
+        }
+        if let Some(d) = description {
+            separated.push("description = ");
+            separated.push_bind_unseparated(d);
+        }
+        if let Some(s) = status {
+            separated.push("status = ");
+            separated.push_bind_unseparated(s);
+        }
+
+        query_builder.push(" WHERE id = ");
+        query_builder.push_bind(id);
+        query_builder
+            .push(" RETURNING id, name, description, status, start_date, end_date, created_at");
+
+        let rec = query_builder
+            .build_query_as::<Campaign>()
+            .fetch_one(&self.pool)
+            .await?;
+
+        Ok(rec)
+    }
+
     // --- Implant Operations ---
     pub async fn register_implant(&self, implant: &Implant) -> Result<Uuid> {
         let row = sqlx::query(
@@ -79,6 +128,22 @@ impl Database {
         .fetch_all(&self.pool)
         .await?;
         Ok(recs)
+    }
+
+    pub async fn get_implant(&self, id: Uuid) -> Result<Implant> {
+        let rec = sqlx::query_as::<_, Implant>("SELECT * FROM implants WHERE id = $1")
+            .bind(id)
+            .fetch_one(&self.pool)
+            .await?;
+        Ok(rec)
+    }
+
+    pub async fn kill_implant(&self, id: Uuid) -> Result<()> {
+        sqlx::query("UPDATE implants SET status = 'killed' WHERE id = $1")
+            .bind(id)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
     }
 
     // --- Listener Operations ---
@@ -164,5 +229,102 @@ impl Database {
 
         tx.commit().await?;
         Ok(())
+    }
+
+    pub async fn list_commands(&self, implant_id: Uuid) -> Result<Vec<Command>> {
+        let recs = sqlx::query_as::<_, Command>(
+            "SELECT * FROM commands WHERE implant_id = $1 ORDER BY created_at DESC",
+        )
+        .bind(implant_id)
+        .fetch_all(&self.pool)
+        .await?;
+        Ok(recs)
+    }
+
+    pub async fn cancel_command(&self, command_id: Uuid) -> Result<()> {
+        sqlx::query(
+            "UPDATE commands SET status = 'cancelled' WHERE id = $1 AND status = 'pending'",
+        )
+        .bind(command_id)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    pub async fn get_command_result(&self, command_id: Uuid) -> Result<Option<CommandResult>> {
+        let rec = sqlx::query_as::<_, CommandResult>(
+            "SELECT * FROM command_results WHERE command_id = $1",
+        )
+        .bind(command_id)
+        .fetch_optional(&self.pool)
+        .await?;
+        Ok(rec)
+    }
+
+    // --- Artifact Operations ---
+    pub async fn list_artifacts(&self) -> Result<Vec<Artifact>> {
+        let recs = sqlx::query_as::<_, Artifact>(
+            "SELECT id, implant_id, command_id, filename, original_path, file_hash_sha256, file_hash_blake3, file_size, mime_type, collected_at, metadata, NULL as content FROM artifacts ORDER BY collected_at DESC"
+        )
+        .fetch_all(&self.pool)
+        .await?;
+        Ok(recs)
+    }
+
+    pub async fn get_artifact(&self, id: Uuid) -> Result<Artifact> {
+        let rec = sqlx::query_as::<_, Artifact>("SELECT * FROM artifacts WHERE id = $1")
+            .bind(id)
+            .fetch_one(&self.pool)
+            .await?;
+        Ok(rec)
+    }
+
+    pub async fn create_artifact(
+        &self,
+        implant_id: Uuid,
+        filename: &str,
+        content: &[u8],
+    ) -> Result<Uuid> {
+        let row = sqlx::query(
+            "INSERT INTO artifacts (implant_id, filename, content, collected_at) VALUES ($1, $2, $3, NOW()) RETURNING id"
+        )
+        .bind(implant_id)
+        .bind(filename)
+        .bind(content)
+        .fetch_one(&self.pool)
+        .await?;
+        Ok(row.try_get("id")?)
+    }
+
+    // --- Credential Operations ---
+    pub async fn list_credentials(&self) -> Result<Vec<Credential>> {
+        let recs =
+            sqlx::query_as::<_, Credential>("SELECT * FROM credentials ORDER BY collected_at DESC")
+                .fetch_all(&self.pool)
+                .await?;
+        Ok(recs)
+    }
+
+    // --- Operator Operations ---
+    pub async fn get_operator_by_username(
+        &self,
+        username: &str,
+    ) -> Result<Option<crate::models::Operator>> {
+        let rec = sqlx::query_as::<_, crate::models::Operator>(
+            "SELECT * FROM operators WHERE username = $1",
+        )
+        .bind(username)
+        .fetch_optional(&self.pool)
+        .await?;
+        Ok(rec)
+    }
+
+    pub async fn get_operator(&self, id: Uuid) -> Result<Option<crate::models::Operator>> {
+        let rec =
+            sqlx::query_as::<_, crate::models::Operator>("SELECT * FROM operators WHERE id = $1")
+                .bind(id)
+                .fetch_optional(&self.pool)
+                .await?;
+        Ok(rec)
     }
 }

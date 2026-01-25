@@ -8,8 +8,9 @@ crate-type = ["cdylib"]
 
 [dependencies]
 # No std dependencies
-# wraith-core and crypto removed to ensure pure no_std
 serde = { version = "1.0", default-features = false, features = ["derive"] }
+snow = { version = "0.9", default-features = false, features = ["hacl-star-accelerated"] }
+# wraith-crypto = { path = "../../../crates/wraith-crypto", default-features = false }
 # winapi for raw windows definitions if needed, but we prefer manual definitions for stealth
 # winapi = { version = "0.3", features = ["winnt"] }
 

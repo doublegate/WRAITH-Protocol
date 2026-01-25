@@ -93,6 +93,86 @@ impl From<Implant> for ImplantJson {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ListenerJson {
+    pub id: String,
+    pub name: String,
+    pub type_: String,
+    pub bind_address: String,
+    pub port: i32,
+    pub status: String,
+}
+
+impl From<Listener> for ListenerJson {
+    fn from(l: Listener) -> Self {
+        Self {
+            id: l.id,
+            name: l.name,
+            type_: l.r#type,
+            bind_address: l.bind_address,
+            port: l.port,
+            status: l.status,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CommandJson {
+    pub id: String,
+    pub implant_id: String,
+    pub command_type: String,
+    pub status: String,
+    pub payload_preview: String,
+}
+
+impl From<Command> for CommandJson {
+    fn from(c: Command) -> Self {
+        Self {
+            id: c.id,
+            implant_id: c.implant_id,
+            command_type: c.command_type,
+            status: c.status,
+            payload_preview: String::from_utf8_lossy(&c.payload).to_string(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CommandResultJson {
+    pub id: String,
+    pub output: String,
+    pub exit_code: i32,
+    pub error_message: String,
+}
+
+impl From<CommandResult> for CommandResultJson {
+    fn from(r: CommandResult) -> Self {
+        Self {
+            id: r.id,
+            output: String::from_utf8_lossy(&r.output).to_string(),
+            exit_code: r.exit_code,
+            error_message: r.error_message,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ArtifactJson {
+    pub id: String,
+    pub filename: String,
+    pub size: i64,
+}
+
+impl From<Artifact> for ArtifactJson {
+    fn from(a: Artifact) -> Self {
+        Self {
+            id: a.id,
+            filename: a.filename,
+            size: a.file_size,
+        }
+    }
+}
+
 struct ClientState {
     client: Mutex<Option<OperatorServiceClient<Channel>>>,
 }
@@ -196,6 +276,146 @@ async fn send_command(
     Ok(response.into_inner().id)
 }
 
+#[tauri::command]
+async fn list_campaigns(state: State<'_, ClientState>) -> Result<String, String> {
+    let mut lock = state.client.lock().await;
+    let client = lock.as_mut().ok_or("Not connected")?;
+
+    let response = client
+        .list_campaigns(tonic::Request::new(ListCampaignsRequest {
+            status_filter: "".to_string(),
+            page_size: 100,
+            page_token: "".to_string(),
+        }))
+        .await
+        .map_err(|e| format!("gRPC error: {}", e))?;
+
+    let campaigns: Vec<CampaignJson> = response
+        .into_inner()
+        .campaigns
+        .into_iter()
+        .map(|c| c.into())
+        .collect();
+
+    serde_json::to_string(&campaigns).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn list_listeners(state: State<'_, ClientState>) -> Result<String, String> {
+    let mut lock = state.client.lock().await;
+    let client = lock.as_mut().ok_or("Not connected")?;
+
+    let response = client
+        .list_listeners(tonic::Request::new(ListListenersRequest {}))
+        .await
+        .map_err(|e| format!("gRPC error: {}", e))?;
+
+    let listeners: Vec<ListenerJson> = response
+        .into_inner()
+        .listeners
+        .into_iter()
+        .map(|l| l.into())
+        .collect();
+
+    serde_json::to_string(&listeners).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn create_listener(
+    name: String,
+    type_: String,
+    bind_address: String,
+    port: i32,
+    state: State<'_, ClientState>,
+) -> Result<String, String> {
+    let mut lock = state.client.lock().await;
+    let client = lock.as_mut().ok_or("Not connected")?;
+
+    let response = client
+        .create_listener(tonic::Request::new(CreateListenerRequest {
+            name,
+            r#type: type_,
+            bind_address,
+            port,
+            config: std::collections::HashMap::new(),
+        }))
+        .await
+        .map_err(|e| format!("gRPC error: {}", e))?;
+
+    let l: ListenerJson = response.into_inner().into();
+    serde_json::to_string(&l).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn list_commands(
+    implant_id: String,
+    state: State<'_, ClientState>,
+) -> Result<String, String> {
+    let mut lock = state.client.lock().await;
+    let client = lock.as_mut().ok_or("Not connected")?;
+
+    let response = client
+        .list_commands(tonic::Request::new(ListCommandsRequest {
+            implant_id,
+            status_filter: "".to_string(),
+            page_size: 100,
+            page_token: "".to_string(),
+        }))
+        .await
+        .map_err(|e| format!("gRPC error: {}", e))?;
+
+    let cmds: Vec<CommandJson> = response
+        .into_inner()
+        .commands
+        .into_iter()
+        .map(|c| c.into())
+        .collect();
+
+    serde_json::to_string(&cmds).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn get_command_result(
+    command_id: String,
+    state: State<'_, ClientState>,
+) -> Result<String, String> {
+    let mut lock = state.client.lock().await;
+    let client = lock.as_mut().ok_or("Not connected")?;
+
+    let response = client
+        .get_command_result(tonic::Request::new(GetCommandResultRequest { command_id }))
+        .await
+        .map_err(|e| format!("gRPC error: {}", e))?;
+
+    let res: CommandResultJson = response.into_inner().into();
+    serde_json::to_string(&res).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn list_artifacts(state: State<'_, ClientState>) -> Result<String, String> {
+    let mut lock = state.client.lock().await;
+    let client = lock.as_mut().ok_or("Not connected")?;
+
+    let response = client
+        .list_artifacts(tonic::Request::new(ListArtifactsRequest {
+            implant_id: "".to_string(),
+            campaign_id: "".to_string(),
+            page_size: 100,
+            page_token: "".to_string(),
+        }))
+        .await
+        .map_err(|e| format!("gRPC error: {}", e))?;
+
+    let artifacts: Vec<ArtifactJson> = response
+        .into_inner()
+        .artifacts
+        .into_iter()
+        .map(|a| a.into())
+        .collect();
+
+    serde_json::to_string(&artifacts).map_err(|e| e.to_string())
+}
+
 /// Initialize and run the Tauri application
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -220,7 +440,13 @@ pub fn run() {
             connect_to_server,
             create_campaign,
             list_implants,
-            send_command
+            send_command,
+            list_campaigns,
+            list_listeners,
+            create_listener,
+            list_commands,
+            get_command_result,
+            list_artifacts
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

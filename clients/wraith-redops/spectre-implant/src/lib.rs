@@ -3,8 +3,8 @@
 
 extern crate alloc;
 
-pub mod utils;
 pub mod c2;
+pub mod utils;
 
 // Global Allocator
 #[global_allocator]
@@ -20,7 +20,7 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
 pub extern "C" fn _start() -> ! {
     // 1. Initialize
     // utils::api_resolver::init();
-    
+
     let config = c2::C2Config {
         transport: c2::TransportType::Http,
         server_addr: "127.0.0.1",

