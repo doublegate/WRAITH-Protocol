@@ -26,9 +26,9 @@ This plan outlines the methodical remediation of WRAITH-RedOps according to the 
 
 ## Phase 2: Spectre Implant Remediation (Gap Analysis Section 2)
 
-- [ ] Task: 2.1 - Implement Process Injection Modules
-    - [ ] Write tests for reflective injection, hollowing, and thread hijacking
-    - [ ] Implement logic in `modules/injection.rs`
+- [x] Task: 2.1 - Implement Process Injection Modules 6918dd0
+    - [x] Write tests for reflective injection, hollowing, and thread hijacking
+    - [x] Implement logic in `modules/injection.rs`
 - [ ] Task: 2.2 - Implement BOF Loader
     - [ ] Write tests for COFF loading and symbol resolution
     - [ ] Implement full loader in `modules/bof_loader.rs`
