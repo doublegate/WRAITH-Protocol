@@ -112,6 +112,15 @@ impl OperatorService for OperatorServiceImpl {
             .await
             .map_err(|e| Status::internal(e.to_string()))?;
 
+        // Audit Log
+        let _ = self.db.log_activity(
+            None, 
+            None,
+            "create_campaign",
+            serde_json::json!({ "name": camp.name, "id": camp.id }),
+            true
+        ).await;
+
         Ok(Response::new(Campaign {
             id: camp.id.to_string(),
             name: camp.name,
@@ -330,6 +339,15 @@ impl OperatorService for OperatorServiceImpl {
             .queue_command(implant_id, &req.command_type, &req.payload)
             .await
             .map_err(|e| Status::internal(e.to_string()))?;
+
+        // Audit Log
+        let _ = self.db.log_activity(
+            None,
+            Some(implant_id),
+            "send_command",
+            serde_json::json!({ "type": req.command_type, "cmd_id": cmd_id }),
+            true
+        ).await;
 
         Ok(Response::new(Command {
             id: cmd_id.to_string(),

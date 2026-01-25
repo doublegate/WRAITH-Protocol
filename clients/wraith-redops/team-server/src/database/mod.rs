@@ -319,12 +319,70 @@ impl Database {
         Ok(rec)
     }
 
-    pub async fn get_operator(&self, id: Uuid) -> Result<Option<crate::models::Operator>> {
-        let rec =
-            sqlx::query_as::<_, crate::models::Operator>("SELECT * FROM operators WHERE id = $1")
-                .bind(id)
-                .fetch_optional(&self.pool)
-                .await?;
-        Ok(rec)
+        pub async fn get_operator(&self, id: Uuid) -> Result<Option<crate::models::Operator>> {
+
+            let rec = sqlx::query_as::<_, crate::models::Operator>(
+
+                "SELECT * FROM operators WHERE id = 
+    "
+
+            )
+
+            .bind(id)
+
+            .fetch_optional(&self.pool)
+
+            .await?;
+
+            Ok(rec)
+
+        }
+
+    
+
+        // --- Audit Logging ---
+
+        pub async fn log_activity(
+
+            &self,
+
+            operator_id: Option<Uuid>,
+
+            implant_id: Option<Uuid>,
+
+            action: &str,
+
+            details: serde_json::Value,
+
+            success: bool
+
+        ) -> Result<()> {
+
+            sqlx::query(
+
+                "INSERT INTO activity_log (operator_id, implant_id, action, details, success) VALUES (
+    , $2, $3, $4, $5)"
+
+            )
+
+            .bind(operator_id)
+
+            .bind(implant_id)
+
+            .bind(action)
+
+            .bind(details)
+
+            .bind(success)
+
+            .execute(&self.pool)
+
+            .await?;
+
+            Ok(())
+
+        }
+
     }
-}
+
+    
