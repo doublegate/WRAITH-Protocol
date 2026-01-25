@@ -5,6 +5,7 @@ use sqlx::{PgPool, Row};
 use uuid::Uuid;
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
+use std::env;
 
 pub struct Database {
     pool: PgPool,
@@ -13,9 +14,10 @@ pub struct Database {
 
 impl Database {
     pub fn new(pool: PgPool) -> Self {
+        let key = env::var("HMAC_SECRET").unwrap_or_else(|_| "audit_log_integrity_key_very_secret".to_string()).into_bytes();
         Self { 
             pool,
-            hmac_key: b"audit_log_integrity_key_very_secret".to_vec(),
+            hmac_key: key,
         }
     }
 

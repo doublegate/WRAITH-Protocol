@@ -78,7 +78,28 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         listeners::udp::start_udp_listener(udp_db, 9999, udp_event_tx, udp_governance, udp_key, udp_sessions).await;
     });
 
-    let addr: SocketAddr = "0.0.0.0:50051".parse()?;
+    // Start DNS Listener
+    let dns_event_tx = event_tx.clone();
+    let dns_governance = governance.clone();
+    let dns_sessions = sessions.clone();
+    let dns_key = static_key.clone();
+    
+    tokio::spawn(async move {
+        listeners::dns::start_dns_listener(5353, dns_event_tx, dns_governance, dns_key, dns_sessions).await;
+    });
+
+    // Start SMB Listener
+    let smb_event_tx = event_tx.clone();
+    let smb_governance = governance.clone();
+    let smb_sessions = sessions.clone();
+    let smb_key = static_key.clone();
+    
+    tokio::spawn(async move {
+        listeners::smb::start_smb_listener(4445, smb_event_tx, smb_governance, smb_key, smb_sessions).await;
+    });
+
+    let addr_str = std::env::var("GRPC_LISTEN_ADDR").unwrap_or_else(|_| "0.0.0.0:50051".to_string());
+    let addr: SocketAddr = addr_str.parse()?;
     let operator_service = OperatorServiceImpl {
         db: db.clone(),
         event_tx: event_tx.clone(),
