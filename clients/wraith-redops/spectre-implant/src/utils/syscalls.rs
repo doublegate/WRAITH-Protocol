@@ -19,6 +19,14 @@ pub const SYS_CONNECT: usize = 42;
 pub const SYS_SENDTO: usize = 44; // sendto/write
 #[cfg(not(target_os = "windows"))]
 pub const SYS_EXIT: usize = 60;
+#[cfg(not(target_os = "windows"))]
+pub const SYS_PIPE: usize = 22;
+#[cfg(not(target_os = "windows"))]
+pub const SYS_DUP2: usize = 33;
+#[cfg(not(target_os = "windows"))]
+pub const SYS_FORK: usize = 57;
+#[cfg(not(target_os = "windows"))]
+pub const SYS_EXECVE: usize = 59;
 
 #[cfg(not(target_os = "windows"))]
 #[inline(always)]
@@ -63,6 +71,41 @@ pub unsafe fn syscall2(n: usize, a1: usize, a2: usize) -> usize {
         options(nostack, preserves_flags)
     );
     ret
+}
+
+#[cfg(not(target_os = "windows"))]
+pub const SYS_MMAP: usize = 9;
+#[cfg(not(target_os = "windows"))]
+pub const SYS_MPROTECT: usize = 10;
+
+#[cfg(not(target_os = "windows"))]
+#[inline(always)]
+pub unsafe fn syscall6(n: usize, a1: usize, a2: usize, a3: usize, a4: usize, a5: usize, a6: usize) -> usize {
+    let ret: usize;
+    asm!(
+        "syscall",
+        inlateout("rax") n => ret,
+        in("rdi") a1,
+        in("rsi") a2,
+        in("rdx") a3,
+        in("r10") a4,
+        in("r8") a5,
+        in("r9") a6,
+        out("rcx") _,
+        out("r11") _,
+        options(nostack, preserves_flags)
+    );
+    ret
+}
+
+#[cfg(not(target_os = "windows"))]
+pub unsafe fn sys_mmap(addr: usize, len: usize, prot: i32, flags: i32, fd: i32, offset: usize) -> usize {
+    syscall6(SYS_MMAP, addr, len, prot as usize, flags as usize, fd as usize, offset)
+}
+
+#[cfg(not(target_os = "windows"))]
+pub unsafe fn sys_mprotect(addr: usize, len: usize, prot: i32) -> usize {
+    syscall3(SYS_MPROTECT, addr, len, prot as usize)
 }
 
 #[cfg(not(target_os = "windows"))]
@@ -121,6 +164,26 @@ pub unsafe fn sys_nanosleep(req: *const Timespec, rem: *mut Timespec) -> usize {
 pub unsafe fn sys_exit(code: i32) -> ! {
     syscall1(SYS_EXIT, code as usize);
     loop {}
+}
+
+#[cfg(not(target_os = "windows"))]
+pub unsafe fn sys_fork() -> isize {
+    syscall0(SYS_FORK) as isize
+}
+
+#[cfg(not(target_os = "windows"))]
+pub unsafe fn sys_execve(filename: *const u8, argv: *const *const u8, envp: *const *const u8) -> isize {
+    syscall3(SYS_EXECVE, filename as usize, argv as usize, envp as usize) as isize
+}
+
+#[cfg(not(target_os = "windows"))]
+pub unsafe fn sys_pipe(pipefd: *mut i32) -> isize {
+    syscall1(SYS_PIPE, pipefd as usize) as isize
+}
+
+#[cfg(not(target_os = "windows"))]
+pub unsafe fn sys_dup2(oldfd: i32, newfd: i32) -> isize {
+    syscall2(SYS_DUP2, oldfd as usize, newfd as usize) as isize
 }
 
 #[repr(C)]
