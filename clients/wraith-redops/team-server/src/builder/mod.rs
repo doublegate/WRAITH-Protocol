@@ -1,6 +1,7 @@
 use std::io::{Read, Write};
 use std::fs::File;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::process::Command;
 
 const CONFIG_MAGIC: &[u8] = b"WRAITH_CONFIG_BLOCK";
 
@@ -41,5 +42,33 @@ impl Builder {
         File::create(output_path)?.write_all(&data)?;
         
         Ok(())
+    }
+
+    pub fn compile_implant(
+        source_dir: &Path,
+        output_path: &Path,
+        _server_addr: &str,
+    ) -> anyhow::Result<()> {
+        // Compile from source using cargo
+        let status = Command::new("cargo")
+            .arg("build")
+            .arg("--release")
+            .arg("--manifest-path")
+            .arg(source_dir.join("Cargo.toml"))
+            // .env("WRAITH_SERVER", server_addr) // Pass config via env if build script handles it
+            .status()?;
+
+        if !status.success() {
+            return Err(anyhow::anyhow!("Compilation failed"));
+        }
+
+        // Copy artifact
+        let artifact = source_dir.join("target/release/spectre_implant"); // Binary name might differ
+        if artifact.exists() {
+             std::fs::copy(artifact, output_path)?;
+             Ok(())
+        } else {
+             Err(anyhow::anyhow!("Artifact not found after build"))
+        }
     }
 }
