@@ -12,7 +12,7 @@ use crate::database::Database;
 use tokio::sync::broadcast;
 use crate::wraith::redops::Event;
 use crate::governance::GovernanceEngine;
-use wraith_crypto::noise::{NoiseKeypair, NoiseHandshake, NoiseTransport};
+use wraith_crypto::noise::{NoiseKeypair, NoiseHandshake};
 use crate::services::session::SessionManager;
 
 #[derive(Debug, Deserialize, Serialize)]

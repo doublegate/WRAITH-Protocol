@@ -30,7 +30,7 @@ impl SessionManager {
         self.sessions.insert(cid, transport);
     }
 
-    pub fn get_session(&self, cid: &[u8; 8]) -> Option<dashmap::mapref::one::RefMut<[u8; 8], NoiseTransport>> {
+    pub fn get_session(&self, cid: &[u8; 8]) -> Option<dashmap::mapref::one::RefMut<'_, [u8; 8], NoiseTransport>> {
         self.sessions.get_mut(cid)
     }
 }
