@@ -417,6 +417,50 @@ async fn list_artifacts(state: State<'_, ClientState>) -> Result<String, String>
 }
 
 #[tauri::command]
+async fn download_artifact(
+    artifact_id: String,
+    save_path: String,
+    state: State<'_, ClientState>,
+) -> Result<String, String> {
+    let mut lock = state.client.lock().await;
+    let client = lock.as_mut().ok_or("Not connected")?;
+
+    let mut stream = client
+        .download_artifact(tonic::Request::new(DownloadArtifactRequest { artifact_id }))
+        .await
+        .map_err(|e| format!("gRPC error: {}", e))?
+        .into_inner();
+
+    let mut file = tokio::fs::File::create(&save_path).await.map_err(|e| e.to_string())?;
+    
+    use tokio::io::AsyncWriteExt;
+    while let Some(chunk) = stream.message().await.map_err(|e| e.to_string())? {
+        file.write_all(&chunk.data).await.map_err(|e| e.to_string())?;
+    }
+
+    Ok("Download complete".to_string())
+}
+
+#[tauri::command]
+async fn update_campaign(
+    id: String,
+    name: String,
+    description: String,
+    status: String,
+    state: State<'_, ClientState>,
+) -> Result<String, String> {
+    let mut lock = state.client.lock().await;
+    let client = lock.as_mut().ok_or("Not connected")?;
+
+    let response = client.update_campaign(tonic::Request::new(UpdateCampaignRequest {
+        id, name, description, status
+    })).await.map_err(|e| format!("gRPC error: {}", e))?;
+    
+    let c: CampaignJson = response.into_inner().into();
+    serde_json::to_string(&c).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 async fn kill_implant(implant_id: String, state: State<'_, ClientState>) -> Result<(), String> {
     let mut lock = state.client.lock().await;
     let client = lock.as_mut().ok_or("Not connected")?;
@@ -489,6 +533,8 @@ pub fn run() {
             list_commands,
             get_command_result,
             list_artifacts,
+            download_artifact,
+            update_campaign,
             kill_implant,
             start_listener,
             stop_listener
