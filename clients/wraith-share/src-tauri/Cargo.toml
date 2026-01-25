@@ -1,6 +1,6 @@
 [package]
 name = "wraith-share"
-version = "2.2.2"
+version = "2.2.5"
 description = "WRAITH-Share - Group File Sharing with Granular Access Control"
 authors = ["WRAITH Protocol Contributors"]
 license = "MIT OR Apache-2.0"
