@@ -13,9 +13,9 @@ This plan outlines the methodical remediation of WRAITH-RedOps according to the 
 - [x] Task: 1.3 - Implement SMB Named Pipe Listener ddec603
     - [x] Write tests for SMB named pipe communication
     - [x] Implement SMB server logic in `smb.rs`
-- [ ] Task: 1.4 - Implement Implant Service Decryption and Binary Retrieval
-    - [ ] Write tests for command/payload decryption
-    - [ ] Implement decryption logic and builder integration in `implant.rs`
+- [x] Task: 1.4 - Implement Implant Service Decryption and Binary Retrieval ab235f1
+    - [x] Write tests for command/payload decryption
+    - [x] Implement decryption logic and builder integration in `implant.rs`
 - [ ] Task: 1.5 - Connect HTTP Listener to Database and Tasks
     - [ ] Write tests for task queuing and delivery via HTTP
     - [ ] Implement DB query logic and Frame construction in `http.rs`
