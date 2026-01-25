@@ -1,5 +1,4 @@
 use alloc::vec::Vec;
-use alloc::string::String;
 
 pub enum SocksState {
     Greeting,

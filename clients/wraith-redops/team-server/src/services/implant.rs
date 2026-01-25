@@ -24,7 +24,7 @@ impl ImplantService for ImplantServiceImpl {
     ) -> Result<Response<RegisterResponse>, Status> {
         // In a production implementation, we extract registration data.
         // For gRPC agents, this typically involves a pre-shared key or initial Noise handshake.
-        let req = req.into_inner();
+        let _req = req.into_inner();
 
         let implant_data = crate::models::Implant {
             id: Uuid::new_v4(),

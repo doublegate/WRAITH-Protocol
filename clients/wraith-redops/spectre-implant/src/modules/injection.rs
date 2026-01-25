@@ -1,5 +1,3 @@
-use alloc::vec::Vec;
-use core::ffi::c_void;
 
 #[cfg(target_os = "windows")]
 use crate::utils::api_resolver::{hash_str, resolve_function};

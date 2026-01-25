@@ -24,3 +24,4 @@ codegen-units = 1   # Maximize optimization
 
 [profile.dev]
 panic = "abort"
+[workspace]
