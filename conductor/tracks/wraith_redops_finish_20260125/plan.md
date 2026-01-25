@@ -25,16 +25,16 @@
     - [x] Sub-task: Ensure all critical actions (tasking, config changes) are written to `activity_log` with signatures.
 - [~] Task: Conductor - User Manual Verification 'Governance & Security' (Protocol in workflow.md)
 
-## Phase 3: Spectre Implant Core Features (Gap 3.1, 3.2, 3.3)
-- [ ] Task: WRAITH C2 Integration (Gap 3.1)
-    - [ ] Sub-task: Ensure `spectre-implant` `c2/mod.rs` fully implements `Noise_XX` handshake using `snow` (aligned with Team Server).
-    - [ ] Sub-task: Verify `WraithFrame` serialization/deserialization.
-- [ ] Task: Evasion Features (Gap 3.2, 3.3)
-    - [ ] Sub-task: Enhance `obfuscation.rs` to support ROP-based Sleep Mask (if feasible in no_std Rust without assembly, otherwise stub with detailed comments on ASM requirement).
-    - [ ] Sub-task: Verify `syscalls.rs` Windows implementation (Hell's Gate) is complete and correct.
-- [ ] Task: Task Execution (Gap 3.7)
-    - [ ] Sub-task: Implement command dispatcher in `c2/mod.rs` to handle standard task types (shell, upload, download).
-- [ ] Task: Conductor - User Manual Verification 'Spectre Implant Core Features' (Protocol in workflow.md)
+## Phase 3: Spectre Implant Core Features (Gap 3.1, 3.2, 3.3) [checkpoint: 369da00]
+- [x] Task: WRAITH C2 Integration (Gap 3.1)
+    - [x] Sub-task: Ensure `spectre-implant` `c2/mod.rs` fully implements `Noise_XX` handshake using `snow` (aligned with Team Server).
+    - [x] Sub-task: Verify `WraithFrame` serialization/deserialization.
+- [x] Task: Evasion Features (Gap 3.2, 3.3)
+    - [x] Sub-task: Enhance `obfuscation.rs` to support ROP-based Sleep Mask (if feasible in no_std Rust without assembly, otherwise stub with detailed comments on ASM requirement).
+    - [x] Sub-task: Verify `syscalls.rs` Windows implementation (Hell's Gate) is complete and correct.
+- [x] Task: Task Execution (Gap 3.7)
+    - [x] Sub-task: Implement command dispatcher in `c2/mod.rs` to handle standard task types (shell, upload, download).
+- [~] Task: Conductor - User Manual Verification 'Spectre Implant Core Features' (Protocol in workflow.md)
 
 ## Phase 4: Advanced Implant Features (Gap 3.4, 3.5, 3.6)
 - [ ] Task: Post-Exploitation Modules
