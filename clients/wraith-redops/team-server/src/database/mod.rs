@@ -1,8 +1,8 @@
+use crate::models::listener::Listener;
+use crate::models::{Campaign, Command, Implant};
+use anyhow::Result;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
-use anyhow::Result;
-use crate::models::{Campaign, Implant, Command};
-use crate::models::listener::Listener;
 
 pub struct Database {
     pool: PgPool,
@@ -13,7 +13,9 @@ impl Database {
         Self { pool }
     }
 
-    pub async fn get_pool(&self) -> &PgPool {
+    /// Get a reference to the underlying database connection pool.
+    #[allow(dead_code)]
+    pub fn pool(&self) -> &PgPool {
         &self.pool
     }
 
@@ -72,7 +74,7 @@ impl Database {
 
     pub async fn list_implants(&self) -> Result<Vec<Implant>> {
         let recs = sqlx::query_as::<_, Implant>(
-            "SELECT * FROM implants ORDER BY last_checkin DESC NULLS LAST"
+            "SELECT * FROM implants ORDER BY last_checkin DESC NULLS LAST",
         )
         .fetch_all(&self.pool)
         .await?;
@@ -80,7 +82,13 @@ impl Database {
     }
 
     // --- Listener Operations ---
-    pub async fn create_listener(&self, name: &str, l_type: &str, bind_addr: &str, config: serde_json::Value) -> Result<Listener> {
+    pub async fn create_listener(
+        &self,
+        name: &str,
+        l_type: &str,
+        bind_addr: &str,
+        config: serde_json::Value,
+    ) -> Result<Listener> {
         let rec = sqlx::query_as::<_, Listener>(
             "INSERT INTO listeners (name, type, bind_address, config, status) VALUES ($1, $2, $3::inet, $4, 'active') RETURNING id, name, type, bind_address::text, config, status"
         )
@@ -112,7 +120,12 @@ impl Database {
     }
 
     // --- Command Operations ---
-    pub async fn queue_command(&self, implant_id: Uuid, cmd_type: &str, payload: &[u8]) -> Result<Uuid> {
+    pub async fn queue_command(
+        &self,
+        implant_id: Uuid,
+        cmd_type: &str,
+        payload: &[u8],
+    ) -> Result<Uuid> {
         let row = sqlx::query(
             "INSERT INTO commands (implant_id, command_type, payload, status) VALUES ($1, $2, $3, 'pending') RETURNING id"
         )
@@ -121,7 +134,7 @@ impl Database {
         .bind(payload)
         .fetch_one(&self.pool)
         .await?;
-        
+
         Ok(row.try_get("id")?)
     }
 

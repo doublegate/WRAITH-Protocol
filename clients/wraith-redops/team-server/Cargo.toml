@@ -1,32 +1,55 @@
 [package]
 name = "team-server"
-version = "0.1.0"
-edition = "2021"
+version = "2.2.5"
+description = "WRAITH RedOps Team Server - Command and Control Infrastructure"
+authors = ["WRAITH Protocol Contributors"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/doublegate/WRAITH-Protocol"
+edition = "2024"
+rust-version = "1.88"
 
 [dependencies]
+# Async runtime
 tokio = { version = "1.35", features = ["full"] }
-axum = "0.7"
-tonic = "0.10"
-prost = "0.12"
-prost-types = "0.12"
-sqlx = { version = "0.7", default-features = false, features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json", "ipnetwork", "macros", "migrate"] }
+tokio-stream = "0.1.18"
+
+# Web framework
+axum = "0.8"
+tower = "0.5"
+tower-http = { version = "0.6", features = ["cors", "trace"] }
+
+# gRPC
+tonic = "0.12"
+prost = "0.13"
+prost-types = "0.13"
+
+# Database - Updated to 0.8.1 to fix CVE (Dependabot alert #3)
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json", "macros", "migrate"] }
+
+# Serialization
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+
+# Logging
 tracing = "0.1"
-tracing-subscriber = "0.3"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Error handling
 anyhow = "1.0"
-thiserror = "1.0"
+thiserror = "2.0"
+
+# Utilities
 uuid = { version = "1.6", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 rand = "0.8"
+
+# Authentication
 jsonwebtoken = "9.2"
 argon2 = "0.5"
-tower = "0.4"
-tower-http = { version = "0.5", features = ["cors", "trace"] }
+
+# WRAITH Protocol
 wraith-core = { path = "../../../crates/wraith-core" }
 wraith-crypto = { path = "../../../crates/wraith-crypto" }
-ipnetwork = "0.20"
-tokio-stream = "0.1.18"
 
 [build-dependencies]
-tonic-build = "0.10"
+tonic-build = "0.12"

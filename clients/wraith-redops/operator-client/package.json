@@ -1,35 +1,47 @@
 {
   "name": "wraith-redops-client",
   "private": true,
-  "version": "0.0.0",
+  "version": "2.2.5",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "lint": "eslint ."
   },
   "dependencies": {
-    "@tauri-apps/api": "^1.5.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "@tailwindcss/vite": "^4.1.17",
+    "@tauri-apps/api": "^2.9.1",
+    "@tauri-apps/plugin-dialog": "^2.4.2",
+    "@tauri-apps/plugin-fs": "^2.4.4",
+    "@tauri-apps/plugin-shell": "^2.4.2",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "xterm": "^5.3.0",
     "xterm-addon-fit": "^0.8.0",
-    "zustand": "^4.4.0",
+    "zustand": "^5.0.9",
     "@tanstack/react-query": "^5.0.0",
     "lucide-react": "^0.290.0",
     "clsx": "^2.0.0",
     "tailwind-merge": "^2.0.0"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^1.5.0",
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
-    "@vitejs/plugin-react": "^4.0.0",
-    "autoprefixer": "^10.4.16",
-    "postcss": "^8.4.31",
-    "tailwindcss": "^3.3.0",
-    "typescript": "^5.0.2",
-    "vite": "^4.4.0"
+    "@eslint/js": "^9.39.1",
+    "@tauri-apps/cli": "^2.0.0",
+    "@types/node": "^24.10.9",
+    "@types/react": "^19.2.5",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "autoprefixer": "^10.4.22",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.17",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.46.4",
+    "vite": "^7.3.1"
   }
 }

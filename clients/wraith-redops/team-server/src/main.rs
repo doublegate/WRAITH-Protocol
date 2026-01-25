@@ -1,7 +1,7 @@
-use tonic::transport::Server;
 use sqlx::postgres::PgPoolOptions;
 use std::net::SocketAddr;
 use std::sync::Arc;
+use tonic::transport::Server;
 use tracing::info;
 
 // Import generated protos
@@ -11,16 +11,16 @@ pub mod wraith {
     }
 }
 
-use wraith::redops::operator_service_server::OperatorServiceServer;
 use wraith::redops::implant_service_server::ImplantServiceServer;
+use wraith::redops::operator_service_server::OperatorServiceServer;
 
 mod database;
-mod services;
 mod models;
+mod services;
 
-use services::operator::OperatorServiceImpl;
-use services::implant::ImplantServiceImpl;
 use database::Database;
+use services::implant::ImplantServiceImpl;
+use services::operator::OperatorServiceImpl;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -42,7 +42,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     sqlx::migrate!("./migrations").run(&pool).await?;
 
     let db = Arc::new(Database::new(pool));
-    
+
     let addr: SocketAddr = "0.0.0.0:50051".parse()?;
     let operator_service = OperatorServiceImpl { db: db.clone() };
     let implant_service = ImplantServiceImpl { db: db.clone() };
