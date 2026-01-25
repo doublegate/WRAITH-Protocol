@@ -14,16 +14,16 @@
     - [x] Sub-task: Ensure `stream_events` gRPC endpoint correctly yields these events.
 - [~] Task: Conductor - User Manual Verification 'Team Server Core & Protocol Integration' (Protocol in workflow.md)
 
-## Phase 2: Governance & Security (Gap 1.2)
-- [ ] Task: Scope Enforcement (Gap 1.2)
-    - [ ] Sub-task: Enhance `GovernanceEngine` to support CIDR whitelist/blacklists.
-    - [ ] Sub-task: Add middleware/interceptor to check all Implant actions against Scope.
-- [ ] Task: Kill Switch & TTL (Gap 1.2)
-    - [ ] Sub-task: Implement UDP broadcast mechanism for Kill Switch.
-    - [ ] Sub-task: Add Time-to-Live checks in `ImplantService` check-in logic.
-- [ ] Task: Audit Logging (Gap 1.2)
-    - [ ] Sub-task: Ensure all critical actions (tasking, config changes) are written to `activity_log` with signatures.
-- [ ] Task: Conductor - User Manual Verification 'Governance & Security' (Protocol in workflow.md)
+## Phase 2: Governance & Security (Gap 1.2) [checkpoint: 8c9a02f]
+- [x] Task: Scope Enforcement (Gap 1.2) [Phase 1]
+    - [x] Sub-task: Enhance `GovernanceEngine` to support CIDR whitelist/blacklists.
+    - [x] Sub-task: Add middleware/interceptor to check all Implant actions against Scope.
+- [~] Task: Kill Switch & TTL (Gap 1.2)
+    - [x] Sub-task: Implement UDP broadcast mechanism for Kill Switch.
+    - [x] Sub-task: Add Time-to-Live checks in `ImplantService` check-in logic.
+- [x] Task: Audit Logging (Gap 1.2)
+    - [x] Sub-task: Ensure all critical actions (tasking, config changes) are written to `activity_log` with signatures.
+- [~] Task: Conductor - User Manual Verification 'Governance & Security' (Protocol in workflow.md)
 
 ## Phase 3: Spectre Implant Core Features (Gap 3.1, 3.2, 3.3)
 - [ ] Task: WRAITH C2 Integration (Gap 3.1)
