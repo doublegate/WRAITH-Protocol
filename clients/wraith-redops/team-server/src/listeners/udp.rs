@@ -1,11 +1,11 @@
+use crate::database::Database;
+use crate::governance::GovernanceEngine;
+use crate::services::protocol::ProtocolHandler;
 use crate::services::session::SessionManager;
+use crate::wraith::redops::Event;
 use std::sync::Arc;
 use tokio::sync::broadcast;
-use crate::wraith::redops::Event;
-use crate::governance::GovernanceEngine;
 use wraith_crypto::noise::NoiseKeypair;
-use crate::database::Database;
-use crate::services::protocol::ProtocolHandler;
 
 pub async fn start_udp_listener(
     db: Arc<Database>,
@@ -13,11 +13,11 @@ pub async fn start_udp_listener(
     event_tx: broadcast::Sender<Event>,
     governance: Arc<GovernanceEngine>,
     static_key: NoiseKeypair,
-    session_manager: Arc<SessionManager>
+    session_manager: Arc<SessionManager>,
 ) {
     let addr = format!("0.0.0.0:{}", port);
     tracing::info!("UDP Listener starting on {}", addr);
-    
+
     let socket = match tokio::net::UdpSocket::bind(&addr).await {
         Ok(s) => Arc::new(s),
         Err(e) => {
@@ -26,12 +26,7 @@ pub async fn start_udp_listener(
         }
     };
 
-    let protocol = ProtocolHandler::new(
-        db,
-        session_manager,
-        Arc::new(static_key),
-        event_tx
-    );
+    let protocol = ProtocolHandler::new(db, session_manager, Arc::new(static_key), event_tx);
 
     let mut buf = [0u8; 65535];
 
@@ -42,17 +37,17 @@ pub async fn start_udp_listener(
                 if !governance.validate_action(src.ip()) {
                     continue;
                 }
-                
+
                 let data = buf[..len].to_vec();
                 let protocol = protocol.clone();
                 let socket = socket.clone();
-                
+
                 // Spawn a task to handle the packet to avoid blocking the loop
                 tokio::spawn(async move {
-                    if let Some(resp) = protocol.handle_packet(&data, src.to_string()).await {
-                        if let Err(e) = socket.send_to(&resp, src).await {
-                            tracing::error!("Failed to send UDP response: {}", e);
-                        }
+                    if let Some(resp) = protocol.handle_packet(&data, src.to_string()).await
+                        && let Err(e) = socket.send_to(&resp, src).await
+                    {
+                        tracing::error!("Failed to send UDP response: {}", e);
                     }
                 });
             }

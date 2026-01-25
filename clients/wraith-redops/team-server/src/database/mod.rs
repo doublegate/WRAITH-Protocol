@@ -1,11 +1,11 @@
 use crate::models::listener::Listener;
 use crate::models::{Artifact, Campaign, Command, CommandResult, Credential, Implant};
 use anyhow::Result;
-use sqlx::{PgPool, Row};
-use uuid::Uuid;
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
+use sqlx::{PgPool, Row};
 use std::env;
+use uuid::Uuid;
 
 pub struct Database {
     pool: PgPool,
@@ -14,8 +14,10 @@ pub struct Database {
 
 impl Database {
     pub fn new(pool: PgPool) -> Self {
-        let key = env::var("HMAC_SECRET").unwrap_or_else(|_| "audit_log_integrity_key_very_secret".to_string()).into_bytes();
-        Self { 
+        let key = env::var("HMAC_SECRET")
+            .unwrap_or_else(|_| "audit_log_integrity_key_very_secret".to_string())
+            .into_bytes();
+        Self {
             pool,
             hmac_key: key,
         }
@@ -328,12 +330,11 @@ impl Database {
     }
 
     pub async fn get_operator(&self, id: Uuid) -> Result<Option<crate::models::Operator>> {
-        let rec = sqlx::query_as::<_, crate::models::Operator>(
-            "SELECT * FROM operators WHERE id = $1",
-        )
-        .bind(id)
-        .fetch_optional(&self.pool)
-        .await?;
+        let rec =
+            sqlx::query_as::<_, crate::models::Operator>("SELECT * FROM operators WHERE id = $1")
+                .bind(id)
+                .fetch_optional(&self.pool)
+                .await?;
         Ok(rec)
     }
 
@@ -344,20 +345,25 @@ impl Database {
         implant_id: Option<Uuid>,
         action: &str,
         details: serde_json::Value,
-        success: bool
+        success: bool,
     ) -> Result<()> {
         let timestamp = chrono::Utc::now();
-        
+
         type HmacSha256 = Hmac<Sha256>;
-        let mut mac = HmacSha256::new_from_slice(&self.hmac_key).expect("HMAC can take key of any size");
-        
+        let mut mac =
+            HmacSha256::new_from_slice(&self.hmac_key).expect("HMAC can take key of any size");
+
         mac.update(timestamp.to_rfc3339().as_bytes());
-        if let Some(oid) = operator_id { mac.update(oid.as_bytes()); }
-        if let Some(iid) = implant_id { mac.update(iid.as_bytes()); }
+        if let Some(oid) = operator_id {
+            mac.update(oid.as_bytes());
+        }
+        if let Some(iid) = implant_id {
+            mac.update(iid.as_bytes());
+        }
         mac.update(action.as_bytes());
         mac.update(details.to_string().as_bytes());
         mac.update(&[if success { 1 } else { 0 }]);
-        
+
         let signature = mac.finalize().into_bytes().to_vec();
 
         sqlx::query(

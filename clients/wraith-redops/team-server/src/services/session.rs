@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use dashmap::DashMap;
+use std::sync::Arc;
 use wraith_crypto::noise::{NoiseHandshake, NoiseTransport};
 
 #[derive(Clone)]
@@ -30,7 +30,10 @@ impl SessionManager {
         self.sessions.insert(cid, transport);
     }
 
-    pub fn get_session(&self, cid: &[u8; 8]) -> Option<dashmap::mapref::one::RefMut<'_, [u8; 8], NoiseTransport>> {
+    pub fn get_session(
+        &self,
+        cid: &[u8; 8],
+    ) -> Option<dashmap::mapref::one::RefMut<'_, [u8; 8], NoiseTransport>> {
         self.sessions.get_mut(cid)
     }
 }
@@ -44,10 +47,11 @@ mod tests {
     fn test_session_manager() {
         let manager = SessionManager::new();
         let cid = [1u8; 8];
-        
-        let keypair = NoiseKeypair::generate().unwrap();
-        let handshake = wraith_crypto::noise::NoiseHandshake::new_initiator(&keypair).unwrap();
-        
+
+        let keypair = NoiseKeypair::generate().expect("Test keypair generation failed");
+        let handshake = wraith_crypto::noise::NoiseHandshake::new_initiator(&keypair)
+            .expect("Test handshake creation failed");
+
         manager.insert_handshake(cid, handshake);
         assert!(manager.remove_handshake(&cid).is_some());
         assert!(manager.remove_handshake(&cid).is_none());

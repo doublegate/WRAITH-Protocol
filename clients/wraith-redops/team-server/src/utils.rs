@@ -1,7 +1,7 @@
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
-use std::time::{SystemTime, UNIX_EPOCH};
 use std::env;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
@@ -11,7 +11,9 @@ pub struct Claims {
 }
 
 fn get_jwt_secret() -> Vec<u8> {
-    env::var("JWT_SECRET").unwrap_or_else(|_| "secret_key_wraith_redops".to_string()).into_bytes()
+    env::var("JWT_SECRET")
+        .expect("JWT_SECRET environment variable must be set with a strong secret key (min 32 characters)")
+        .into_bytes()
 }
 
 pub fn create_jwt(id: &str, role: &str) -> anyhow::Result<String> {

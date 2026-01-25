@@ -1,12 +1,12 @@
+use crate::database::Database;
+use crate::governance::GovernanceEngine;
+use crate::services::protocol::ProtocolHandler;
+use crate::services::session::SessionManager;
+use crate::wraith::redops::Event;
 use std::sync::Arc;
 use tokio::net::UdpSocket;
 use tokio::sync::broadcast;
-use crate::wraith::redops::Event;
-use crate::governance::GovernanceEngine;
 use wraith_crypto::noise::NoiseKeypair;
-use crate::services::session::SessionManager;
-use crate::database::Database;
-use crate::services::protocol::ProtocolHandler;
 
 pub async fn start_dns_listener(
     db: Arc<Database>,
@@ -14,11 +14,11 @@ pub async fn start_dns_listener(
     event_tx: broadcast::Sender<Event>,
     governance: Arc<GovernanceEngine>,
     static_key: NoiseKeypair,
-    session_manager: Arc<SessionManager>
+    session_manager: Arc<SessionManager>,
 ) {
     let addr = format!("0.0.0.0:{}", port);
     tracing::info!("DNS Listener starting on {}", addr);
-    
+
     let socket = match UdpSocket::bind(&addr).await {
         Ok(s) => s,
         Err(e) => {
@@ -36,7 +36,7 @@ pub async fn start_dns_listener(
                 if !governance.validate_action(src.ip()) {
                     continue;
                 }
-                
+
                 if len > 12 {
                     let domain = parse_dns_query(&buf[..len]);
                     if !governance.validate_domain(&domain) {
@@ -56,11 +56,17 @@ fn parse_dns_query(buf: &[u8]) -> String {
     let mut domain = String::new();
     while pos < buf.len() {
         let len = buf[pos] as usize;
-        if len == 0 { break; }
+        if len == 0 {
+            break;
+        }
         pos += 1;
-        if pos + len > buf.len() { break; }
-        if !domain.is_empty() { domain.push('.'); }
-        domain.push_str(&String::from_utf8_lossy(&buf[pos..pos+len]));
+        if pos + len > buf.len() {
+            break;
+        }
+        if !domain.is_empty() {
+            domain.push('.');
+        }
+        domain.push_str(&String::from_utf8_lossy(&buf[pos..pos + len]));
         pos += len;
     }
     domain

@@ -166,23 +166,114 @@ function App() {
             </div>
           )}
 
-          {/* Dashboard - Placeholder */}
+          {/* Dashboard */}
           {activeTab === 'dashboard' && (
              <div className="flex flex-col h-full gap-4">
-                <div className="grid grid-cols-3 gap-4">
+                {/* Primary Metrics */}
+                <div className="grid grid-cols-4 gap-4">
                     <div className="rounded border border-slate-800 bg-slate-900 p-4">
-                        <div className="text-xs text-slate-500">ACTIVE CAMPAIGNS</div>
-                        <div className="text-2xl font-bold text-white">{campaigns.length}</div>
+                        <div className="text-xs text-slate-500 uppercase tracking-wider">Active Campaigns</div>
+                        <div className="text-2xl font-bold text-white mt-1">{campaigns.length}</div>
+                        <div className="text-[10px] text-slate-600 mt-1">
+                          {campaigns.filter(c => c.status === 'active').length} running
+                        </div>
                     </div>
                     <div className="rounded border border-slate-800 bg-slate-900 p-4">
-                        <div className="text-xs text-slate-500">LIVE BEACONS</div>
-                        <div className="text-2xl font-bold text-green-500">{implants.filter(i => i.status === 'active').length}</div>
+                        <div className="text-xs text-slate-500 uppercase tracking-wider">Live Beacons</div>
+                        <div className="text-2xl font-bold text-green-500 mt-1">
+                          {implants.filter(i => i.status === 'active').length}
+                        </div>
+                        <div className="text-[10px] text-slate-600 mt-1">
+                          {implants.length} total registered
+                        </div>
                     </div>
                     <div className="rounded border border-slate-800 bg-slate-900 p-4">
-                        <div className="text-xs text-slate-500">ARTIFACTS LOOTED</div>
-                        <div className="text-2xl font-bold text-yellow-500">{artifacts.length}</div>
+                        <div className="text-xs text-slate-500 uppercase tracking-wider">Active Listeners</div>
+                        <div className="text-2xl font-bold text-blue-500 mt-1">
+                          {listeners.filter(l => l.status === 'active').length}
+                        </div>
+                        <div className="text-[10px] text-slate-600 mt-1">
+                          {listeners.length} configured
+                        </div>
+                    </div>
+                    <div className="rounded border border-slate-800 bg-slate-900 p-4">
+                        <div className="text-xs text-slate-500 uppercase tracking-wider">Artifacts Collected</div>
+                        <div className="text-2xl font-bold text-yellow-500 mt-1">{artifacts.length}</div>
+                        <div className="text-[10px] text-slate-600 mt-1">
+                          {artifacts.reduce((sum, a) => sum + (a.size || 0), 0).toLocaleString()} bytes
+                        </div>
                     </div>
                 </div>
+
+                {/* Secondary Metrics */}
+                <div className="grid grid-cols-3 gap-4">
+                    <div className="rounded border border-slate-800 bg-slate-900 p-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-slate-500 uppercase">Beacon Health</span>
+                          <span className={`text-xs font-bold ${
+                            implants.filter(i => i.status === 'active').length === implants.length
+                              ? 'text-green-500'
+                              : implants.filter(i => i.status === 'active').length > 0
+                                ? 'text-yellow-500'
+                                : 'text-red-500'
+                          }`}>
+                            {implants.length > 0
+                              ? Math.round((implants.filter(i => i.status === 'active').length / implants.length) * 100)
+                              : 0}%
+                          </span>
+                        </div>
+                        <div className="mt-2 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-green-500 to-green-400 transition-all duration-500"
+                            style={{
+                              width: `${implants.length > 0
+                                ? (implants.filter(i => i.status === 'active').length / implants.length) * 100
+                                : 0}%`
+                            }}
+                          />
+                        </div>
+                    </div>
+                    <div className="rounded border border-slate-800 bg-slate-900 p-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-slate-500 uppercase">Listener Status</span>
+                          <span className="text-xs font-bold text-blue-500">
+                            {listeners.filter(l => l.status === 'active').length}/{listeners.length}
+                          </span>
+                        </div>
+                        <div className="mt-2 flex gap-1">
+                          {listeners.slice(0, 6).map((l, i) => (
+                            <div
+                              key={i}
+                              className={`flex-1 h-1.5 rounded ${
+                                l.status === 'active' ? 'bg-blue-500' : 'bg-slate-700'
+                              }`}
+                              title={`${l.name}: ${l.status}`}
+                            />
+                          ))}
+                          {listeners.length === 0 && (
+                            <div className="flex-1 h-1.5 rounded bg-slate-700" />
+                          )}
+                        </div>
+                    </div>
+                    <div className="rounded border border-slate-800 bg-slate-900 p-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-slate-500 uppercase">Server Connection</span>
+                          <span className={`text-xs font-bold ${
+                            serverStatus === 'Connected' ? 'text-green-500' : 'text-red-500'
+                          }`}>
+                            {serverStatus === 'Connected' ? 'ONLINE' : 'OFFLINE'}
+                          </span>
+                        </div>
+                        <div className="mt-2 flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full ${
+                            serverStatus === 'Connected' ? 'bg-green-500 animate-pulse' : 'bg-red-500'
+                          }`} />
+                          <span className="text-[10px] text-slate-600 truncate">{serverAddress}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Network Graph */}
                 <div className="flex-1 min-h-0">
                     <NetworkGraph implants={implants} />
                 </div>
