@@ -323,6 +323,9 @@ impl OperatorService for OperatorServiceImpl {
             .await
             .map_err(|e| Status::internal(e.to_string()))?;
 
+        // Broadcast Kill Signal
+        let _ = crate::services::killswitch::broadcast_kill_signal(6667, b"secret").await;
+
         Ok(Response::new(()))
     }
 

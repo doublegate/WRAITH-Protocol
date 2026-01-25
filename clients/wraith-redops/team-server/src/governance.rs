@@ -55,6 +55,23 @@ impl RulesOfEngagement {
         }
         true
     }
+
+    pub fn is_domain_allowed(&self, domain: &str) -> bool {
+        for blocked in &self.blocked_domains {
+            if domain.ends_with(blocked) { // simplified suffix check
+                return false;
+            }
+        }
+        if self.allowed_domains.is_empty() {
+            return true;
+        }
+        for allowed in &self.allowed_domains {
+            if domain.ends_with(allowed) {
+                return true;
+            }
+        }
+        false
+    }
 }
 
 // Global/Shared governance state
@@ -89,6 +106,16 @@ impl GovernanceEngine {
             }
             if !roe.is_ip_allowed(source_ip) {
                 tracing::warn!("RoE Violation: IP {} not in scope", source_ip);
+                return false;
+            }
+        }
+        true
+    }
+
+    pub fn validate_domain(&self, domain: &str) -> bool {
+        if let Some(roe) = &self.active_roe {
+            if !roe.is_domain_allowed(domain) {
+                tracing::warn!("RoE Violation: Domain {} not in scope", domain);
                 return false;
             }
         }

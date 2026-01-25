@@ -3,14 +3,20 @@ use crate::models::{Artifact, Campaign, Command, CommandResult, Credential, Impl
 use anyhow::Result;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
+use hmac::{Hmac, Mac};
+use sha2::Sha256;
 
 pub struct Database {
     pool: PgPool,
+    hmac_key: Vec<u8>,
 }
 
 impl Database {
     pub fn new(pool: PgPool) -> Self {
-        Self { pool }
+        Self { 
+            pool,
+            hmac_key: b"audit_log_integrity_key_very_secret".to_vec(),
+        }
     }
 
     /// Get a reference to the underlying database connection pool.
@@ -319,70 +325,51 @@ impl Database {
         Ok(rec)
     }
 
-        pub async fn get_operator(&self, id: Uuid) -> Result<Option<crate::models::Operator>> {
-
-            let rec = sqlx::query_as::<_, crate::models::Operator>(
-
-                "SELECT * FROM operators WHERE id = 
-    "
-
-            )
-
-            .bind(id)
-
-            .fetch_optional(&self.pool)
-
-            .await?;
-
-            Ok(rec)
-
-        }
-
-    
-
-        // --- Audit Logging ---
-
-        pub async fn log_activity(
-
-            &self,
-
-            operator_id: Option<Uuid>,
-
-            implant_id: Option<Uuid>,
-
-            action: &str,
-
-            details: serde_json::Value,
-
-            success: bool
-
-        ) -> Result<()> {
-
-            sqlx::query(
-
-                "INSERT INTO activity_log (operator_id, implant_id, action, details, success) VALUES (
-    , $2, $3, $4, $5)"
-
-            )
-
-            .bind(operator_id)
-
-            .bind(implant_id)
-
-            .bind(action)
-
-            .bind(details)
-
-            .bind(success)
-
-            .execute(&self.pool)
-
-            .await?;
-
-            Ok(())
-
-        }
-
+    pub async fn get_operator(&self, id: Uuid) -> Result<Option<crate::models::Operator>> {
+        let rec = sqlx::query_as::<_, crate::models::Operator>(
+            "SELECT * FROM operators WHERE id = $1",
+        )
+        .bind(id)
+        .fetch_optional(&self.pool)
+        .await?;
+        Ok(rec)
     }
 
-    
+    // --- Audit Logging ---
+    pub async fn log_activity(
+        &self,
+        operator_id: Option<Uuid>,
+        implant_id: Option<Uuid>,
+        action: &str,
+        details: serde_json::Value,
+        success: bool
+    ) -> Result<()> {
+        let timestamp = chrono::Utc::now();
+        
+        type HmacSha256 = Hmac<Sha256>;
+        let mut mac = HmacSha256::new_from_slice(&self.hmac_key).expect("HMAC can take key of any size");
+        
+        mac.update(timestamp.to_rfc3339().as_bytes());
+        if let Some(oid) = operator_id { mac.update(oid.as_bytes()); }
+        if let Some(iid) = implant_id { mac.update(iid.as_bytes()); }
+        mac.update(action.as_bytes());
+        mac.update(details.to_string().as_bytes());
+        mac.update(&[if success { 1 } else { 0 }]);
+        
+        let signature = mac.finalize().into_bytes().to_vec();
+
+        sqlx::query(
+            "INSERT INTO activity_log (timestamp, operator_id, implant_id, action, details, success, signature) VALUES ($1, $2, $3, $4, $5, $6, $7)"
+        )
+        .bind(timestamp)
+        .bind(operator_id)
+        .bind(implant_id)
+        .bind(action)
+        .bind(details)
+        .bind(success)
+        .bind(signature)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+}

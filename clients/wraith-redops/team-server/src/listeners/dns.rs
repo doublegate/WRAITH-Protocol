@@ -36,6 +36,11 @@ pub async fn start_dns_listener(
                 // Minimal DNS parsing
                 if len > 12 {
                     let domain = parse_dns_query(&buf[..len]);
+                    
+                    if !governance.validate_domain(&domain) {
+                        continue;
+                    }
+
                     tracing::debug!("Received DNS query for {} from {}", domain, src);
                 }
             }
