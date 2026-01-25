@@ -68,13 +68,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     // Start UDP Listener
+    let udp_db = db.clone();
     let udp_event_tx = event_tx.clone();
     let udp_governance = governance.clone();
     let udp_sessions = sessions.clone();
     let udp_key = static_key.clone();
 
     tokio::spawn(async move {
-        listeners::udp::start_udp_listener(9999, udp_event_tx, udp_governance, udp_key, udp_sessions).await;
+        listeners::udp::start_udp_listener(udp_db, 9999, udp_event_tx, udp_governance, udp_key, udp_sessions).await;
     });
 
     let addr: SocketAddr = "0.0.0.0:50051".parse()?;
