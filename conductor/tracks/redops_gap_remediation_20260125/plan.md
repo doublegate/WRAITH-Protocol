@@ -10,9 +10,9 @@ This plan outlines the methodical remediation of WRAITH-RedOps according to the 
 - [x] Task: 1.2 - Implement full DNS Tunneling Listener 07003c2
     - [x] Write tests for DNS protocol handling (TXT/A/AAAA)
     - [x] Implement DNS server logic and protocol handler in `dns.rs`
-- [ ] Task: 1.3 - Implement SMB Named Pipe Listener
-    - [ ] Write tests for SMB named pipe communication
-    - [ ] Implement SMB server logic in `smb.rs`
+- [x] Task: 1.3 - Implement SMB Named Pipe Listener ddec603
+    - [x] Write tests for SMB named pipe communication
+    - [x] Implement SMB server logic in `smb.rs`
 - [ ] Task: 1.4 - Implement Implant Service Decryption and Binary Retrieval
     - [ ] Write tests for command/payload decryption
     - [ ] Implement decryption logic and builder integration in `implant.rs`
