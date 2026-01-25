@@ -36,11 +36,20 @@ impl BofLoader {
 
     pub fn load_and_run(&self) -> Result<(), ()> {
         // 1. Parse COFF Header
-        // 2. Allocate memory for sections
-        // 3. Copy section data
-        // 4. Perform relocations
-        // 5. Resolve symbols (Beacon APIs)
-        // 6. Execute entry point
+        if self.raw_data.len() < core::mem::size_of::<CoffHeader>() {
+            return Err(());
+        }
+        
+        let header = unsafe { &*(self.raw_data.as_ptr() as *const CoffHeader) };
+        if header.machine != 0x8664 { // AMD64
+            return Err(());
+        }
+
+        // 2. Allocate memory for sections (Stub)
+        // 3. Copy section data (Stub)
+        // 4. Perform relocations (Stub)
+        // 5. Resolve symbols (Beacon APIs) (Stub)
+        // 6. Execute entry point (Stub)
         Ok(())
     }
 }
