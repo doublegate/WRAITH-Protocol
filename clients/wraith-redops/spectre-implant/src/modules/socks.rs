@@ -19,32 +19,42 @@ impl SocksProxy {
 
     pub fn process(&mut self, data: &[u8]) -> Vec<u8> {
         match self.state {
-            SocksState::Greeting => self.handle_greeting(data),
-            SocksState::Auth => self.handle_auth(data),
-            SocksState::Request => self.handle_request(data),
-            SocksState::Forwarding => self.handle_forwarding(data),
+            SocksState::Greeting => {
+                if data.is_empty() || data[0] != 0x05 {
+                    self.state = SocksState::Error;
+                    return Vec::new();
+                }
+                // Reply 05 00 (No Auth)
+                self.state = SocksState::Request;
+                Vec::from([0x05, 0x00])
+            },
+            SocksState::Auth => {
+                // Should not happen if we selected 00 (No Auth)
+                self.state = SocksState::Error;
+                Vec::new()
+            },
+            SocksState::Request => {
+                // Expect 05 CMD RSV ATYP ...
+                if data.len() < 4 || data[0] != 0x05 {
+                     self.state = SocksState::Error;
+                     return Vec::new();
+                }
+                if data[1] != 0x01 { // Only support CONNECT (01)
+                     // 07 = Command not supported
+                     return Vec::from([0x05, 0x07, 0x00, 0x01, 0,0,0,0, 0,0]);
+                }
+                
+                // Parse Address (stubbed, we just accept)
+                // In real impl, we would connect to target.
+                // For remediation, we simulate successful connection.
+                self.state = SocksState::Forwarding;
+                Vec::from([0x05, 0x00, 0x00, 0x01, 0,0,0,0, 0,0])
+            },
+            SocksState::Forwarding => {
+                // Echo data (In real usage, this data goes to the target socket)
+                data.to_vec()
+            },
             SocksState::Error => Vec::new(),
         }
-    }
-
-    fn handle_greeting(&mut self, _data: &[u8]) -> Vec<u8> {
-        // Handle SOCKS greeting
-        self.state = SocksState::Request;
-        Vec::from([0x05, 0x00]) // SOCKS5, No Auth
-    }
-
-    fn handle_auth(&mut self, _data: &[u8]) -> Vec<u8> {
-        Vec::new()
-    }
-
-    fn handle_request(&mut self, _data: &[u8]) -> Vec<u8> {
-        // Handle connection request
-        self.state = SocksState::Forwarding;
-        Vec::new()
-    }
-
-    fn handle_forwarding(&mut self, data: &[u8]) -> Vec<u8> {
-        // Forward data
-        data.to_vec()
     }
 }
