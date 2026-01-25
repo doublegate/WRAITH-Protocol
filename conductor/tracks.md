@@ -8,9 +8,7 @@ This file tracks all major work tracks for the WRAITH Protocol project. Each tra
 
 ## Active Tracks
 
-- [~] **Track: Remediate WRAITH-RedOps Implementation (Gap Analysis v3.0.0)**
-  *Type: Feature | Created: 2026-01-25*
-  *Link: [./tracks/wraith_redops_finish_20260125/](./tracks/wraith_redops_finish_20260125/)*
+*(No active tracks)*
 
 ---
 
