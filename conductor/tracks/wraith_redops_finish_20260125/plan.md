@@ -54,9 +54,9 @@
     - [x] Sub-task: Implement missing IPC commands (`download_artifact`, listener controls) in `lib.rs` and frontend.
 - [~] Task: Conductor - User Manual Verification 'Operator Client Enhancements' (Protocol in workflow.md)
 
-## Phase 6: Builder Pipeline (Gap 1.3)
-- [ ] Task: Builder Implementation
-    - [ ] Sub-task: Create `team-server/src/builder/` module.
-    - [ ] Sub-task: Implement config patching logic (search and replace magic bytes in template binary).
-    - [ ] Sub-task: Expose builder functionality via gRPC/API.
-- [ ] Task: Conductor - User Manual Verification 'Builder Pipeline' (Protocol in workflow.md)
+## Phase 6: Builder Pipeline (Gap 1.3) [checkpoint: 488af90]
+- [x] Task: Builder Implementation
+    - [x] Sub-task: Create `team-server/src/builder/` module.
+    - [x] Sub-task: Implement config patching logic (search and replace magic bytes in template binary).
+    - [x] Sub-task: Expose builder functionality via gRPC/API.
+- [~] Task: Conductor - User Manual Verification 'Builder Pipeline' (Protocol in workflow.md)
