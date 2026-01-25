@@ -35,9 +35,9 @@ This plan outlines the methodical remediation of WRAITH-RedOps according to the 
 - [x] Task: 2.3 - Implement SOCKS Proxy 102d755
     - [x] Write tests for SOCKS4a/5 authentication and proxying
     - [x] Implement logic in `modules/socks.rs`
-- [ ] Task: 2.4 - Implement PTY Shell and Fix C2 Hardcodings
-    - [ ] Write tests for interactive shell execution
-    - [ ] Implement PTY shell in `c2/mod.rs` and remove hardcoded IPs
+- [x] Task: 2.4 - Implement PTY Shell and Fix C2 Hardcodings 5af2461
+    - [x] Write tests for interactive shell execution
+    - [x] Implement PTY shell in `c2/mod.rs` and remove hardcoded IPs
 - [ ] Task: 2.5 - Implement Halo's Gate SSN Resolution
     - [ ] Write tests for syscall resolution
     - [ ] Implement Halo's Gate logic in `utils/syscalls.rs`
