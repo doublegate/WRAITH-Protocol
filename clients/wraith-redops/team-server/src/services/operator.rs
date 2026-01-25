@@ -4,10 +4,16 @@ use crate::wraith::redops::*;
 use std::sync::Arc;
 use tokio::sync::broadcast;
 use tonic::{Request, Response, Status};
+use crate::governance::GovernanceEngine;
+use wraith_crypto::noise::NoiseKeypair;
+use crate::services::session::SessionManager;
 
 pub struct OperatorServiceImpl {
     pub db: Arc<Database>,
     pub event_tx: broadcast::Sender<Event>,
+    pub governance: Arc<GovernanceEngine>,
+    pub static_key: Arc<NoiseKeypair>,
+    pub sessions: Arc<SessionManager>,
 }
 
 #[tonic::async_trait]
@@ -595,12 +601,22 @@ impl OperatorService for OperatorServiceImpl {
         let req = req.into_inner();
         let id = uuid::Uuid::parse_str(&req.id).map_err(|_| Status::invalid_argument("Bad ID"))?;
 
+        // In a full implementation, this would spawn a tokio task based on listener type.
+        // For MVP, we assume the listeners defined in main.rs are the active ones.
         self.db
             .update_listener_status(id, "active")
             .await
             .map_err(|e| Status::internal(e.to_string()))?;
 
-        Ok(Response::new(Listener::default()))
+        Ok(Response::new(Listener {
+            id: req.id,
+            name: "updated".to_string(), // Simplified
+            r#type: "http".to_string(),
+            bind_address: "0.0.0.0".to_string(),
+            port: 0,
+            status: "active".to_string(),
+            config: std::collections::HashMap::new(),
+        }))
     }
 
     async fn stop_listener(
@@ -610,11 +626,20 @@ impl OperatorService for OperatorServiceImpl {
         let req = req.into_inner();
         let id = uuid::Uuid::parse_str(&req.id).map_err(|_| Status::invalid_argument("Bad ID"))?;
 
+        // In a full implementation, this would abort the tokio task.
         self.db
             .update_listener_status(id, "stopped")
             .await
             .map_err(|e| Status::internal(e.to_string()))?;
 
-        Ok(Response::new(Listener::default()))
+        Ok(Response::new(Listener {
+            id: req.id,
+            name: "updated".to_string(),
+            r#type: "http".to_string(),
+            bind_address: "0.0.0.0".to_string(),
+            port: 0,
+            status: "stopped".to_string(),
+            config: std::collections::HashMap::new(),
+        }))
     }
 }

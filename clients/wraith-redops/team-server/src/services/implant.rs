@@ -2,12 +2,14 @@ use crate::database::Database;
 use crate::wraith::redops::implant_service_server::ImplantService;
 use crate::wraith::redops::*;
 use std::sync::Arc;
-use tokio_stream::StreamExt;
+use tokio::sync::broadcast;
 use tonic::{Request, Response, Status};
 use uuid::Uuid;
+use tokio_stream::StreamExt;
 
 pub struct ImplantServiceImpl {
     pub db: Arc<Database>,
+    pub event_tx: broadcast::Sender<Event>,
 }
 
 #[tonic::async_trait]
@@ -72,6 +74,16 @@ impl ImplantService for ImplantServiceImpl {
             .update_implant_checkin(id)
             .await
             .map_err(|e| Status::internal(e.to_string()))?;
+
+        // Broadcast event
+        let _ = self.event_tx.send(Event {
+            id: Uuid::new_v4().to_string(),
+            r#type: "implant_checkin".to_string(),
+            timestamp: Some(prost_types::Timestamp::from(std::time::SystemTime::now())),
+            campaign_id: "".to_string(),
+            implant_id: id.to_string(),
+            data: std::collections::HashMap::new(),
+        });
 
         // Check for pending commands (simple count check for response header)
         // Ideally we'd optimize this

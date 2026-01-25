@@ -25,6 +25,7 @@ use database::Database;
 use governance::GovernanceEngine;
 use services::implant::ImplantServiceImpl;
 use services::operator::OperatorServiceImpl;
+use services::session::SessionManager;
 use wraith_crypto::noise::NoiseKeypair;
 
 #[tokio::main]
@@ -49,6 +50,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let db = Arc::new(Database::new(pool));
     let governance = Arc::new(GovernanceEngine::new());
     let static_key = NoiseKeypair::generate().expect("Failed to generate static key");
+    let sessions = Arc::new(SessionManager::new());
 
     // Event broadcast channel
     let (event_tx, _rx) = tokio::sync::broadcast::channel(100);
@@ -57,24 +59,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let http_db = db.clone();
     let http_event_tx = event_tx.clone();
     let http_governance = governance.clone();
+    let http_sessions = sessions.clone();
+    let http_key = static_key.clone();
+    
+    tokio::spawn(async move {
+        listeners::http::start_http_listener(http_db, 8080, http_event_tx, http_governance, http_key, http_sessions).await;
+    });
+
+    // Start UDP Listener
+    let udp_event_tx = event_tx.clone();
+    let udp_governance = governance.clone();
+    let udp_sessions = sessions.clone();
+    let udp_key = static_key.clone();
 
     tokio::spawn(async move {
-        listeners::http::start_http_listener(
-            http_db,
-            8080,
-            http_event_tx,
-            http_governance,
-            static_key,
-        )
-        .await;
+        listeners::udp::start_udp_listener(9999, udp_event_tx, udp_governance, udp_key, udp_sessions).await;
     });
 
     let addr: SocketAddr = "0.0.0.0:50051".parse()?;
     let operator_service = OperatorServiceImpl {
         db: db.clone(),
         event_tx: event_tx.clone(),
+        governance: governance.clone(),
+        static_key: Arc::new(static_key.clone()),
+        sessions: sessions.clone()
     };
-    let implant_service = ImplantServiceImpl { db: db.clone() };
+    let implant_service = ImplantServiceImpl { db: db.clone(), event_tx: event_tx.clone() };
 
     info!("Team Server listening on {}", addr);
 

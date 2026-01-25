@@ -51,6 +51,7 @@ argon2 = "0.5"
 # WRAITH Protocol
 wraith-core = { path = "../../../crates/wraith-core" }
 wraith-crypto = { path = "../../../crates/wraith-crypto" }
+wraith-transport = { path = "../../../crates/wraith-transport" }
 dashmap = "5.5"
 
 [build-dependencies]

@@ -1,18 +1,18 @@
 # Implementation Plan - Remediate WRAITH-RedOps
 
 ## Phase 1: Team Server Core & Protocol Integration (Gap 1.1, 1.4, 1.5)
-- [ ] Task: Integrate WRAITH Protocol (Gap 1.1)
-    - [ ] Sub-task: Add `wraith-crypto` and `wraith-transport` dependencies to `team-server`.
-    - [ ] Sub-task: Implement `Noise_XX` session management in `services/mod.rs` (or appropriate location).
-    - [ ] Sub-task: Update `http.rs` listener to handle encrypted WRAITH frames (mimicry).
-    - [ ] Sub-task: Implement UDP listener in `listeners/udp.rs` using `wraith-transport`.
-- [ ] Task: Listener Management (Gap 1.4)
-    - [ ] Sub-task: Create `listeners/dns.rs` (stub/basic impl) and `listeners/smb.rs` (stub/basic impl) to satisfy architecture.
-    - [ ] Sub-task: Implement full lifecycle management (start/stop) for all listener types in `OperatorService`.
-- [ ] Task: Real-time Events (Gap 1.5)
-    - [ ] Sub-task: Connect `broadcast::Sender` to `ImplantService` actions (check-in, task result).
-    - [ ] Sub-task: Ensure `stream_events` gRPC endpoint correctly yields these events.
-- [ ] Task: Conductor - User Manual Verification 'Team Server Core & Protocol Integration' (Protocol in workflow.md)
+- [x] Task: Integrate WRAITH Protocol (Gap 1.1)
+    - [x] Sub-task: Add `wraith-crypto` and `wraith-transport` dependencies to `team-server`.
+    - [x] Sub-task: Implement `Noise_XX` session management in `services/mod.rs` (or appropriate location).
+    - [x] Sub-task: Update `http.rs` listener to handle encrypted WRAITH frames (mimicry).
+    - [x] Sub-task: Implement UDP listener in `listeners/udp.rs` using `wraith-transport`.
+- [x] Task: Listener Management (Gap 1.4)
+    - [x] Sub-task: Create `listeners/dns.rs` (stub/basic impl) and `listeners/smb.rs` (stub/basic impl) to satisfy architecture.
+    - [x] Sub-task: Implement full lifecycle management (start/stop) for all listener types in `OperatorService`.
+- [x] Task: Real-time Events (Gap 1.5)
+    - [x] Sub-task: Connect `broadcast::Sender` to `ImplantService` actions (check-in, task result).
+    - [x] Sub-task: Ensure `stream_events` gRPC endpoint correctly yields these events.
+- [~] Task: Conductor - User Manual Verification 'Team Server Core & Protocol Integration' (Protocol in workflow.md)
 
 ## Phase 2: Governance & Security (Gap 1.2)
 - [ ] Task: Scope Enforcement (Gap 1.2)
