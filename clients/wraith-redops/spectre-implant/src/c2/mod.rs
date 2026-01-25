@@ -53,7 +53,7 @@ impl C2Config {
             Self {
                 transport: TransportType::Http,
                 server_addr: addr_str,
-                sleep_interval: GLOBAL_CONFIG.sleep_interval,
+                sleep_interval: core::ptr::addr_of!(GLOBAL_CONFIG.sleep_interval).read(),
             }
         }
     }

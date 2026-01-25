@@ -24,7 +24,7 @@ This plan focuses on achieving a zero-warning and zero-stub state for all WRAITH
 
 ## Phase 3: Spectre Implant Remediation
 
-- [ ] Task: Address all Spectre Implant warnings
+- [~] Task: Address all Spectre Implant warnings
     - [ ] Use or gate unused constants/structs in `bof_loader.rs` (e.g., `IMAGE_FILE_MACHINE_AMD64`)
     - [ ] Resolve `dead_code` for fields like `BofLoader::raw_data` and `MiniHeap::heap_start`
     - [ ] Eliminate unused import warnings in `injection.rs`, `socks.rs`, etc.
