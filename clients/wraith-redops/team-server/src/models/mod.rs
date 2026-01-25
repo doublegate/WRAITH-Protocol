@@ -1,9 +1,8 @@
 pub mod listener;
-use serde::{Serialize, Deserialize};
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use uuid::Uuid;
-use chrono::{DateTime, Utc};
-use ipnetwork::IpNetwork;
 
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct Campaign {
@@ -21,8 +20,10 @@ pub struct Implant {
     pub id: Uuid,
     pub campaign_id: Option<Uuid>,
     pub hostname: Option<String>,
-    pub internal_ip: Option<IpNetwork>, 
-    pub external_ip: Option<IpNetwork>,
+    /// Internal IP address stored as CIDR string (e.g., "192.168.1.100/32")
+    pub internal_ip: Option<String>,
+    /// External IP address stored as CIDR string (e.g., "203.0.113.50/32")
+    pub external_ip: Option<String>,
     pub os_type: Option<String>,
     pub os_version: Option<String>,
     pub architecture: Option<String>,
@@ -58,6 +59,8 @@ pub struct Command {
     pub max_retries: Option<i32>,
 }
 
+/// Operator model for team server authentication and authorization.
+#[allow(dead_code)]
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct Operator {
     pub id: Uuid,

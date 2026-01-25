@@ -1,46 +1,50 @@
 {
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "WRAITH RedOps",
+  "version": "2.2.5",
+  "identifier": "io.wraith.redops",
   "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420",
     "beforeDevCommand": "npm run dev",
-    "beforeBuildCommand": "npm run build",
-    "devPath": "http://localhost:1420",
-    "distDir": "../dist",
-    "withGlobalTauri": false
+    "beforeBuildCommand": "npm run build"
   },
-  "package": {
-    "productName": "wraith-redops-client",
-    "version": "0.0.0"
-  },
-  "tauri": {
-    "allowlist": {
-      "all": false,
-      "shell": {
-        "all": false,
-        "open": true
-      }
-    },
-    "bundle": {
-      "active": true,
-      "targets": "all",
-      "identifier": "com.wraith.redops",
-      "icon": [
-        "icons/32x32.png",
-        "icons/128x128.png",
-        "icons/128x128@2x.png",
-        "icons/icon.icns",
-        "icons/icon.ico"
-      ]
-    },
-    "security": {
-      "csp": null
-    },
+  "app": {
     "windows": [
       {
-        "fullscreen": false,
-        "resizable": true,
         "title": "WRAITH RedOps",
-        "width": 1200,
-        "height": 800
+        "width": 1400,
+        "height": 900,
+        "minWidth": 1200,
+        "minHeight": 800,
+        "resizable": true,
+        "fullscreen": false,
+        "center": true,
+        "decorations": true
       }
-    ]
-  }
+    ],
+    "security": {
+      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data: asset: https://asset.localhost"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "../../../wraith-chat/src-tauri/icons/32x32.png",
+      "../../../wraith-chat/src-tauri/icons/128x128.png",
+      "../../../wraith-chat/src-tauri/icons/128x128@2x.png",
+      "../../../wraith-chat/src-tauri/icons/icon.icns",
+      "../../../wraith-chat/src-tauri/icons/icon.ico"
+    ],
+    "category": "Utility",
+    "shortDescription": "WRAITH Red Team Operations Platform",
+    "longDescription": "WRAITH RedOps is an authorized red team operations platform for offensive security engagements. It provides a team server for command and control operations and an operator console for conducting authorized security assessments.",
+    "linux": {
+      "appimage": {
+        "bundleMediaFramework": false
+      }
+    }
+  },
+  "plugins": {}
 }
