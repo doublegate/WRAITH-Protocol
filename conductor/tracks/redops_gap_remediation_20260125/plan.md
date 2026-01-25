@@ -57,7 +57,7 @@ This plan outlines the methodical remediation of WRAITH-RedOps according to the 
 - [x] Task: Integration - End-to-End Command Encryption d3a5254
     - [x] Write integration tests for E2E encrypted tasking
     - [x] Implement encryption at rest in DB and delivery to implant
-- [ ] Task: Integration - Kill Switch Logic Implementation
-    - [ ] Write tests for kill switch triggers
-    - [ ] Implement verification logic in `killswitch.rs`
+- [x] Task: Integration - Kill Switch Logic Implementation 78338e2
+    - [x] Write tests for kill switch triggers
+    - [x] Implement verification logic in `killswitch.rs`
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Operator Client & Integration' (Protocol in workflow.md)
