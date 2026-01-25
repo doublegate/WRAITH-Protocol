@@ -1,5 +1,6 @@
 pub mod listener;
 use chrono::{DateTime, Utc};
+use ipnetwork::IpNetwork;
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use uuid::Uuid;
@@ -20,10 +21,10 @@ pub struct Implant {
     pub id: Uuid,
     pub campaign_id: Option<Uuid>,
     pub hostname: Option<String>,
-    /// Internal IP address stored as CIDR string (e.g., "192.168.1.100/32")
-    pub internal_ip: Option<String>,
-    /// External IP address stored as CIDR string (e.g., "203.0.113.50/32")
-    pub external_ip: Option<String>,
+    /// Internal IP address (INET type in database)
+    pub internal_ip: Option<IpNetwork>,
+    /// External IP address (INET type in database)
+    pub external_ip: Option<IpNetwork>,
     pub os_type: Option<String>,
     pub os_version: Option<String>,
     pub architecture: Option<String>,
