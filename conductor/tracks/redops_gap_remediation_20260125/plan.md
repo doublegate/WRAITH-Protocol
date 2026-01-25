@@ -7,9 +7,9 @@ This plan outlines the methodical remediation of WRAITH-RedOps according to the 
 - [x] Task: 1.1 - Implement Operator ID extraction from gRPC metadata in `operator.rs` b32156e
     - [x] Write tests for gRPC metadata extraction
     - [x] Implement metadata interceptor/extraction logic
-- [ ] Task: 1.2 - Implement full DNS Tunneling Listener
-    - [ ] Write tests for DNS protocol handling (TXT/A/AAAA)
-    - [ ] Implement DNS server logic and protocol handler in `dns.rs`
+- [x] Task: 1.2 - Implement full DNS Tunneling Listener 07003c2
+    - [x] Write tests for DNS protocol handling (TXT/A/AAAA)
+    - [x] Implement DNS server logic and protocol handler in `dns.rs`
 - [ ] Task: 1.3 - Implement SMB Named Pipe Listener
     - [ ] Write tests for SMB named pipe communication
     - [ ] Implement SMB server logic in `smb.rs`
