@@ -68,6 +68,9 @@ clients/*/src-tauri/target/
 clients/wraith-ios/wraith-swift-ffi/target/
 clients/wraith-android/app/src/main/rust/target/
 
+# Tauri generated files
+**/src-tauri/gen/
+
 # Node.js
 **/node_modules/
 npm-debug.log*
