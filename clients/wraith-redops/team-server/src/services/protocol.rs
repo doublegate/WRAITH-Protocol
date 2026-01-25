@@ -152,9 +152,13 @@ impl ProtocolHandler {
                     };
 
                     // Implement proper Frame construction (28-byte header)
-                    let mut frame = vec![0u8; 28];
-                    // TODO: Fill frame header with useful metadata (length, flags, etc.)
-                    // For now, we maintain the 28-byte padding for compatibility
+                    // [Magic: 4] [Length: 4] [Type: 2] [Flags: 2] [Reserved: 16]
+                    let mut frame = Vec::with_capacity(28 + resp_json.len());
+                    frame.extend_from_slice(b"WRTH"); // Magic
+                    frame.extend_from_slice(&(resp_json.len() as u32).to_be_bytes()); // Length
+                    frame.extend_from_slice(&0u16.to_be_bytes()); // Type (Data=0)
+                    frame.extend_from_slice(&0u16.to_be_bytes()); // Flags
+                    frame.extend_from_slice(&[0u8; 16]); // Reserved
                     frame.extend_from_slice(&resp_json);
 
                     let ciphertext = match transport.write_message(&frame) {

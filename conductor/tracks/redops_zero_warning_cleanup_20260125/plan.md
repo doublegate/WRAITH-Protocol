@@ -11,7 +11,7 @@ This plan focuses on achieving a zero-warning and zero-stub state for all WRAITH
 
 ## Phase 2: Team Server Remediation
 
-- [ ] Task: Resolve all TODOs in Team Server
+- [~] Task: Resolve all TODOs in Team Server
     - [ ] Implement Frame header metadata in `protocol.rs` (currently marked TODO)
     - [ ] Address any other TODOs found in Phase 1
 - [ ] Task: Integrate and Validate `compile_implant`
