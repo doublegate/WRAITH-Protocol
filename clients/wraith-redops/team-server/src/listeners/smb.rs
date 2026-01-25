@@ -88,9 +88,6 @@ pub async fn start_smb_listener(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use tokio::net::TcpStream;
-
     #[tokio::test]
     async fn test_smb_encapsulation_loopback() {
         // This test requires a running listener, but we can test the logic by mocking

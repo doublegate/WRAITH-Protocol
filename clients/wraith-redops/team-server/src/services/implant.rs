@@ -267,8 +267,6 @@ impl ImplantService for ImplantServiceImpl {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[tokio::test]
     async fn test_payload_offset_logic() {
         let full_payload = b"TEST_PAYLOAD_DATA";

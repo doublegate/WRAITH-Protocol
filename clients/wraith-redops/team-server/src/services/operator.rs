@@ -723,14 +723,31 @@ impl OperatorService for OperatorServiceImpl {
         let output_dir = std::env::temp_dir();
         let output_path = output_dir.join(format!("spectre_{}.bin", uuid::Uuid::new_v4()));
 
-        // Builder
-        crate::builder::Builder::patch_implant(
-            &template_path,
-            &output_path,
-            &req.c2_url,
-            req.sleep_interval as u64,
-        )
-        .map_err(|e| Status::internal(format!("Build failed: {}", e)))?;
+        // Builder Logic: Compile from source if requested, otherwise patch template
+        if req.platform == "linux-src" || req.platform == "windows-src" {
+            // Assume source is available relative to CWD
+            let source_dir = std::path::Path::new("../spectre-implant");
+            if !source_dir.exists() {
+                return Err(Status::failed_precondition("Implant source code not found"));
+            }
+            
+            crate::builder::Builder::compile_implant(
+                source_dir,
+                &output_path,
+                &req.c2_url,
+                &[], // No special features
+                true // Obfuscate by default
+            ).map_err(|e| Status::internal(format!("Compilation failed: {}", e)))?;
+        } else {
+            // Patch existing template
+            crate::builder::Builder::patch_implant(
+                &template_path,
+                &output_path,
+                &req.c2_url,
+                req.sleep_interval as u64,
+            )
+            .map_err(|e| Status::internal(format!("Build failed: {}", e)))?;
+        }
 
         // Stream back
         let (tx, rx) = tokio::sync::mpsc::channel(4);
