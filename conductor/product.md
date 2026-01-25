@@ -7,7 +7,7 @@ WRAITH Protocol is designed to provide wire-speed, secure, and invisible file tr
 ## Key Features
 - **High Performance:** 10+ Gbps throughput via AF_XDP and io_uring; sub-millisecond latency.
 - **Strong Security:** End-to-end encryption using XChaCha20-Poly1305, Noise_XX mutual authentication, and perfect forward secrecy.
-- **Traffic Obfuscation:** Traffic analysis resistance through Elligator2 key encoding, padding, and protocol mimicry (TLS 1.3, WebSocket, DNS). Includes advanced evasion features like memory sleep masking and indirect syscalls.
+- **Traffic Obfuscation & Evasion:** Traffic analysis resistance through protocol mimicry (TLS 1.3, DNS, SMB). Includes advanced evasion features like memory sleep masking, indirect syscalls, and stack spoofing.
 - **Decentralized Discovery:** Privacy-preserving peer discovery using a secure Kademlia DHT and relay fallback for NAT traversal.
 - **Resilience:** Stateless recovery from packet loss and connection migration support.
 - **Cross-Platform Support:** Ecosystem of 12 clients covering desktop (Linux, macOS, Windows), mobile (Android, iOS), and server environments.
