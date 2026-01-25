@@ -76,12 +76,16 @@ jobs:
       - name: Create corpus directory
         run: mkdir -p fuzz/corpus/${{ matrix.target }}
 
-      - name: Download existing corpus (if available)
-        continue-on-error: true
-        uses: actions/download-artifact@v4
+      # Use cache instead of artifacts for corpus persistence across workflow runs
+      # actions/cache persists across runs; actions/download-artifact@v4 only works within the same run
+      - name: Restore corpus from cache
+        id: corpus-cache
+        uses: actions/cache@v4
         with:
-          name: corpus-${{ matrix.target }}
           path: fuzz/corpus/${{ matrix.target }}
+          key: fuzz-corpus-${{ matrix.target }}-${{ github.sha }}
+          restore-keys: |
+            fuzz-corpus-${{ matrix.target }}-
 
       - name: Run fuzzer
         env:
@@ -103,13 +107,8 @@ jobs:
             -max_len=16384 \
             -print_final_stats=1
 
-      - name: Upload corpus
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: corpus-${{ matrix.target }}
-          path: fuzz/corpus/${{ matrix.target }}
-          retention-days: 30
+      # Note: Corpus is automatically saved to cache at job end (actions/cache post-job behavior)
+      # We only upload artifacts for crashes which need longer retention and explicit review
 
       - name: Upload crash artifacts
         if: failure()
@@ -154,6 +153,33 @@ jobs:
 
       - name: Install cargo-fuzz
         run: cargo install cargo-fuzz
+
+      - name: Create corpus directories
+        run: |
+          mkdir -p fuzz/corpus/fuzz_frame_parser
+          mkdir -p fuzz/corpus/fuzz_dht_message
+          mkdir -p fuzz/corpus/fuzz_crypto
+          mkdir -p fuzz/corpus/fuzz_padding
+          mkdir -p fuzz/corpus/fuzz_tree_hash
+
+      # Restore all corpus caches for extended fuzzing
+      - name: Restore corpus caches
+        uses: actions/cache@v4
+        with:
+          path: |
+            fuzz/corpus/fuzz_frame_parser
+            fuzz/corpus/fuzz_dht_message
+            fuzz/corpus/fuzz_crypto
+            fuzz/corpus/fuzz_padding
+            fuzz/corpus/fuzz_tree_hash
+          key: fuzz-corpus-extended-${{ github.sha }}
+          restore-keys: |
+            fuzz-corpus-extended-
+            fuzz-corpus-fuzz_frame_parser-
+            fuzz-corpus-fuzz_dht_message-
+            fuzz-corpus-fuzz_crypto-
+            fuzz-corpus-fuzz_padding-
+            fuzz-corpus-fuzz_tree_hash-
 
       - name: Extended fuzzing (all targets)
         run: |
