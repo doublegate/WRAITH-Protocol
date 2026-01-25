@@ -15,11 +15,12 @@ use wraith::redops::implant_service_server::ImplantServiceServer;
 use wraith::redops::operator_service_server::OperatorServiceServer;
 
 mod database;
-mod governance;
-mod listeners;
 mod models;
 mod services;
+mod listeners;
 mod utils;
+mod governance;
+mod builder;
 
 use database::Database;
 use governance::GovernanceEngine;
