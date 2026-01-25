@@ -79,23 +79,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     // Start DNS Listener
+    let dns_db = db.clone();
     let dns_event_tx = event_tx.clone();
     let dns_governance = governance.clone();
     let dns_sessions = sessions.clone();
     let dns_key = static_key.clone();
     
     tokio::spawn(async move {
-        listeners::dns::start_dns_listener(5353, dns_event_tx, dns_governance, dns_key, dns_sessions).await;
+        listeners::dns::start_dns_listener(dns_db, 5353, dns_event_tx, dns_governance, dns_key, dns_sessions).await;
     });
 
     // Start SMB Listener
+    let smb_db = db.clone();
     let smb_event_tx = event_tx.clone();
     let smb_governance = governance.clone();
     let smb_sessions = sessions.clone();
     let smb_key = static_key.clone();
     
     tokio::spawn(async move {
-        listeners::smb::start_smb_listener(4445, smb_event_tx, smb_governance, smb_key, smb_sessions).await;
+        listeners::smb::start_smb_listener(smb_db, 4445, smb_event_tx, smb_governance, smb_key, smb_sessions).await;
     });
 
     let addr_str = std::env::var("GRPC_LISTEN_ADDR").unwrap_or_else(|_| "0.0.0.0:50051".to_string());

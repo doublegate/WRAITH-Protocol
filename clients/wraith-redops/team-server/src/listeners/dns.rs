@@ -5,13 +5,16 @@ use crate::wraith::redops::Event;
 use crate::governance::GovernanceEngine;
 use wraith_crypto::noise::NoiseKeypair;
 use crate::services::session::SessionManager;
+use crate::database::Database;
+use crate::services::protocol::ProtocolHandler;
 
 pub async fn start_dns_listener(
+    db: Arc<Database>,
     port: u16,
-    _event_tx: broadcast::Sender<Event>,
+    event_tx: broadcast::Sender<Event>,
     governance: Arc<GovernanceEngine>,
-    _static_key: NoiseKeypair,
-    _sessions: Arc<SessionManager>
+    static_key: NoiseKeypair,
+    session_manager: Arc<SessionManager>
 ) {
     let addr = format!("0.0.0.0:{}", port);
     tracing::info!("DNS Listener starting on {}", addr);
@@ -24,6 +27,7 @@ pub async fn start_dns_listener(
         }
     };
 
+    let _protocol = ProtocolHandler::new(db, session_manager, Arc::new(static_key), event_tx);
     let mut buf = [0u8; 1024];
 
     loop {
@@ -33,15 +37,13 @@ pub async fn start_dns_listener(
                     continue;
                 }
                 
-                // Minimal DNS parsing
                 if len > 12 {
                     let domain = parse_dns_query(&buf[..len]);
-                    
                     if !governance.validate_domain(&domain) {
                         continue;
                     }
-
                     tracing::debug!("Received DNS query for {} from {}", domain, src);
+                    // TODO: Hook up protocol handler for TXT records
                 }
             }
             Err(e) => tracing::error!("DNS Recv error: {}", e),
@@ -50,16 +52,13 @@ pub async fn start_dns_listener(
 }
 
 fn parse_dns_query(buf: &[u8]) -> String {
-    // Skip header (12 bytes)
     let mut pos = 12;
     let mut domain = String::new();
-    
     while pos < buf.len() {
         let len = buf[pos] as usize;
         if len == 0 { break; }
         pos += 1;
         if pos + len > buf.len() { break; }
-        
         if !domain.is_empty() { domain.push('.'); }
         domain.push_str(&String::from_utf8_lossy(&buf[pos..pos+len]));
         pos += len;
