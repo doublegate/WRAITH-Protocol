@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { invoke } from '@tauri-apps/api/core'
+import { Console } from './components/Console'
+import { NetworkGraph } from './components/NetworkGraph'
 
 interface Implant {
   id: string;
@@ -38,6 +40,22 @@ function App() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [listeners, setListeners] = useState<Listener[]>([])
   const [artifacts, setArtifacts] = useState<Artifact[]>([])
+  const [interactingImplantId, setInteractingImplantId] = useState<string | null>(null)
+  const [showCreateCampaign, setShowCreateCampaign] = useState(false)
+  const [newCampaignName, setNewCampaignName] = useState('')
+  const [newCampaignDesc, setNewCampaignDesc] = useState('')
+
+  const handleCreateCampaign = async () => {
+    try {
+      await invoke('create_campaign', { name: newCampaignName, description: newCampaignDesc });
+      setShowCreateCampaign(false);
+      setNewCampaignName('');
+      setNewCampaignDesc('');
+      refreshCampaigns();
+    } catch (e) {
+      console.error(e);
+    }
+  }
   
   const connect = async () => {
     try {
@@ -131,29 +149,67 @@ function App() {
           
           {/* Dashboard - Placeholder */}
           {activeTab === 'dashboard' && (
-             <div className="grid grid-cols-3 gap-4">
-                <div className="rounded border border-slate-800 bg-slate-900 p-4">
-                    <div className="text-xs text-slate-500">ACTIVE CAMPAIGNS</div>
-                    <div className="text-2xl font-bold text-white">{campaigns.length}</div>
+             <div className="flex flex-col h-full gap-4">
+                <div className="grid grid-cols-3 gap-4">
+                    <div className="rounded border border-slate-800 bg-slate-900 p-4">
+                        <div className="text-xs text-slate-500">ACTIVE CAMPAIGNS</div>
+                        <div className="text-2xl font-bold text-white">{campaigns.length}</div>
+                    </div>
+                    <div className="rounded border border-slate-800 bg-slate-900 p-4">
+                        <div className="text-xs text-slate-500">LIVE BEACONS</div>
+                        <div className="text-2xl font-bold text-green-500">{implants.filter(i => i.status === 'active').length}</div>
+                    </div>
+                    <div className="rounded border border-slate-800 bg-slate-900 p-4">
+                        <div className="text-xs text-slate-500">ARTIFACTS LOOTED</div>
+                        <div className="text-2xl font-bold text-yellow-500">{artifacts.length}</div>
+                    </div>
                 </div>
-                <div className="rounded border border-slate-800 bg-slate-900 p-4">
-                    <div className="text-xs text-slate-500">LIVE BEACONS</div>
-                    <div className="text-2xl font-bold text-green-500">{implants.filter(i => i.status === 'active').length}</div>
-                </div>
-                <div className="rounded border border-slate-800 bg-slate-900 p-4">
-                    <div className="text-xs text-slate-500">ARTIFACTS LOOTED</div>
-                    <div className="text-2xl font-bold text-yellow-500">{artifacts.length}</div>
+                <div className="flex-1 min-h-0">
+                    <NetworkGraph implants={implants} />
                 </div>
              </div>
           )}
 
           {/* Campaigns */}
           {activeTab === 'campaigns' && (
-            <div>
+            <div className="flex flex-col h-full">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-sm font-bold text-white">OPERATIONS / CAMPAIGNS</h2>
-                <button onClick={refreshCampaigns} className="rounded bg-slate-800 px-3 py-1 text-xs text-white hover:bg-slate-700">Refresh</button>
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider">OPERATIONS / CAMPAIGNS</h2>
+                <div className="flex gap-2">
+                    <button 
+                        onClick={() => setShowCreateCampaign(true)}
+                        className="rounded bg-red-600 px-3 py-1 text-xs text-white hover:bg-red-500 font-bold"
+                    >
+                        NEW CAMPAIGN
+                    </button>
+                    <button onClick={refreshCampaigns} className="rounded bg-slate-800 px-3 py-1 text-xs text-white hover:bg-slate-700">REFRESH</button>
+                </div>
               </div>
+
+              {showCreateCampaign && (
+                  <div className="mb-6 p-4 rounded border border-red-900/50 bg-red-950/10 border-dashed">
+                      <h3 className="text-xs font-bold text-red-500 mb-3 uppercase tracking-widest">Initialization Wizard</h3>
+                      <div className="grid gap-3">
+                          <input 
+                            placeholder="Campaign Name" 
+                            value={newCampaignName}
+                            onChange={(e) => setNewCampaignName(e.target.value)}
+                            className="bg-slate-900 border border-slate-800 p-2 text-xs text-white focus:outline-none focus:border-red-500"
+                          />
+                          <textarea 
+                            placeholder="Objective / Description" 
+                            value={newCampaignDesc}
+                            onChange={(e) => setNewCampaignDesc(e.target.value)}
+                            className="bg-slate-900 border border-slate-800 p-2 text-xs text-white focus:outline-none focus:border-red-500 min-h-[80px]"
+                          />
+                          <div className="flex gap-2">
+                              <button onClick={handleCreateCampaign} className="bg-red-600 px-4 py-1 text-xs font-bold text-white">CREATE</button>
+                              <button onClick={() => setShowCreateCampaign(false)} className="text-slate-500 text-xs hover:text-white">CANCEL</button>
+                          </div>
+                      </div>
+                  </div>
+              )}
+
               <div className="border border-slate-800 bg-slate-900">
                  <table className="w-full text-left text-xs">
                   <thead className="border-b border-slate-800 bg-slate-900 text-slate-500">
@@ -206,13 +262,42 @@ function App() {
                           <td className="px-4 py-2">{imp.last_checkin || 'Never'}</td>
                           <td className="px-4 py-2 text-green-500">{imp.status}</td>
                           <td className="px-4 py-2">
-                            <button className="text-blue-400 hover:text-blue-300 mr-2">INTERACT</button>
+                            <button 
+                              onClick={() => {
+                                setInteractingImplantId(imp.id);
+                                setActiveTab('console');
+                              }}
+                              className="text-blue-400 hover:text-blue-300 mr-2"
+                            >
+                              INTERACT
+                            </button>
                           </td>
                         </tr>
                       ))
                     )}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          )}
+
+          {/* Console */}
+          {activeTab === 'console' && interactingImplantId && (
+            <div className="flex flex-col h-full gap-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider">BEACON INTERACTION / {interactingImplantId.substring(0,8)}</h2>
+                <button 
+                  onClick={() => {
+                    setInteractingImplantId(null);
+                    setActiveTab('beacons');
+                  }}
+                  className="rounded bg-slate-800 px-3 py-1 text-xs text-white hover:bg-slate-700"
+                >
+                  BACK TO LIST
+                </button>
+              </div>
+              <div className="flex-1 min-h-0">
+                <Console implantId={interactingImplantId} />
               </div>
             </div>
           )}

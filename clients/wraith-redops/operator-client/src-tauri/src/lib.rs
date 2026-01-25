@@ -416,6 +416,48 @@ async fn list_artifacts(state: State<'_, ClientState>) -> Result<String, String>
     serde_json::to_string(&artifacts).map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+async fn kill_implant(implant_id: String, state: State<'_, ClientState>) -> Result<(), String> {
+    let mut lock = state.client.lock().await;
+    let client = lock.as_mut().ok_or("Not connected")?;
+
+    client
+        .kill_implant(tonic::Request::new(KillImplantRequest { 
+            id: implant_id,
+            clean_artifacts: false
+        }))
+        .await
+        .map_err(|e| format!("gRPC error: {}", e))?;
+
+    Ok(())
+}
+
+#[tauri::command]
+async fn start_listener(listener_id: String, state: State<'_, ClientState>) -> Result<(), String> {
+    let mut lock = state.client.lock().await;
+    let client = lock.as_mut().ok_or("Not connected")?;
+
+    client
+        .start_listener(tonic::Request::new(ListenerActionRequest { id: listener_id }))
+        .await
+        .map_err(|e| format!("gRPC error: {}", e))?;
+
+    Ok(())
+}
+
+#[tauri::command]
+async fn stop_listener(listener_id: String, state: State<'_, ClientState>) -> Result<(), String> {
+    let mut lock = state.client.lock().await;
+    let client = lock.as_mut().ok_or("Not connected")?;
+
+    client
+        .stop_listener(tonic::Request::new(ListenerActionRequest { id: listener_id }))
+        .await
+        .map_err(|e| format!("gRPC error: {}", e))?;
+
+    Ok(())
+}
+
 /// Initialize and run the Tauri application
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -446,7 +488,10 @@ pub fn run() {
             create_listener,
             list_commands,
             get_command_result,
-            list_artifacts
+            list_artifacts,
+            kill_implant,
+            start_listener,
+            stop_listener
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
