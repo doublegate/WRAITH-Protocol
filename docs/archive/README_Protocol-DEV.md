@@ -22,10 +22,10 @@ For the current production README, see [../../README.md](../../README.md).
 
 **Total Development Effort:** 2,685 story points delivered across 24 phases
 
-**Project Metrics (2026-01-24):**
-- **Code Volume:** ~272,000 lines of Rust code across protocol and client crates + ~10,000 lines TypeScript
-- **Test Coverage:** 2,124 tests passing (16 ignored) - 100% pass rate
-- **Documentation:** 130+ markdown files, ~90,000+ lines of comprehensive documentation
+**Project Metrics (2026-01-25):**
+- **Code Volume:** ~131,000 lines of Rust code across protocol and client crates + ~35,000 lines TypeScript
+- **Test Coverage:** 2,140 tests passing (16 ignored) - 100% pass rate
+- **Documentation:** 113 markdown files, ~61,000 lines of comprehensive documentation
 - **Dependencies:** 295 audited packages (zero vulnerabilities via cargo-audit)
 - **Security:** Grade A+ (EXCELLENT) - zero vulnerabilities, 100% unsafe documentation, comprehensive audits
 - **Technical Debt Ratio:** ~2.5% (Grade A - Excellent)
@@ -36,7 +36,7 @@ For the current production README, see [../../README.md](../../README.md).
 **Quality Metrics:**
 - **Quality Grade:** 98/100 (Production-ready)
 - **Technical Debt Ratio:** ~2.5% (Grade A - Excellent)
-- **Test Coverage:** 2,124 tests passing (16 ignored) - 100% pass rate
+- **Test Coverage:** 2,140 tests passing (16 ignored) - 100% pass rate
   - 414 wraith-core - frame parsing (SIMD), sessions, streams, BBR, migration, ring buffers, Node API
   - 127 wraith-crypto - Ed25519, X25519+Elligator2, AEAD, Noise_XX, Double Ratchet (+ test vectors + zeroization)
   - 130 wraith-transport - AF_XDP socket config, io_uring, UDP, worker pools, NUMA-aware allocation
@@ -56,6 +56,7 @@ For the current production README, see [../../README.md](../../README.md).
   - 56 wraith-publish - Decentralized content publishing (Ed25519 signatures, RSS feeds)
   - 99 wraith-vault - Distributed secret storage (Shamir SSS, erasure coding, guardians)
   - 78 wraith-recon - Network reconnaissance (packet capture, protocol analysis, mapping)
+  - wraith-redops - Red team operations (Team Server, Operator Client, Spectre Implant)
 - **Security Vulnerabilities:** Zero (295 dependencies scanned with cargo-audit, CodeQL verified)
 - **Clippy Warnings:** Zero (strict `-D warnings` enforcement)
 - **Compiler Warnings:** Zero
@@ -68,7 +69,7 @@ For the current production README, see [../../README.md](../../README.md).
   - tree_hash: Merkle tree construction with incremental hashing
 - **Property Tests:** 15 QuickCheck-style property tests validating state machine invariants
 - **Unsafe Code:** 100% SAFETY documentation coverage (zero unsafe in crypto paths)
-- **Documentation:** 130+ markdown files, ~90,000+ lines, complete API coverage
+- **Documentation:** 113 markdown files, ~61,000 lines, complete API coverage
 
 ---
 
@@ -1319,12 +1320,12 @@ This major phase delivers three production-ready client applications implementin
 
 ## Current Status & Next Steps
 
-**Version 2.2.1 Status (2026-01-24):**
+**Version 2.2.5 Status (2026-01-25):**
 - ✅ All 24 development phases complete (2,740+ SP delivered)
-- ✅ 1,733 tests (4 ignored) - 100% pass rate
+- ✅ 2,140 tests (16 ignored) - 100% pass rate
 - ✅ Zero vulnerabilities, zero warnings
 - ✅ Code quality: 98/100 (production-ready)
-- ✅ 9 production desktop client applications deployed (Transfer, Chat, Sync, Share, Stream, Mesh, Publish, Vault, Recon)
+- ✅ 12 production client applications deployed (9 desktop + 2 mobile + 1 server platform)
 - ✅ Technical debt ratio: ~2.5% (Grade A - Excellent)
 - ✅ 100% unsafe block documentation coverage
 - ✅ Production-ready with comprehensive security audits (Grade A+)
@@ -1392,8 +1393,8 @@ See [../../to-dos/ROADMAP.md](../../to-dos/ROADMAP.md) for detailed future plann
 
 ---
 
-**WRAITH Protocol Development History** - *From Foundation to v2.2.1 (Phases 1-24 + Infrastructure Sprints)*
+**WRAITH Protocol Development History** - *From Foundation to v2.2.5 (Phases 1-24 + Infrastructure Sprints)*
 
-**Development Period:** 2024 - 2026-01-24 | **Total Effort:** 2,740+ story points delivered across 24 phases + infrastructure sprints | **Quality:** Production-ready (98/100), 1,733 tests (100% pass rate), 0 vulnerabilities, Grade A+ security | **Clients:** 9 desktop applications | **TDR:** ~2.5% (Grade A - Excellent) | **CI/CD:** Optimized workflows with reusable setup and path filters | **v2.2.1:** MSRV 1.88, 58 clippy warnings resolved
+**Development Period:** 2024 - 2026-01-25 | **Total Effort:** 2,740+ story points delivered across 24 phases + infrastructure sprints | **Quality:** Production-ready (98/100), 2,140 tests (100% pass rate), 0 vulnerabilities, Grade A+ security | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server) | **TDR:** ~2.5% (Grade A - Excellent) | **CI/CD:** Optimized workflows with reusable setup and path filters | **v2.2.5:** MSRV 1.88, WRAITH-RedOps complete
 
-*Last Updated: 2026-01-24*
+*Last Updated: 2026-01-25*

@@ -30,15 +30,15 @@ WRAITH Protocol is a privacy-focused, high-performance file transfer protocol de
 - **End-to-end encryption** - Noise_XX handshake, XChaCha20-Poly1305, perfect forward secrecy
 - **Traffic analysis resistance** - Elligator2 key encoding, protocol mimicry, cover traffic
 - **Decentralized discovery** - Kademlia DHT, NAT traversal, relay fallback
-- **Production-ready ecosystem** - 9 desktop client applications for file transfer, messaging, and specialized use cases
+- **Production-ready ecosystem** - 12 client applications for file transfer, messaging, and specialized use cases
 
 ### Project Metrics
 
 | Metric | Value |
 |--------|-------|
-| **Tests** | 2,124 passing (100% pass rate, 16 intentionally ignored) |
-| **Code** | ~272,000 lines Rust (protocol + clients) + ~10,000 lines TypeScript |
-| **Documentation** | 130+ files, ~90,000+ lines |
+| **Tests** | 2,140 passing (100% pass rate, 16 intentionally ignored) |
+| **Code** | ~131,000 lines Rust (protocol + clients) + ~35,000 lines TypeScript |
+| **Documentation** | 113 files, ~61,000 lines |
 | **Security** | Grade A+ (zero vulnerabilities, 295 audited dependencies) |
 | **Quality** | 98/100, zero clippy warnings |
 | **TDR** | ~2.5% (Grade A - Excellent) |
@@ -139,7 +139,7 @@ WRAITH Protocol powers a comprehensive ecosystem of 12 production-ready applicat
 | **[WRAITH-Share](clients/wraith-share/)** | Desktop | Anonymous distributed file sharing with swarm transfers |
 | **[WRAITH-Stream](clients/wraith-stream/)** | Desktop | Secure media streaming with AV1/VP9/H.264 and adaptive bitrate |
 
-### Tier 3: Advanced Applications
+### Tier 3: Advanced & Security Applications
 
 | Application | Platform | Description |
 |-------------|----------|-------------|
@@ -147,7 +147,7 @@ WRAITH Protocol powers a comprehensive ecosystem of 12 production-ready applicat
 | **[WRAITH-Publish](clients/wraith-publish/)** | Desktop | Censorship-resistant content publishing with Ed25519 signatures and RSS |
 | **[WRAITH-Vault](clients/wraith-vault/)** | Desktop | Distributed secret storage with Shamir's Secret Sharing |
 | **[WRAITH-Recon](clients/wraith-recon/)** | Desktop | Network reconnaissance platform for authorized security testing (RoE enforced) |
-| **[WRAITH-RedOps](clients/wraith-redops/)** | Server + Desktop | Red team operations platform with C2 infrastructure, implant framework |
+| **[WRAITH-RedOps](clients/wraith-redops/)** | Server + Desktop | Red team operations platform with C2 infrastructure and implant framework |
 
 ### Application Highlights
 
@@ -354,7 +354,7 @@ For detailed architecture documentation, see [Protocol Overview](docs/architectu
 - 100% unsafe code documentation
 
 **Validation:**
-- Comprehensive test coverage (1,733+ tests)
+- Comprehensive test coverage (2,140+ tests)
 - DPI evasion validation (Wireshark, Zeek, Suricata, nDPI)
 - 5 libFuzzer targets
 - Property-based tests
@@ -383,7 +383,7 @@ cargo bench --workspace           # Benchmarks
 
 ```
 WRAITH-Protocol/
-|-- crates/                # Protocol crates (9)
+|-- crates/                # Protocol crates (8 active + 1 excluded)
 |   |-- wraith-core/       # Frame, session, congestion, Node API
 |   |-- wraith-crypto/     # Noise, AEAD, Elligator2, ratcheting
 |   |-- wraith-transport/  # AF_XDP, io_uring, UDP
@@ -392,7 +392,7 @@ WRAITH-Protocol/
 |   |-- wraith-files/      # Chunking, integrity, transfer
 |   |-- wraith-cli/        # CLI
 |   +-- wraith-ffi/        # FFI bindings
-|-- clients/               # Client applications (9)
+|-- clients/               # Client applications (12)
 |-- templates/             # Configuration and ROE templates (17)
 |   |-- recon/             # WRAITH-Recon ROE templates (7)
 |   |-- config/            # CLI and node configuration (2)
@@ -465,7 +465,7 @@ See [CI Workflow](.github/workflows/ci.yml) and [Release Workflow](.github/workf
 
 ### Completed
 
-WRAITH Protocol v2.2.0 represents 2,685+ story points across 24 development phases:
+WRAITH Protocol v2.2.5 represents 2,740+ story points across 24 development phases:
 
 - Core protocol implementation (cryptography, transport, obfuscation, discovery)
 - 9 production-ready desktop client applications
@@ -477,7 +477,7 @@ WRAITH Protocol v2.2.0 represents 2,685+ story points across 24 development phas
 - **Post-quantum cryptography** - Kyber/Dilithium hybrid mode
 - **Formal verification** - Cryptographic protocol proofs
 - **XDP/eBPF implementation** - Full kernel bypass (wraith-xdp crate)
-- **Security testing tools** - WRAITH-Recon, WRAITH-RedOps (authorized use only)
+- **SDK development** - Python, Go, Node.js language bindings
 
 See [ROADMAP.md](to-dos/ROADMAP.md) for detailed planning.
 
@@ -546,6 +546,6 @@ WRAITH Protocol builds on excellent projects and research:
 
 **WRAITH Protocol** - *Secure. Fast. Invisible.*
 
-**Version:** 2.2.1 | **License:** MIT | **Language:** Rust 2024 (MSRV 1.88) | **Tests:** 1,733 passing (100%) | **Clients:** 9 desktop applications
+**Version:** 2.2.5 | **License:** MIT | **Language:** Rust 2024 (MSRV 1.88) | **Tests:** 2,140 passing (100%) | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server)
 
-*Last Updated: 2026-01-24*
+*Last Updated: 2026-01-25*

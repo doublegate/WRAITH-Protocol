@@ -11,9 +11,9 @@ WRAITH (Wire-speed Resilient Authenticated Invisible Transfer Handler) is a dece
 ### Metrics
 | Metric | Value |
 |--------|-------|
-| Tests | 2,124 passing (16 ignored) - 100% pass rate |
-| Code | ~272,000 lines Rust (protocol + clients) + ~10,000 lines TypeScript |
-| Documentation | 130+ files, ~90,000+ lines |
+| Tests | 2,140 passing (16 ignored) - 100% pass rate |
+| Code | ~131,000 lines Rust (protocol + clients) + ~35,000 lines TypeScript |
+| Documentation | 113 files, ~61,000 lines |
 | Templates | 17 configuration/ROE templates |
 | Security | Zero vulnerabilities - EXCELLENT ([v1.1.0 audit](docs/security/SECURITY_AUDIT_v1.1.0.md), 295 deps) |
 | Performance | File chunking 14.85 GiB/s, tree hashing 4.71 GiB/s, verification 4.78 GiB/s, reassembly 5.42 GiB/s |
@@ -36,7 +36,7 @@ cargo run -p wraith-cli -- --help # Run CLI
 
 ```
 WRAITH-Protocol/
-├── crates/                 # Rust workspace (7 active + 1 excluded)
+├── crates/                 # Rust workspace (8 active + 1 excluded)
 │   ├── wraith-core/        # Frame, session, congestion, Node API
 │   ├── wraith-crypto/      # Noise, AEAD, Elligator2, ratcheting
 │   ├── wraith-transport/   # AF_XDP, io_uring, UDP
@@ -45,7 +45,7 @@ WRAITH-Protocol/
 │   ├── wraith-files/       # Chunking, integrity, transfer
 │   ├── wraith-cli/         # CLI (wraith binary)
 │   └── wraith-xdp/         # eBPF/XDP (Linux-only, excluded)
-├── clients/                # Desktop applications (Tauri)
+├── clients/                # Client applications (12 total: 9 desktop + 2 mobile + 1 server)
 ├── templates/              # Configuration and ROE templates (17)
 │   ├── recon/              # WRAITH-Recon ROE templates (7)
 │   ├── config/             # CLI and node configuration (2)
@@ -151,5 +151,6 @@ Thread-per-core with no locks in hot path. Sessions pinned to cores, NUMA-aware 
 | wraith-publish | ✅ Complete | 56 | Ed25519 signatures, RSS feeds |
 | wraith-vault | ✅ Complete | 99 | Shamir SSS, erasure coding, guardians |
 | wraith-recon | ✅ Complete | 78 | Packet capture, protocol analysis |
+| wraith-redops | ✅ Complete | - | Team Server, Operator Client, Spectre Implant |
 
-**Total:** 2,124 tests passing (16 ignored)
+**Total:** 2,140 tests passing (16 ignored)
