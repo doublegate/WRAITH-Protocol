@@ -36,12 +36,12 @@
     - [x] Sub-task: Implement command dispatcher in `c2/mod.rs` to handle standard task types (shell, upload, download).
 - [~] Task: Conductor - User Manual Verification 'Spectre Implant Core Features' (Protocol in workflow.md)
 
-## Phase 4: Advanced Implant Features (Gap 3.4, 3.5, 3.6)
-- [ ] Task: Post-Exploitation Modules
-    - [ ] Sub-task: Create `modules/bof_loader.rs` and implement COFF parser (Gap 3.4).
-    - [ ] Sub-task: Create `modules/injection.rs` and implement injection logic (Gap 3.5).
-    - [ ] Sub-task: Create `modules/socks.rs` and implement SOCKS proxy state machine (Gap 3.6).
-- [ ] Task: Conductor - User Manual Verification 'Advanced Implant Features' (Protocol in workflow.md)
+## Phase 4: Advanced Implant Features (Gap 3.4, 3.5, 3.6) [checkpoint: d28feae]
+- [x] Task: Post-Exploitation Modules
+    - [x] Sub-task: Create `modules/bof_loader.rs` and implement COFF parser (Gap 3.4).
+    - [x] Sub-task: Create `modules/injection.rs` and implement injection logic (Gap 3.5).
+    - [x] Sub-task: Create `modules/socks.rs` and implement SOCKS proxy state machine (Gap 3.6).
+- [~] Task: Conductor - User Manual Verification 'Advanced Implant Features' (Protocol in workflow.md)
 
 ## Phase 5: Operator Client Enhancements (Gap 2.1 - 2.4)
 - [ ] Task: Interactive Console (Gap 2.1)
