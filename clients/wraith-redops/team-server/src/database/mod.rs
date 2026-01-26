@@ -19,23 +19,18 @@ pub struct Database {
 impl Database {
     pub fn new(pool: PgPool) -> Self {
         let hmac_key = env::var("HMAC_SECRET")
-            .unwrap_or_else(|_| "audit_log_integrity_key_very_secret".to_string())
+            .expect("HMAC_SECRET environment variable must be set")
             .into_bytes();
 
         let master_key_str = env::var("MASTER_KEY")
-            .unwrap_or_else(|_| "0000000000000000000000000000000000000000000000000000000000000000".to_string());
+            .expect("MASTER_KEY environment variable must be set (64 hex chars)");
         
         let mut master_key = [0u8; 32];
-        if let Ok(decoded) = hex::decode(&master_key_str) {
-            if decoded.len() == 32 {
-                master_key.copy_from_slice(&decoded);
-            } else {
-                // Fallback or panic? For now fallback to zero
-            }
-        } else {
-            // Assume string is key if hex fails? No, hex is standard.
-            // Simplified fallback
+        let decoded = hex::decode(&master_key_str).expect("Failed to decode MASTER_KEY hex");
+        if decoded.len() != 32 {
+            panic!("MASTER_KEY must be exactly 32 bytes (64 hex chars)");
         }
+        master_key.copy_from_slice(&decoded);
 
         Self {
             pool,

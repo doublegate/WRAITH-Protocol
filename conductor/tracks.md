@@ -8,7 +8,7 @@ This file tracks all major work tracks for the WRAITH Protocol project. Each tra
 
 ## Active Tracks
 
-- [ ] **Track: Final, comprehensive remediation and completion of WRAITH-RedOps, including full MITRE ATT&CK integration and security hardening.**
+- [~] **Track: Final, comprehensive remediation and completion of WRAITH-RedOps, including full MITRE ATT&CK integration and security hardening.**
   *Type: Feature | Created: 2026-01-25*
   *Link: [./tracks/redops_full_completion_20260125/](./tracks/redops_full_completion_20260125/)*
 

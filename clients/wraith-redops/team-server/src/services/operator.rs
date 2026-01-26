@@ -20,24 +20,13 @@ pub struct OperatorServiceImpl {
 }
 
 fn extract_operator_id<T>(req: &Request<T>) -> Result<String, Status> {
-    let auth_header = req
-        .metadata()
-        .get("authorization")
-        .ok_or_else(|| Status::unauthenticated("Missing authorization header"))?;
-
-    let auth_str = auth_header
-        .to_str()
-        .map_err(|_| Status::unauthenticated("Invalid authorization header"))?;
-
-    if !auth_str.starts_with("Bearer ") {
-        return Err(Status::unauthenticated("Invalid authorization scheme"));
+    if let Some(claims) = req.extensions().get::<crate::utils::Claims>() {
+        return Ok(claims.sub.clone());
     }
-
-    let token = &auth_str[7..];
-    let claims = crate::utils::verify_jwt(token)
-        .map_err(|e| Status::unauthenticated(format!("Invalid token: {}", e)))?;
-
-    Ok(claims.sub)
+    
+    // If no claims found in extensions, check if we have a direct header (fallback/test)
+    // or return error. Since interceptor handles verification, absence means unauthenticated.
+    Err(Status::unauthenticated("Authentication required: Missing valid token"))
 }
 
 #[tonic::async_trait]
@@ -62,11 +51,23 @@ impl OperatorService for OperatorServiceImpl {
             .map_err(|e| Status::internal(e.to_string()))?
             .ok_or(Status::unauthenticated("Invalid credentials"))?;
 
-        // Verify signature (Simplified for MVP compliance - ensures field usage)
+        // Verify signature
+        // The signature must be over the username bytes to prove possession of the private key
         if req.signature.is_empty() {
             return Err(Status::unauthenticated("Missing signature"));
         }
-        // Real verification would happen here using op_model.public_key
+
+        let vk_bytes: [u8; 32] = op_model.public_key.clone().try_into()
+            .map_err(|_| Status::internal("Stored operator public key is invalid (not 32 bytes)"))?;
+
+        let vk = wraith_crypto::signatures::VerifyingKey::from_bytes(&vk_bytes)
+            .map_err(|_| Status::internal("Failed to parse operator public key"))?;
+
+        let sig = wraith_crypto::signatures::Signature::from_slice(&req.signature)
+            .map_err(|_| Status::unauthenticated("Invalid signature format (must be 64 bytes)"))?;
+
+        vk.verify(req.username.as_bytes(), &sig)
+            .map_err(|_| Status::unauthenticated("Invalid signature"))?;
 
         let token = crate::utils::create_jwt(&op_model.id.to_string(), &op_model.role)
             .map_err(|e| Status::internal(e.to_string()))?;
