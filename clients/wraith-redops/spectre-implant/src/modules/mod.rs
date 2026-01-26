@@ -7,3 +7,5 @@ pub mod powershell;
 pub mod persistence;
 pub mod privesc;
 pub mod evasion;
+pub mod credentials;
+pub mod discovery;
