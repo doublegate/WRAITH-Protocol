@@ -15,7 +15,7 @@ This plan covers the end-to-end integration of offensive techniques into the Ope
 
 ## Phase 2: Operator Client - Core UI Enhancements
 
-- [ ] Task: Implement Phishing Builder UI
+- [~] Task: Implement Phishing Builder UI
     - [ ] Create `components/PhishingBuilder.tsx` with payload configuration form.
     - [ ] Integrate with `create_phishing` Tauri command.
 - [ ] Task: Enhance Beacon Console for Advanced Tradecraft
