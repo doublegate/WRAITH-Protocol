@@ -53,15 +53,15 @@ This plan follows the 7-Sprint remediation timeline defined in the Gap Analysis 
     - [ ] Modify `obfuscation.rs` to use session-derived or random XOR keys for the sleep mask instead of the hardcoded `0xAA`.
 - [ ] **Task: Conductor - User Manual Verification 'Phase 5: Sprint 5' (Protocol in workflow.md)**
 
-## Phase 6: Sprint 6 - P2 Completeness
+## Phase 6: Sprint 6 - P2 Completeness [checkpoint: 42ba646]
 
-- [ ] **Task: Enhance DNS Multi-Label Encoding**
+- [~] **Task: Enhance DNS Multi-Label Encoding**
     - [ ] Implement chunked encoding across multiple subdomain labels for larger payloads in the DNS listener.
-- [ ] **Task: Implement Artifact Encryption at Rest**
+- [~] **Task: Implement Artifact Encryption at Rest**
     - [ ] Apply XChaCha20-Poly1305 encryption to artifact content before storage in the database.
-- [ ] **Task: Externalize Listener Ports**
+- [~] **Task: Externalize Listener Ports**
     - [ ] Move hardcoded ports (8080, 9999, etc.) from `main.rs` to environment variables.
-- [ ] **Task: Implement Native Persistence APIs**
+- [~] **Task: Implement Native Persistence APIs**
     - [ ] Replace shell-based persistence methods with native API calls (e.g., Task Scheduler COM API).
 - [ ] **Task: Conductor - User Manual Verification 'Phase 6: Sprint 6' (Protocol in workflow.md)**
 
