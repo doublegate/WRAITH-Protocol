@@ -51,7 +51,7 @@ This plan outlines the final development sprint to bring WRAITH-RedOps to 100% c
     - [x] Add Settings UI to the Operator Client for server address management
 - [x] Task: Conductor - User Manual Verification 'Phase 4: P3 Finalization' (Protocol in workflow.md) 0244497
 
-## Phase 5: MITRE ATT&CK Tradecraft Integration
+## Phase 5: MITRE ATT&CK Tradecraft Integration [checkpoint: 3a927e8]
 
 - [x] Task: TA0001 & TA0002 (Access & Execution) 77c44cc
     - [x] Implement Phishing Payload Generator (T1566) in Team Server
@@ -69,4 +69,4 @@ This plan outlines the final development sprint to bring WRAITH-RedOps to 100% c
     - [x] Implement WMI/PsExec Lateral Movement (T1021)
     - [x] Implement Screenshot & Keylogger (T1113/T1056)
     - [x] Implement Service Stop (T1489)
-- [ ] Task: Conductor - User Manual Verification 'Phase 5: MITRE ATT&CK' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 5: MITRE ATT&CK' (Protocol in workflow.md) 3a927e8
