@@ -15,9 +15,9 @@ This plan follows the 7-Sprint remediation timeline defined in the Gap Analysis 
 - [x] **Task: Fix CONTEXT Struct Structural Bug** (a0a030d)
     - [ ] Move orphaned field declarations into the `CONTEXT` struct body in `spectre-implant/src/utils/windows_definitions.rs`.
     - [ ] Verify `size_of::<CONTEXT>()` matches Windows expectations (approx. 1232 bytes for x64).
-- [ ] **Task: Externalize Kill Signal Configuration**
+- [x] **Task: Externalize Kill Signal Configuration**
     - [ ] Update `operator.rs` to read the kill signal port and secret from environment variables or campaign configuration instead of using hardcoded values.
-- [ ] **Task: Implement PowerShell Runner (Non-Stub)**
+- [x] **Task: Implement PowerShell Runner (Non-Stub)** (d854111)
     - [ ] Replace `MZ_PLACEHOLDER` in `powershell.rs` with a valid .NET runner assembly or a mechanism to load it.
 - [ ] **Task: Implement BeaconDataParse BIF**
     - [ ] Implement the argument parsing logic for Cobalt Strike BOF compatibility in `bof_loader.rs`.
