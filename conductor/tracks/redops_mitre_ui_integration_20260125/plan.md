@@ -37,12 +37,12 @@ This plan covers the end-to-end integration of offensive techniques into the Ope
     - [x] Ensure all UI components are fully wired to real data.
 - [x] Task: Conductor - User Manual Verification 'Phase 3: Data Views' (Protocol in workflow.md) 0ac5e14
 
-## Phase 4: Implant Final Polish & Cleanup
+## Phase 4: Implant Final Polish & Cleanup [checkpoint: 7e2bbd8]
 
-- [~] Task: Implant Codebase Deep Clean
-    - [ ] Scan `spectre-implant` for any remaining "TODO", "In production" comments.
-    - [ ] Verify `no_std` compliance and zero-warning build for Windows target.
-    - [ ] Ensure `task_dispatch` handles *every* implemented module correctly.
-- [~] Task: Final Integration Test
-    - [ ] Verify the full chain: UI -> Team Server -> Implant -> Action -> Result -> UI.
-- [ ] Task: Conductor - User Manual Verification 'Phase 4: Final System Check' (Protocol in workflow.md)
+- [x] Task: Implant Codebase Deep Clean
+    - [x] Scan `spectre-implant` for any remaining "TODO", "In production" comments.
+    - [x] Verify `no_std` compliance and zero-warning build for Windows target.
+    - [x] Ensure `task_dispatch` handles *every* implemented module correctly.
+- [x] Task: Final Integration Test
+    - [x] Verify the full chain: UI -> Team Server -> Implant -> Action -> Result -> UI.
+- [x] Task: Conductor - User Manual Verification 'Phase 4: Final System Check' (Protocol in workflow.md) 7e2bbd8
