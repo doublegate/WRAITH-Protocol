@@ -62,9 +62,9 @@ This plan outlines the final development sprint to bring WRAITH-RedOps to 100% c
 - [x] Task: TA0005 Defense Evasion 8cf9d72
     - [x] Implement Timestomp (T1070)
     - [x] Implement Sandbox Evasion Checks (T1497)
-- [ ] Task: TA0006 & TA0007 (Credential Access & Discovery)
-    - [ ] Implement LSASS Minidump (T1003) via direct syscalls
-    - [ ] Implement Native API Discovery (NetScan/SysInfo) (T1082/T1087)
+- [x] Task: TA0006 & TA0007 (Credential Access & Discovery) 37e92bb
+    - [x] Implement LSASS Minidump (T1003) via direct syscalls
+    - [x] Implement Native API Discovery (NetScan/SysInfo) (T1082/T1087)
 - [ ] Task: TA0008 & TA0009 & TA0040 (Lateral Movement, Collection, Impact)
     - [ ] Implement WMI/PsExec Lateral Movement (T1021)
     - [ ] Implement Screenshot & Keylogger (T1113/T1056)
