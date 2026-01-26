@@ -132,81 +132,35 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Event broadcast channel
     let (event_tx, _rx) = tokio::sync::broadcast::channel(100);
 
-    // Start HTTP Listener for Implants
-    let http_db = db.clone();
-    let http_event_tx = event_tx.clone();
-    let http_governance = governance.clone();
-    let http_sessions = sessions.clone();
-    let http_key = static_key.clone();
+    let listener_manager = Arc::new(services::listener::ListenerManager::new(
+        db.clone(),
+        governance.clone(),
+        sessions.clone(),
+        Arc::new(static_key.clone()),
+        event_tx.clone(),
+    ));
 
-    tokio::spawn(async move {
-        listeners::http::start_http_listener(
-            http_db,
-            8080,
-            http_event_tx,
-            http_governance,
-            http_key,
-            http_sessions,
-        )
-        .await;
-    });
-
-    // Start UDP Listener
-    let udp_db = db.clone();
-    let udp_event_tx = event_tx.clone();
-    let udp_governance = governance.clone();
-    let udp_sessions = sessions.clone();
-    let udp_key = static_key.clone();
-
-    tokio::spawn(async move {
-        listeners::udp::start_udp_listener(
-            udp_db,
-            9999,
-            udp_event_tx,
-            udp_governance,
-            udp_key,
-            udp_sessions,
-        )
-        .await;
-    });
-
-    // Start DNS Listener
-    let dns_db = db.clone();
-    let dns_event_tx = event_tx.clone();
-    let dns_governance = governance.clone();
-    let dns_sessions = sessions.clone();
-    let dns_key = static_key.clone();
-
-    tokio::spawn(async move {
-        listeners::dns::start_dns_listener(
-            dns_db,
-            5454,
-            dns_event_tx,
-            dns_governance,
-            dns_key,
-            dns_sessions,
-        )
-        .await;
-    });
-
-    // Start SMB Listener
-    let smb_db = db.clone();
-    let smb_event_tx = event_tx.clone();
-    let smb_governance = governance.clone();
-    let smb_sessions = sessions.clone();
-    let smb_key = static_key.clone();
-
-    tokio::spawn(async move {
-        listeners::smb::start_smb_listener(
-            smb_db,
-            4445,
-            smb_event_tx,
-            smb_governance,
-            smb_key,
-            smb_sessions,
-        )
-        .await;
-    });
+    // Restore active listeners from database
+    if let Ok(listeners) = db.list_listeners().await {
+        for l in listeners {
+            if l.status == "active" {
+                // Determine port from type or config (Simplified for MVP)
+                let port = match l.r#type.as_str() {
+                    "http" => 8080,
+                    "udp" => 9999,
+                    "dns" => 5454,
+                    "smb" => 4445,
+                    _ => 0,
+                };
+                
+                if port > 0 {
+                    if let Err(e) = listener_manager.start_listener(&l.id.to_string(), &l.r#type, &l.bind_address, port).await {
+                        tracing::error!("Failed to restart listener {}: {}", l.name, e);
+                    }
+                }
+            }
+        }
+    }
 
     let addr_str = std::env::var("GRPC_LISTEN_ADDR")
         .expect("GRPC_LISTEN_ADDR environment variable must be set (e.g., 0.0.0.0:50051)");
@@ -217,6 +171,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         governance: governance.clone(),
         static_key: Arc::new(static_key.clone()),
         sessions: sessions.clone(),
+        listener_manager: listener_manager.clone(),
     };
     let implant_service = ImplantServiceImpl {
         db: db.clone(),

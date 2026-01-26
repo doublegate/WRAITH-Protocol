@@ -7,6 +7,7 @@ use crate::database::Database;
 use crate::governance::GovernanceEngine;
 use crate::services::session::SessionManager;
 use wraith_crypto::noise::NoiseKeypair;
+use crate::services::listener::ListenerManager;
 
 #[tokio::test]
 #[should_panic(expected = "KILLSWITCH_PORT must be set")]
@@ -23,13 +24,25 @@ async fn test_kill_implant_panics_without_port() {
     let pool = sqlx::postgres::PgPoolOptions::new().connect_lazy("postgres://user:pass@localhost/db").unwrap();
     let db = Arc::new(Database::new(pool));
     let (tx, _) = tokio::sync::broadcast::channel(1);
+    let governance = Arc::new(GovernanceEngine::new());
+    let sessions = Arc::new(SessionManager::new());
+    let static_key = Arc::new(NoiseKeypair::generate().unwrap());
+    
+    let listener_manager = Arc::new(ListenerManager::new(
+        db.clone(),
+        governance.clone(),
+        sessions.clone(),
+        static_key.clone(),
+        tx.clone(),
+    ));
     
     let operator_service = OperatorServiceImpl {
         db,
         event_tx: tx,
-        governance: Arc::new(GovernanceEngine::new()),
-        static_key: Arc::new(NoiseKeypair::generate().unwrap()),
-        sessions: Arc::new(SessionManager::new()),
+        governance,
+        static_key,
+        sessions,
+        listener_manager,
     };
 
     let req = Request::new(KillImplantRequest {
@@ -56,13 +69,25 @@ async fn test_kill_implant_panics_without_secret() {
     let pool = sqlx::postgres::PgPoolOptions::new().connect_lazy("postgres://user:pass@localhost/db").unwrap();
     let db = Arc::new(Database::new(pool));
     let (tx, _) = tokio::sync::broadcast::channel(1);
+    let governance = Arc::new(GovernanceEngine::new());
+    let sessions = Arc::new(SessionManager::new());
+    let static_key = Arc::new(NoiseKeypair::generate().unwrap());
+    
+    let listener_manager = Arc::new(ListenerManager::new(
+        db.clone(),
+        governance.clone(),
+        sessions.clone(),
+        static_key.clone(),
+        tx.clone(),
+    ));
 
     let operator_service = OperatorServiceImpl {
         db,
         event_tx: tx,
-        governance: Arc::new(GovernanceEngine::new()),
-        static_key: Arc::new(NoiseKeypair::generate().unwrap()),
-        sessions: Arc::new(SessionManager::new()),
+        governance,
+        static_key,
+        sessions,
+        listener_manager,
     };
     
     let req = Request::new(KillImplantRequest {

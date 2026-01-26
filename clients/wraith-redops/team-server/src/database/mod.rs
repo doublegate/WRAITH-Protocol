@@ -239,6 +239,16 @@ impl Database {
         Ok(recs)
     }
 
+    pub async fn get_listener(&self, id: Uuid) -> Result<Option<Listener>> {
+        let rec = sqlx::query_as::<_, Listener>(
+            "SELECT id, name, type, bind_address::text, config, status FROM listeners WHERE id = $1"
+        )
+        .bind(id)
+        .fetch_optional(&self.pool)
+        .await?;
+        Ok(rec)
+    }
+
     pub async fn update_listener_status(&self, id: Uuid, status: &str) -> Result<()> {
         sqlx::query("UPDATE listeners SET status = $1 WHERE id = $2")
             .bind(status)
