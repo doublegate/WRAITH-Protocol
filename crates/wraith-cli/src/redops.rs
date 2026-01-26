@@ -1,21 +1,21 @@
-use clap::Subcommand;
 use anyhow::Result;
+use clap::Subcommand;
 use crossterm::{
-    event::{self, KeyCode, KeyEventKind},
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
+    event::{self, KeyCode, KeyEventKind},
+    terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
 use ratatui::{
     prelude::*,
-    widgets::{Block, Borders, Paragraph, List, ListItem},
+    widgets::{Block, Borders, List, ListItem, Paragraph},
 };
 use std::io::stdout;
 
 pub mod proto {
     tonic::include_proto!("wraith.redops");
 }
-use proto::operator_service_client::OperatorServiceClient;
 use proto::ListAttackChainsRequest;
+use proto::operator_service_client::OperatorServiceClient;
 
 #[derive(Subcommand)]
 pub enum RedOpsCommands {
@@ -46,10 +46,12 @@ async fn run_tui(server: &str) -> Result<()> {
     let mut client = OperatorServiceClient::connect(server.to_string()).await?;
 
     // Fetch chains
-    let response = client.list_attack_chains(tonic::Request::new(ListAttackChainsRequest {
-        page_size: 100,
-        page_token: "".to_string(),
-    })).await?;
+    let response = client
+        .list_attack_chains(tonic::Request::new(ListAttackChainsRequest {
+            page_size: 100,
+            page_token: "".to_string(),
+        }))
+        .await?;
     let chains = response.into_inner().chains;
 
     let mut should_quit = false;
@@ -64,12 +66,19 @@ async fn run_tui(server: &str) -> Result<()> {
                 .split(f.size());
 
             // Sidebar: Chain List
-            let items: Vec<ListItem> = chains.iter().map(|c| ListItem::new(c.name.clone())).collect();
+            let items: Vec<ListItem> = chains
+                .iter()
+                .map(|c| ListItem::new(c.name.clone()))
+                .collect();
             let list = List::new(items)
-                .block(Block::default().title("Attack Chains").borders(Borders::ALL))
+                .block(
+                    Block::default()
+                        .title("Attack Chains")
+                        .borders(Borders::ALL),
+                )
                 .highlight_style(Style::default().add_modifier(Modifier::BOLD).fg(Color::Red))
                 .highlight_symbol("> ");
-            
+
             // We need state for list selection, simplified here by just rendering
             // In a real app we'd use ListState.
             f.render_widget(list, chunks[0]);
@@ -94,30 +103,29 @@ async fn run_tui(server: &str) -> Result<()> {
                 }
             };
 
-            let p = Paragraph::new(content)
-                .block(Block::default().title(title).borders(Borders::ALL));
+            let p =
+                Paragraph::new(content).block(Block::default().title(title).borders(Borders::ALL));
             f.render_widget(p, chunks[1]);
         })?;
 
-        if event::poll(std::time::Duration::from_millis(50))? {
-            if let event::Event::Key(key) = event::read()? {
-                if key.kind == KeyEventKind::Press {
-                    match key.code {
-                        KeyCode::Char('q') => should_quit = true,
-                        KeyCode::Tab => view_mode = (view_mode + 1) % 3,
-                        KeyCode::Down => {
-                            if !chains.is_empty() {
-                                selected_chain_idx = (selected_chain_idx + 1) % chains.len();
-                            }
-                        }
-                        KeyCode::Up => {
-                            if !chains.is_empty() {
-                                selected_chain_idx = (selected_chain_idx + chains.len() - 1) % chains.len();
-                            }
-                        }
-                        _ => {}
+        if event::poll(std::time::Duration::from_millis(50))?
+            && let event::Event::Key(key) = event::read()?
+            && key.kind == KeyEventKind::Press
+        {
+            match key.code {
+                KeyCode::Char('q') => should_quit = true,
+                KeyCode::Tab => view_mode = (view_mode + 1) % 3,
+                KeyCode::Down => {
+                    if !chains.is_empty() {
+                        selected_chain_idx = (selected_chain_idx + 1) % chains.len();
                     }
                 }
+                KeyCode::Up => {
+                    if !chains.is_empty() {
+                        selected_chain_idx = (selected_chain_idx + chains.len() - 1) % chains.len();
+                    }
+                }
+                _ => {}
             }
         }
     }
@@ -132,7 +140,10 @@ fn render_tree(chain: &proto::AttackChain) -> String {
     let mut out = String::new();
     out.push_str(&format!("📦 {}\n", chain.name));
     for step in &chain.steps {
-        out.push_str(&format!(" ┣━━ 📝 Step {}: {} ({})\n", step.step_order, step.technique_id, step.command_type));
+        out.push_str(&format!(
+            " ┣━━ 📝 Step {}: {} ({})\n",
+            step.step_order, step.technique_id, step.command_type
+        ));
         out.push_str(&format!(" ┃    └─ {}\n", step.description));
     }
     out
@@ -142,9 +153,9 @@ fn render_flowchart(chain: &proto::AttackChain) -> String {
     let mut out = String::new();
     out.push_str("START\n  │\n  ▼\n");
     for step in &chain.steps {
-        out.push_str(&format!("┌──────────────────────┐\n"));
+        out.push_str("┌──────────────────────┐\n");
         out.push_str(&format!("│ {:<20} │\n", step.technique_id));
-        out.push_str(&format!("└──────────────────────┘\n"));
+        out.push_str("└──────────────────────┘\n");
         out.push_str("  │\n  ▼\n");
     }
     out.push_str("END\n");
@@ -157,8 +168,15 @@ fn render_mermaid(chain: &proto::AttackChain) -> String {
     out.push_str("    Start((Start)) --> Step1\n");
     for (i, step) in chain.steps.iter().enumerate() {
         let current = format!("Step{}", i + 1);
-        let next = if i + 1 < chain.steps.len() { format!("Step{}", i + 2) } else { "End".to_string() };
-        out.push_str(&format!("    {}[{}] --> {}\n", current, step.technique_id, next));
+        let next = if i + 1 < chain.steps.len() {
+            format!("Step{}", i + 2)
+        } else {
+            "End".to_string()
+        };
+        out.push_str(&format!(
+            "    {}[{}] --> {}\n",
+            current, step.technique_id, next
+        ));
     }
     out
 }

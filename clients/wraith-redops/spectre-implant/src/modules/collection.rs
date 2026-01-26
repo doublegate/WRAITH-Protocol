@@ -35,7 +35,7 @@ impl Collection {
             result
         }
         #[cfg(not(target_os = "windows"))]
-        { String::new() }
+        { String::from("Keylogging not supported on Linux") }
     }
 }
 
