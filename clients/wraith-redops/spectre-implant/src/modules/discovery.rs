@@ -2,8 +2,6 @@ use alloc::string::String;
 use alloc::format;
 
 #[cfg(target_os = "windows")]
-use core::ffi::c_void;
-#[cfg(target_os = "windows")]
 use crate::utils::api_resolver::{hash_str, resolve_function};
 #[cfg(target_os = "windows")]
 use crate::utils::windows_definitions::*;
@@ -12,6 +10,7 @@ pub struct Discovery;
 
 #[cfg(target_os = "windows")]
 #[repr(C)]
+#[allow(non_snake_case)]
 struct SYSTEM_INFO {
     wProcessorArchitecture: u16,
     wReserved: u16,

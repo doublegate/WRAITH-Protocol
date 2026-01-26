@@ -1,6 +1,4 @@
 #[cfg(target_os = "windows")]
-use alloc::vec::Vec;
-#[cfg(target_os = "windows")]
 use core::ffi::c_void;
 
 #[cfg(target_os = "windows")]
@@ -18,6 +16,7 @@ pub struct Injector;
 
 #[cfg(target_os = "windows")]
 #[repr(C)]
+#[allow(non_snake_case)]
 struct STARTUPINFOA {
     cb: u32,
     lpReserved: PVOID,
@@ -41,6 +40,7 @@ struct STARTUPINFOA {
 
 #[cfg(target_os = "windows")]
 #[repr(C)]
+#[allow(non_snake_case)]
 struct PROCESS_INFORMATION {
     hProcess: HANDLE,
     hThread: HANDLE,

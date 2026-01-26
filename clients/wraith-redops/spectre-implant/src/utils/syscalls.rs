@@ -271,7 +271,6 @@ pub unsafe fn do_syscall(ssn: u16, w1: usize, w2: usize, w3: usize, w4: usize) -
 
 #[cfg(target_os = "windows")]
 pub unsafe fn sys_exit(code: i32) -> ! {
-    let ntdll_hash = hash_str(b"ntdll.dll");
     let term_hash = hash_str(b"NtTerminateProcess");
     let ssn = get_ssn(term_hash);
     if ssn != 0 {
