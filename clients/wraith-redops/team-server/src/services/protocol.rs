@@ -104,8 +104,19 @@ impl ProtocolHandler {
                 }
             };
 
+            // Check for Rekey Frame (Type 4)
+            if plaintext.len() >= 28 {
+                let frame_type = u16::from_be_bytes(plaintext[8..10].try_into().unwrap_or([0, 0]));
+                if frame_type == 4 {
+                    transport.rekey_recv();
+                    debug!("REKEY initiated by client for session {}", hex::encode(cid));
+                    // Ack rekey by sending our own if we haven't recently
+                    // (Protocol specifies bidirectional ratchet)
+                }
+            }
+
             // Minimum length for a valid frame (simplified header + minimum JSON)
-            if plaintext.len() > 28 {
+            if plaintext.len() >= 28 {
                 let inner_payload = &plaintext[28..];
 
                 if let Ok(beacon) = serde_json::from_slice::<BeaconData>(inner_payload) {
