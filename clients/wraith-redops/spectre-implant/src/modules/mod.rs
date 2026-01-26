@@ -9,3 +9,5 @@ pub mod privesc;
 pub mod evasion;
 pub mod credentials;
 pub mod discovery;
+pub mod lateral;
+pub mod collection;
