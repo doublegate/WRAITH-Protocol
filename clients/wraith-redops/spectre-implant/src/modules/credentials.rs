@@ -1,29 +1,21 @@
 #[cfg(target_os = "windows")]
-use alloc::vec::Vec;
-
-#[cfg(target_os = "windows")]
-use core::ffi::c_void;
-#[cfg(target_os = "windows")]
-use crate::utils::api_resolver::{hash_str, resolve_function};
-#[cfg(target_os = "windows")]
-use crate::utils::windows_definitions::*;
+use crate::utils::api_resolver::hash_str;
 
 pub struct Credentials;
 
 impl Credentials {
-    pub fn dump_lsass(&self, output_path: &str) -> Result<(), ()> {
+    pub fn dump_lsass(&self, _target_path: &str) -> Result<(), ()> {
         #[cfg(target_os = "windows")]
-        unsafe {
-            // ...
-            let _ = output_path;
-            let kernel32 = hash_str(b"kernel32.dll");
-            // ...
+        {
+            // Resolve LSASS PID and dump memory
+            let _kernel32 = hash_str(b"kernel32.dll");
+            // In full implementation, we'd use MiniDumpWriteDump
             Ok(())
         }
+
         #[cfg(not(target_os = "windows"))]
-        { 
-            let _ = output_path;
-            Err(()) 
+        {
+            Err(())
         }
     }
 }
