@@ -34,3 +34,8 @@ Completed or superseded tracks are preserved in the [archive/](./archive/) direc
 ---
 
 
+
+---
+
+- [~] **Track: WRAITH-RedOps UI/UX Audit - [ ] **Track: WRAITH-RedOps UI/UX Audit & Attack Chaining** Attack Chaining**
+*Link: [./tracks/redops_ui_chaining_20260126/](./tracks/redops_ui_chaining_20260126/)*
