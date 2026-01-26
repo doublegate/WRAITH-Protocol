@@ -25,17 +25,17 @@ This plan covers the end-to-end integration of offensive techniques into the Ope
     - [x] Create `components/PersistenceManager.tsx` to view/remove installed persistence.
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Core UI' (Protocol in workflow.md) 0866cb3
 
-## Phase 3: Operator Client - Data & Discovery Views
+## Phase 3: Operator Client - Data & Discovery Views [checkpoint: 0ac5e14]
 
-- [~] Task: Implement Credential & Loot Gallery
-    - [ ] Create `components/LootGallery.tsx` for credentials and files.
-    - [ ] Connect to `list_credentials` and `list_artifacts` backend endpoints.
-- [~] Task: Implement Discovery Dashboard
-    - [ ] Create `components/DiscoveryDashboard.tsx` to visualize network scan results and system info.
-- [~] Task: Global Codebase Cleanup (Operator Client)
-    - [ ] Scan `operator-client` for any TODOs or placeholders.
-    - [ ] Ensure all UI components are fully wired to real data.
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Data Views' (Protocol in workflow.md)
+- [x] Task: Implement Credential & Loot Gallery
+    - [x] Create `components/LootGallery.tsx` for credentials and files.
+    - [x] Connect to `list_credentials` and `list_artifacts` backend endpoints.
+- [x] Task: Implement Discovery Dashboard
+    - [x] Create `components/DiscoveryDashboard.tsx` to visualize network scan results and system info.
+- [x] Task: Global Codebase Cleanup (Operator Client)
+    - [x] Scan `operator-client` for any TODOs or placeholders.
+    - [x] Ensure all UI components are fully wired to real data.
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Data Views' (Protocol in workflow.md) 0ac5e14
 
 ## Phase 4: Implant Final Polish & Cleanup
 
