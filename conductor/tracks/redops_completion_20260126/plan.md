@@ -10,7 +10,7 @@ This plan follows the 7-Sprint remediation timeline defined in the Gap Analysis 
     - [ ] Verify that unauthenticated requests to protected endpoints now return `Status::unauthenticated`.
 - [ ] **Task: Conductor - User Manual Verification 'Phase 1: Sprint 1' (Protocol in workflow.md)**
 
-## Phase 2: Sprint 2 - P1 Core Bugs & Gaps
+## Phase 2: Sprint 2 - P1 Core Bugs Phase 2: Sprint 2 - P1 Core Bugs & Gaps Gaps [checkpoint: 06bd42b]
 
 - [x] **Task: Fix CONTEXT Struct Structural Bug** (a0a030d)
     - [ ] Move orphaned field declarations into the `CONTEXT` struct body in `spectre-implant/src/utils/windows_definitions.rs`.
@@ -19,7 +19,7 @@ This plan follows the 7-Sprint remediation timeline defined in the Gap Analysis 
     - [ ] Update `operator.rs` to read the kill signal port and secret from environment variables or campaign configuration instead of using hardcoded values.
 - [x] **Task: Implement PowerShell Runner (Non-Stub)** (d854111)
     - [ ] Replace `MZ_PLACEHOLDER` in `powershell.rs` with a valid .NET runner assembly or a mechanism to load it.
-- [ ] **Task: Implement BeaconDataParse BIF**
+- [x] **Task: Implement BeaconDataParse BIF** (4b1bc54)
     - [ ] Implement the argument parsing logic for Cobalt Strike BOF compatibility in `bof_loader.rs`.
 - [ ] **Task: Conductor - User Manual Verification 'Phase 2: Sprint 2' (Protocol in workflow.md)**
 
