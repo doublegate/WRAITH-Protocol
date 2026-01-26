@@ -13,17 +13,17 @@ This plan covers the end-to-end integration of offensive techniques into the Ope
     - [x] Resolve any remaining unused imports or dead code warnings in `team-server`.
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Backend Readiness' (Protocol in workflow.md) c3bc24e
 
-## Phase 2: Operator Client - Core UI Enhancements
+## Phase 2: Operator Client - Core UI Enhancements [checkpoint: 0866cb3]
 
-- [~] Task: Implement Phishing Builder UI
-    - [ ] Create `components/PhishingBuilder.tsx` with payload configuration form.
-    - [ ] Integrate with `create_phishing` Tauri command.
-- [ ] Task: Enhance Beacon Console for Advanced Tradecraft
-    - [ ] Update `Console.tsx` to handle structured input/output for complex commands (e.g. PowerShell args).
-    - [ ] Add command helpers/autocomplete for `powershell`, `persist`, `dump_lsass`, `uac_bypass`.
-- [ ] Task: Implement Persistence Manager UI
-    - [ ] Create `components/PersistenceManager.tsx` to view/remove installed persistence.
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Core UI' (Protocol in workflow.md)
+- [x] Task: Implement Phishing Builder UI
+    - [x] Create `components/PhishingBuilder.tsx` with payload configuration form.
+    - [x] Integrate with `create_phishing` Tauri command.
+- [x] Task: Enhance Beacon Console for Advanced Tradecraft
+    - [x] Update `Console.tsx` to handle structured input/output for complex commands (e.g. PowerShell args).
+    - [x] Add command helpers/autocomplete for `powershell`, `persist`, `dump_lsass`, `uac_bypass`.
+- [x] Task: Implement Persistence Manager UI
+    - [x] Create `components/PersistenceManager.tsx` to view/remove installed persistence.
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Core UI' (Protocol in workflow.md) 0866cb3
 
 ## Phase 3: Operator Client - Data & Discovery Views
 
