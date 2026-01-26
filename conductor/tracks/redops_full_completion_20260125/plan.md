@@ -56,9 +56,9 @@ This plan outlines the final development sprint to bring WRAITH-RedOps to 100% c
 - [x] Task: TA0001 & TA0002 (Access & Execution) 77c44cc
     - [x] Implement Phishing Payload Generator (T1566) in Team Server
     - [x] Implement Unmanaged PowerShell Host (T1059) in Spectre
-- [ ] Task: TA0003 & TA0004 (Persistence & PrivEsc)
-    - [ ] Implement Persistence Module (Registry/Task) (T1547/T1053)
-    - [ ] Implement UAC Bypass (Fodhelper) (T1548)
+- [x] Task: TA0003 & TA0004 (Persistence & PrivEsc) 7e24479
+    - [x] Implement Persistence Module (Registry/Task) (T1547/T1053)
+    - [x] Implement UAC Bypass (Fodhelper) (T1548)
 - [ ] Task: TA0005 Defense Evasion
     - [ ] Implement Timestomp (T1070)
     - [ ] Implement Sandbox Evasion Checks (T1497)
