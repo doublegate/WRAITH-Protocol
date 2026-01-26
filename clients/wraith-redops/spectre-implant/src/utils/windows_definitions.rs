@@ -150,6 +150,21 @@ pub struct THREADENTRY32 {
     pub dwFlags: ULONG,
 }
 
+#[repr(C)]
+#[allow(non_snake_case)]
+pub struct PROCESSENTRY32 {
+    pub dwSize: ULONG,
+    pub cntUsage: ULONG,
+    pub th32ProcessID: ULONG,
+    pub th32DefaultHeapID: usize,
+    pub th32ModuleID: ULONG,
+    pub cntThreads: ULONG,
+    pub th32ParentProcessID: ULONG,
+    pub pcPriClassBase: i32,
+    pub dwFlags: ULONG,
+    pub szExeFile: [u8; 260],
+}
+
 #[repr(C, align(16))]
 pub struct CONTEXT {
     pub P1Home: u64,
