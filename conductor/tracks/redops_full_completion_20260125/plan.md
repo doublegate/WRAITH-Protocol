@@ -65,8 +65,8 @@ This plan outlines the final development sprint to bring WRAITH-RedOps to 100% c
 - [x] Task: TA0006 & TA0007 (Credential Access & Discovery) 37e92bb
     - [x] Implement LSASS Minidump (T1003) via direct syscalls
     - [x] Implement Native API Discovery (NetScan/SysInfo) (T1082/T1087)
-- [ ] Task: TA0008 & TA0009 & TA0040 (Lateral Movement, Collection, Impact)
-    - [ ] Implement WMI/PsExec Lateral Movement (T1021)
-    - [ ] Implement Screenshot & Keylogger (T1113/T1056)
-    - [ ] Implement Service Stop (T1489)
+- [x] Task: TA0008 & TA0009 & TA0040 (Lateral Movement, Collection, Impact) d24297e
+    - [x] Implement WMI/PsExec Lateral Movement (T1021)
+    - [x] Implement Screenshot & Keylogger (T1113/T1056)
+    - [x] Implement Service Stop (T1489)
 - [ ] Task: Conductor - User Manual Verification 'Phase 5: MITRE ATT&CK' (Protocol in workflow.md)
