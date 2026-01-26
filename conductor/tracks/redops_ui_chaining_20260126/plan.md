@@ -35,12 +35,12 @@ This plan covers the comprehensive UI/UX audit across all RedOps variants and th
     - [ ] **Implement:** Update node colors (Green/Red/Yellow) based on live gRPC event stream data.
 - [ ] **Task: Conductor - User Manual Verification 'Phase 3: GUI Attack Graph Editor [checkpoint: 38a24fd]' (Protocol in workflow.md)**
 
-## Phase 4: TUI Attack Chain Visualization
+## Phase 4: TUI Attack Chain Visualization [checkpoint: 4a2eba3]
 
-- [ ] **Task: Implement TUI Chain Viewers**
+- [x] **Task: Implement TUI Chain Viewers** (4a2eba3)
     - [ ] **Implement:** ASCII Flowchart renderer (2D box-and-arrow).
     - [ ] **Implement:** Hierarchical Tree renderer.
     - [ ] **Implement:** Mermaid-Text output generator.
-- [ ] **Task: Integrate Audit Log Sidebar**
+- [x] **Task: Integrate Audit Log Sidebar** (4a2eba3)
     - [ ] **Implement:** Create a scrollable log component in the TUI session view for chain monitoring.
-- [ ] **Task: Conductor - User Manual Verification 'Phase 4: TUI Attack Chain Visualization' (Protocol in workflow.md)**
+- [ ] **Task: Conductor - User Manual Verification 'Phase 4: TUI Attack Chain Visualization [checkpoint: 4a2eba3]' (Protocol in workflow.md)**
