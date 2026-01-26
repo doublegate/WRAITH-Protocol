@@ -19,6 +19,7 @@
 | Concurrency | [dashmap](https://crates.io/crates/dashmap) | 6 (concurrent hash maps) |
 | Concurrency | [crossbeam-queue](https://crates.io/crates/crossbeam-queue) | 0.3 (lock-free queues) |
 | CLI | [clap](https://crates.io/crates/clap) | 4.4 (derive) |
+| TUI | [ratatui](https://crates.io/crates/ratatui) | 0.26 (RedOps Console) |
 | Logging | [tracing](https://crates.io/crates/tracing) | 0.1, [tracing-subscriber](https://crates.io/crates/tracing-subscriber) 0.3 (env-filter) |
 | Error Handling | [thiserror](https://crates.io/crates/thiserror) | 2.0 (library errors), [anyhow](https://crates.io/crates/anyhow) 1.0 (application errors) |
 | Testing | [proptest](https://crates.io/crates/proptest) | 1.4 (property-based), [criterion](https://crates.io/crates/criterion) 0.7 (benchmarks) |
