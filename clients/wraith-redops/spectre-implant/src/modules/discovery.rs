@@ -5,6 +5,8 @@ use alloc::format;
 use crate::utils::api_resolver::{hash_str, resolve_function};
 #[cfg(target_os = "windows")]
 use crate::utils::windows_definitions::*;
+#[cfg(target_os = "windows")]
+use crate::utils::syscalls::SockAddrIn;
 
 pub struct Discovery;
 
