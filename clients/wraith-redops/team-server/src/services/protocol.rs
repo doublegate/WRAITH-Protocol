@@ -110,8 +110,6 @@ impl ProtocolHandler {
                 if frame_type == 4 {
                     transport.rekey_recv();
                     debug!("REKEY initiated by client for session {}", hex::encode(cid));
-                    // Ack rekey by sending our own if we haven't recently
-                    // (Protocol specifies bidirectional ratchet)
                 }
             }
 
@@ -163,13 +161,12 @@ impl ProtocolHandler {
                     };
 
                     // Implement proper Frame construction (28-byte header)
-                    // [Magic: 4] [Length: 4] [Type: 2] [Flags: 2] [Reserved: 16]
                     let mut frame = Vec::with_capacity(28 + resp_json.len());
-                    frame.extend_from_slice(b"WRTH"); // Magic
-                    frame.extend_from_slice(&(resp_json.len() as u32).to_be_bytes()); // Length
-                    frame.extend_from_slice(&0u16.to_be_bytes()); // Type (Data=0)
-                    frame.extend_from_slice(&0u16.to_be_bytes()); // Flags
-                    frame.extend_from_slice(&[0u8; 16]); // Reserved
+                    frame.extend_from_slice(b"WRTH"); 
+                    frame.extend_from_slice(&(resp_json.len() as u32).to_be_bytes());
+                    frame.extend_from_slice(&0u16.to_be_bytes()); 
+                    frame.extend_from_slice(&0u16.to_be_bytes()); 
+                    frame.extend_from_slice(&[0u8; 16]); 
                     frame.extend_from_slice(&resp_json);
 
                     let ciphertext = match transport.write_message(&frame) {
@@ -182,6 +179,33 @@ impl ProtocolHandler {
 
                     let mut response = Vec::new();
                     response.extend_from_slice(&cid);
+                    response.extend_from_slice(&ciphertext);
+                    return Some(response);
+                }
+            }
+        } else if let Some(upstream_cid) = self.session_manager.get_upstream_cid(&cid) {
+            // Mesh Routing: Relay to upstream beacon
+            if let Some(mut upstream_transport) = self.session_manager.get_session(&upstream_cid) {
+                debug!("Mesh Routing: Relaying packet for {} via {}", hex::encode(cid), hex::encode(upstream_cid));
+                
+                let relay_task = BeaconTask {
+                    id: uuid::Uuid::new_v4().to_string(),
+                    type_: "mesh_relay".to_string(),
+                    payload: hex::encode(data),
+                };
+                
+                let resp_json = serde_json::to_vec(&BeaconResponse { tasks: vec![relay_task] }).unwrap_or_default();
+                let mut frame = Vec::with_capacity(28 + resp_json.len());
+                frame.extend_from_slice(b"WRTH");
+                frame.extend_from_slice(&(resp_json.len() as u32).to_be_bytes());
+                frame.extend_from_slice(&0u16.to_be_bytes());
+                frame.extend_from_slice(&0u16.to_be_bytes());
+                frame.extend_from_slice(&[0u8; 16]);
+                frame.extend_from_slice(&resp_json);
+
+                if let Ok(ciphertext) = upstream_transport.write_message(&frame) {
+                    let mut response = Vec::new();
+                    response.extend_from_slice(&upstream_cid);
                     response.extend_from_slice(&ciphertext);
                     return Some(response);
                 }

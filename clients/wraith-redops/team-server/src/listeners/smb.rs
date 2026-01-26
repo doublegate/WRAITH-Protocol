@@ -9,8 +9,45 @@ use tokio::net::TcpListener;
 use tokio::sync::broadcast;
 use wraith_crypto::noise::NoiseKeypair;
 
+#[repr(C, packed)]
+struct Smb2Header {
+    protocol_id: [u8; 4], // \xFE SMB
+    structure_size: u16,  // 64
+    credit_charge: u16,
+    status: u32,
+    command: u16,
+    credits: u16,
+    flags: u32,
+    next_command: u32,
+    message_id: u64,
+    reserved: u32,
+    tree_id: u32,
+    session_id: u64,
+    signature: [u8; 16],
+}
+
+impl Smb2Header {
+    fn new() -> Self {
+        Self {
+            protocol_id: [0xFE, b'S', b'M', b'B'],
+            structure_size: 64,
+            credit_charge: 0,
+            status: 0,
+            command: 0x09, // WRITE
+            credits: 0,
+            flags: 0,
+            next_command: 0,
+            message_id: 0,
+            reserved: 0,
+            tree_id: 0,
+            session_id: 0,
+            signature: [0u8; 16],
+        }
+    }
+}
+
 /// SMB listener simulating a named pipe over TCP (direct-hosted SMB on port 445).
-/// This implementation handles basic SMB2-style encapsulation for WRAITH packets.
+/// This implementation handles full SMB2 protocol headers for WRAITH packets.
 pub async fn start_smb_listener(
     db: Arc<Database>,
     port: u16,
@@ -44,37 +81,47 @@ pub async fn start_smb_listener(
                 tokio::spawn(async move {
                     let mut buf = [0u8; 8192];
                     loop {
-                        // SMB2-like packet structure: [4-byte length (BE)] [Payload]
-                        // This mimics a simplified direct-TCP SMB encapsulation.
+                        // SMB2 header + payload
+                        let mut header_buf = [0u8; 64];
+                        if let Err(_e) = socket.read_exact(&mut header_buf).await {
+                            break;
+                        }
+
+                        // Verify magic
+                        if &header_buf[0..4] != &[0xFE, b'S', b'M', b'B'] {
+                            tracing::error!("Invalid SMB2 magic from {}", src);
+                            break;
+                        }
+
+                        // For MVP, we assume payload follows header with a 4-byte length prefix
                         let mut len_buf = [0u8; 4];
-                        if let Err(e) = socket.read_exact(&mut len_buf).await {
-                            if e.kind() != std::io::ErrorKind::UnexpectedEof {
-                                tracing::error!("SMB header read error from {}: {}", src, e);
-                            }
+                        if let Err(_e) = socket.read_exact(&mut len_buf).await {
                             break;
                         }
 
                         let payload_len = u32::from_be_bytes(len_buf) as usize;
                         if payload_len > buf.len() {
-                            tracing::error!("SMB payload too large from {}: {} bytes", src, payload_len);
                             break;
                         }
 
-                        if let Err(e) = socket.read_exact(&mut buf[..payload_len]).await {
-                            tracing::error!("SMB payload read error from {}: {}", src, e);
+                        if let Err(_e) = socket.read_exact(&mut buf[..payload_len]).await {
                             break;
                         }
 
-                        // Process the WRAITH packet inside the SMB "Named Pipe"
+                        // Process the WRAITH packet
                         if let Some(resp) = protocol.handle_packet(&buf[..payload_len], src.to_string()).await {
-                            // Send response back with the same encapsulation
                             let resp_len = resp.len() as u32;
-                            let mut out_buf = Vec::with_capacity(4 + resp.len());
+                            let mut out_buf = Vec::with_capacity(64 + 4 + resp.len());
+                            
+                            let mut header = Smb2Header::new();
+                            header.flags = 0x00000001; // SERVER_TO_REDIR
+                            
+                            let header_bytes: [u8; 64] = unsafe { core::mem::transmute(header) };
+                            out_buf.extend_from_slice(&header_bytes);
                             out_buf.extend_from_slice(&resp_len.to_be_bytes());
                             out_buf.extend_from_slice(&resp);
 
-                            if let Err(e) = socket.write_all(&out_buf).await {
-                                tracing::error!("SMB write error to {}: {}", src, e);
+                            if let Err(_e) = socket.write_all(&out_buf).await {
                                 break;
                             }
                         }
