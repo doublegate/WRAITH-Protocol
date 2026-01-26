@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { invoke } from '@tauri-apps/api/core'
-import { Console } from './components/Console'
 import { NetworkGraph } from './components/NetworkGraph'
 import BeaconInteraction from './components/BeaconInteraction'
 import PhishingBuilder from './components/PhishingBuilder'
@@ -8,7 +7,27 @@ import LootGallery from './components/LootGallery'
 
 interface Implant {
   id: string;
-// ... (interfaces same) ...
+  hostname: string;
+  internal_ip: string;
+  status: string;
+  last_checkin?: string;
+}
+
+interface Campaign {
+  id: string;
+  name: string;
+  status: string;
+  implant_count: number;
+}
+
+interface Listener {
+  id: string;
+  name: string;
+  type_: string;
+  bind_address: string;
+  port: number;
+  status: string;
+}
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard')

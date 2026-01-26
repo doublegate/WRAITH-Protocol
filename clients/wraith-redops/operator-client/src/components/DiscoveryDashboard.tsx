@@ -71,7 +71,7 @@ export default function DiscoveryDashboard({ implantId }: { implantId: string })
                 <div className="bg-slate-800 p-4 rounded border border-slate-700 flex flex-col h-[400px]">
                     <h3 className="font-bold text-green-400 mb-2 text-sm uppercase tracking-wider">Network Reconnaissance</h3>
                     <div className="flex-1 bg-slate-950 p-3 rounded font-mono text-xs overflow-auto text-slate-300 border border-slate-900">
-                        {netScan || <span className="text-slate-600 italic">No network scan data found. Execute 'net_scan <target>' in console.</span>}
+                        {netScan || <span className="text-slate-600 italic">No network scan data found. Execute 'net_scan &lt;target&gt;' in console.</span>}
                     </div>
                 </div>
             </div>
