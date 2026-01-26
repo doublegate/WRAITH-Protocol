@@ -51,13 +51,32 @@ impl Discovery {
         {
             unsafe {
                 let mut uts: crate::utils::syscalls::Utsname = core::mem::zeroed();
-                if crate::utils::syscalls::sys_uname(&mut uts) == 0 {
-                    format!("OS: {}\nNode: {}\nRelease: {}\nMachine: {}",
+                let mut info: crate::utils::syscalls::Sysinfo = core::mem::zeroed();
+                
+                let uname_res = crate::utils::syscalls::sys_uname(&mut uts);
+                let sysinfo_res = crate::utils::syscalls::sys_sysinfo(&mut info);
+
+                if uname_res == 0 {
+                    let mut output = format!("OS: {}\nNode: {}\nRelease: {}\nMachine: {}",
                         c_str_to_str(&uts.sysname),
                         c_str_to_str(&uts.nodename),
                         c_str_to_str(&uts.release),
                         c_str_to_str(&uts.machine)
-                    )
+                    );
+
+                    if sysinfo_res == 0 {
+                        let unit = if info.mem_unit == 0 { 1 } else { info.mem_unit as u64 };
+                        let total_mb = (info.totalram * unit) / (1024 * 1024);
+                        let free_mb = (info.freeram * unit) / (1024 * 1024);
+                        
+                        output.push_str(&format!("\nUptime: {}s\nLoad: {} {} {}\nMem: {}MB / {}MB\nProcs: {}",
+                            info.uptime,
+                            info.loads[0] / 65536, info.loads[1] / 65536, info.loads[2] / 65536,
+                            free_mb, total_mb,
+                            info.procs
+                        ));
+                    }
+                    output
                 } else {
                     String::from("Linux System Info (Failed)")
                 }
@@ -72,12 +91,28 @@ impl Discovery {
             use crate::utils::syscalls::*;
             let mut result = String::from("Scan results:\n");
             
-            // Assume target is IP:port for simplified MVP
+            // Expected format: <ip>:<start_port>[-<end_port>]
             let parts: alloc::vec::Vec<&str> = target.split(':').collect();
-            if parts.len() != 2 { return String::from("Usage: net_scan <ip>:<port>"); }
+            if parts.len() != 2 { return String::from("Usage: net_scan <ip>:<port>[-<end_port>]"); }
             
             let ip_str = parts[0];
-            let port = parts[1].parse::<u16>().unwrap_or(0);
+            let port_part = parts[1];
+            
+            let (start_port, end_port) = if port_part.contains('-') {
+                let range: alloc::vec::Vec<&str> = port_part.split('-').collect();
+                if range.len() == 2 {
+                    (range[0].parse::<u16>().unwrap_or(0), range[1].parse::<u16>().unwrap_or(0))
+                } else {
+                    (0, 0)
+                }
+            } else {
+                let p = port_part.parse::<u16>().unwrap_or(0);
+                (p, p)
+            };
+
+            if start_port == 0 || end_port < start_port {
+                return String::from("Invalid port range");
+            }
 
             let mut ip_bytes = [0u8; 4];
             let mut ip_parts = ip_str.split('.');
@@ -85,22 +120,23 @@ impl Discovery {
                 ip_bytes[i] = ip_parts.next().unwrap_or("0").parse().unwrap_or(0);
             }
 
-            let sock = sys_socket(2, 1, 0); // AF_INET, SOCK_STREAM
-            if (sock as isize) < 0 { return String::from("Failed to create socket"); }
+            for port in start_port..=end_port {
+                let sock = sys_socket(2, 1, 0); // AF_INET, SOCK_STREAM
+                if (sock as isize) < 0 { continue; }
 
-            let addr = SockAddrIn {
-                sin_family: 2,
-                sin_port: port.to_be(),
-                sin_addr: u32::from_ne_bytes(ip_bytes),
-                sin_zero: [0; 8],
-            };
+                let addr = SockAddrIn {
+                    sin_family: 2,
+                    sin_port: port.to_be(),
+                    sin_addr: u32::from_ne_bytes(ip_bytes),
+                    sin_zero: [0; 8],
+                };
 
-            if sys_connect(sock, &addr as *const _ as *const u8, 16) == 0 {
-                result.push_str(&format!("{}:{} OPEN\n", ip_str, port));
-            } else {
-                result.push_str(&format!("{}:{} CLOSED\n", ip_str, port));
+                // Simple blocking connect
+                if sys_connect(sock, &addr as *const _ as *const u8, 16) == 0 {
+                    result.push_str(&format!("{}:{} OPEN\n", ip_str, port));
+                }
+                sys_close(sock);
             }
-            sys_close(sock);
             result
         }
 
@@ -125,11 +161,24 @@ impl Discovery {
             core::mem::transmute::<_, FnWSAStartup>(wsa_startup)(0x0202, wsa_data.as_mut_ptr());
 
             let mut result = String::from("Scan results (Windows):\n");
+            
             let parts: alloc::vec::Vec<&str> = target.split(':').collect();
-            if parts.len() != 2 { return String::from("Usage: net_scan <ip>:<port>"); }
+            if parts.len() != 2 { return String::from("Usage: net_scan <ip>:<port>[-<end_port>]"); }
             
             let ip_str = parts[0];
-            let port = parts[1].parse::<u16>().unwrap_or(0);
+            let port_part = parts[1];
+            
+            let (start_port, end_port) = if port_part.contains('-') {
+                let range: alloc::vec::Vec<&str> = port_part.split('-').collect();
+                if range.len() == 2 {
+                    (range[0].parse::<u16>().unwrap_or(0), range[1].parse::<u16>().unwrap_or(0))
+                } else {
+                    (0, 0)
+                }
+            } else {
+                let p = port_part.parse::<u16>().unwrap_or(0);
+                (p, p)
+            };
 
             let mut ip_bytes = [0u8; 4];
             let mut ip_parts = ip_str.split('.');
@@ -137,23 +186,23 @@ impl Discovery {
                 ip_bytes[i] = ip_parts.next().unwrap_or("0").parse().unwrap_or(0);
             }
 
-            let sock = core::mem::transmute::<_, FnSocket>(socket_fn)(2, 1, 0);
-            if sock == (-1isize as HANDLE) { return String::from("Socket creation failed"); }
+            for port in start_port..=end_port {
+                let sock = core::mem::transmute::<_, FnSocket>(socket_fn)(2, 1, 0);
+                if sock == (-1isize as HANDLE) { continue; }
 
-            let addr = SockAddrIn {
-                sin_family: 2,
-                sin_port: port.to_be(),
-                sin_addr: u32::from_ne_bytes(ip_bytes),
-                sin_zero: [0; 8],
-            };
+                let addr = SockAddrIn {
+                    sin_family: 2,
+                    sin_port: port.to_be(),
+                    sin_addr: u32::from_ne_bytes(ip_bytes),
+                    sin_zero: [0; 8],
+                };
 
-            if core::mem::transmute::<_, FnConnect>(connect_fn)(sock, &addr as *const _ as *const u8, 16) == 0 {
-                result.push_str(&format!("{}:{} OPEN\n", ip_str, port));
-            } else {
-                result.push_str(&format!("{}:{} CLOSED\n", ip_str, port));
+                if core::mem::transmute::<_, FnConnect>(connect_fn)(sock, &addr as *const _ as *const u8, 16) == 0 {
+                    result.push_str(&format!("{}:{} OPEN\n", ip_str, port));
+                }
+
+                core::mem::transmute::<_, FnCloseSocket>(closesocket)(sock);
             }
-
-            core::mem::transmute::<_, FnCloseSocket>(closesocket)(sock);
             result
         }
     }

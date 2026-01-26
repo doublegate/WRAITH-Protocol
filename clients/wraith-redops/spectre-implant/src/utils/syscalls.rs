@@ -33,7 +33,10 @@ pub const SYS_EXECVE: usize = 59;
 #[cfg(not(target_os = "windows"))]
 pub const SYS_UNAME: usize = 63;
 #[cfg(not(target_os = "windows"))]
+pub const SYS_SYSINFO: usize = 99;
+#[cfg(not(target_os = "windows"))]
 pub const SYS_GETUID: usize = 102;
+
 #[cfg(not(target_os = "windows"))]
 pub const SYS_PTRACE: usize = 101;
 #[cfg(not(target_os = "windows"))]
@@ -82,6 +85,30 @@ pub struct user_regs_struct {
     pub es: u64,
     pub fs: u64,
     pub gs: u64,
+}
+
+#[cfg(not(target_os = "windows"))]
+#[repr(C)]
+pub struct Sysinfo {
+    pub uptime: i64,
+    pub loads: [u64; 3],
+    pub totalram: u64,
+    pub freeram: u64,
+    pub sharedram: u64,
+    pub bufferram: u64,
+    pub totalswap: u64,
+    pub freeswap: u64,
+    pub procs: u16,
+    pub pad: u16,
+    pub totalhigh: u64,
+    pub freehigh: u64,
+    pub mem_unit: u32,
+    pub _f: [u8; 0],
+}
+
+#[cfg(not(target_os = "windows"))]
+pub unsafe fn sys_sysinfo(info: *mut Sysinfo) -> isize {
+    syscall1(SYS_SYSINFO, info as usize) as isize
 }
 
 #[cfg(not(target_os = "windows"))]
