@@ -121,7 +121,7 @@ jobs:
 
       - name: Cache Cargo registry and target
         id: cache-cargo
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
@@ -147,7 +147,7 @@ jobs:
       - name: Cache Node modules
         if: inputs.install-node || inputs.install-tauri
         id: cache-node
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.npm

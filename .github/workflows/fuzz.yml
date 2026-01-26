@@ -63,7 +63,7 @@ jobs:
         run: cargo install cargo-fuzz
 
       - name: Cache cargo registry
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
@@ -80,7 +80,7 @@ jobs:
       # actions/cache persists across runs; actions/download-artifact@v4 only works within the same run
       - name: Restore corpus from cache
         id: corpus-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: fuzz/corpus/${{ matrix.target }}
           key: fuzz-corpus-${{ matrix.target }}-${{ github.sha }}
@@ -164,7 +164,7 @@ jobs:
 
       # Restore all corpus caches for extended fuzzing
       - name: Restore corpus caches
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             fuzz/corpus/fuzz_frame_parser
