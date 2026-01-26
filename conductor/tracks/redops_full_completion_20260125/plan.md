@@ -2,15 +2,15 @@
 
 This plan outlines the final development sprint to bring WRAITH-RedOps to 100% completion, addressing critical security gaps, core functionality omissions, and full MITRE ATT&CK tradecraft integration.
 
-## Phase 1: P0 Critical Safety & Security
+## Phase 1: P0 Critical Safety & Security [checkpoint: ab82c23]
 
 - [x] Task: Remediate Hardcoded Cryptographic Fallbacks
     - [x] Update `database/mod.rs` to require `HMAC_SECRET` and `MASTER_KEY` via `.expect()`
     - [x] Update `services/killswitch.rs` to load key seed from environment or secure storage
-- [~] Task: Implement gRPC Channel Security & Auth
-    - [ ] Implement a gRPC interceptor in the Team Server to enforce JWT authentication on all OperatorService routes
-    - [ ] Update `OperatorServiceImpl::authenticate` to perform real Ed25519 signature verification against the operator's public key
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: P0 Security' (Protocol in workflow.md)
+- [x] Task: Implement gRPC Channel Security & Auth
+    - [x] Implement a gRPC interceptor in the Team Server to enforce JWT authentication on all OperatorService routes
+    - [x] Update `OperatorServiceImpl::authenticate` to perform real Ed25519 signature verification against the operator's public key
+- [x] Task: Conductor - User Manual Verification 'Phase 1: P0 Security' (Protocol in workflow.md) ab82c23
 
 ## Phase 2: P1 High Priority Core Implementation
 
