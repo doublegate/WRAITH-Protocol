@@ -33,11 +33,11 @@ This plan follows the 7-Sprint remediation timeline defined in the Gap Analysis 
     - [ ] Add logic to update the Noise session keys every 2 minutes or 1,000,000 packets as per protocol specification.
 - [ ] **Task: Conductor - User Manual Verification 'Phase 3: Sprint 3' (Protocol in workflow.md)**
 
-## Phase 4: Sprint 4 - P1 Dynamic Management + Beacon Data
+## Phase 4: Sprint 4 - P1 Dynamic Management + Beacon Data [checkpoint: 1ccd030]
 
-- [ ] **Task: Implement Dynamic Listener Spawning**
+- [~] **Task: Implement Dynamic Listener Spawning**
     - [ ] Update `start_listener` and `stop_listener` in `team-server/src/services/operator.rs` to spawn/abort active Tokio tasks for each listener.
-- [ ] **Task: Populate Real Beacon Data**
+- [~] **Task: Populate Real Beacon Data**
     - [ ] Replace static JSON in the implant check-in with dynamic system metadata (hostname, user, arch, etc.).
 - [ ] **Task: Conductor - User Manual Verification 'Phase 4: Sprint 4' (Protocol in workflow.md)**
 
