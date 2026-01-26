@@ -41,15 +41,15 @@ This plan follows the 7-Sprint remediation timeline defined in the Gap Analysis 
     - [ ] Replace static JSON in the implant check-in with dynamic system metadata (hostname, user, arch, etc.).
 - [ ] **Task: Conductor - User Manual Verification 'Phase 4: Sprint 4' (Protocol in workflow.md)**
 
-## Phase 5: Sprint 5 - P2 Platform & Stubs
+## Phase 5: Sprint 5 - P2 Platform Phase 5: Sprint 5 - P2 Platform & Stubs Stubs [checkpoint: 7d43b46]
 
-- [ ] **Task: Implement Linux Injection and Discovery**
+- [x] **Task: Implement Linux Injection and Discovery** (496e820)
     - [ ] Implement `process_vm_writev` or `ptrace` logic for injection and `uname`/`/proc` parsing for discovery on Linux.
-- [ ] **Task: Implement Credential Dumping Logic**
+- [x] **Task: Implement Credential Dumping Logic** (b4fc649)
     - [ ] Implement LSASS memory parsing or a similar mechanism for credential harvesting on Windows.
-- [ ] **Task: Implement Network Connect Scanner**
+- [x] **Task: Implement Network Connect Scanner** (ab66e44)
     - [ ] Implement the TCP connect scan logic in the `discovery` module.
-- [ ] **Task: Randomize Sleep Mask XOR Key**
+- [x] **Task: Randomize Sleep Mask XOR Key** (494b5a2)
     - [ ] Modify `obfuscation.rs` to use session-derived or random XOR keys for the sleep mask instead of the hardcoded `0xAA`.
 - [ ] **Task: Conductor - User Manual Verification 'Phase 5: Sprint 5' (Protocol in workflow.md)**
 
