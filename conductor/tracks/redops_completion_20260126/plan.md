@@ -2,7 +2,7 @@
 
 This plan follows the 7-Sprint remediation timeline defined in the Gap Analysis v4.1.0 to finish the implementation of the RedOps platform.
 
-## Phase 1: Sprint 1 - P0 Critical Security
+## Phase 1: Sprint 1 - P0 Critical Security [checkpoint: 3fe2c30]
 
 - [x] **Task: Fix gRPC Authentication Passthrough** (8f6441d)
     - [ ] Update `auth_interceptor` in `team-server/src/main.rs` to reject requests missing the `authorization` header.
