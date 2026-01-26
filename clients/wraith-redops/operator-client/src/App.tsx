@@ -2,36 +2,13 @@ import { useState, useEffect } from 'react'
 import { invoke } from '@tauri-apps/api/core'
 import { Console } from './components/Console'
 import { NetworkGraph } from './components/NetworkGraph'
+import BeaconInteraction from './components/BeaconInteraction'
+import PhishingBuilder from './components/PhishingBuilder'
+import LootGallery from './components/LootGallery'
 
 interface Implant {
   id: string;
-  hostname: string;
-  internal_ip: string;
-  last_checkin: string;
-  status: string;
-}
-
-interface Campaign {
-    id: string;
-    name: string;
-    status: string;
-    implant_count: number;
-}
-
-interface Listener {
-    id: string;
-    name: string;
-    type_: string;
-    bind_address: string;
-    port: number;
-    status: string;
-}
-
-interface Artifact {
-    id: string;
-    filename: string;
-    size: number;
-}
+// ... (interfaces same) ...
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard')
@@ -39,7 +16,7 @@ function App() {
   const [implants, setImplants] = useState<Implant[]>([])
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [listeners, setListeners] = useState<Listener[]>([])
-  const [artifacts, setArtifacts] = useState<Artifact[]>([])
+  // artifacts state moved to LootGallery
   const [interactingImplantId, setInteractingImplantId] = useState<string | null>(null)
   const [showCreateCampaign, setShowCreateCampaign] = useState(false)
   const [newCampaignName, setNewCampaignName] = useState('')
@@ -73,7 +50,6 @@ function App() {
       refreshImplants()
       refreshCampaigns()
       refreshListeners()
-      refreshArtifacts()
   }
 
   const refreshImplants = async () => {
@@ -97,13 +73,6 @@ function App() {
     } catch (e) { console.error(e) }
   }
 
-  const refreshArtifacts = async () => {
-    try {
-      const json = await invoke('list_artifacts') as string
-      setArtifacts(JSON.parse(json))
-    } catch (e) { console.error(e) }
-  }
-
   useEffect(() => {
     connect()
     const interval = setInterval(refreshAll, 5000)
@@ -113,54 +82,77 @@ function App() {
   return (
     <div className="flex h-screen w-full flex-col font-mono text-slate-300">
       {/* Header */}
-      <header className="flex h-14 items-center justify-between border-b border-slate-800 bg-slate-900 px-4">
+      <header className="flex h-14 items-center justify-between border-b border-slate-800 bg-slate-900 px-4 shadow-sm z-10">
         <div className="flex items-center gap-2">
-          <div className="h-4 w-4 bg-red-600"></div>
+          <div className="h-4 w-4 bg-red-600 shadow-[0_0_10px_rgba(220,38,38,0.5)]"></div>
           <span className="text-lg font-bold tracking-tight text-red-500">WRAITH::REDOPS</span>
         </div>
-        <div className="flex items-center gap-4 text-xs">
-          <span className={serverStatus === 'Connected' ? 'text-green-500' : 'text-red-500'}>
-            [{serverStatus}]
+        <div className="flex items-center gap-4 text-xs font-bold">
+          <span className={`px-2 py-0.5 rounded ${serverStatus === 'Connected' ? 'bg-green-900/30 text-green-500 border border-green-900/50' : 'bg-red-900/30 text-red-500 border border-red-900/50'}`}>
+            {serverStatus.toUpperCase()}
           </span>
-          <span className="text-slate-400">OP: ADMIN</span>
+          <span className="text-slate-500">OP: ADMIN</span>
         </div>
       </header>
 
       {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <nav className="w-48 border-r border-slate-800 bg-slate-950 p-2 text-xs">
-          <div className="mb-2 px-2 text-slate-500 uppercase">Operations</div>
-          <ul className="space-y-1">
-            {['Dashboard', 'Campaigns', 'Beacons', 'Listeners', 'Artifacts', 'Settings'].map(tab => (
-              <li key={tab}>
-                <button 
-                  onClick={() => setActiveTab(tab.toLowerCase())}
-                  className={`w-full rounded px-2 py-1.5 text-left ${activeTab === tab.toLowerCase() ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}
-                >
-                  {tab}
-                </button>
-              </li>
-            ))}
-          </ul>
+        <nav className="w-48 border-r border-slate-800 bg-slate-950 p-2 text-xs flex flex-col gap-1">
+          <div className="mt-2 mb-1 px-2 text-slate-600 font-bold uppercase text-[10px] tracking-wider">Operations</div>
+          {['Dashboard', 'Campaigns', 'Beacons', 'Listeners', 'Loot', 'Phishing'].map(tab => (
+            <button 
+              key={tab}
+              onClick={() => setActiveTab(tab.toLowerCase())}
+              className={`w-full rounded px-3 py-2 text-left transition-colors flex items-center gap-2 ${
+                activeTab === tab.toLowerCase() 
+                  ? 'bg-red-600/10 text-red-500 border border-red-900/20' 
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+              }`}
+            >
+              {tab === 'Dashboard' && '📊'}
+              {tab === 'Campaigns' && '📁'}
+              {tab === 'Beacons' && '📡'}
+              {tab === 'Listeners' && '👂'}
+              {tab === 'Loot' && '💰'}
+              {tab === 'Phishing' && '🎣'}
+              {tab}
+            </button>
+          ))}
+          
+          <div className="mt-4 mb-1 px-2 text-slate-600 font-bold uppercase text-[10px] tracking-wider">System</div>
+          <button 
+            onClick={() => setActiveTab('settings')}
+            className={`w-full rounded px-3 py-2 text-left transition-colors flex items-center gap-2 ${
+              activeTab === 'settings' 
+                ? 'bg-red-600/10 text-red-500 border border-red-900/20' 
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+            }`}
+          >
+            ⚙️ Settings
+          </button>
         </nav>
 
         {/* Content Area */}
-        <main className="flex-1 overflow-auto bg-slate-950 p-4">
+        <main className="flex-1 overflow-auto bg-slate-950 p-4 relative">
           
           {/* Settings */}
           {activeTab === 'settings' && (
-            <div className="flex flex-col h-full gap-4">
-                <div className="rounded border border-slate-800 bg-slate-900 p-4">
-                    <h3 className="text-sm font-bold text-white mb-4">CONNECTION SETTINGS</h3>
-                    <div className="grid gap-2">
-                        <label className="text-xs text-slate-500">TEAM SERVER ADDRESS</label>
-                        <input 
-                            value={serverAddress}
-                            onChange={(e) => setServerAddress(e.target.value)}
-                            className="bg-slate-950 border border-slate-800 p-2 text-xs text-white focus:outline-none focus:border-red-500"
-                        />
-                        <button onClick={() => connect(serverAddress)} className="bg-red-600 text-white px-4 py-2 text-xs font-bold w-fit hover:bg-red-500">RECONNECT</button>
+            <div className="max-w-md mx-auto mt-10">
+                <div className="rounded border border-slate-800 bg-slate-900 p-6 shadow-lg">
+                    <h3 className="text-sm font-bold text-white mb-6 border-b border-slate-800 pb-2">CONNECTION SETTINGS</h3>
+                    <div className="grid gap-4">
+                        <div>
+                            <label className="block text-xs text-slate-500 mb-1">TEAM SERVER ADDRESS</label>
+                            <input 
+                                value={serverAddress}
+                                onChange={(e) => setServerAddress(e.target.value)}
+                                className="w-full bg-slate-950 border border-slate-800 p-2 text-sm text-white focus:outline-none focus:border-red-500 rounded"
+                            />
+                        </div>
+                        <button onClick={() => connect(serverAddress)} className="bg-red-600 text-white px-4 py-2 text-xs font-bold rounded hover:bg-red-500 transition-colors">
+                            RECONNECT
+                        </button>
                     </div>
                 </div>
             </div>
@@ -172,15 +164,15 @@ function App() {
                 {/* Primary Metrics */}
                 <div className="grid grid-cols-4 gap-4">
                     <div className="rounded border border-slate-800 bg-slate-900 p-4">
-                        <div className="text-xs text-slate-500 uppercase tracking-wider">Active Campaigns</div>
-                        <div className="text-2xl font-bold text-white mt-1">{campaigns.length}</div>
+                        <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Active Campaigns</div>
+                        <div className="text-3xl font-bold text-white mt-2">{campaigns.length}</div>
                         <div className="text-[10px] text-slate-600 mt-1">
                           {campaigns.filter(c => c.status === 'active').length} running
                         </div>
                     </div>
                     <div className="rounded border border-slate-800 bg-slate-900 p-4">
-                        <div className="text-xs text-slate-500 uppercase tracking-wider">Live Beacons</div>
-                        <div className="text-2xl font-bold text-green-500 mt-1">
+                        <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Live Beacons</div>
+                        <div className="text-3xl font-bold text-green-500 mt-2">
                           {implants.filter(i => i.status === 'active').length}
                         </div>
                         <div className="text-[10px] text-slate-600 mt-1">
@@ -188,8 +180,8 @@ function App() {
                         </div>
                     </div>
                     <div className="rounded border border-slate-800 bg-slate-900 p-4">
-                        <div className="text-xs text-slate-500 uppercase tracking-wider">Active Listeners</div>
-                        <div className="text-2xl font-bold text-blue-500 mt-1">
+                        <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Active Listeners</div>
+                        <div className="text-3xl font-bold text-blue-500 mt-2">
                           {listeners.filter(l => l.status === 'active').length}
                         </div>
                         <div className="text-[10px] text-slate-600 mt-1">
@@ -197,84 +189,19 @@ function App() {
                         </div>
                     </div>
                     <div className="rounded border border-slate-800 bg-slate-900 p-4">
-                        <div className="text-xs text-slate-500 uppercase tracking-wider">Artifacts Collected</div>
-                        <div className="text-2xl font-bold text-yellow-500 mt-1">{artifacts.length}</div>
+                        <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">System Status</div>
+                        <div className="text-xl font-bold text-slate-300 mt-3 truncate">
+                          {serverStatus === 'Connected' ? 'OPERATIONAL' : 'OFFLINE'}
+                        </div>
                         <div className="text-[10px] text-slate-600 mt-1">
-                          {artifacts.reduce((sum, a) => sum + (a.size || 0), 0).toLocaleString()} bytes
-                        </div>
-                    </div>
-                </div>
-
-                {/* Secondary Metrics */}
-                <div className="grid grid-cols-3 gap-4">
-                    <div className="rounded border border-slate-800 bg-slate-900 p-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-slate-500 uppercase">Beacon Health</span>
-                          <span className={`text-xs font-bold ${
-                            implants.filter(i => i.status === 'active').length === implants.length
-                              ? 'text-green-500'
-                              : implants.filter(i => i.status === 'active').length > 0
-                                ? 'text-yellow-500'
-                                : 'text-red-500'
-                          }`}>
-                            {implants.length > 0
-                              ? Math.round((implants.filter(i => i.status === 'active').length / implants.length) * 100)
-                              : 0}%
-                          </span>
-                        </div>
-                        <div className="mt-2 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-gradient-to-r from-green-500 to-green-400 transition-all duration-500"
-                            style={{
-                              width: `${implants.length > 0
-                                ? (implants.filter(i => i.status === 'active').length / implants.length) * 100
-                                : 0}%`
-                            }}
-                          />
-                        </div>
-                    </div>
-                    <div className="rounded border border-slate-800 bg-slate-900 p-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-slate-500 uppercase">Listener Status</span>
-                          <span className="text-xs font-bold text-blue-500">
-                            {listeners.filter(l => l.status === 'active').length}/{listeners.length}
-                          </span>
-                        </div>
-                        <div className="mt-2 flex gap-1">
-                          {listeners.slice(0, 6).map((l, i) => (
-                            <div
-                              key={i}
-                              className={`flex-1 h-1.5 rounded ${
-                                l.status === 'active' ? 'bg-blue-500' : 'bg-slate-700'
-                              }`}
-                              title={`${l.name}: ${l.status}`}
-                            />
-                          ))}
-                          {listeners.length === 0 && (
-                            <div className="flex-1 h-1.5 rounded bg-slate-700" />
-                          )}
-                        </div>
-                    </div>
-                    <div className="rounded border border-slate-800 bg-slate-900 p-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-slate-500 uppercase">Server Connection</span>
-                          <span className={`text-xs font-bold ${
-                            serverStatus === 'Connected' ? 'text-green-500' : 'text-red-500'
-                          }`}>
-                            {serverStatus === 'Connected' ? 'ONLINE' : 'OFFLINE'}
-                          </span>
-                        </div>
-                        <div className="mt-2 flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${
-                            serverStatus === 'Connected' ? 'bg-green-500 animate-pulse' : 'bg-red-500'
-                          }`} />
-                          <span className="text-[10px] text-slate-600 truncate">{serverAddress}</span>
+                          {serverAddress}
                         </div>
                     </div>
                 </div>
 
                 {/* Network Graph */}
-                <div className="flex-1 min-h-0">
+                <div className="flex-1 min-h-0 rounded border border-slate-800 bg-slate-900 overflow-hidden relative">
+                    <div className="absolute top-2 left-2 z-10 text-[10px] text-slate-500 font-bold uppercase tracking-wider">Operational Graph</div>
                     <NetworkGraph implants={implants} />
                 </div>
              </div>
@@ -288,49 +215,55 @@ function App() {
                 <div className="flex gap-2">
                     <button 
                         onClick={() => setShowCreateCampaign(true)}
-                        className="rounded bg-red-600 px-3 py-1 text-xs text-white hover:bg-red-500 font-bold"
+                        className="rounded bg-red-600 px-3 py-1 text-xs text-white hover:bg-red-500 font-bold shadow-lg shadow-red-900/20 transition-all"
                     >
                         NEW CAMPAIGN
                     </button>
-                    <button onClick={refreshCampaigns} className="rounded bg-slate-800 px-3 py-1 text-xs text-white hover:bg-slate-700">REFRESH</button>
+                    <button onClick={refreshCampaigns} className="rounded bg-slate-800 px-3 py-1 text-xs text-white hover:bg-slate-700 transition-colors">REFRESH</button>
                 </div>
               </div>
 
               {showCreateCampaign && (
-                  <div className="mb-6 p-4 rounded border border-red-900/50 bg-red-950/10 border-dashed">
-                      <h3 className="text-xs font-bold text-red-500 mb-3 uppercase tracking-widest">Initialization Wizard</h3>
-                      <div className="grid gap-3">
-                          <input 
-                            placeholder="Campaign Name" 
-                            value={newCampaignName}
-                            onChange={(e) => setNewCampaignName(e.target.value)}
-                            className="bg-slate-900 border border-slate-800 p-2 text-xs text-white focus:outline-none focus:border-red-500"
-                          />
-                          <textarea 
-                            placeholder="Objective / Description" 
-                            value={newCampaignDesc}
-                            onChange={(e) => setNewCampaignDesc(e.target.value)}
-                            className="bg-slate-900 border border-slate-800 p-2 text-xs text-white focus:outline-none focus:border-red-500 min-h-[80px]"
-                          />
-                          <div className="flex gap-2">
-                              <button onClick={handleCreateCampaign} className="bg-red-600 px-4 py-1 text-xs font-bold text-white">CREATE</button>
-                              <button onClick={() => setShowCreateCampaign(false)} className="text-slate-500 text-xs hover:text-white">CANCEL</button>
+                  <div className="mb-6 p-6 rounded border border-red-900/50 bg-red-950/10 border-dashed animate-in fade-in slide-in-from-top-2">
+                      <h3 className="text-xs font-bold text-red-500 mb-4 uppercase tracking-widest">Initialization Wizard</h3>
+                      <div className="grid gap-4 max-w-lg">
+                          <div>
+                            <label className="text-[10px] text-slate-500 uppercase mb-1 block">Codename</label>
+                            <input 
+                                placeholder="OP_GHOST" 
+                                value={newCampaignName}
+                                onChange={(e) => setNewCampaignName(e.target.value)}
+                                className="w-full bg-slate-900 border border-slate-800 p-2 text-sm text-white focus:outline-none focus:border-red-500 rounded"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-slate-500 uppercase mb-1 block">Mission Objective</label>
+                            <textarea 
+                                placeholder="Describe the operational goals..." 
+                                value={newCampaignDesc}
+                                onChange={(e) => setNewCampaignDesc(e.target.value)}
+                                className="w-full bg-slate-900 border border-slate-800 p-2 text-sm text-white focus:outline-none focus:border-red-500 min-h-[80px] rounded"
+                            />
+                          </div>
+                          <div className="flex gap-2 mt-2">
+                              <button onClick={handleCreateCampaign} className="bg-red-600 px-6 py-2 text-xs font-bold text-white rounded hover:bg-red-500 transition-colors">CREATE OPERATION</button>
+                              <button onClick={() => setShowCreateCampaign(false)} className="text-slate-500 text-xs hover:text-white px-4 py-2">CANCEL</button>
                           </div>
                       </div>
                   </div>
               )}
 
-              <div className="border border-slate-800 bg-slate-900">
+              <div className="border border-slate-800 bg-slate-900 rounded overflow-hidden shadow">
                  <table className="w-full text-left text-xs">
-                  <thead className="border-b border-slate-800 bg-slate-900 text-slate-500">
-                    <tr><th className="px-4 py-2">NAME</th><th className="px-4 py-2">STATUS</th><th className="px-4 py-2">IMPLANTS</th></tr>
+                  <thead className="border-b border-slate-800 bg-slate-950 text-slate-500">
+                    <tr><th className="px-4 py-3 font-medium">NAME</th><th className="px-4 py-3 font-medium">STATUS</th><th className="px-4 py-3 font-medium">IMPLANTS</th></tr>
                   </thead>
                   <tbody>
                     {campaigns.map(c => (
-                        <tr key={c.id} className="border-b border-slate-800/50 hover:bg-slate-800/50">
-                            <td className="px-4 py-2">{c.name}</td>
-                            <td className="px-4 py-2">{c.status}</td>
-                            <td className="px-4 py-2">{c.implant_count}</td>
+                        <tr key={c.id} className="border-b border-slate-800/50 hover:bg-slate-800/50 transition-colors">
+                            <td className="px-4 py-3 font-bold text-slate-300">{c.name}</td>
+                            <td className="px-4 py-3"><span className="px-2 py-0.5 bg-green-900/20 text-green-500 rounded border border-green-900/30">{c.status.toUpperCase()}</span></td>
+                            <td className="px-4 py-3 text-slate-400">{c.implant_count}</td>
                         </tr>
                     ))}
                   </tbody>
@@ -343,41 +276,41 @@ function App() {
           {activeTab === 'beacons' && (
             <div>
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-sm font-bold text-white">ACTIVE BEACONS</h2>
-                <button onClick={refreshImplants} className="rounded bg-slate-800 px-3 py-1 text-xs text-white hover:bg-slate-700">Refresh</button>
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider">ACTIVE BEACONS</h2>
+                <button onClick={refreshImplants} className="rounded bg-slate-800 px-3 py-1 text-xs text-white hover:bg-slate-700 transition-colors">REFRESH</button>
               </div>
-              <div className="border border-slate-800 bg-slate-900">
+              <div className="border border-slate-800 bg-slate-900 rounded overflow-hidden shadow">
                 <table className="w-full text-left text-xs">
-                  <thead className="border-b border-slate-800 bg-slate-900 text-slate-500">
+                  <thead className="border-b border-slate-800 bg-slate-950 text-slate-500">
                     <tr>
-                      <th className="px-4 py-2 font-medium">ID</th>
-                      <th className="px-4 py-2 font-medium">HOSTNAME</th>
-                      <th className="px-4 py-2 font-medium">IP</th>
-                      <th className="px-4 py-2 font-medium">LAST SEEN</th>
-                      <th className="px-4 py-2 font-medium">STATUS</th>
-                      <th className="px-4 py-2 font-medium">ACTIONS</th>
+                      <th className="px-4 py-3 font-medium">ID</th>
+                      <th className="px-4 py-3 font-medium">HOSTNAME</th>
+                      <th className="px-4 py-3 font-medium">IP ADDRESS</th>
+                      <th className="px-4 py-3 font-medium">LAST SEEN</th>
+                      <th className="px-4 py-3 font-medium">STATUS</th>
+                      <th className="px-4 py-3 font-medium text-right">ACTIONS</th>
                     </tr>
                   </thead>
                   <tbody className="text-slate-300">
                     {implants.length === 0 ? (
                       <tr>
-                        <td className="px-4 py-8 text-center text-slate-500" colSpan={6}>No signals detected.</td>
+                        <td className="px-4 py-12 text-center text-slate-600 italic" colSpan={6}>No signals detected. Waiting for check-in...</td>
                       </tr>
                     ) : (
                       implants.map(imp => (
-                        <tr key={imp.id} className="border-b border-slate-800/50 hover:bg-slate-800/50">
-                          <td className="px-4 py-2 font-mono text-slate-500">{imp.id.substring(0,8)}...</td>
-                          <td className="px-4 py-2">{imp.hostname}</td>
-                          <td className="px-4 py-2">{imp.internal_ip}</td>
-                          <td className="px-4 py-2">{imp.last_checkin || 'Never'}</td>
-                          <td className="px-4 py-2 text-green-500">{imp.status}</td>
-                          <td className="px-4 py-2">
+                        <tr key={imp.id} className="border-b border-slate-800/50 hover:bg-slate-800/50 transition-colors group">
+                          <td className="px-4 py-3 font-mono text-slate-500">{imp.id.substring(0,8)}...</td>
+                          <td className="px-4 py-3 font-bold text-slate-200">{imp.hostname}</td>
+                          <td className="px-4 py-3 font-mono text-slate-400">{imp.internal_ip}</td>
+                          <td className="px-4 py-3 text-slate-400">{imp.last_checkin || 'Never'}</td>
+                          <td className="px-4 py-3"><span className="text-green-500 font-bold flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-500"></span> {imp.status.toUpperCase()}</span></td>
+                          <td className="px-4 py-3 text-right">
                             <button 
                               onClick={() => {
                                 setInteractingImplantId(imp.id);
                                 setActiveTab('console');
                               }}
-                              className="text-blue-400 hover:text-blue-300 mr-2"
+                              className="text-blue-400 hover:text-white bg-blue-900/20 hover:bg-blue-600 px-3 py-1 rounded transition-all opacity-0 group-hover:opacity-100"
                             >
                               INTERACT
                             </button>
@@ -391,46 +324,40 @@ function App() {
             </div>
           )}
 
-          {/* Console */}
+          {/* Console / Beacon Interaction */}
           {activeTab === 'console' && interactingImplantId && (
-            <div className="flex flex-col h-full gap-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-bold text-white uppercase tracking-wider">BEACON INTERACTION / {interactingImplantId.substring(0,8)}</h2>
-                <button 
-                  onClick={() => {
+            <BeaconInteraction 
+                implantId={interactingImplantId} 
+                onBack={() => {
                     setInteractingImplantId(null);
                     setActiveTab('beacons');
-                  }}
-                  className="rounded bg-slate-800 px-3 py-1 text-xs text-white hover:bg-slate-700"
-                >
-                  BACK TO LIST
-                </button>
-              </div>
-              <div className="flex-1 min-h-0">
-                <Console implantId={interactingImplantId} />
-              </div>
-            </div>
+                }} 
+            />
           )}
 
           {/* Listeners */}
           {activeTab === 'listeners' && (
             <div>
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-sm font-bold text-white">C2 LISTENERS</h2>
-                <button onClick={refreshListeners} className="rounded bg-slate-800 px-3 py-1 text-xs text-white hover:bg-slate-700">Refresh</button>
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider">C2 LISTENERS</h2>
+                <button onClick={refreshListeners} className="rounded bg-slate-800 px-3 py-1 text-xs text-white hover:bg-slate-700 transition-colors">REFRESH</button>
               </div>
-              <div className="border border-slate-800 bg-slate-900">
+              <div className="border border-slate-800 bg-slate-900 rounded overflow-hidden shadow">
                  <table className="w-full text-left text-xs">
-                  <thead className="border-b border-slate-800 bg-slate-900 text-slate-500">
-                    <tr><th className="px-4 py-2">NAME</th><th className="px-4 py-2">TYPE</th><th className="px-4 py-2">BIND</th><th className="px-4 py-2">STATUS</th></tr>
+                  <thead className="border-b border-slate-800 bg-slate-950 text-slate-500">
+                    <tr><th className="px-4 py-3 font-medium">NAME</th><th className="px-4 py-3 font-medium">PROTOCOL</th><th className="px-4 py-3 font-medium">BIND ADDRESS</th><th className="px-4 py-3 font-medium">STATUS</th></tr>
                   </thead>
                   <tbody>
                     {listeners.map(l => (
-                        <tr key={l.id} className="border-b border-slate-800/50 hover:bg-slate-800/50">
-                            <td className="px-4 py-2">{l.name}</td>
-                            <td className="px-4 py-2">{l.type_}</td>
-                            <td className="px-4 py-2">{l.bind_address}</td>
-                            <td className="px-4 py-2">{l.status}</td>
+                        <tr key={l.id} className="border-b border-slate-800/50 hover:bg-slate-800/50 transition-colors">
+                            <td className="px-4 py-3 font-bold text-slate-300">{l.name}</td>
+                            <td className="px-4 py-3 uppercase text-slate-400">{l.type_}</td>
+                            <td className="px-4 py-3 font-mono text-slate-400">{l.bind_address}:{l.port}</td>
+                            <td className="px-4 py-3">
+                                <span className={`px-2 py-0.5 rounded border ${l.status === 'active' ? 'bg-blue-900/20 text-blue-500 border-blue-900/30' : 'bg-slate-800 text-slate-500 border-slate-700'}`}>
+                                    {l.status.toUpperCase()}
+                                </span>
+                            </td>
                         </tr>
                     ))}
                   </tbody>
@@ -439,31 +366,11 @@ function App() {
             </div>
           )}
 
-          {/* Artifacts */}
-          {activeTab === 'artifacts' && (
-            <div>
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-sm font-bold text-white">LOOT / ARTIFACTS</h2>
-                <button onClick={refreshArtifacts} className="rounded bg-slate-800 px-3 py-1 text-xs text-white hover:bg-slate-700">Refresh</button>
-              </div>
-              <div className="border border-slate-800 bg-slate-900">
-                 <table className="w-full text-left text-xs">
-                  <thead className="border-b border-slate-800 bg-slate-900 text-slate-500">
-                    <tr><th className="px-4 py-2">FILENAME</th><th className="px-4 py-2">SIZE</th><th className="px-4 py-2">ACTIONS</th></tr>
-                  </thead>
-                  <tbody>
-                    {artifacts.map(a => (
-                        <tr key={a.id} className="border-b border-slate-800/50 hover:bg-slate-800/50">
-                            <td className="px-4 py-2">{a.filename}</td>
-                            <td className="px-4 py-2">{a.size} B</td>
-                            <td className="px-4 py-2"><button className="text-blue-400 hover:text-blue-300">DOWNLOAD</button></td>
-                        </tr>
-                    ))}
-                  </tbody>
-                 </table>
-              </div>
-            </div>
-          )}
+          {/* Loot */}
+          {activeTab === 'loot' && <LootGallery />}
+
+          {/* Phishing */}
+          {activeTab === 'phishing' && <PhishingBuilder />}
 
         </main>
       </div>

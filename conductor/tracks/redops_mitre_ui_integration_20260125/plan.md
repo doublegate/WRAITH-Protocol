@@ -27,12 +27,12 @@ This plan covers the end-to-end integration of offensive techniques into the Ope
 
 ## Phase 3: Operator Client - Data & Discovery Views
 
-- [ ] Task: Implement Credential & Loot Gallery
+- [~] Task: Implement Credential & Loot Gallery
     - [ ] Create `components/LootGallery.tsx` for credentials and files.
     - [ ] Connect to `list_credentials` and `list_artifacts` backend endpoints.
-- [ ] Task: Implement Discovery Dashboard
+- [~] Task: Implement Discovery Dashboard
     - [ ] Create `components/DiscoveryDashboard.tsx` to visualize network scan results and system info.
-- [ ] Task: Global Codebase Cleanup (Operator Client)
+- [~] Task: Global Codebase Cleanup (Operator Client)
     - [ ] Scan `operator-client` for any TODOs or placeholders.
     - [ ] Ensure all UI components are fully wired to real data.
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Data Views' (Protocol in workflow.md)
