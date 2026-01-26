@@ -14,16 +14,16 @@ This plan covers the comprehensive UI/UX audit across all RedOps variants and th
     - [ ] **Implement:** Add missing CLI options for recently implemented features (e.g., service control, credential dumping).
 - [ ] **Task: Conductor - User Manual Verification 'Phase 1: UI/UX Audit Phase 1: UI/UX Audit & Standardization Standardization [checkpoint: 3fbfdf9]' (Protocol in workflow.md)**
 
-## Phase 2: Attack Chain Backend & Model
+## Phase 2: Attack Chain Backend Phase 2: Attack Chain Backend & Model Model [checkpoint: 07738b4]
 
-- [ ] **Task: Define Attack Chain Schema**
+- [x] **Task: Define Attack Chain Schema** (07738b4)
     - [ ] Create database models for `AttackChain` and `ChainStep`.
     - [ ] **Implement:** Add gRPC service definitions for saving, loading, and listing chains.
-- [ ] **Task: Implement Sequential Chain Executor**
+- [x] **Task: Implement Sequential Chain Executor** (07738b4)
     - [ ] Build a service in the Team Server to execute a sequence of tasks on an implant.
     - [ ] **Write Tests:** Verify the executor handles failures (e.g., stopping the chain if a required step fails).
     - [ ] **Implement:** Logic to dispatch tasks in order and collect results.
-- [ ] **Task: Conductor - User Manual Verification 'Phase 2: Attack Chain Backend & Model' (Protocol in workflow.md)**
+- [ ] **Task: Conductor - User Manual Verification 'Phase 2: Attack Chain Backend Phase 2: Attack Chain Backend & Model Model [checkpoint: 07738b4]' (Protocol in workflow.md)**
 
 ## Phase 3: GUI Attack Graph Editor
 
