@@ -23,13 +23,13 @@ This plan follows the 7-Sprint remediation timeline defined in the Gap Analysis 
     - [ ] Implement the argument parsing logic for Cobalt Strike BOF compatibility in `bof_loader.rs`.
 - [ ] **Task: Conductor - User Manual Verification 'Phase 2: Sprint 2' (Protocol in workflow.md)**
 
-## Phase 3: Sprint 3 - P1 C2 Expansion
+## Phase 3: Sprint 3 - P1 C2 Expansion [checkpoint: ddfd4a7]
 
 - [x] **Task: Implement Full Task Dispatch in Implant** (de0e654)
     - [ ] Add handlers for `inject`, `bof`, and `socks` task types in `spectre-implant/src/c2/mod.rs`.
-- [ ] **Task: Implement SOCKS TCP Relay**
+- [~] **Task: Implement SOCKS TCP Relay**
     - [ ] Replace the simulation logic in `socks.rs` with actual asynchronous TCP relaying to the target host.
-- [ ] **Task: Implement Noise Key Ratcheting**
+- [~] **Task: Implement Noise Key Ratcheting**
     - [ ] Add logic to update the Noise session keys every 2 minutes or 1,000,000 packets as per protocol specification.
 - [ ] **Task: Conductor - User Manual Verification 'Phase 3: Sprint 3' (Protocol in workflow.md)**
 
