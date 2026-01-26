@@ -152,18 +152,6 @@ pub struct THREADENTRY32 {
 
 #[repr(C, align(16))]
 pub struct CONTEXT {
-    // ...
-}
-
-#[repr(C)]
-pub struct PROCESS_HEAP_ENTRY {
-    pub lpData: PVOID,
-    pub cbData: u32,
-    pub cbOverhead: u8,
-    pub iRegionIndex: u8,
-    pub wFlags: u16,
-    pub u: [u8; 16],
-}
     pub P1Home: u64,
     pub P2Home: u64,
     pub P3Home: u64,
@@ -224,7 +212,29 @@ pub struct PROCESS_HEAP_ENTRY {
     pub VectorControl: u64,
     pub DebugControl: u64,
     pub LastBranchToRip: u64,
-    pub LastBranchFromRip: u64,
     pub LastExceptionToRip: u64,
     pub LastExceptionFromRip: u64,
+}
+
+#[repr(C)]
+pub struct PROCESS_HEAP_ENTRY {
+    pub lpData: PVOID,
+    pub cbData: u32,
+    pub cbOverhead: u8,
+    pub iRegionIndex: u8,
+    pub wFlags: u16,
+    pub u: [u8; 16],
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use core::mem::size_of;
+
+    #[test]
+    fn test_context_size() {
+        // x64 CONTEXT should be 1232 bytes (0x4D0)
+        // This confirms the fields are correctly packed and aligned
+        assert_eq!(size_of::<CONTEXT>(), 1232);
+    }
 }
