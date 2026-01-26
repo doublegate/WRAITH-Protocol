@@ -25,7 +25,7 @@ This plan follows the 7-Sprint remediation timeline defined in the Gap Analysis 
 
 ## Phase 3: Sprint 3 - P1 C2 Expansion
 
-- [ ] **Task: Implement Full Task Dispatch in Implant**
+- [x] **Task: Implement Full Task Dispatch in Implant** (de0e654)
     - [ ] Add handlers for `inject`, `bof`, and `socks` task types in `spectre-implant/src/c2/mod.rs`.
 - [ ] **Task: Implement SOCKS TCP Relay**
     - [ ] Replace the simulation logic in `socks.rs` with actual asynchronous TCP relaying to the target host.
