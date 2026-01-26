@@ -33,5 +33,3 @@ Completed or superseded tracks are preserved in the [archive/](./archive/) direc
 
 ---
 
-- [x] **Track: WRAITH-RedOps Implementation Completion**
-*Link: [./tracks/redops_completion_20260126/](./tracks/redops_completion_20260126/)*
