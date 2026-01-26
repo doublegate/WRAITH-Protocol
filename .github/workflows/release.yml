@@ -307,7 +307,7 @@ jobs:
         shell: bash
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.artifact_name }}-${{ needs.validate.outputs.version }}
           path: release-staging/*
@@ -758,7 +758,7 @@ jobs:
           Get-ChildItem client-bundle
 
       - name: Upload client bundle
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: wraith-clients-${{ matrix.platform }}-${{ matrix.arch }}
           path: client-bundle/*
@@ -767,7 +767,7 @@ jobs:
 
       - name: Upload Linux AppImages separately
         if: matrix.os == 'ubuntu-latest'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: wraith-appimages-linux-${{ matrix.arch }}
           path: appimage-staging/*.AppImage
