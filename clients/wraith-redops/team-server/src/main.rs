@@ -144,12 +144,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Ok(listeners) = db.list_listeners().await {
         for l in listeners {
             if l.status == "active" {
-                // Determine port from type or config (Simplified for MVP)
+                // Determine port from environment variables or type defaults
                 let port = match l.r#type.as_str() {
-                    "http" => 8080,
-                    "udp" => 9999,
-                    "dns" => 5454,
-                    "smb" => 4445,
+                    "http" => std::env::var("HTTP_LISTEN_PORT")
+                        .unwrap_or_else(|_| "8080".to_string())
+                        .parse()
+                        .unwrap_or(8080),
+                    "udp" => std::env::var("UDP_LISTEN_PORT")
+                        .unwrap_or_else(|_| "9999".to_string())
+                        .parse()
+                        .unwrap_or(9999),
+                    "dns" => std::env::var("DNS_LISTEN_PORT")
+                        .unwrap_or_else(|_| "5454".to_string())
+                        .parse()
+                        .unwrap_or(5454),
+                    "smb" => std::env::var("SMB_LISTEN_PORT")
+                        .unwrap_or_else(|_| "4445".to_string())
+                        .parse()
+                        .unwrap_or(4445),
                     _ => 0,
                 };
                 

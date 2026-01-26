@@ -382,10 +382,18 @@ impl Database {
     }
 
     pub async fn get_artifact(&self, id: Uuid) -> Result<Artifact> {
-        let rec = sqlx::query_as::<_, Artifact>("SELECT * FROM artifacts WHERE id = $1")
+        let mut rec = sqlx::query_as::<_, Artifact>("SELECT * FROM artifacts WHERE id = $1")
             .bind(id)
             .fetch_one(&self.pool)
             .await?;
+
+        // DECRYPT CONTENT
+        if let Some(cipher_content) = &rec.content {
+            if let Ok(plaintext) = self.decrypt_data(cipher_content) {
+                rec.content = Some(plaintext);
+            }
+        }
+
         Ok(rec)
     }
 
@@ -395,14 +403,15 @@ impl Database {
         filename: &str,
         content: &[u8],
     ) -> Result<Uuid> {
-        // Artifacts should also be encrypted ideally, but they are blobs.
-        // For MVP E2E Command Encryption, we skip artifacts unless requested.
+        // ENCRYPT ARTIFACT CONTENT AT REST
+        let encrypted_content = self.encrypt_data(content)?;
+
         let row = sqlx::query(
             "INSERT INTO artifacts (implant_id, filename, content, collected_at) VALUES ($1, $2, $3, NOW()) RETURNING id"
         )
         .bind(implant_id)
         .bind(filename)
-        .bind(content)
+        .bind(encrypted_content)
         .fetch_one(&self.pool)
         .await?;
         Ok(row.try_get("id")?)
