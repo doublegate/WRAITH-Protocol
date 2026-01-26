@@ -39,10 +39,10 @@ This plan covers the end-to-end integration of offensive techniques into the Ope
 
 ## Phase 4: Implant Final Polish & Cleanup
 
-- [ ] Task: Implant Codebase Deep Clean
+- [~] Task: Implant Codebase Deep Clean
     - [ ] Scan `spectre-implant` for any remaining "TODO", "In production" comments.
     - [ ] Verify `no_std` compliance and zero-warning build for Windows target.
     - [ ] Ensure `task_dispatch` handles *every* implemented module correctly.
-- [ ] Task: Final Integration Test
+- [~] Task: Final Integration Test
     - [ ] Verify the full chain: UI -> Team Server -> Implant -> Action -> Result -> UI.
 - [ ] Task: Conductor - User Manual Verification 'Phase 4: Final System Check' (Protocol in workflow.md)
