@@ -69,7 +69,15 @@ pub struct BofLoader {
 // Global buffer for BOF output (Single-threaded context)
 static mut BOF_OUTPUT: Vec<u8> = Vec::new();
 
-// Beacon Internal Functions (BIFs) Stubs
+// Beacon Internal Functions (BIFs) Implementation
+#[repr(C)]
+pub struct datap {
+    buffer: *const u8,
+    length: u32,
+    size: u32,
+    offset: u32,
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn BeaconPrintf(_type: i32, fmt: *const u8, _args: *const c_void) {
     // Capture output
@@ -85,8 +93,55 @@ pub unsafe extern "C" fn BeaconPrintf(_type: i32, fmt: *const u8, _args: *const 
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn BeaconDataParse(_parser: *mut c_void, _data: *const u8, _size: u32) {
-    // Stub
+pub unsafe extern "C" fn BeaconDataParse(parser: *mut datap, data: *const u8, size: u32) {
+    if parser.is_null() || data.is_null() { return; }
+    (*parser).buffer = data;
+    (*parser).length = size;
+    (*parser).size = size;
+    (*parser).offset = 0;
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn BeaconDataInt(parser: *mut datap) -> i32 {
+    if parser.is_null() || (*parser).offset + 4 > (*parser).length { return 0; }
+    let ptr = (*parser).buffer.add((*parser).offset as usize);
+    let val = i32::from_be_bytes(*(ptr as *const [u8; 4]));
+    (*parser).offset += 4;
+    val
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn BeaconDataShort(parser: *mut datap) -> i16 {
+    if parser.is_null() || (*parser).offset + 2 > (*parser).length { return 0; }
+    let ptr = (*parser).buffer.add((*parser).offset as usize);
+    let val = i16::from_be_bytes(*(ptr as *const [u8; 2]));
+    (*parser).offset += 2;
+    val
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn BeaconDataLength(parser: *mut datap) -> i32 {
+    if parser.is_null() { return 0; }
+    ((*parser).length - (*parser).offset) as i32
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn BeaconDataExtract(parser: *mut datap, size: *mut i32) -> *mut u8 {
+    if parser.is_null() || (*parser).offset + 4 > (*parser).length { return core::ptr::null_mut(); }
+    
+    // Read length of following data (CS format uses 4-byte big-endian length)
+    let len_ptr = (*parser).buffer.add((*parser).offset as usize);
+    let data_len = u32::from_be_bytes(*(len_ptr as *const [u8; 4]));
+    (*parser).offset += 4;
+
+    if (*parser).offset + data_len > (*parser).length { return core::ptr::null_mut(); }
+    
+    let data_ptr = (*parser).buffer.add((*parser).offset as usize) as *mut u8;
+    if !size.is_null() {
+        *size = data_len as i32;
+    }
+    (*parser).offset += data_len;
+    data_ptr
 }
 
 impl BofLoader {
@@ -203,6 +258,14 @@ impl BofLoader {
                             sym_addr = BeaconPrintf as usize;
                         } else if name_str == "BeaconDataParse" {
                             sym_addr = BeaconDataParse as usize;
+                        } else if name_str == "BeaconDataInt" {
+                            sym_addr = BeaconDataInt as usize;
+                        } else if name_str == "BeaconDataShort" {
+                            sym_addr = BeaconDataShort as usize;
+                        } else if name_str == "BeaconDataLength" {
+                            sym_addr = BeaconDataLength as usize;
+                        } else if name_str == "BeaconDataExtract" {
+                            sym_addr = BeaconDataExtract as usize;
                         }
                     }
 
