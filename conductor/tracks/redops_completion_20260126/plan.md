@@ -65,14 +65,14 @@ This plan follows the 7-Sprint remediation timeline defined in the Gap Analysis 
     - [ ] Replace shell-based persistence methods with native API calls (e.g., Task Scheduler COM API).
 - [ ] **Task: Conductor - User Manual Verification 'Phase 6: Sprint 6' (Protocol in workflow.md)**
 
-## Phase 7: Sprint 7 - P3 Advanced Features
+## Phase 7: Sprint 7 - P3 Advanced Features [checkpoint: b8f3218]
 
-- [ ] **Task: Implement ROP Sleep Mask**
+- [~] **Task: Implement ROP Sleep Mask**
     - [ ] Implement `.text` section encryption/decryption using a ROP-based sleep mask.
-- [ ] **Task: Implement P2P Mesh C2**
+- [~] **Task: Implement P2P Mesh C2**
     - [ ] Add support for SMB/TCP peer-to-peer beacon routing in the implant and team server.
-- [ ] **Task: Implement Keylogger Mapping and Persistence**
+- [~] **Task: Implement Keylogger Mapping and Persistence**
     - [ ] Complete the virtual key mapping and implement a persistent monitoring buffer for the keylogger.
-- [ ] **Task: Full SMB2 Protocol Headers**
+- [~] **Task: Full SMB2 Protocol Headers**
     - [ ] Upgrade the SMB listener and implant transport to use full SMB2 protocol headers.
 - [ ] **Task: Conductor - User Manual Verification 'Phase 7: Sprint 7' (Protocol in workflow.md)**
