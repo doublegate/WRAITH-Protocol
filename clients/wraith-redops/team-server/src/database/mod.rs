@@ -523,4 +523,66 @@ impl Database {
         .await?;
         Ok(())
     }
+
+    // --- Attack Chain Operations ---
+    pub async fn create_attack_chain(&self, name: &str, description: &str, steps: &[crate::models::ChainStep]) -> Result<crate::models::AttackChain> {
+        let mut tx = self.pool.begin().await?;
+
+        // 1. Create Chain
+        let chain_row = sqlx::query_as::<_, crate::models::AttackChain>(
+            "INSERT INTO attack_chains (name, description) VALUES ($1, $2) RETURNING *"
+        )
+        .bind(name)
+        .bind(description)
+        .fetch_one(&mut *tx)
+        .await?;
+
+        // 2. Create Steps
+        for step in steps {
+            sqlx::query(
+                "INSERT INTO chain_steps (chain_id, step_order, technique_id, command_type, payload, description) VALUES ($1, $2, $3, $4, $5, $6)"
+            )
+            .bind(chain_row.id)
+            .bind(step.step_order)
+            .bind(&step.technique_id)
+            .bind(&step.command_type)
+            .bind(&step.payload)
+            .bind(&step.description)
+            .execute(&mut *tx)
+            .await?;
+        }
+
+        tx.commit().await?;
+        Ok(chain_row)
+    }
+
+    pub async fn list_attack_chains(&self) -> Result<Vec<crate::models::AttackChain>> {
+        let recs = sqlx::query_as::<_, crate::models::AttackChain>(
+            "SELECT * FROM attack_chains ORDER BY created_at DESC"
+        )
+        .fetch_all(&self.pool)
+        .await?;
+        Ok(recs)
+    }
+
+    pub async fn get_attack_chain(&self, id: Uuid) -> Result<Option<(crate::models::AttackChain, Vec<crate::models::ChainStep>)>> {
+        let chain = sqlx::query_as::<_, crate::models::AttackChain>(
+            "SELECT * FROM attack_chains WHERE id = $1"
+        )
+        .bind(id)
+        .fetch_optional(&self.pool)
+        .await?;
+
+        if let Some(c) = chain {
+            let steps = sqlx::query_as::<_, crate::models::ChainStep>(
+                "SELECT * FROM chain_steps WHERE chain_id = $1 ORDER BY step_order ASC"
+            )
+            .bind(id)
+            .fetch_all(&self.pool)
+            .await?;
+            Ok(Some((c, steps)))
+        } else {
+            Ok(None)
+        }
+    }
 }

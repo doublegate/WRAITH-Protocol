@@ -143,3 +143,24 @@ pub struct PersistenceItem {
     pub details: String,
     pub created_at: Option<DateTime<Utc>>,
 }
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct AttackChain {
+    pub id: Uuid,
+    pub name: String,
+    pub description: Option<String>,
+    pub created_at: Option<DateTime<Utc>>,
+    pub updated_at: Option<DateTime<Utc>>,
+    pub metadata: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct ChainStep {
+    pub id: Uuid,
+    pub chain_id: Uuid,
+    pub step_order: i32,
+    pub technique_id: String, // e.g. T1059
+    pub command_type: String, // e.g. shell
+    pub payload: String,
+    pub description: Option<String>,
+}
