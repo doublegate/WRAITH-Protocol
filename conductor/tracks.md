@@ -8,7 +8,9 @@ This file tracks all major work tracks for the WRAITH Protocol project. Each tra
 
 ## Active Tracks
 
-*(No active tracks)*
+- [~] **Track: Full-stack integration of MITRE ATT&CK tradecraft into the WRAITH-RedOps Operator Client UI, including backend verification and final cleanup.**
+  *Type: Feature | Created: 2026-01-25*
+  *Link: [./tracks/redops_mitre_ui_integration_20260125/](./tracks/redops_mitre_ui_integration_20260125/)*
 
 ---
 

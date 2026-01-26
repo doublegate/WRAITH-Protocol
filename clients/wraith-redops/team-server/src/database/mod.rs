@@ -472,4 +472,36 @@ impl Database {
         .await?;
         Ok(())
     }
+
+    // --- Persistence Operations ---
+    pub async fn list_persistence(&self, implant_id: Uuid) -> Result<Vec<crate::models::PersistenceItem>> {
+        let recs = sqlx::query_as::<_, crate::models::PersistenceItem>(
+            "SELECT * FROM persistence WHERE implant_id = $1 ORDER BY created_at DESC"
+        )
+        .bind(implant_id)
+        .fetch_all(&self.pool)
+        .await?;
+        Ok(recs)
+    }
+
+    pub async fn remove_persistence(&self, id: Uuid) -> Result<()> {
+        sqlx::query("DELETE FROM persistence WHERE id = $1")
+            .bind(id)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
+    }
+
+    #[allow(dead_code)]
+    pub async fn add_persistence(&self, implant_id: Uuid, method: &str, details: &str) -> Result<()> {
+        sqlx::query(
+            "INSERT INTO persistence (implant_id, method, details) VALUES ($1, $2, $3)"
+        )
+        .bind(implant_id)
+        .bind(method)
+        .bind(details)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
 }

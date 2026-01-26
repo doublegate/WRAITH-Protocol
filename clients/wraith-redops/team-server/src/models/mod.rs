@@ -130,7 +130,16 @@ pub struct BeaconTask {
     pub payload: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct BeaconResponse {
     pub tasks: Vec<BeaconTask>,
+}
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct PersistenceItem {
+    pub id: Uuid,
+    pub implant_id: Option<Uuid>,
+    pub method: String,
+    pub details: String,
+    pub created_at: Option<DateTime<Utc>>,
 }
