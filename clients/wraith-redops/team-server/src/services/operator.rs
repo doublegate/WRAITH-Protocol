@@ -907,6 +907,9 @@ mod tests {
         let token = crate::utils::create_jwt(user_id, "admin").unwrap();
         
         let mut req = Request::new(());
+        let claims = crate::utils::verify_jwt(&token).unwrap();
+        req.extensions_mut().insert(claims);
+        
         let val = MetadataValue::from_str(&format!("Bearer {}", token)).unwrap();
         req.metadata_mut().insert("authorization", val);
 

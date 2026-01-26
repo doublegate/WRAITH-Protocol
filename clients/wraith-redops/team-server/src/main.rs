@@ -22,6 +22,9 @@ mod models;
 mod services;
 mod utils;
 
+#[cfg(test)]
+mod auth_tests;
+
 use database::Database;
 use governance::GovernanceEngine;
 use services::implant::ImplantServiceImpl;
@@ -30,8 +33,55 @@ use services::session::SessionManager;
 use wraith_crypto::noise::NoiseKeypair;
 
 use tonic::{Request, Status};
+use tower::{Layer, Service};
+use std::task::{Context, Poll};
+
+#[derive(Clone, Debug)]
+struct RpcPath(String);
+
+#[derive(Clone)]
+struct PathLayer;
+
+impl<S> Layer<S> for PathLayer {
+    type Service = PathService<S>;
+
+    fn layer(&self, service: S) -> Self::Service {
+        PathService { service }
+    }
+}
+
+#[derive(Clone)]
+struct PathService<S> {
+    service: S,
+}
+
+impl<S, B> Service<tonic::codegen::http::Request<B>> for PathService<S>
+where
+    S: Service<tonic::codegen::http::Request<B>>,
+{
+    type Response = S::Response;
+    type Error = S::Error;
+    type Future = S::Future;
+
+    fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        self.service.poll_ready(cx)
+    }
+
+    fn call(&mut self, mut req: tonic::codegen::http::Request<B>) -> Self::Future {
+        let path = req.uri().path().to_string();
+        req.extensions_mut().insert(RpcPath(path));
+        self.service.call(req)
+    }
+}
 
 fn auth_interceptor(mut req: Request<()>) -> Result<Request<()>, Status> {
+    // Whitelist Authenticate method
+    if let Some(path) = req.extensions().get::<RpcPath>() {
+        if path.0 == "/wraith.redops.OperatorService/Authenticate" {
+            return Ok(req);
+        }
+    }
+
     let token = match req.metadata().get("authorization") {
         Some(t) => {
             let s = t.to_str().map_err(|_| Status::unauthenticated("Invalid auth header"))?;
@@ -41,7 +91,7 @@ fn auth_interceptor(mut req: Request<()>) -> Result<Request<()>, Status> {
                 return Err(Status::unauthenticated("Invalid auth scheme"));
             }
         },
-        None => return Ok(req),
+        None => return Err(Status::unauthenticated("Missing authorization header")),
     };
 
     let claims = utils::verify_jwt(token)
@@ -174,6 +224,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Team Server listening on {}", addr);
 
     Server::builder()
+        .layer(PathLayer)
         .add_service(OperatorServiceServer::with_interceptor(operator_service, auth_interceptor))
         .add_service(ImplantServiceServer::new(implant_service))
         .serve(addr)
