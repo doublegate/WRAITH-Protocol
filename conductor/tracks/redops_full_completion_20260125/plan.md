@@ -14,7 +14,7 @@ This plan outlines the final development sprint to bring WRAITH-RedOps to 100% c
 
 ## Phase 2: P1 High Priority Core Implementation
 
-- [ ] Task: Complete Windows Injection & Post-Exploitation
+- [~] Task: Complete Windows Injection & Post-Exploitation
     - [ ] Implement thread enumeration and full Thread Hijack in `modules/injection.rs`
     - [ ] Implement proper Process Hollowing (NtUnmapViewOfSection) in `modules/injection.rs`
     - [ ] Implement BOF IAT resolution and full BIF (BeaconPrintf/DataParse) in `modules/bof_loader.rs`
