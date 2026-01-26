@@ -672,13 +672,15 @@ impl OperatorService for OperatorServiceImpl {
 
         // Start it via manager
         // Default port if not in config? Assuming stored in DB or config
-        let port = 8080; // Placeholder: Need to store port in DB
+        let port = listener_model.config.get("port")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(8080) as u16;
         
         self.listener_manager.start_listener(
             &listener_model.id.to_string(),
             &listener_model.r#type,
             &listener_model.bind_address,
-            port // TODO: Get port from model/config
+            port
         ).await.map_err(|e| Status::internal(e))?;
 
         self.db

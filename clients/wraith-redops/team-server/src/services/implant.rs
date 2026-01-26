@@ -227,8 +227,7 @@ impl ImplantService for ImplantServiceImpl {
         let full_payload = if payload_path.exists() {
             tokio::fs::read(payload_path).await.map_err(|e| Status::internal(e.to_string()))?
         } else {
-            // Fallback to a mock successful payload for development if the file doesn't exist
-            b"WRAITH_SPECTRE_PAYLOAD_V2_2_5".to_vec()
+            return Err(Status::not_found("Payload binary not found (payloads/spectre.bin)"));
         };
 
         if start_offset >= full_payload.len() {
