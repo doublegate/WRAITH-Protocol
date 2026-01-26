@@ -33,3 +33,8 @@ Completed or superseded tracks are preserved in the [archive/](./archive/) direc
 
 ---
 
+
+---
+
+- [x] **Track: WRAITH-RedOps Zero-Stub Completion**
+*Link: [./tracks/zero_stub_redops_20260126/](./tracks/zero_stub_redops_20260126/)*
