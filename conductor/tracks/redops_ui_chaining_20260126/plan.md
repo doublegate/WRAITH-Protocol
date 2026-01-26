@@ -25,15 +25,15 @@ This plan covers the comprehensive UI/UX audit across all RedOps variants and th
     - [ ] **Implement:** Logic to dispatch tasks in order and collect results.
 - [ ] **Task: Conductor - User Manual Verification 'Phase 2: Attack Chain Backend Phase 2: Attack Chain Backend & Model Model [checkpoint: 07738b4]' (Protocol in workflow.md)**
 
-## Phase 3: GUI Attack Graph Editor
+## Phase 3: GUI Attack Graph Editor [checkpoint: 38a24fd]
 
-- [ ] **Task: Integrate ReactFlow for Chain Canvas**
+- [x] **Task: Integrate ReactFlow for Chain Canvas** (38a24fd)
     - [ ] Set up `reactflow` in the Operator Console.
     - [ ] **Implement:** Create technique node palette and drag-and-drop logic.
-- [ ] **Task: Implement Visual Execution Monitor**
+- [x] **Task: Implement Visual Execution Monitor** (38a24fd)
     - [ ] Create a "Real-time Status Overlay" for the graph nodes.
     - [ ] **Implement:** Update node colors (Green/Red/Yellow) based on live gRPC event stream data.
-- [ ] **Task: Conductor - User Manual Verification 'Phase 3: GUI Attack Graph Editor' (Protocol in workflow.md)**
+- [ ] **Task: Conductor - User Manual Verification 'Phase 3: GUI Attack Graph Editor [checkpoint: 38a24fd]' (Protocol in workflow.md)**
 
 ## Phase 4: TUI Attack Chain Visualization
 
