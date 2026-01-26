@@ -40,16 +40,16 @@ This plan outlines the final development sprint to bring WRAITH-RedOps to 100% c
     - [ ] Audit and replace `unwrap()` calls in production paths with structured error handling
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: P2 Completeness' (Protocol in workflow.md)
 
-## Phase 4: P3 Low Priority & Advanced Implementation
+## Phase 4: P3 Low Priority & Advanced Implementation [checkpoint: 0244497]
 
-- [ ] Task: Advanced Evasion & Automation
-    - [ ] Implement Sleep Mask (ROP-based section encryption) in `utils/obfuscation.rs`
-    - [ ] Implement P2P Mesh routing logic in the Team Server and Implant
-    - [ ] Implement APT Playbook engine for technique sequencing
-- [ ] Task: Protocol & UI Finalization
-    - [ ] Implement full SMB2 protocol headers for the SMB listener
-    - [ ] Add Settings UI to the Operator Client for server address management
-- [ ] Task: Conductor - User Manual Verification 'Phase 4: P3 Finalization' (Protocol in workflow.md)
+- [x] Task: Advanced Evasion & Automation
+    - [x] Implement Sleep Mask (ROP-based section encryption) in `utils/obfuscation.rs`
+    - [x] Implement P2P Mesh routing logic in the Team Server and Implant
+    - [x] Implement APT Playbook engine for technique sequencing
+- [x] Task: Protocol & UI Finalization
+    - [x] Implement full SMB2 protocol headers for the SMB listener
+    - [x] Add Settings UI to the Operator Client for server address management
+- [x] Task: Conductor - User Manual Verification 'Phase 4: P3 Finalization' (Protocol in workflow.md) 0244497
 
 ## Phase 5: MITRE ATT&CK Tradecraft Integration
 
