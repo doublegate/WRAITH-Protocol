@@ -12,7 +12,7 @@ This plan follows the 7-Sprint remediation timeline defined in the Gap Analysis 
 
 ## Phase 2: Sprint 2 - P1 Core Bugs & Gaps
 
-- [ ] **Task: Fix CONTEXT Struct Structural Bug**
+- [x] **Task: Fix CONTEXT Struct Structural Bug** (a0a030d)
     - [ ] Move orphaned field declarations into the `CONTEXT` struct body in `spectre-implant/src/utils/windows_definitions.rs`.
     - [ ] Verify `size_of::<CONTEXT>()` matches Windows expectations (approx. 1232 bytes for x64).
 - [ ] **Task: Externalize Kill Signal Configuration**
