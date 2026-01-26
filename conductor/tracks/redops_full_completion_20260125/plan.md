@@ -53,9 +53,9 @@ This plan outlines the final development sprint to bring WRAITH-RedOps to 100% c
 
 ## Phase 5: MITRE ATT&CK Tradecraft Integration
 
-- [ ] Task: TA0001 & TA0002 (Access & Execution)
-    - [ ] Implement Phishing Payload Generator (T1566) in Team Server
-    - [ ] Implement Unmanaged PowerShell Host (T1059) in Spectre
+- [x] Task: TA0001 & TA0002 (Access & Execution) 77c44cc
+    - [x] Implement Phishing Payload Generator (T1566) in Team Server
+    - [x] Implement Unmanaged PowerShell Host (T1059) in Spectre
 - [ ] Task: TA0003 & TA0004 (Persistence & PrivEsc)
     - [ ] Implement Persistence Module (Registry/Task) (T1547/T1053)
     - [ ] Implement UAC Bypass (Fodhelper) (T1548)
