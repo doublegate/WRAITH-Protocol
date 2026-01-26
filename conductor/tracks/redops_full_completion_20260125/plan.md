@@ -59,9 +59,9 @@ This plan outlines the final development sprint to bring WRAITH-RedOps to 100% c
 - [x] Task: TA0003 & TA0004 (Persistence & PrivEsc) 7e24479
     - [x] Implement Persistence Module (Registry/Task) (T1547/T1053)
     - [x] Implement UAC Bypass (Fodhelper) (T1548)
-- [ ] Task: TA0005 Defense Evasion
-    - [ ] Implement Timestomp (T1070)
-    - [ ] Implement Sandbox Evasion Checks (T1497)
+- [x] Task: TA0005 Defense Evasion 8cf9d72
+    - [x] Implement Timestomp (T1070)
+    - [x] Implement Sandbox Evasion Checks (T1497)
 - [ ] Task: TA0006 & TA0007 (Credential Access & Discovery)
     - [ ] Implement LSASS Minidump (T1003) via direct syscalls
     - [ ] Implement Native API Discovery (NetScan/SysInfo) (T1082/T1087)
