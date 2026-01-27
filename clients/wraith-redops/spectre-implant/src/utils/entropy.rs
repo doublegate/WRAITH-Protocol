@@ -42,13 +42,33 @@ fn get_random_u8() -> u8 {
     (mixed >> 56) as u8
 }
 
-#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+#[cfg(target_arch = "aarch64")]
 fn get_random_u8() -> u8 {
-    // Fallback for non-x86 (e.g. ARM) - rely on address space layout randomization (ASLR) and time
-    // This is WEAK entropy, but prevents compilation failure
+    let mut cntvct: u64;
+    unsafe {
+        asm!(
+            "mrs {}, cntvct_el0",
+            out(reg) cntvct,
+            options(nomem, nostack)
+        );
+    }
+    
+    // Mix with stack address
+    let stack_var = 0u8;
+    let stack_addr = &stack_var as *const u8 as u64;
+    
+    let mixed = cntvct.wrapping_add(stack_addr);
+    
+    // Simple mixing function
+    let mixed = mixed.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+    
+    (mixed >> 56) as u8
+}
+
+#[cfg(not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")))]
+fn get_random_u8() -> u8 {
+    // Fallback for others
     let stack_var = 0u8;
     let addr = &stack_var as *const u8 as u64;
-    
-    // In a real implementation we'd read CNTVCT_EL0 on ARM64
     (addr & 0xFF) as u8
 }

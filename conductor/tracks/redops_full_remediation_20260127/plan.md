@@ -38,8 +38,8 @@
 - [x] Task: Build-Time LLVM Obfuscation [ff0bba70]
     - [x] Configure `builder/mod.rs` to apply LLVM-level obfuscation passes via `RUSTFLAGS`.
     - [x] Write tests to verify symbol stripping and control flow flattening in generated binaries.
-- [ ] Task: Hardware-Based ARM64 Entropy
-    - [ ] Implement `CNTVCT_EL0` register reading for ARM64 entropy in `entropy.rs`.
+- [x] Task: Hardware-Based ARM64 Entropy [pending commit]
+    - [x] Implement `CNTVCT_EL0` register reading for ARM64 entropy in `entropy.rs`.
 - [ ] Task: Multi-Transport Failover
     - [ ] Write tests for transport state monitoring and failover triggers.
     - [ ] Implement autonomous transport switching logic in the Spectre C2 client.
