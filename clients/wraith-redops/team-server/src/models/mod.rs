@@ -115,3 +115,22 @@ pub struct Credential {
     pub validated: Option<bool>,
     pub metadata: Option<serde_json::Value>,
 }
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct BeaconData {
+    pub id: String,
+    pub hostname: String,
+    pub username: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct BeaconTask {
+    pub id: String,
+    pub type_: String,
+    pub payload: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct BeaconResponse {
+    pub tasks: Vec<BeaconTask>,
+}

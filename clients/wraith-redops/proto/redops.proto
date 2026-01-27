@@ -43,6 +43,9 @@ service OperatorService {
     rpc ListListeners(ListListenersRequest) returns (ListListenersResponse);
     rpc StartListener(ListenerActionRequest) returns (Listener);
     rpc StopListener(ListenerActionRequest) returns (Listener);
+
+    // Builder
+    rpc GenerateImplant(GenerateImplantRequest) returns (stream PayloadChunk);
 }
 
 // Implant service (C2 protocol)
@@ -329,6 +332,14 @@ message ListListenersResponse {
 
 message ListenerActionRequest {
     string id = 1;
+}
+
+message GenerateImplantRequest {
+    string platform = 1;
+    string arch = 2;
+    string format = 3;
+    string c2_url = 4;
+    int32 sleep_interval = 5;
 }
 
 // Implant-side messages

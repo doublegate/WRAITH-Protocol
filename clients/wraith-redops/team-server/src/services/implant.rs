@@ -3,9 +3,9 @@ use crate::wraith::redops::implant_service_server::ImplantService;
 use crate::wraith::redops::*;
 use std::sync::Arc;
 use tokio::sync::broadcast;
+use tokio_stream::StreamExt;
 use tonic::{Request, Response, Status};
 use uuid::Uuid;
-use tokio_stream::StreamExt;
 
 pub struct ImplantServiceImpl {
     pub db: Arc<Database>,

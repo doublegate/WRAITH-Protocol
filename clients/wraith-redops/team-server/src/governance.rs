@@ -16,10 +16,10 @@ impl RulesOfEngagement {
     pub fn is_ip_allowed(&self, ip: IpAddr) -> bool {
         // Check blocks first
         for net_str in &self.blocked_networks {
-            if let Ok(net) = net_str.parse::<IpNetwork>() {
-                if net.contains(ip) {
-                    return false;
-                }
+            if let Ok(net) = net_str.parse::<IpNetwork>()
+                && net.contains(ip)
+            {
+                return false;
             }
         }
 
@@ -31,10 +31,10 @@ impl RulesOfEngagement {
         }
 
         for net_str in &self.allowed_networks {
-            if let Ok(net) = net_str.parse::<IpNetwork>() {
-                if net.contains(ip) {
-                    return true;
-                }
+            if let Ok(net) = net_str.parse::<IpNetwork>()
+                && net.contains(ip)
+            {
+                return true;
             }
         }
 
@@ -43,17 +43,35 @@ impl RulesOfEngagement {
 
     pub fn is_time_valid(&self) -> bool {
         let now = chrono::Utc::now();
-        if let Some(start) = self.start_date {
-            if now < start {
-                return false;
-            }
+        if let Some(start) = self.start_date
+            && now < start
+        {
+            return false;
         }
-        if let Some(end) = self.end_date {
-            if now > end {
-                return false;
-            }
+        if let Some(end) = self.end_date
+            && now > end
+        {
+            return false;
         }
         true
+    }
+
+    pub fn is_domain_allowed(&self, domain: &str) -> bool {
+        for blocked in &self.blocked_domains {
+            if domain.ends_with(blocked) {
+                // simplified suffix check
+                return false;
+            }
+        }
+        if self.allowed_domains.is_empty() {
+            return true;
+        }
+        for allowed in &self.allowed_domains {
+            if domain.ends_with(allowed) {
+                return true;
+            }
+        }
+        false
     }
 }
 
@@ -91,6 +109,16 @@ impl GovernanceEngine {
                 tracing::warn!("RoE Violation: IP {} not in scope", source_ip);
                 return false;
             }
+        }
+        true
+    }
+
+    pub fn validate_domain(&self, domain: &str) -> bool {
+        if let Some(roe) = &self.active_roe
+            && !roe.is_domain_allowed(domain)
+        {
+            tracing::warn!("RoE Violation: Domain {} not in scope", domain);
+            return false;
         }
         true
     }
