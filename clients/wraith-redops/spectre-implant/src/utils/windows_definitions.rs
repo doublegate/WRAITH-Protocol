@@ -253,6 +253,16 @@ pub struct MEMORY_BASIC_INFORMATION {
 }
 
 #[repr(C)]
+pub struct PROCESS_BASIC_INFORMATION {
+    pub ExitStatus: i32,
+    pub PebBaseAddress: PVOID,
+    pub AffinityMask: usize,
+    pub BasePriority: i32,
+    pub UniqueProcessId: usize,
+    pub InheritedFromUniqueProcessId: usize,
+}
+
+#[repr(C)]
 pub struct ITaskServiceVtbl {
     pub QueryInterface: PVOID,
     pub AddRef: PVOID,

