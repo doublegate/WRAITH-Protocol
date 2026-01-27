@@ -15,28 +15,28 @@ This plan methodically addresses all gaps identified in the v2.2.5 Gap Analysis,
     - [ ] **Implement:** Map these IPC commands to the corresponding gRPC client calls in the Tauri backend.
 - [ ] **Task: Conductor - User Manual Verification 'Phase 1: P1 High Priority Gaps (Core Phase 1: P1 High Priority Gaps (Core & Security) Security) [checkpoint: 53c6444]' (Protocol in workflow.md)**
 
-## Phase 2: P2 Medium Priority Gaps (Platform Completeness)
+## Phase 2: P2 Medium Priority Gaps (Platform Completeness) [checkpoint: fbe9007]
 
-- [ ] **Task: DNS Multi-Label Encoding & TXT Formatting**
+- [~] **Task: DNS Multi-Label Encoding - [ ] **Task: DNS Multi-Label Encoding & TXT Formatting** TXT Formatting**
     - [ ] **Write Tests:** Add unit tests in `dns.rs` for multi-label subdomain parsing and TXT record RDATA validity.
     - [ ] **Implement:** Support chunked payload encoding across multiple labels in the DNS listener.
     - [ ] **Implement:** Fix TXT record wrapping in Spectre's DNS module to ensure valid RDATA.
-- [ ] **Task: Dynamic Heap Discovery & CLR GUID Fix**
+- [x] **Task: Dynamic Heap Discovery - [ ] **Task: Dynamic Heap Discovery & CLR GUID Fix** CLR GUID Fix**
     - [ ] **Implement:** Replace hardcoded heap addresses in `obfuscation.rs` with runtime discovery via `/proc/self/maps` (Linux) and dynamic API calls (Windows).
     - [ ] **Implement:** Correct the CLSID for `CLRRuntimeHost` in `clr.rs`.
     - [ ] **Linux Validation:** Use a standalone script `test_heap_discovery` to confirm correct memory range detection on the host.
-- [ ] **Task: Handshake Robustness & .unwrap() Cleanup**
+- [~] **Task: Handshake Robustness - [ ] **Task: Handshake Robustness & .unwrap() Cleanup** .unwrap() Cleanup**
     - [ ] **Implement:** Replace `.unwrap()` and `.expect()` calls in `c2/mod.rs` handshake sequence with proper error propagation.
     - [ ] **Implement:** Standardize error handling across all Spectre modules to meet production-ready standards.
-- [ ] **Task: LLVM Obfuscation & VBA Phishing Runner**
+- [x] **Task: LLVM Obfuscation - [ ] **Task: LLVM Obfuscation & VBA Phishing Runner** VBA Phishing Runner** (fbe9007)
     - [ ] **Implement:** Update the builder pipeline to inject actual `RUSTFLAGS` for LLVM obfuscation passes.
     - [ ] **Implement:** Complete the VBA shellcode runner (`CreateThread`/`VirtualAlloc`) in the phishing macro generator.
-- [ ] **Task: Native COM Scheduled Task Persistence**
+- [x] **Task: Native COM Scheduled Task Persistence** (fbe9007)
     - [ ] **Implement:** Implement the full `ITaskService` COM vtable in `persistence.rs` to remove the fallback to `schtasks.exe`.
-- [ ] **Task: AttackChainEditor Real-World Wiring**
+- [x] **Task: AttackChainEditor Real-World Wiring** (fbe9007)
     - [ ] **Implement:** Remove `setInterval` simulation from `AttackChainEditor.tsx`.
     - [ ] **Implement:** Use `invoke()` to connect "Save" and "Execute" actions to the newly wired IPC bridge.
-- [ ] **Task: Conductor - User Manual Verification 'Phase 2: P2 Medium Priority Gaps (Platform Completeness)' (Protocol in workflow.md)**
+- [ ] **Task: Conductor - User Manual Verification 'Phase 2: P2 Medium Priority Gaps (Platform Completeness) [checkpoint: fbe9007]' (Protocol in workflow.md)**
 
 ## Phase 3: P3 Low Priority Gaps & Polish
 
