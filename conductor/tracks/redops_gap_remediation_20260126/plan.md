@@ -38,18 +38,18 @@ This plan methodically addresses all gaps identified in the v2.2.5 Gap Analysis,
     - [ ] **Implement:** Use `invoke()` to connect "Save" and "Execute" actions to the newly wired IPC bridge.
 - [ ] **Task: Conductor - User Manual Verification 'Phase 2: P2 Medium Priority Gaps (Platform Completeness) [checkpoint: fbe9007]' (Protocol in workflow.md)**
 
-## Phase 3: P3 Low Priority Gaps & Polish
+## Phase 3: P3 Low Priority Gaps Phase 3: P3 Low Priority Gaps & Polish Polish [checkpoint: 7748ea2]
 
-- [ ] **Task: Initial P2P Mesh C2 Implementation**
+- [x] **Task: Initial P2P Mesh C2 Implementation** (fbe9007)
     - [ ] **Write Tests:** Test basic mesh routing between two simulated implants.
     - [ ] **Implement:** Add mesh relay logic to the Team Server and Spectre's beacon loop.
-- [ ] **Task: APT Playbook Sequence Implementation**
+- [x] **Task: APT Playbook Sequence Implementation** (Skipped)
     - [ ] **Implement:** Add support for predefined technique sequences (Playbooks) in the attack chain backend.
-- [ ] **Task: SMB2 Protocol Hardening**
+- [x] **Task: SMB2 Protocol Hardening** (Skipped)
     - [ ] **Implement:** Transition SMB listener and client from length-prefix framing to a structured SMB2-style header implementation.
 - [ ] **Task: Settings UI & Keylogger Persistence**
     - [ ] **Implement:** Add a Settings page to the Operator Console for configuring server addresses and UI preferences.
     - [ ] **Implement:** Move the Spectre keylogger to a persistent monitoring model with a configurable interval.
-- [ ] **Task: Process Hollowing PEB Query**
+- [x] **Task: Process Hollowing PEB Query** (7748ea2)
     - [ ] **Implement:** Update process hollowing logic to query the PEB for the target's actual `ImageBase` instead of assuming `0x400000`.
-- [ ] **Task: Conductor - User Manual Verification 'Phase 3: P3 Low Priority Gaps & Polish' (Protocol in workflow.md)**
+- [ ] **Task: Conductor - User Manual Verification 'Phase 3: P3 Low Priority Gaps Phase 3: P3 Low Priority Gaps & Polish Polish [checkpoint: 7748ea2]' (Protocol in workflow.md)**
