@@ -454,22 +454,65 @@ unsafe fn parse_syscall_stub(addr: *const ()) -> Option<u16> {
 }
 
 #[cfg(target_os = "windows")]
+static mut SYSCALL_GADGET: Option<*const ()> = None;
+
+#[cfg(target_os = "windows")]
+unsafe fn get_syscall_gadget() -> Option<*const ()> {
+    if let Some(addr) = SYSCALL_GADGET {
+        return Some(addr);
+    }
+
+    let ntdll_hash = hash_str(b"ntdll.dll");
+    let func_hash = hash_str(b"NtOpenFile"); 
+    let addr = resolve_function(ntdll_hash, func_hash) as *const u8;
+
+    if addr.is_null() { return None; }
+
+    // Scan for syscall; ret (0F 05 C3)
+    for i in 0..32 {
+        if *addr.add(i) == 0x0F && *addr.add(i + 1) == 0x05 && *addr.add(i + 2) == 0xC3 {
+            let gadget = addr.add(i) as *const ();
+            SYSCALL_GADGET = Some(gadget);
+            return Some(gadget);
+        }
+    }
+    None
+}
+
+#[cfg(target_os = "windows")]
 #[inline(always)]
 pub unsafe fn do_syscall(ssn: u16, w1: usize, w2: usize, w3: usize, w4: usize) -> usize {
     let ret: usize;
-    asm!(
-    "mov r10, rcx",
-    "syscall",
-    in("eax") ssn as u32,
-    in("rcx") w1,
-    in("rdx") w2,
-    in("r8")  w3,
-    in("r9")  w4,
-    lateout("rax") ret,
-    out("r10") _,
-    out("r11") _,
+    if let Some(gadget) = get_syscall_gadget() {
+        asm!(
+            "mov r10, rcx",
+            "call {}",
+            in(reg) gadget,
+            in("eax") ssn as u32,
+            in("rcx") w1,
+            in("rdx") w2,
+            in("r8")  w3,
+            in("r9")  w4,
+            lateout("rax") ret,
+            out("r10") _,
+            out("r11") _,
             options(nostack)
         );
+    } else {
+        asm!(
+            "mov r10, rcx",
+            "syscall",
+            in("eax") ssn as u32,
+            in("rcx") w1,
+            in("rdx") w2,
+            in("r8")  w3,
+            in("r9")  w4,
+            lateout("rax") ret,
+            out("r10") _,
+            out("r11") _,
+            options(nostack)
+        );
+    }
     ret
 }
 
