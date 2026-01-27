@@ -32,7 +32,7 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 - **Tier 3:** Advanced use cases (Mesh, Publish, Vault, Recon - ALL COMPLETE)
 - **Tier 4:** Security Testing (RedOps - COMPLETE)
 
-**Current Status (2026-01-25):**
+**Current Status (2026-01-26):**
 - Protocol v2.2.5 complete (all 24 phases + infrastructure sprints delivered)
 - **All 12 Client Applications:** ✅ **COMPLETE** (1,292 SP total)
   - WRAITH-Transfer: Desktop P2P file transfer (68 tests)
@@ -1012,7 +1012,8 @@ All 12 clients are complete and production-ready.
 - Spectre Implant (no_std Rust, PIC, sleep mask, indirect syscalls)
 - Multi-transport C2 (UDP, TCP, HTTPS, DNS, WebSocket)
 - P2P beacon mesh (SMB, TCP lateral movement)
-- MITRE ATT&CK coverage (51+ techniques across 12 tactics)
+- MITRE ATT&CK coverage across 12 tactics (TA0001-TA0011, TA0040)
+  - Full-stack integration: Phishing, PowerShell, Persistence, Privilege Escalation, Defense Evasion, Credential Access, Discovery, Lateral Movement, Collection, Impact
 
 **⚠️ GOVERNANCE:** Requires signed RoE, executive authorization, audit logging, kill switch mechanisms. See [Security Testing Parameters](../../ref-docs/WRAITH-Security-Testing-Parameters-v1.0.md).
 
@@ -1134,7 +1135,7 @@ RedOps                                                          [=============]
 
 ## Current Status & Next Steps
 
-**Protocol Status (2026-01-25):**
+**Protocol Status (2026-01-26):**
 - ✅ All 24 protocol development phases complete (2,740+ SP delivered)
 - ✅ 2,140 tests passing (16 ignored) - 100% pass rate
 - ✅ Zero vulnerabilities, zero clippy warnings
@@ -1267,6 +1268,6 @@ RedOps                                                          [=============]
 
 **WRAITH Protocol Client Applications Development History** - *From Planning to v2.2.5*
 
-**Status:** Phases 15-24 Complete (All 12 Clients) | **Total Scope:** 12 clients, 1,292 SP | **Delivered:** 1,292 SP (100%) | **Protocol:** v2.2.5 Complete | **Tests:** 2,140 total (665+ client tests) | **TDR:** ~2.5% (Grade A) | **CI/CD:** Optimized workflows with reusable setup and path filters
+**Status:** Phases 15-24 Complete (All 12 Clients) | **Total Scope:** 12 clients, 1,292 SP | **Delivered:** 1,292 SP (100%) | **Protocol:** v2.2.5 Complete | **Tests:** 2,140 total (665+ client tests) | **TDR:** ~2.5% (Grade A) | **CI/CD:** Optimized workflows with reusable setup and path filters | **RedOps:** Gap analysis v4.1.0 (82% complete, MITRE ATT&CK 50% coverage)
 
-*Last Updated: 2026-01-25*
+*Last Updated: 2026-01-26*

@@ -19,23 +19,18 @@ pub struct Database {
 impl Database {
     pub fn new(pool: PgPool) -> Self {
         let hmac_key = env::var("HMAC_SECRET")
-            .unwrap_or_else(|_| "audit_log_integrity_key_very_secret".to_string())
+            .expect("HMAC_SECRET environment variable must be set")
             .into_bytes();
 
         let master_key_str = env::var("MASTER_KEY")
-            .unwrap_or_else(|_| "0000000000000000000000000000000000000000000000000000000000000000".to_string());
+            .expect("MASTER_KEY environment variable must be set (64 hex chars)");
         
         let mut master_key = [0u8; 32];
-        if let Ok(decoded) = hex::decode(&master_key_str) {
-            if decoded.len() == 32 {
-                master_key.copy_from_slice(&decoded);
-            } else {
-                // Fallback or panic? For now fallback to zero
-            }
-        } else {
-            // Assume string is key if hex fails? No, hex is standard.
-            // Simplified fallback
+        let decoded = hex::decode(&master_key_str).expect("Failed to decode MASTER_KEY hex");
+        if decoded.len() != 32 {
+            panic!("MASTER_KEY must be exactly 32 bytes (64 hex chars)");
         }
+        master_key.copy_from_slice(&decoded);
 
         Self {
             pool,
@@ -473,6 +468,38 @@ impl Database {
         .bind(details)
         .bind(success)
         .bind(signature)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    // --- Persistence Operations ---
+    pub async fn list_persistence(&self, implant_id: Uuid) -> Result<Vec<crate::models::PersistenceItem>> {
+        let recs = sqlx::query_as::<_, crate::models::PersistenceItem>(
+            "SELECT * FROM persistence WHERE implant_id = $1 ORDER BY created_at DESC"
+        )
+        .bind(implant_id)
+        .fetch_all(&self.pool)
+        .await?;
+        Ok(recs)
+    }
+
+    pub async fn remove_persistence(&self, id: Uuid) -> Result<()> {
+        sqlx::query("DELETE FROM persistence WHERE id = $1")
+            .bind(id)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
+    }
+
+    #[allow(dead_code)]
+    pub async fn add_persistence(&self, implant_id: Uuid, method: &str, details: &str) -> Result<()> {
+        sqlx::query(
+            "INSERT INTO persistence (implant_id, method, details) VALUES ($1, $2, $3)"
+        )
+        .bind(implant_id)
+        .bind(method)
+        .bind(details)
         .execute(&self.pool)
         .await?;
         Ok(())

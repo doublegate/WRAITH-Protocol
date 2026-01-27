@@ -1,8 +1,6 @@
 use tokio::net::UdpSocket;
 use wraith_crypto::signatures::SigningKey;
-
-// Hardcoded seed for killswitch (In production, this comes from secure storage or hardware token)
-const KILL_KEY_SEED: [u8; 32] = *b"kill_switch_master_key_seed_0000";
+use std::env;
 
 pub async fn broadcast_kill_signal(port: u16, secret_msg: &[u8]) -> std::io::Result<()> {
     let socket = UdpSocket::bind("0.0.0.0:0").await?;
@@ -24,7 +22,11 @@ pub async fn broadcast_kill_signal(port: u16, secret_msg: &[u8]) -> std::io::Res
     data.extend_from_slice(secret_msg);
 
     // Sign it
-    let key = SigningKey::from_bytes(&KILL_KEY_SEED);
+    let seed_hex = env::var("KILLSWITCH_KEY").expect("KILLSWITCH_KEY env var must be set");
+    let seed = hex::decode(&seed_hex).expect("Failed to decode KILLSWITCH_KEY");
+    let key_bytes: [u8; 32] = seed.try_into().expect("KILLSWITCH_KEY must be 32 bytes");
+    
+    let key = SigningKey::from_bytes(&key_bytes);
     let signature = key.sign(&data);
 
     // Final Payload: [SIGNATURE: 64] + [DATA]
@@ -44,7 +46,14 @@ mod tests {
 
     #[test]
     fn test_kill_signal_structure() {
-        let key = SigningKey::from_bytes(&KILL_KEY_SEED);
+        let dummy_key = "0000000000000000000000000000000000000000000000000000000000000000";
+        unsafe {
+            std::env::set_var("KILLSWITCH_KEY", dummy_key);
+        }
+        
+        let seed = hex::decode(dummy_key).unwrap();
+        let key_bytes: [u8; 32] = seed.try_into().unwrap();
+        let key = SigningKey::from_bytes(&key_bytes);
         let msg = b"TEST";
         
         // This just verifies we can sign without panic

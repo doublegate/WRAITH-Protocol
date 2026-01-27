@@ -16,6 +16,10 @@ This file tracks all major work tracks for the WRAITH Protocol project. Each tra
 
 Completed or superseded tracks are preserved in the [archive/](./archive/) directory:
 
+- [x] **MITRE ATT&CK Full-Stack Integration** (2026-01-25)
+  *Link: [./archive/redops_mitre_ui_integration_20260125/](./archive/redops_mitre_ui_integration_20260125/)*
+- [x] **RedOps Full Completion** (2026-01-25)
+  *Link: [./archive/redops_full_completion_20260125/](./archive/redops_full_completion_20260125/)*
 - [x] **Comprehensive remediation of WRAITH-RedOps** (2026-01-25)
   *Link: [./archive/wraith_redops_comprehensive_20260125/](./archive/wraith_redops_comprehensive_20260125/)*
 - [x] **WRAITH-RedOps finalization** (2026-01-25)

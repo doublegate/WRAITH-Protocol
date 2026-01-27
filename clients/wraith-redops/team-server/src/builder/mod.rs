@@ -4,6 +4,8 @@ use std::path::Path;
 use std::process::Command;
 use tracing::{info, error};
 
+pub mod phishing;
+
 const CONFIG_MAGIC: &[u8] = b"WRAITH_CONFIG_BLOCK";
 
 pub struct Builder;

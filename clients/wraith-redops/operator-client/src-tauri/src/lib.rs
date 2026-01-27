@@ -516,6 +516,125 @@ async fn stop_listener(listener_id: String, state: State<'_, ClientState>) -> Re
     Ok(())
 }
 
+#[tauri::command]
+async fn create_phishing(
+    type_: String,
+    c2_url: String,
+    save_path: String,
+    state: State<'_, ClientState>,
+) -> Result<String, String> {
+    let mut lock = state.client.lock().await;
+    let client = lock.as_mut().ok_or("Not connected")?;
+
+    let req = tonic::Request::new(GeneratePhishingRequest {
+        r#type: type_,
+        c2_url,
+        template_name: "".to_string(),
+    });
+
+    let mut stream = client.generate_phishing(req).await
+        .map_err(|e| format!("gRPC error: {}", e))?
+        .into_inner();
+
+    let mut file = tokio::fs::File::create(&save_path).await.map_err(|e| e.to_string())?;
+    use tokio::io::AsyncWriteExt;
+    while let Some(chunk) = stream.message().await.map_err(|e| e.to_string())? {
+        file.write_all(&chunk.data).await.map_err(|e| e.to_string())?;
+    }
+
+    Ok("Phishing payload generated".to_string())
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PersistenceItemJson {
+    pub id: String,
+    pub implant_id: String,
+    pub method: String,
+    pub details: String,
+}
+
+impl From<PersistenceItem> for PersistenceItemJson {
+    fn from(p: PersistenceItem) -> Self {
+        Self {
+            id: p.id,
+            implant_id: p.implant_id,
+            method: p.method,
+            details: p.details,
+        }
+    }
+}
+
+#[tauri::command]
+async fn list_persistence(
+    implant_id: String,
+    state: State<'_, ClientState>,
+) -> Result<String, String> {
+    let mut lock = state.client.lock().await;
+    let client = lock.as_mut().ok_or("Not connected")?;
+
+    let response = client.list_persistence(tonic::Request::new(ListPersistenceRequest {
+        implant_id,
+    })).await.map_err(|e| format!("gRPC error: {}", e))?;
+
+    let items: Vec<PersistenceItemJson> = response.into_inner().items.into_iter().map(|i| i.into()).collect();
+    serde_json::to_string(&items).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn remove_persistence(
+    id: String,
+    state: State<'_, ClientState>,
+) -> Result<(), String> {
+    let mut lock = state.client.lock().await;
+    let client = lock.as_mut().ok_or("Not connected")?;
+
+    client.remove_persistence(tonic::Request::new(RemovePersistenceRequest { id }))
+        .await.map_err(|e| format!("gRPC error: {}", e))?;
+    Ok(())
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CredentialJson {
+    pub id: String,
+    pub implant_id: String,
+    pub source: String,
+    pub credential_type: String,
+    pub domain: String,
+    pub username: String,
+}
+
+impl From<Credential> for CredentialJson {
+    fn from(c: Credential) -> Self {
+        Self {
+            id: c.id,
+            implant_id: c.implant_id,
+            source: c.source,
+            credential_type: c.credential_type,
+            domain: c.domain,
+            username: c.username,
+        }
+    }
+}
+
+#[tauri::command]
+async fn list_credentials(
+    state: State<'_, ClientState>,
+) -> Result<String, String> {
+    let mut lock = state.client.lock().await;
+    let client = lock.as_mut().ok_or("Not connected")?;
+
+    let response = client.list_credentials(tonic::Request::new(ListCredentialsRequest {
+        campaign_id: "".to_string(),
+        implant_id: "".to_string(),
+        credential_type: "".to_string(),
+        page_size: 100,
+        page_token: "".to_string(),
+    })).await.map_err(|e| format!("gRPC error: {}", e))?;
+
+    let creds: Vec<CredentialJson> = response.into_inner().credentials.into_iter().map(|c| c.into()).collect();
+    serde_json::to_string(&creds).map_err(|e| e.to_string())
+}
+
 /// Initialize and run the Tauri application
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -551,7 +670,11 @@ pub fn run() {
             update_campaign,
             kill_implant,
             start_listener,
-            stop_listener
+            stop_listener,
+            create_phishing,
+            list_persistence,
+            remove_persistence,
+            list_credentials
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

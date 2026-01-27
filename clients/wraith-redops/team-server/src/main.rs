@@ -29,6 +29,28 @@ use services::operator::OperatorServiceImpl;
 use services::session::SessionManager;
 use wraith_crypto::noise::NoiseKeypair;
 
+use tonic::{Request, Status};
+
+fn auth_interceptor(mut req: Request<()>) -> Result<Request<()>, Status> {
+    let token = match req.metadata().get("authorization") {
+        Some(t) => {
+            let s = t.to_str().map_err(|_| Status::unauthenticated("Invalid auth header"))?;
+            if s.starts_with("Bearer ") {
+                &s[7..]
+            } else {
+                return Err(Status::unauthenticated("Invalid auth scheme"));
+            }
+        },
+        None => return Ok(req),
+    };
+
+    let claims = utils::verify_jwt(token)
+        .map_err(|e| Status::unauthenticated(format!("Invalid token: {}", e)))?;
+        
+    req.extensions_mut().insert(claims);
+    Ok(req)
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize logging
@@ -152,7 +174,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Team Server listening on {}", addr);
 
     Server::builder()
-        .add_service(OperatorServiceServer::new(operator_service))
+        .add_service(OperatorServiceServer::with_interceptor(operator_service, auth_interceptor))
         .add_service(ImplantServiceServer::new(implant_service))
         .serve(addr)
         .await?;

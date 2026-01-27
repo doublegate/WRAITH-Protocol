@@ -46,6 +46,11 @@ service OperatorService {
 
     // Builder
     rpc GenerateImplant(GenerateImplantRequest) returns (stream PayloadChunk);
+    rpc GeneratePhishing(GeneratePhishingRequest) returns (stream PayloadChunk);
+
+    // Persistence
+    rpc ListPersistence(ListPersistenceRequest) returns (ListPersistenceResponse);
+    rpc RemovePersistence(RemovePersistenceRequest) returns (google.protobuf.Empty);
 }
 
 // Implant service (C2 protocol)
@@ -392,6 +397,32 @@ message PayloadChunk {
     bytes data = 1;
     int64 offset = 2;
     bool is_last = 3;
+}
+
+message GeneratePhishingRequest {
+    string type = 1; // "html", "macro"
+    string c2_url = 2;
+    string template_name = 3;
+}
+
+message ListPersistenceRequest {
+    string implant_id = 1;
+}
+
+message ListPersistenceResponse {
+    repeated PersistenceItem items = 1;
+}
+
+message PersistenceItem {
+    string id = 1;
+    string implant_id = 2;
+    string method = 3;
+    string details = 4;
+    google.protobuf.Timestamp created_at = 5;
+}
+
+message RemovePersistenceRequest {
+    string id = 1;
 }
 
 message RefreshRequest {

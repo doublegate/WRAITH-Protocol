@@ -189,6 +189,7 @@ WRAITH Protocol powers a comprehensive ecosystem of 12 production-ready applicat
 - BOF Loader with COFF parsing, section mapping, and relocation support
 - SOCKS4a/5 proxy for tunneling operator traffic
 - Halo's Gate SSN resolution for direct syscalls
+- MITRE ATT&CK technique coverage across 12 tactics (TA0001-TA0011, TA0040)
 - Ed25519-signed Kill Switch broadcast mechanism
 - Encryption at Rest for command payloads and results
 
@@ -561,7 +562,7 @@ WRAITH Protocol v2.2.5 represents 2,740+ story points across 24 development phas
 
 - Core protocol implementation (cryptography, transport, obfuscation, discovery)
 - 12 production-ready client applications (9 desktop + 2 mobile + 1 server platform)
-- WRAITH-RedOps fully remediated with exhaustive gap analysis (v4.0.0)
+- WRAITH-RedOps fully remediated with exhaustive gap analysis (v4.0.0, refreshed v4.1.0)
 - Comprehensive documentation (113 files, ~61,000 lines) and testing (2,140 tests)
 - CI/CD infrastructure with multi-platform releases
 
@@ -641,4 +642,4 @@ WRAITH Protocol builds on excellent projects and research:
 
 **Version:** 2.2.5 | **License:** MIT | **Language:** Rust 2024 (MSRV 1.88) | **Tests:** 2,140 passing (100%) | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server)
 
-*Last Updated: 2026-01-25*
+*Last Updated: 2026-01-26*
