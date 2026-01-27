@@ -131,6 +131,8 @@ pub async fn start_smb_listener(
                                 h.message_id = msg_id;
                                 h.process_id = proc_id;
                                 h.credits = 1; // Credits granted
+                                // SAFETY: Smb2Header is #[repr(C, packed)] and 64 bytes, 
+                                // which is compatible with the [u8; 64] target array.
                                 let h_bytes: [u8; 64] = unsafe { core::mem::transmute(h) };
                                 resp.extend_from_slice(&h_bytes);
 
@@ -163,6 +165,7 @@ pub async fn start_smb_listener(
                                 h.message_id = msg_id;
                                 h.process_id = proc_id;
                                 h.session_id = 0x10000001; // Assign session ID
+                                // SAFETY: Smb2Header is #[repr(C, packed)] and 64 bytes.
                                 let h_bytes: [u8; 64] = unsafe { core::mem::transmute(h) };
                                 resp.extend_from_slice(&h_bytes);
 
@@ -180,6 +183,7 @@ pub async fn start_smb_listener(
                                 h.process_id = proc_id;
                                 h.session_id = session_id;
                                 h.tree_id = 0x20000001; // Assign tree ID
+                                // SAFETY: Smb2Header is #[repr(C, packed)] and 64 bytes.
                                 let h_bytes: [u8; 64] = unsafe { core::mem::transmute(h) };
                                 resp.extend_from_slice(&h_bytes);
 
@@ -221,6 +225,7 @@ pub async fn start_smb_listener(
                                         h.message_id = msg_id;
                                         h.process_id = proc_id;
                                         h.session_id = session_id;
+                                        // SAFETY: Smb2Header is #[repr(C, packed)] and 64 bytes.
                                         let h_bytes: [u8; 64] = unsafe { core::mem::transmute(h) };
                                         resp.extend_from_slice(&h_bytes);
 
@@ -254,6 +259,7 @@ pub async fn start_smb_listener(
                                 h.message_id = msg_id;
                                 h.process_id = proc_id;
                                 h.session_id = session_id;
+                                // SAFETY: Smb2Header is #[repr(C, packed)] and 64 bytes.
                                 let h_bytes: [u8; 64] = unsafe { core::mem::transmute(h) };
                                 resp.extend_from_slice(&h_bytes);
 

@@ -11,6 +11,10 @@ Implement advanced evasion techniques and missing MITRE ATT&CK capabilities to b
 5.  **MITRE Capabilities (Priority: P2):**
     -   **T1113:** Screen Capture
     -   **T1555:** Browser/Keychain Credential Access
+6.  **Integration & Lifecycle Management (Phase 4):**
+    -   **Tauri Client Parity:** Upgrade operator client to Tauri 2.x standards, including `tauri-plugin-log` and `tauri-plugin-notification`.
+    -   **Version Synchronization:** Align `spectre-implant` versioning with the project core (v2.3.0).
+    -   **Workspace Integration:** Address CI/CD gaps caused by workspace exclusion.
 
 ## Implementation Details
 
@@ -41,3 +45,10 @@ Implement advanced evasion techniques and missing MITRE ATT&CK capabilities to b
 ### Browser Credentials
 -   Search for `Login Data` files (Chrome/Edge).
 -   Use DPAPI (`CryptUnprotectData`) to decrypt the key (if master key extraction is feasible in no_std, otherwise just download the files).
+-   Implement key file extraction (download for offline decryption).
+
+### Tauri & Lifecycle
+-   Update `tauri.conf.json` to include missing plugins.
+-   Implement desktop notifications for implant check-ins and command completions.
+-   Synchronize `spectre-implant/Cargo.toml` version to `2.3.0`.
+-   Add explicit linting/testing commands for RedOps components in `xtask` or CI.

