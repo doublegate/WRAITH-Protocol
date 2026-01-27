@@ -52,7 +52,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Rust nightly
         uses: dtolnay/rust-toolchain@nightly
@@ -63,7 +63,7 @@ jobs:
         run: cargo install cargo-fuzz
 
       - name: Cache cargo registry
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
@@ -77,10 +77,10 @@ jobs:
         run: mkdir -p fuzz/corpus/${{ matrix.target }}
 
       # Use cache instead of artifacts for corpus persistence across workflow runs
-      # actions/cache persists across runs; actions/download-artifact@v4 only works within the same run
+      # actions/cache persists across runs; actions/download-artifact@v7 only works within the same run
       - name: Restore corpus from cache
         id: corpus-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: fuzz/corpus/${{ matrix.target }}
           key: fuzz-corpus-${{ matrix.target }}-${{ github.sha }}
@@ -112,7 +112,7 @@ jobs:
 
       - name: Upload crash artifacts
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: crashes-${{ matrix.target }}
           path: |
@@ -144,7 +144,7 @@ jobs:
     if: github.event_name == 'schedule'
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Rust nightly
         uses: dtolnay/rust-toolchain@nightly
@@ -164,7 +164,7 @@ jobs:
 
       # Restore all corpus caches for extended fuzzing
       - name: Restore corpus caches
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             fuzz/corpus/fuzz_frame_parser
@@ -194,7 +194,7 @@ jobs:
 
       - name: Upload all artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: extended-fuzz-results
           path: |
