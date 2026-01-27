@@ -1,31 +1,19 @@
-use crate::database::Database;
-use crate::governance::GovernanceEngine;
-use crate::wraith::redops::Event;
 use axum::{
-    Router,
-    body::Bytes,
-    extract::{ConnectInfo, State},
-    response::IntoResponse,
+    extract::{State, ConnectInfo},
     routing::post,
+    response::IntoResponse,
+    body::Bytes,
+    Router,
 };
-use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
-use std::net::SocketAddr;
 use std::sync::Arc;
+use std::net::SocketAddr;
+use crate::database::Database;
 use tokio::sync::broadcast;
-use wraith_crypto::noise::{HandshakePhase, NoiseHandshake, NoiseKeypair, NoiseTransport};
-
-#[derive(Clone)]
-pub struct AppState {
-    pub db: Arc<Database>,
-    pub event_tx: broadcast::Sender<Event>,
-    pub governance: Arc<GovernanceEngine>,
-    pub static_key: Arc<NoiseKeypair>,
-    // Map temporary CIDs (from handshake) to pending handshakes
-    pub handshakes: Arc<DashMap<[u8; 8], NoiseHandshake>>,
-    // Map session CIDs to established transports
-    pub sessions: Arc<DashMap<[u8; 8], NoiseTransport>>,
-}
+use crate::wraith::redops::Event;
+use crate::governance::GovernanceEngine;
+use wraith_crypto::noise::{NoiseKeypair, NoiseHandshake};
+use crate::services::session::SessionManager;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct BeaconData {
@@ -39,32 +27,39 @@ pub struct BeaconResponse {
     pub tasks: Vec<String>,
 }
 
+#[derive(Clone)]
+pub struct AppState {
+    pub db: Arc<Database>,
+    pub event_tx: broadcast::Sender<Event>,
+    pub governance: Arc<GovernanceEngine>,
+    pub static_key: Arc<NoiseKeypair>,
+    pub session_manager: Arc<SessionManager>,
+}
+
 // Helper to extract CID from packet
 fn extract_cid(data: &[u8]) -> Option<[u8; 8]> {
-    if data.len() < 8 {
-        return None;
-    }
+    if data.len() < 8 { return None; }
     let mut cid = [0u8; 8];
     cid.copy_from_slice(&data[0..8]);
     Some(cid)
 }
 
 pub async fn start_http_listener(
-    db: Arc<Database>,
-    port: u16,
-    event_tx: broadcast::Sender<Event>,
+    db: Arc<Database>, 
+    port: u16, 
+    event_tx: broadcast::Sender<Event>, 
     governance: Arc<GovernanceEngine>,
     static_key: NoiseKeypair,
+    session_manager: Arc<SessionManager>
 ) {
-    let state = AppState {
-        db,
-        event_tx,
+    let state = AppState { 
+        db, 
+        event_tx, 
         governance,
         static_key: Arc::new(static_key),
-        handshakes: Arc::new(DashMap::new()),
-        sessions: Arc::new(DashMap::new()),
+        session_manager,
     };
-
+    
     let app = Router::new()
         .route("/api/v1/beacon", post(handle_beacon))
         .with_state(state);
@@ -75,11 +70,9 @@ pub async fn start_http_listener(
     match tokio::net::TcpListener::bind(addr).await {
         Ok(listener) => {
             if let Err(e) = axum::serve(
-                listener,
-                app.into_make_service_with_connect_info::<SocketAddr>(),
-            )
-            .await
-            {
+                listener, 
+                app.into_make_service_with_connect_info::<SocketAddr>()
+            ).await {
                 tracing::error!("HTTP Listener error: {}", e);
             }
         }
@@ -102,7 +95,7 @@ async fn handle_beacon(
         Some(c) => c,
         None => return Vec::new(),
     };
-
+    
     let payload = &data[8..]; // Skip CID
 
     // 1. Handshake Init (Msg 1)
@@ -115,15 +108,15 @@ async fn handle_beacon(
                 return Vec::new();
             }
         };
-
-        let response_payload = match handshake.read_message(payload) {
+        
+        let _response_payload = match handshake.read_message(payload) {
             Ok(p) => p, // Should be empty
             Err(e) => {
                 tracing::error!("Read msg 1 failed: {}", e);
                 return Vec::new();
             }
         };
-
+        
         // Generate Msg 2
         let msg2 = match handshake.write_message(&[]) {
             Ok(m) => m,
@@ -132,29 +125,19 @@ async fn handle_beacon(
                 return Vec::new();
             }
         };
-
-        // We need a way to map the next request (Msg 3) to this state.
-        // In UDP WRAITH, Msg 2 contains a new CID derived from keys.
-        // We haven't derived keys yet.
-        // Snow doesn't expose ephemeral public key easily to derive CID?
-        // We'll generate a random temporary CID for the handshake continuation.
-        // For Msg 2 response, we prepend THIS temp CID so client knows where to send Msg 3.
-        // Wait, WRAITH spec says Responder sends "Connection ID (8 bytes): Derived from ee".
-        // Snow state allows `get_handshake_hash`?
-        // For MVP integration, I'll use a random CID.
-
+        
         let temp_cid = uuid::Uuid::new_v4().as_bytes()[0..8].try_into().unwrap();
-        state.handshakes.insert(temp_cid, handshake);
-
+        state.session_manager.insert_handshake(temp_cid, handshake);
+        
         // Response: Temp CID + Msg 2
         let mut response = Vec::new();
         response.extend_from_slice(&temp_cid);
         response.extend_from_slice(&msg2);
         return response;
     }
-
+    
     // 2. Handshake Continue (Msg 3)
-    if let Some((_, mut handshake)) = state.handshakes.remove(&cid) {
+    if let Some(mut handshake) = state.session_manager.remove_handshake(&cid) {
         tracing::debug!("Received Handshake Msg 3");
         let _payload = match handshake.read_message(payload) {
             Ok(p) => p,
@@ -163,7 +146,7 @@ async fn handle_beacon(
                 return Vec::new();
             }
         };
-
+        
         // Handshake complete
         let transport = match handshake.into_transport() {
             Ok(t) => t,
@@ -172,22 +155,17 @@ async fn handle_beacon(
                 return Vec::new();
             }
         };
-
-        // In WRAITH, we derive session keys and CID.
-        // Here we'll just use the same Temp CID as the Session CID for simplicity
-        // or derive a new one. Let's use the same CID for the session.
-        // (In real WRAITH, CID rotates, but for this integration we stick to stable CID for HTTP).
-        state.sessions.insert(cid, transport);
-
+        
+        state.session_manager.insert_session(cid, transport);
+        
         // Return empty ack (Msg 4 equivalent/Transport established)
-        // Client can now send Data.
         let mut response = Vec::new();
         response.extend_from_slice(&cid);
         return response;
     }
-
+    
     // 3. Data Transport
-    if let Some(mut transport) = state.sessions.get_mut(&cid) {
+    if let Some(mut transport) = state.session_manager.get_session(&cid) {
         // Decrypt
         let plaintext = match transport.read_message(payload) {
             Ok(pt) => pt,
@@ -196,24 +174,16 @@ async fn handle_beacon(
                 return Vec::new();
             }
         };
-
+        
         // Handle Inner Frame (WraithFrame)
-        // For now, assume it's just the JSON body we used before, or a Frame struct.
-        // Implant sends: serialized WraithFrame.
-        // We need to parse it.
-        // Since I don't have wraith-core::frame::Frame available easily (I need to import it),
-        // I'll just assume the payload IS the data for the beacon logic (skip frame header parsing for this step
-        // or parse it manually if simple).
-        // My Implant sends: Header (28 bytes) + JSON.
-        // I'll skip 28 bytes.
-
+        // Skip header (28 bytes)
         if plaintext.len() > 28 {
             let inner_payload = &plaintext[28..];
-
-            // Process Beacon (Legacy Logic)
+            
+            // Process Beacon
             if let Ok(beacon) = serde_json::from_slice::<BeaconData>(inner_payload) {
-                tracing::debug!("Beacon Checkin: {}", beacon.id);
-                let _ = state.event_tx.send(Event {
+                 tracing::debug!("Beacon Checkin: {}", beacon.id);
+                 let _ = state.event_tx.send(Event {
                     id: uuid::Uuid::new_v4().to_string(),
                     r#type: "beacon_checkin".to_string(),
                     timestamp: Some(prost_types::Timestamp::from(std::time::SystemTime::now())),
@@ -221,21 +191,21 @@ async fn handle_beacon(
                     implant_id: beacon.id.clone(),
                     data: std::collections::HashMap::new(),
                 });
-
+                
                 // Response: Encrypt JSON tasks
-                // TODO: Get real tasks
+                // In real impl, get tasks from DB
                 let resp_json = serde_json::to_vec(&BeaconResponse { tasks: vec![] }).unwrap();
-
+                
                 // Wrap in Frame (Mock header)
                 let mut frame = vec![0u8; 28]; // Empty header
                 frame.extend_from_slice(&resp_json);
-
+                
                 // Encrypt
                 let ciphertext = match transport.write_message(&frame) {
                     Ok(ct) => ct,
                     Err(_) => return Vec::new(),
                 };
-
+                
                 let mut response = Vec::new();
                 response.extend_from_slice(&cid);
                 response.extend_from_slice(&ciphertext);

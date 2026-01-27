@@ -1,5 +1,4 @@
 use crate::utils::windows_definitions::*;
-use core::arch::asm;
 
 // DJB2 Hash for ASCII strings
 pub const fn hash_str(s: &[u8]) -> u32 {

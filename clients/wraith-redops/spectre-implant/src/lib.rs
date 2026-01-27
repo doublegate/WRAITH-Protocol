@@ -3,8 +3,9 @@
 
 extern crate alloc;
 
-pub mod c2;
 pub mod utils;
+pub mod c2;
+pub mod modules;
 
 // Global Allocator
 #[global_allocator]

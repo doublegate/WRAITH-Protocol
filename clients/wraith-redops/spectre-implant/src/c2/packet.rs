@@ -40,4 +40,34 @@ impl WraithFrame {
         buf.extend_from_slice(&self.payload);
         buf
     }
+
+    pub fn deserialize(data: &[u8]) -> Option<Self> {
+        if data.len() < 28 {
+            return None;
+        }
+
+        let nonce = u64::from_be_bytes(data[0..8].try_into().ok()?);
+        let frame_type = data[8];
+        let flags = data[9];
+        let stream_id = u16::from_be_bytes(data[10..12].try_into().ok()?);
+        let sequence = u32::from_be_bytes(data[12..16].try_into().ok()?);
+        let offset = u64::from_be_bytes(data[16..24].try_into().ok()?);
+        let payload_len = u16::from_be_bytes(data[24..26].try_into().ok()?) as usize;
+
+        if data.len() < 28 + payload_len {
+            return None;
+        }
+
+        let payload = data[28..28 + payload_len].to_vec();
+
+        Some(Self {
+            nonce,
+            frame_type,
+            flags,
+            stream_id,
+            sequence,
+            offset,
+            payload,
+        })
+    }
 }
