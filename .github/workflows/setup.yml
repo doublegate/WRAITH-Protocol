@@ -87,18 +87,20 @@ jobs:
             libgtk-3-dev \
             libayatana-appindicator3-dev \
             libsqlcipher-dev \
-            libasound2-dev
+            libasound2-dev \
+            protobuf-compiler
 
       - name: Install system dependencies (macOS)
         if: inputs.os == 'macos-latest'
         run: |
-          brew install sqlcipher opus
+          brew install sqlcipher opus protobuf
 
       - name: Install system dependencies (Windows)
         if: inputs.os == 'windows-latest'
         shell: pwsh
         run: |
-          # Install SQLCipher using vcpkg
+          # Install protobuf compiler and SQLCipher
+          choco install protoc -y
           vcpkg install sqlcipher:x64-windows
 
       - name: Set SQLCipher environment (Windows)
@@ -121,7 +123,7 @@ jobs:
 
       - name: Cache Cargo registry and target
         id: cache-cargo
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
@@ -140,14 +142,14 @@ jobs:
       #########################################################################
       - name: Setup Node.js
         if: inputs.install-node || inputs.install-tauri
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ inputs.node-version }}
 
       - name: Cache Node modules
         if: inputs.install-node || inputs.install-tauri
         id: cache-node
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.npm
