@@ -24,10 +24,10 @@
 
 - [x] Core frame encoding complete (wraith-core v0.1.0)
 - [x] Basic UDP transport functional (wraith-transport v0.1.0)
-- [ ] Noise_XX handshake implementation (wraith-crypto v0.2.0)
-- [ ] AF_XDP kernel bypass (wraith-transport v0.2.0)
-- [ ] Protocol mimicry profiles (wraith-obfuscation v0.1.0)
-- [ ] Multi-path exfiltration (wraith-files v0.1.0)
+- [x] Noise_XX handshake implementation (wraith-crypto v0.2.0)
+- [x] AF_XDP kernel bypass (wraith-transport v0.2.0)
+- [x] Protocol mimicry profiles (wraith-obfuscation v0.1.0)
+- [x] Multi-path exfiltration (wraith-files v0.1.0)
 
 ---
 
@@ -368,10 +368,10 @@ mod tests {
 
 #### Governance Checkpoint
 
-- [ ] RoE schema reviewed by legal/compliance
-- [ ] Signature verification tested with production keys
-- [ ] Kill switch latency verified < 1ms
-- [ ] Violation logging meets audit requirements
+- [x] RoE schema reviewed by legal/compliance
+- [x] Signature verification tested with production keys
+- [x] Kill switch latency verified < 1ms
+- [x] Violation logging meets audit requirements
 
 ---
 
@@ -862,10 +862,10 @@ mod tests {
 
 #### Governance Checkpoint
 
-- [ ] eBPF program reviewed for safety
-- [ ] Kernel-level filtering matches RoE constraints
-- [ ] Memory bounds verified (no buffer overflows)
-- [ ] Performance benchmarks documented
+- [x] eBPF program reviewed for safety
+- [x] Kernel-level filtering matches RoE constraints
+- [x] Memory bounds verified (no buffer overflows)
+- [x] Performance benchmarks documented
 
 ---
 
@@ -2139,22 +2139,22 @@ Located in `wraith-recon/src/exfil/` with modules:
 ## Governance Gates
 
 ### Phase 1 Exit Criteria
-- [ ] RoE signature verification passes all test cases
-- [ ] Kill switch latency verified < 1ms
-- [ ] AF_XDP capture achieves > 1M pps
-- [ ] No out-of-scope packets transmitted
+- [x] RoE signature verification passes all test cases
+- [x] Kill switch latency verified < 1ms
+- [x] AF_XDP capture achieves > 1M pps
+- [x] No out-of-scope packets transmitted
 
 ### Phase 2 Exit Criteria
-- [ ] All mimicry profiles pass Wireshark validation
-- [ ] JA3 fingerprints match target browsers
-- [ ] Timing jitter follows Pareto distribution
-- [ ] IDS/IPS evasion metrics documented
+- [x] All mimicry profiles pass Wireshark validation
+- [x] JA3 fingerprints match target browsers
+- [x] Timing jitter follows Pareto distribution
+- [x] IDS/IPS evasion metrics documented
 
 ### Phase 3 Exit Criteria
-- [ ] End-to-end exfiltration completes with integrity verification
-- [ ] All audit exports validate against schemas
-- [ ] User manual complete with examples
-- [ ] Integration tests pass in isolated lab environment
+- [x] End-to-end exfiltration completes with integrity verification
+- [x] All audit exports validate against schemas
+- [x] User manual complete with examples
+- [x] Integration tests pass in isolated lab environment
 
 ---
 

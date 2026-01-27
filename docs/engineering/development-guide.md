@@ -173,8 +173,22 @@ WRAITH-Protocol/
 │   ├── wraith-obfuscation/    # Traffic obfuscation
 │   ├── wraith-discovery/      # DHT and peer discovery
 │   ├── wraith-files/          # File transfer logic
-│   ├── wraith-xdp/            # XDP/eBPF packet filtering
+│   ├── wraith-ffi/            # FFI bindings (C, JNI, UniFFI)
+│   ├── wraith-xdp/            # XDP/eBPF packet filtering (excluded)
 │   └── wraith-cli/            # Command-line interface
+├── clients/                   # Client applications (12 total)
+│   ├── wraith-transfer/       # Desktop file transfer (Tauri)
+│   ├── wraith-chat/           # E2EE messaging (Tauri)
+│   ├── wraith-sync/           # File synchronization (Tauri)
+│   ├── wraith-share/          # Distributed file sharing (Tauri)
+│   ├── wraith-stream/         # Secure media streaming (Tauri)
+│   ├── wraith-mesh/           # IoT mesh networking (Tauri)
+│   ├── wraith-publish/        # Censorship-resistant publishing (Tauri)
+│   ├── wraith-vault/          # Distributed secret storage (Tauri)
+│   ├── wraith-recon/          # Security reconnaissance (Tauri)
+│   ├── wraith-android/        # Android mobile client (Kotlin)
+│   ├── wraith-ios/            # iOS mobile client (Swift)
+│   └── wraith-redops/         # Red team operations (Team Server + Client + Implant)
 ├── xtask/                     # Build automation
 ├── benches/                   # Performance benchmarks
 ├── tests/                     # Integration tests
@@ -206,6 +220,7 @@ graph TD
 - **wraith-obfuscation:** Traffic obfuscation (packet padding, timing randomization)
 - **wraith-discovery:** Peer discovery (DHT, relay discovery)
 - **wraith-files:** File transfer logic (chunking, integrity verification)
+- **wraith-ffi:** Foreign function interface (C, JNI for Android, UniFFI for iOS)
 - **wraith-cli:** User interface
 
 ---

@@ -1,6 +1,6 @@
 [package]
 name = "wraith-recon"
-version = "2.2.5"
+version = "2.3.0"
 description = "WRAITH-Recon - Network Reconnaissance and Data Exfiltration Assessment Platform"
 authors = ["WRAITH Protocol Contributors"]
 license = "MIT OR Apache-2.0"

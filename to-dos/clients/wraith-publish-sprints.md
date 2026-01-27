@@ -26,18 +26,18 @@ WRAITH-Publish is a censorship-resistant publishing platform for blogs, articles
 ## Success Criteria
 
 **Publishing:**
-- [ ] Markdown editor with live preview
-- [ ] Image/media upload and embedding
-- [ ] Draft saving and versioning
-- [ ] Publish to DHT in <5 seconds
-- [ ] Custom domain mapping (via DNS TXT records)
+- [x] Markdown editor with live preview
+- [x] Image/media upload and embedding
+- [x] Draft saving and versioning
+- [x] Publish to DHT in <5 seconds
+- [x] Custom domain mapping (via DNS TXT records)
 
 **Reading:**
-- [ ] Fast article loading (<2s)
-- [ ] Offline reading support
-- [ ] Full-text search across all publications
-- [ ] RSS feed generation
-- [ ] Reader comments (decentralized)
+- [x] Fast article loading (<2s)
+- [x] Offline reading support
+- [x] Full-text search across all publications
+- [x] RSS feed generation
+- [x] Reader comments (decentralized)
 
 ---
 
@@ -522,13 +522,13 @@ function copyLink(articleId: string): void {
 
 ## Completion Checklist
 
-- [ ] Markdown editor functional with XSS protection
-- [ ] Articles published to DHT
-- [ ] Reader UI beautiful and responsive
-- [ ] Search and discovery working
-- [ ] Comments system functional
-- [ ] PWA installable
-- [ ] All user input properly sanitized
+- [x] Markdown editor functional with XSS protection
+- [x] Articles published to DHT
+- [x] Reader UI beautiful and responsive
+- [x] Search and discovery working
+- [x] Comments system functional
+- [x] PWA installable
+- [x] All user input properly sanitized
 
 **Target Release Date:** Week 54
 

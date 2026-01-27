@@ -14,8 +14,10 @@ This document provides a comprehensive reference for the WRAITH Protocol's publi
 - **wraith-core:** Core session management, framing
 - **wraith-crypto:** Cryptographic primitives
 - **wraith-transport:** Network transport layer
+- **wraith-obfuscation:** Traffic obfuscation (padding, timing, mimicry)
 - **wraith-discovery:** DHT and peer discovery
 - **wraith-files:** File transfer operations
+- **wraith-ffi:** FFI bindings (C, JNI, UniFFI)
 - **wraith-cli:** Command-line interface
 
 ---

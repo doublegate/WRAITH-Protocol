@@ -1,8 +1,8 @@
 # WRAITH Protocol Client Applications
 
-**Document Version:** 2.0.0
-**Last Updated:** 2026-01-23
-**Status:** All 10 Clients Complete
+**Document Version:** 2.3.0
+**Last Updated:** 2026-01-27
+**Status:** All 12 Clients Complete (9 Desktop + 2 Mobile + 1 Server)
 
 ---
 
@@ -51,7 +51,7 @@ WRAITH Protocol provides a suite of client applications built on the core protoc
 - Private conversations
 - Group messaging
 - File attachments
-- Voice/video calls (planned)
+- Voice/video calls (Opus codec, VP8/VP9, adaptive bitrate)
 
 **Key Features:**
 - End-to-end encrypted messages
@@ -570,6 +570,10 @@ For detailed information about each client, see:
 - **WRAITH-Publish:** [architecture](wraith-publish/architecture.md) | [features](wraith-publish/features.md) | [implementation](wraith-publish/implementation.md)
 - **WRAITH-Vault:** [architecture](wraith-vault/architecture.md) | [features](wraith-vault/features.md) | [implementation](wraith-vault/implementation.md)
 
+**Mobile Clients:**
+- **WRAITH-Android:** Kotlin + JNI, Android Keystore, FCM push notifications
+- **WRAITH-iOS:** Swift + UniFFI, iOS Keychain, APNs push notifications
+
 **Security Testing Clients (Tier 3 - Authorized Use Only):**
 - **WRAITH-Recon:** [architecture](wraith-recon/architecture.md) | [features](wraith-recon/features.md) | [implementation](wraith-recon/implementation.md) | [integration](wraith-recon/integration.md) | [testing](wraith-recon/testing.md) | [usage](wraith-recon/usage.md)
 - **WRAITH-RedOps:** [architecture](wraith-redops/architecture.md) | [features](wraith-redops/features.md) | [implementation](wraith-redops/implementation.md) | [integration](wraith-redops/integration.md) | [testing](wraith-redops/testing.md) | [usage](wraith-redops/usage.md)
@@ -578,25 +582,18 @@ For detailed information about each client, see:
 
 ## Roadmap
 
-**Q1 2026:**
-- WRAITH-Transfer 1.0 (stable release)
-- WRAITH-Chat beta
-- Mobile apps (Android/iOS) alpha
+**Completed (as of v2.3.0):**
+- All 12 client applications implemented and tested
+- 9 desktop clients (Transfer, Chat, Sync, Share, Stream, Mesh, Publish, Vault, Recon)
+- 2 mobile clients (Android, iOS)
+- 1 server platform (RedOps Team Server + Operator Client + Spectre Implant)
+- 2,120+ tests passing across all components
 
-**Q2 2026:**
-- WRAITH-Sync 1.0
-- WRAITH-Share beta
+**Future Enhancements:**
 - Browser extension
-
-**Q3 2026:**
-- WRAITH-Stream beta
-- WRAITH-Mesh alpha
-- Hardware encryption support
-
-**Q4 2026:**
-- WRAITH-Publish beta
-- WRAITH-Vault 1.0
+- Hardware encryption support (Secure Enclave, TPM)
 - Enterprise features (LDAP, SSO)
+- Post-quantum cryptography hybrid mode (Kyber/Dilithium)
 
 ---
 

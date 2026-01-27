@@ -16,6 +16,7 @@
   - [ ] wraith-obfuscation (Padding, Timing, Protocol mimicry)
   - [ ] wraith-discovery (DHT, NAT traversal, Relay)
   - [ ] wraith-files (File I/O, Chunking, Hashing)
+  - [ ] wraith-ffi (FFI bindings, JNI, UniFFI)
   - [ ] wraith-cli (Configuration, Key management)
 
 ---

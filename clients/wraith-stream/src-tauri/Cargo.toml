@@ -1,6 +1,6 @@
 [package]
 name = "wraith-stream"
-version = "2.2.5"
+version = "2.3.0"
 description = "WRAITH-Stream - Encrypted Peer-to-Peer Media Streaming"
 authors = ["WRAITH Protocol Contributors"]
 license = "MIT OR Apache-2.0"

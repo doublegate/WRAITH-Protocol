@@ -228,7 +228,7 @@
 | **Resume** | Chunk-level bitmap | Application | N/A | Piece selection | No |
 | **Multi-Peer** | Yes (4 strategies) | Application | N/A | Yes (tit-for-tat) | No |
 | **Compression** | Optional | Application | N/A | No | No |
-| **Streaming** | Planned | Yes | N/A | Planned (WebTorrent) | No |
+| **Streaming** | Yes (AV1/VP9/H.264, adaptive bitrate) | Yes | N/A | Planned (WebTorrent) | No |
 
 ---
 
@@ -418,7 +418,7 @@
 - Connection migration
 - HTTP/3 integration
 
-**Alternative:** WRAITH (for privacy-enhanced streaming - planned)
+**Alternative:** WRAITH (for privacy-enhanced streaming via WRAITH-Stream)
 
 ---
 

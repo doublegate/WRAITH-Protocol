@@ -45,32 +45,32 @@ WRAITH-Transfer is the flagship client application providing an intuitive graphi
 ## Success Criteria
 
 **User Experience:**
-- [ ] Transfer initiated in <3 clicks from file selection
-- [ ] Progress feedback updates at <100ms intervals
-- [ ] Peer connection established in <5 seconds
-- [ ] Application startup in <2 seconds
-- [ ] <20 MB installer size per platform
+- [x] Transfer initiated in <3 clicks from file selection
+- [x] Progress feedback updates at <100ms intervals
+- [x] Peer connection established in <5 seconds
+- [x] Application startup in <2 seconds
+- [x] <20 MB installer size per platform
 
 **Performance:**
-- [ ] Saturates 1 Gbps link with single large file
-- [ ] Handles 10,000+ small files efficiently
-- [ ] Resumes interrupted transfers automatically
-- [ ] CPU usage <10% during idle peer connection
-- [ ] Memory usage <150 MB baseline
+- [x] Saturates 1 Gbps link with single large file
+- [x] Handles 10,000+ small files efficiently
+- [x] Resumes interrupted transfers automatically
+- [x] CPU usage <10% during idle peer connection
+- [x] Memory usage <150 MB baseline
 
 **Platform Support:**
-- [ ] Windows 10+ (x64, ARM64)
-- [ ] macOS 11+ (Intel, Apple Silicon)
-- [ ] Linux (AppImage, deb, rpm)
-- [ ] Native installer per platform
-- [ ] Auto-update mechanism
+- [x] Windows 10+ (x64, ARM64)
+- [x] macOS 11+ (Intel, Apple Silicon)
+- [x] Linux (AppImage, deb, rpm)
+- [x] Native installer per platform
+- [x] Auto-update mechanism
 
 **Security:**
-- [ ] Peer identity verification via QR code or key fingerprint
-- [ ] Optional password protection for transfers
-- [ ] Sandboxed file system access
-- [ ] No data leaves encrypted channel
-- [ ] Key management UI
+- [x] Peer identity verification via QR code or key fingerprint
+- [x] Optional password protection for transfers
+- [x] Sandboxed file system access
+- [x] No data leaves encrypted channel
+- [x] Key management UI
 
 ---
 
@@ -174,11 +174,11 @@ Establish the Tauri application scaffold and implement core file transfer workfl
 **Task:** Initialize Tauri 2.x project with React frontend and TypeScript configuration.
 
 **Acceptance Criteria:**
-- [ ] `npm create tauri-app` executed with React + TypeScript template
-- [ ] Build succeeds on all target platforms (Windows, macOS, Linux)
-- [ ] Hot module reloading works in development mode
-- [ ] Production build generates optimized bundles
-- [ ] Tauri CLI commands documented in README
+- [x] `npm create tauri-app` executed with React + TypeScript template
+- [x] Build succeeds on all target platforms (Windows, macOS, Linux)
+- [x] Hot module reloading works in development mode
+- [x] Production build generates optimized bundles
+- [x] Tauri CLI commands documented in README
 
 **Implementation:**
 
@@ -266,11 +266,11 @@ env_logger = "0.11"
 **Task:** Design and implement the main application window with navigation and content areas.
 
 **Acceptance Criteria:**
-- [ ] Responsive layout works on 800×600 minimum resolution
-- [ ] Navigation sidebar with icons for Send, Receive, History, Settings
-- [ ] Content area updates based on navigation selection
-- [ ] Window controls (minimize, maximize, close) work correctly
-- [ ] Application icon displays in taskbar/dock
+- [x] Responsive layout works on 800×600 minimum resolution
+- [x] Navigation sidebar with icons for Send, Receive, History, Settings
+- [x] Content area updates based on navigation selection
+- [x] Window controls (minimize, maximize, close) work correctly
+- [x] Application icon displays in taskbar/dock
 
 **React Component Structure:**
 ```tsx
@@ -407,12 +407,12 @@ export function Sidebar({ currentView, onNavigate }: SidebarProps) {
 **Task:** Implement native file picker dialog for selecting files/folders to transfer.
 
 **Acceptance Criteria:**
-- [ ] Single file selection works
-- [ ] Multiple file selection works
-- [ ] Folder selection works (recursive)
-- [ ] File size and count displayed after selection
-- [ ] Invalid/inaccessible files show error message
-- [ ] Selected files listed with remove option
+- [x] Single file selection works
+- [x] Multiple file selection works
+- [x] Folder selection works (recursive)
+- [x] File size and count displayed after selection
+- [x] Invalid/inaccessible files show error message
+- [x] Selected files listed with remove option
 
 **Tauri Backend (Rust):**
 ```rust
@@ -577,13 +577,13 @@ function formatBytes(bytes: number): string {
 **Task:** Implement UI for establishing peer connections via manual key exchange.
 
 **Acceptance Criteria:**
-- [ ] Display local peer ID (public key fingerprint)
-- [ ] Copy peer ID to clipboard button
-- [ ] Input field for remote peer ID
-- [ ] Connection status indicator (connecting/connected/failed)
-- [ ] Peer identity verification UI (key fingerprint comparison)
-- [ ] Save trusted peers to local storage
-- [ ] Recent peers list for quick reconnection
+- [x] Display local peer ID (public key fingerprint)
+- [x] Copy peer ID to clipboard button
+- [x] Input field for remote peer ID
+- [x] Connection status indicator (connecting/connected/failed)
+- [x] Peer identity verification UI (key fingerprint comparison)
+- [x] Save trusted peers to local storage
+- [x] Recent peers list for quick reconnection
 
 **Tauri Backend:**
 ```rust
@@ -797,13 +797,13 @@ export function PeerConnection() {
 **Task:** Implement real-time transfer progress UI for single file transfers.
 
 **Acceptance Criteria:**
-- [ ] Progress bar updates every 100ms
-- [ ] Shows transfer speed (MB/s)
-- [ ] Shows time remaining estimate
-- [ ] Shows bytes transferred / total bytes
-- [ ] Cancel button works and cleans up connection
-- [ ] Pause/resume functionality (if protocol supports)
-- [ ] Transfer completion notification
+- [x] Progress bar updates every 100ms
+- [x] Shows transfer speed (MB/s)
+- [x] Shows time remaining estimate
+- [x] Shows bytes transferred / total bytes
+- [x] Cancel button works and cleans up connection
+- [x] Pause/resume functionality (if protocol supports)
+- [x] Transfer completion notification
 
 **Tauri Backend:**
 ```rust
@@ -1032,11 +1032,11 @@ function formatTime(seconds: number): string {
 **Task:** Add system tray icon with menu for quick access to app features.
 
 **Acceptance Criteria:**
-- [ ] Tray icon displays on Windows/macOS/Linux
-- [ ] Double-click tray icon shows/hides main window
-- [ ] Context menu has options: Show, Quit, Pause All Transfers
-- [ ] Tray icon tooltip shows active transfer count
-- [ ] Badge/overlay icon indicates transfer activity
+- [x] Tray icon displays on Windows/macOS/Linux
+- [x] Double-click tray icon shows/hides main window
+- [x] Context menu has options: Show, Quit, Pause All Transfers
+- [x] Tray icon tooltip shows active transfer count
+- [x] Badge/overlay icon indicates transfer activity
 
 **Tauri Configuration:**
 ```rust
@@ -1131,12 +1131,12 @@ fn main() {
 **Task:** Create settings UI for configuring application behavior.
 
 **Acceptance Criteria:**
-- [ ] Settings persisted to local storage
-- [ ] Network settings (port, relay server)
-- [ ] UI preferences (theme, language, notifications)
-- [ ] Storage location for received files
-- [ ] Bandwidth throttling options
-- [ ] Reset to defaults button
+- [x] Settings persisted to local storage
+- [x] Network settings (port, relay server)
+- [x] UI preferences (theme, language, notifications)
+- [x] Storage location for received files
+- [x] Bandwidth throttling options
+- [x] Reset to defaults button
 
 **React Component:**
 ```tsx
@@ -1323,11 +1323,11 @@ export function SettingsView() {
 **Task:** Implement theme switching with CSS custom properties.
 
 **Acceptance Criteria:**
-- [ ] Theme persists across app restarts
-- [ ] Smooth transition between themes (<200ms)
-- [ ] All UI components respect theme
-- [ ] System theme detection works
-- [ ] Manual override option in settings
+- [x] Theme persists across app restarts
+- [x] Smooth transition between themes (<200ms)
+- [x] All UI components respect theme
+- [x] System theme detection works
+- [x] Manual override option in settings
 
 **CSS Variables:**
 ```css
@@ -1418,18 +1418,18 @@ export function useTheme() {
 
 ## Sprint 1 Definition of Done
 
-- [ ] All code compiles without warnings on Windows, macOS, Linux
-- [ ] Application launches in <2 seconds
-- [ ] Window rendering is smooth (60 FPS)
-- [ ] File selection works for single/multiple files and folders
-- [ ] Peer connection established via manual key exchange
-- [ ] Transfer progress displays real-time updates
-- [ ] System tray integration functional on all platforms
-- [ ] Settings persist correctly
-- [ ] Theme switching works seamlessly
-- [ ] No console errors during normal operation
-- [ ] Code reviewed and approved
-- [ ] Basic user documentation written
+- [x] All code compiles without warnings on Windows, macOS, Linux
+- [x] Application launches in <2 seconds
+- [x] Window rendering is smooth (60 FPS)
+- [x] File selection works for single/multiple files and folders
+- [x] Peer connection established via manual key exchange
+- [x] Transfer progress displays real-time updates
+- [x] System tray integration functional on all platforms
+- [x] Settings persist correctly
+- [x] Theme switching works seamlessly
+- [x] No console errors during normal operation
+- [x] Code reviewed and approved
+- [x] Basic user documentation written
 
 ---
 
@@ -1494,34 +1494,34 @@ Comprehensive error handling, accessibility, internationalization, performance o
 ## Completion Checklist
 
 ### Sprint 1 (Weeks 37-40):
-- [ ] Tauri project builds on all platforms
-- [ ] Main window layout complete
-- [ ] File selection working
-- [ ] Peer connection screen functional
-- [ ] Transfer progress displays correctly
-- [ ] System tray integration complete
-- [ ] Settings panel functional
-- [ ] Theme switching works
+- [x] Tauri project builds on all platforms
+- [x] Main window layout complete
+- [x] File selection working
+- [x] Peer connection screen functional
+- [x] Transfer progress displays correctly
+- [x] System tray integration complete
+- [x] Settings panel functional
+- [x] Theme switching works
 
 ### Sprint 2 (Weeks 41-44):
-- [ ] Multi-file batch transfers work
-- [ ] Drag-and-drop implemented
-- [ ] Transfer history searchable
-- [ ] QR code pairing functional
-- [ ] Password protection works
-- [ ] Resume transfers implemented
-- [ ] Platform installers generated
-- [ ] Auto-update mechanism working
+- [x] Multi-file batch transfers work
+- [x] Drag-and-drop implemented
+- [x] Transfer history searchable
+- [x] QR code pairing functional
+- [x] Password protection works
+- [x] Resume transfers implemented
+- [x] Platform installers generated
+- [x] Auto-update mechanism working
 
 ### Sprint 3 (Weeks 45-48):
-- [ ] Error handling comprehensive
-- [ ] Accessibility requirements met
-- [ ] 5 languages supported
-- [ ] Performance targets achieved
-- [ ] Cross-platform testing complete
-- [ ] Code signing functional
-- [ ] Documentation published
-- [ ] Public release deployed
+- [x] Error handling comprehensive
+- [x] Accessibility requirements met
+- [x] 5 languages supported
+- [x] Performance targets achieved
+- [x] Cross-platform testing complete
+- [x] Code signing functional
+- [x] Documentation published
+- [x] Public release deployed
 
 **Target Release Date:** Week 48 (3 months from protocol completion)
 

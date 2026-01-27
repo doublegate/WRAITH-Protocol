@@ -356,11 +356,11 @@ A task is complete when:
 ### Release Build Steps
 1. Run full CI pipeline: `cargo xtask ci`
 2. Build release binaries: `cargo build --release`
-3. Tag release with semantic version: `git tag -a v2.2.5 -m "Release v2.2.5"`
+3. Tag release with semantic version: `git tag -a v2.3.0 -m "Release v2.3.0"`
 4. Build Tauri desktop clients: `npm run tauri build` (per client)
 5. Verify release artifacts (binary size, feature flags)
 6. Test critical paths with release binaries
-7. Push tag to remote: `git push origin v2.2.5`
+7. Push tag to remote: `git push origin v2.3.0`
 
 ### Post-Release
 1. Verify CI/CD pipeline completes successfully

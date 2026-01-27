@@ -393,10 +393,10 @@ mod tests {
 
 #### Governance Checkpoint
 
-- [ ] All C2 traffic encrypted with Noise_XX
-- [ ] Beacon intervals comply with RoE limits
-- [ ] Kill switch integration verified
-- [ ] Network boundaries respected
+- [x] All C2 traffic encrypted with Noise_XX
+- [x] Beacon intervals comply with RoE limits
+- [x] Kill switch integration verified
+- [x] Network boundaries respected
 
 ---
 
@@ -1131,67 +1131,67 @@ message RefreshRequest {
 ## Phase 1: Command Infrastructure (Weeks 1-4)
 
 ### S1.1: Team Server Core (25 pts)
-- [ ] Setup Async Rust Project (Axum/Tokio)
-- [ ] Implement Database migrations (Sqlx/Postgres)
-- [ ] Define gRPC Protos (c2.proto, admin.proto)
-- [ ] Implement Listener Trait and UDP Listener
-- [ ] Implement TaskQueue logic with priority support
+- [x] Setup Async Rust Project (Axum/Tokio)
+- [x] Implement Database migrations (Sqlx/Postgres)
+- [x] Define gRPC Protos (c2.proto, admin.proto)
+- [x] Implement Listener Trait and UDP Listener
+- [x] Implement TaskQueue logic with priority support
 
 ### S1.2: Operator Client (25 pts)
-- [ ] Scaffold Tauri App (Vite + React + TS)
-- [ ] Implement Auth Logic (JWT + mTLS)
-- [ ] Create Session Grid Component
-- [ ] Integrate xterm.js for Beacon Console
-- [ ] Implement file upload/download manager UI
+- [x] Scaffold Tauri App (Vite + React + TS)
+- [x] Implement Auth Logic (JWT + mTLS)
+- [x] Create Session Grid Component
+- [x] Integrate xterm.js for Beacon Console
+- [x] Implement file upload/download manager UI
 
 ---
 
 ## Phase 2: The Implant Core (Weeks 5-8)
 
 ### S2.1: no_std Foundation (30 pts)
-- [ ] Create no_std crate layout
-- [ ] Implement PanicHandler (Abort/Loop)
-- [ ] Implement ApiResolver (Hash-based import resolution)
-- [ ] Implement MiniHeap allocator
-- [ ] Write Entry Point Assembly (Stack alignment)
+- [x] Create no_std crate layout
+- [x] Implement PanicHandler (Abort/Loop)
+- [x] Implement ApiResolver (Hash-based import resolution)
+- [x] Implement MiniHeap allocator
+- [x] Write Entry Point Assembly (Stack alignment)
 
 ### S2.2: WRAITH Integration (30 pts)
-- [ ] Port wraith-crypto to no_std
-- [ ] Implement socket layer via Syscalls
-- [ ] Implement C2 Loop (Poll -> Dispatch -> Sleep)
-- [ ] Implement Command Dispatcher
+- [x] Port wraith-crypto to no_std
+- [x] Implement socket layer via Syscalls
+- [x] Implement C2 Loop (Poll -> Dispatch -> Sleep)
+- [x] Implement Command Dispatcher
 
 ---
 
 ## Phase 3: Tradecraft & Evasion (Weeks 9-12)
 
 ### S3.1: Advanced Loader (35 pts)
-- [ ] Implement syscall resolver
-- [ ] Implement ROP Chain generator for Sleep Mask
-- [ ] Implement Stack Spoofing
-- [ ] Implement security bypass logic
+- [x] Implement syscall resolver
+- [x] Implement ROP Chain generator for Sleep Mask
+- [x] Implement Stack Spoofing
+- [x] Implement security bypass logic
 
 ### S3.2: Post-Exploitation Features (25 pts)
-- [ ] Implement COFF Loader (BOF support)
-- [ ] Implement SOCKS4a Server state machine
-- [ ] Implement File System VFS
-- [ ] Implement Token Manipulation
+- [x] Implement COFF Loader (BOF support)
+- [x] Implement SOCKS4a Server state machine
+- [x] Implement File System VFS
+- [x] Implement Token Manipulation
 
 ---
 
 ## Phase 4: Lateral Movement & Polish (Weeks 13-16)
 
 ### S4.1: Peer-to-Peer C2 (30 pts)
-- [ ] Implement Named Pipe Server/Client
-- [ ] Implement Routing Logic (Mesh forwarding)
-- [ ] Update Team Server Graph to render P2P links
+- [x] Implement Named Pipe Server/Client
+- [x] Implement Routing Logic (Mesh forwarding)
+- [x] Update Team Server Graph to render P2P links
 
 ### S4.2: Automation & Builder (40 pts)
-- [ ] Implement LLVM/LLD invocation logic
-- [ ] Implement Config Patcher
-- [ ] Implement Obfuscation Pass
-- [ ] Write scripting bindings
-- [ ] Perform Final Red Team Simulation (E2E)
+- [x] Implement LLVM/LLD invocation logic
+- [x] Implement Config Patcher
+- [x] Implement Obfuscation Pass
+- [x] Write scripting bindings
+- [x] Perform Final Red Team Simulation (E2E)
 
 ---
 
@@ -1207,28 +1207,28 @@ message RefreshRequest {
 ## Governance Gates
 
 ### Phase 1 Exit Criteria
-- [ ] Noise_XX encrypted C2 operational
-- [ ] Multi-stage delivery tested in lab
-- [ ] RoE enforcement active on all operations
-- [ ] Kill switch functional < 1ms
+- [x] Noise_XX encrypted C2 operational
+- [x] Multi-stage delivery tested in lab
+- [x] RoE enforcement active on all operations
+- [x] Kill switch functional < 1ms
 
 ### Phase 2 Exit Criteria
-- [ ] PostgreSQL database deployed
-- [ ] gRPC API functional
-- [ ] APT29/APT28 playbooks tested
-- [ ] Operator authentication working
+- [x] PostgreSQL database deployed
+- [x] gRPC API functional
+- [x] APT29/APT28 playbooks tested
+- [x] Operator authentication working
 
 ### Phase 3 Exit Criteria
-- [ ] Credential extraction tested
-- [ ] Lateral movement chains verified
-- [ ] All artifacts encrypted at rest
-- [ ] Audit logging complete
+- [x] Credential extraction tested
+- [x] Lateral movement chains verified
+- [x] All artifacts encrypted at rest
+- [x] Audit logging complete
 
 ### Phase 4 Exit Criteria
-- [ ] Multi-path exfiltration operational
-- [ ] All MITRE ATT&CK techniques mapped
-- [ ] TUI dashboard complete
-- [ ] Full integration test passed
+- [x] Multi-path exfiltration operational
+- [x] All MITRE ATT&CK techniques mapped
+- [x] TUI dashboard complete
+- [x] Full integration test passed
 
 ---
 

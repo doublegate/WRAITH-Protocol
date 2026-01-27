@@ -1,6 +1,6 @@
 [package]
 name = "wraith-redops-client"
-version = "2.2.5"
+version = "2.3.0"
 description = "WRAITH RedOps Operator Console"
 authors = ["WRAITH Protocol Contributors"]
 license = "MIT OR Apache-2.0"

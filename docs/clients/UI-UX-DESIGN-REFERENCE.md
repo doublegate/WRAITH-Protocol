@@ -44,23 +44,21 @@ This document establishes the definitive UI/UX design reference for all WRAITH P
 
 ### 1.2 Scope
 
-**Current Applications:**
+**All Applications (12 Complete):**
 | Application | Status | Primary Function |
 |-------------|--------|------------------|
 | WRAITH-Transfer | Production | Secure file transfer |
 | WRAITH-Chat | Production | E2EE messaging, voice/video calls |
 | WRAITH-Sync | Production | File synchronization |
+| WRAITH-Share | Production | Distributed file sharing |
+| WRAITH-Stream | Production | Secure media streaming |
+| WRAITH-Mesh | Production | IoT mesh networking |
+| WRAITH-Publish | Production | Censorship-resistant publishing |
+| WRAITH-Vault | Production | Distributed secret storage |
 | WRAITH-Android | Production | Mobile messaging (Android) |
 | WRAITH-iOS | Production | Mobile messaging (iOS) |
-
-**Planned Applications:**
-| Application | Status | Primary Function |
-|-------------|--------|------------------|
-| WRAITH-Share | Planned | Distributed file sharing |
-| WRAITH-Stream | Planned | Secure media streaming |
-| WRAITH-Mesh | Planned | IoT mesh networking |
-| WRAITH-Publish | Planned | Censorship-resistant publishing |
-| WRAITH-Vault | Planned | Distributed secret storage |
+| WRAITH-Recon | Production | Security testing - reconnaissance |
+| WRAITH-RedOps | Production | Red team operations platform |
 
 ### 1.3 Design Philosophy
 

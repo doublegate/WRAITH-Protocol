@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [2.3.0] - 2026-01-27 - RedOps Workspace Integration & CI/CD Fixes
+
+### Overview
+
+This release integrates WRAITH-RedOps `team-server` and `operator-client` into the root Cargo workspace, resolves all CI/CD workflow failures, completes gap analysis v5.0.0 comprehensive re-verification, and bumps all component versions to 2.3.0.
+
 ### Added
 
 #### RedOps Workspace Integration (2026-01-27)
@@ -60,8 +68,21 @@ Full codebase re-audit of WRAITH-RedOps with independent verification of every s
   - 0 P0 critical issues, 2 P1 high issues remaining (down from 3)
   - ~12,819 lines total RedOps codebase (+6% from v4.3.0)
 
+### Fixed
+
+#### CI/CD Workflow Fixes (2026-01-27)
+
+- **GitHub Actions Exclusion Lists** - Added `--exclude wraith-redops-client` and `--exclude team-server` to all workspace-wide cargo commands across 4 workflow files:
+  - `ci.yml`: 6 locations (EXCLUDE_CLIENTS env var, test, clippy, docs, msrv, coverage jobs)
+  - `docs.yml`: 2 locations (cargo doc build and documentation check)
+  - `codeql.yml`: 1 location (cargo build in CodeQL analysis)
+  - `release.yml`: 2 locations (cargo test and cargo clippy)
+- **Root Cause:** Tauri `generate_context!()` proc macro panics when `frontendDist` path (`../dist`) doesn't exist in CI environment
+- **protobuf-compiler:** Added to CI system dependencies for team-server gRPC compilation
+
 ### Changed
 
+- **Version:** Bumped all workspace, crate, and client versions from 2.2.5 to 2.3.0
 - **Workspace:** Integrated team-server and operator-client as workspace members; spectre-implant remains excluded (no_std)
 - **team-server:** Restructured sqlx from sqlite+postgres to postgres-only; runtime migration loading via `Migrator::new()`
 - **team-server:** Fixed 16 clippy warnings and added `#[serial]` to test_operator_service_comprehensive
@@ -70,6 +91,7 @@ Full codebase re-audit of WRAITH-RedOps with independent verification of every s
 - Updated README.md with v5.0.0 gap analysis metrics
 - Updated README_Protocol-DEV.md with current project metrics
 - Updated README_Clients-DEV.md with v5.0.0 gap analysis data
+- Comprehensive documentation and to-dos update to reflect v2.3.0 project state
 
 ---
 

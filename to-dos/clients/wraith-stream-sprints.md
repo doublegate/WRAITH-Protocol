@@ -26,17 +26,17 @@ WRAITH-Stream enables encrypted streaming of video, audio, and live content over
 ## Success Criteria
 
 **Performance:**
-- [ ] 1080p playback at 5 Mbps
-- [ ] Sub-3-second startup latency
-- [ ] Adaptive bitrate switches in <500ms
-- [ ] Supports 100+ concurrent viewers per stream
+- [x] 1080p playback at 5 Mbps
+- [x] Sub-3-second startup latency
+- [x] Adaptive bitrate switches in <500ms
+- [x] Supports 100+ concurrent viewers per stream
 
 **Features:**
-- [ ] On-demand video streaming (HLS/DASH)
-- [ ] Live streaming with <5s latency
-- [ ] Multi-quality transcoding (240p/480p/720p/1080p/4K)
-- [ ] Subtitle support (SRT, VTT)
-- [ ] Seek to any position in <1s
+- [x] On-demand video streaming (HLS/DASH)
+- [x] Live streaming with <5s latency
+- [x] Multi-quality transcoding (240p/480p/720p/1080p/4K)
+- [x] Subtitle support (SRT, VTT)
+- [x] Seek to any position in <1s
 
 ---
 
@@ -315,12 +315,12 @@ async function downloadSegment(streamId: string, segmentName: string): Promise<B
 
 ## Completion Checklist
 
-- [ ] Video transcoding works for all profiles
-- [ ] HLS playback smooth on all platforms
-- [ ] Live streaming <5s latency
-- [ ] Adaptive bitrate switching functional
-- [ ] Content discovery working
-- [ ] Desktop/web apps published
+- [x] Video transcoding works for all profiles
+- [x] HLS playback smooth on all platforms
+- [x] Live streaming <5s latency
+- [x] Adaptive bitrate switching functional
+- [x] Content discovery working
+- [x] Desktop/web apps published
 
 **Target Release Date:** Week 50
 

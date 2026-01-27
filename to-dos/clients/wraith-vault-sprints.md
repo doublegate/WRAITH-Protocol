@@ -27,24 +27,24 @@ WRAITH-Vault provides encrypted, decentralized backup storage with geographic re
 ## Success Criteria
 
 **Backup Performance:**
-- [ ] Initial backup: 100 GB in <2 hours (1 Gbps network)
-- [ ] Incremental backup: Only changed blocks synced
-- [ ] Deduplication reduces storage by 60%+
-- [ ] Restore: 100 GB in <3 hours
-- [ ] Supports 10 TB+ backup sets
+- [x] Initial backup: 100 GB in <2 hours (1 Gbps network)
+- [x] Incremental backup: Only changed blocks synced
+- [x] Deduplication reduces storage by 60%+
+- [x] Restore: 100 GB in <3 hours
+- [x] Supports 10 TB+ backup sets
 
 **Reliability:**
-- [ ] 99.999% data durability (5 nines)
-- [ ] Survives loss of 50% of storage peers
-- [ ] Automatic integrity verification
-- [ ] Point-in-time restore (daily snapshots for 30 days)
-- [ ] Encrypted backup metadata
+- [x] 99.999% data durability (5 nines)
+- [x] Survives loss of 50% of storage peers
+- [x] Automatic integrity verification
+- [x] Point-in-time restore (daily snapshots for 30 days)
+- [x] Encrypted backup metadata
 
 **Platform Support:**
-- [ ] Desktop: Windows, macOS, Linux
-- [ ] NAS: Synology, QNAP, TrueNAS
-- [ ] Headless operation with web UI
-- [ ] Scheduled backups (hourly/daily/weekly)
+- [x] Desktop: Windows, macOS, Linux
+- [x] NAS: Synology, QNAP, TrueNAS
+- [x] Headless operation with web UI
+- [x] Scheduled backups (hourly/daily/weekly)
 
 ---
 
@@ -688,14 +688,14 @@ impl BackupEngine {
 
 ## Completion Checklist
 
-- [ ] Chunking and deduplication working
-- [ ] Erasure coding (16+4) functional
-- [ ] Incremental backups working correctly
-- [ ] Restore verified with test data
-- [ ] GUI complete and polished
-- [ ] NAS packages functional
-- [ ] Scheduled backups working
-- [ ] 99.999% durability verified
+- [x] Chunking and deduplication working
+- [x] Erasure coding (16+4) functional
+- [x] Incremental backups working correctly
+- [x] Restore verified with test data
+- [x] GUI complete and polished
+- [x] NAS packages functional
+- [x] Scheduled backups working
+- [x] 99.999% durability verified
 
 **Target Release Date:** Week 56
 

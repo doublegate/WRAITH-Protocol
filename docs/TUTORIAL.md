@@ -182,7 +182,7 @@ sudo install -m 755 target/release/wraith /usr/local/bin/
 # Run the test suite
 cargo test --workspace
 
-# Should see: 1,025+ tests passing
+# Should see: 2,120+ tests passing
 ```
 
 ### 1.4 First Run and Configuration

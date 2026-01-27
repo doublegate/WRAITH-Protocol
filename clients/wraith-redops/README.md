@@ -1,7 +1,7 @@
 # WRAITH-RedOps
 
 **Status:** Implementation Complete (Phase 1-4 Logic Integrated)
-**Version:** 2.2.5
+**Version:** 2.3.0
 
 WRAITH-RedOps is a comprehensive adversary emulation platform designed for authorized red teaming operations. It features a distributed architecture with a high-performance team server, a cross-platform implant (`Spectre`), and a modern operator console.
 

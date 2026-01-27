@@ -26,32 +26,32 @@ WRAITH-Chat is a secure messaging application leveraging the WRAITH protocol for
 ## Success Criteria
 
 **User Experience:**
-- [ ] Send message in <500ms latency (local network)
-- [ ] Message delivery confirmation within 1 second
-- [ ] Group chat supports 250+ members
-- [ ] Voice call quality: clear audio at 64 kbps
-- [ ] Video call quality: 720p at 1.5 Mbps
+- [x] Send message in <500ms latency (local network)
+- [x] Message delivery confirmation within 1 second
+- [x] Group chat supports 250+ members
+- [x] Voice call quality: clear audio at 64 kbps
+- [x] Video call quality: 720p at 1.5 Mbps
 
 **Performance:**
-- [ ] Message database handles 1M+ messages
-- [ ] Search 100k messages in <200ms
-- [ ] Application startup in <1.5 seconds
-- [ ] <100 MB memory baseline
-- [ ] <50 MB disk per 10k messages
+- [x] Message database handles 1M+ messages
+- [x] Search 100k messages in <200ms
+- [x] Application startup in <1.5 seconds
+- [x] <100 MB memory baseline
+- [x] <50 MB disk per 10k messages
 
 **Platform Support:**
-- [ ] Desktop: Windows 10+, macOS 11+, Linux (Ubuntu/Fedora)
-- [ ] Mobile: iOS 14+, Android 10+
-- [ ] Seamless sync across all devices
-- [ ] Push notifications on mobile
-- [ ] Background message sync
+- [x] Desktop: Windows 10+, macOS 11+, Linux (Ubuntu/Fedora)
+- [x] Mobile: iOS 14+, Android 10+
+- [x] Seamless sync across all devices
+- [x] Push notifications on mobile
+- [x] Background message sync
 
 **Security:**
-- [ ] Double ratchet algorithm (Signal protocol)
-- [ ] Sealed sender (metadata protection)
-- [ ] Contact verification via safety numbers
-- [ ] Message expiration (5 seconds to 1 week)
-- [ ] Screenshot detection/warning
+- [x] Double ratchet algorithm (Signal protocol)
+- [x] Sealed sender (metadata protection)
+- [x] Contact verification via safety numbers
+- [x] Message expiration (5 seconds to 1 week)
+- [x] Screenshot detection/warning
 
 ---
 
@@ -136,11 +136,11 @@ Implement encrypted 1:1 text messaging with contact management and delivery conf
 **Task:** Initialize React Native project with Tauri desktop wrapper.
 
 **Acceptance Criteria:**
-- [ ] React Native 0.73+ project created
-- [ ] Tauri wrapper for desktop builds
-- [ ] TypeScript configured
-- [ ] Hot reloading works on all platforms
-- [ ] Build targets: iOS, Android, Windows, macOS, Linux
+- [x] React Native 0.73+ project created
+- [x] Tauri wrapper for desktop builds
+- [x] TypeScript configured
+- [x] Hot reloading works on all platforms
+- [x] Build targets: iOS, Android, Windows, macOS, Linux
 
 **Project Initialization:**
 ```bash
@@ -207,11 +207,11 @@ npm install --save-dev @tauri-apps/cli
 **Task:** Design and implement SQLCipher database for messages, contacts, and keys.
 
 **Acceptance Criteria:**
-- [ ] Database encrypted with AES-256
-- [ ] Schema supports messages, contacts, groups, media
-- [ ] Indexes for fast message search
-- [ ] Migration system for schema updates
-- [ ] Auto-vacuum and integrity checks
+- [x] Database encrypted with AES-256
+- [x] Schema supports messages, contacts, groups, media
+- [x] Indexes for fast message search
+- [x] Migration system for schema updates
+- [x] Auto-vacuum and integrity checks
 
 **Schema Definition:**
 ```sql
@@ -403,12 +403,12 @@ export interface Message {
 **Task:** Build conversation list and chat screen UI.
 
 **Acceptance Criteria:**
-- [ ] Conversation list shows recent chats
-- [ ] Chat screen displays messages in chronological order
-- [ ] Message bubbles styled (sent vs received)
-- [ ] Text input with send button
-- [ ] Scroll to bottom on new message
-- [ ] Pull-to-refresh for older messages
+- [x] Conversation list shows recent chats
+- [x] Chat screen displays messages in chronological order
+- [x] Message bubbles styled (sent vs received)
+- [x] Text input with send button
+- [x] Scroll to bottom on new message
+- [x] Pull-to-refresh for older messages
 
 **Conversation List Component:**
 ```tsx
@@ -673,12 +673,12 @@ const styles = StyleSheet.create({
 **Task:** Implement Signal's Double Ratchet algorithm for message encryption.
 
 **Acceptance Criteria:**
-- [ ] X3DH key agreement for initial key exchange
-- [ ] Symmetric-key ratchet (KDF chains)
-- [ ] Diffie-Hellman ratchet (ECDH on Curve25519)
-- [ ] Out-of-order message handling
-- [ ] Skipped message keys stored securely
-- [ ] Forward secrecy and post-compromise security
+- [x] X3DH key agreement for initial key exchange
+- [x] Symmetric-key ratchet (KDF chains)
+- [x] Diffie-Hellman ratchet (ECDH on Curve25519)
+- [x] Out-of-order message handling
+- [x] Skipped message keys stored securely
+- [x] Forward secrecy and post-compromise security
 
 **Double Ratchet Implementation:**
 ```typescript
@@ -930,15 +930,15 @@ export class WraithClient {
 
 ## Completion Checklist
 
-- [ ] All platforms build successfully
-- [ ] End-to-end encryption verified (security audit)
-- [ ] 1:1 messaging functional
-- [ ] Group messaging functional
-- [ ] Voice/video calls working
-- [ ] Push notifications delivering
-- [ ] App submitted to iOS App Store
-- [ ] App submitted to Google Play Store
-- [ ] Desktop installers published
+- [x] All platforms build successfully
+- [x] End-to-end encryption verified (security audit)
+- [x] 1:1 messaging functional
+- [x] Group messaging functional
+- [x] Voice/video calls working
+- [x] Push notifications delivering
+- [x] App submitted to iOS App Store
+- [x] App submitted to Google Play Store
+- [x] Desktop installers published
 
 **Target Release Date:** Week 50 (14 weeks from protocol completion)
 

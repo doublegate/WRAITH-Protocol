@@ -41,7 +41,7 @@ impl ImplantService for ImplantServiceImpl {
             username: None,
             domain: None,
             privileges: None,
-            implant_version: Some("2.2.5".to_string()),
+            implant_version: Some("2.3.0".to_string()),
             first_seen: Some(chrono::Utc::now()),
             last_checkin: Some(chrono::Utc::now()),
             checkin_interval: Some(60),

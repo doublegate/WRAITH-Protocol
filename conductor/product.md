@@ -1,6 +1,6 @@
 # Product Definition -- WRAITH Protocol
 
-**Version:** 2.2.5 | **Status:** Production
+**Version:** 2.3.0 | **Status:** Production
 
 ## Initial Concept
 
