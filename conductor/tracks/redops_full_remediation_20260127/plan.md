@@ -22,10 +22,10 @@
     - [x] Develop and compile a native C# .NET assembly for unmanaged PowerShell execution.
     - [x] Embed the compiled runner into `spectre-implant/src/modules/powershell.rs`.
     - [x] Write integration tests for in-memory PowerShell execution.
-- [ ] Task: Resolve P2 High-Priority Bugfixes
-    - [ ] Correct CLR GUID for `CLSID_CLRRuntimeHost` in `clr.rs`.
-    - [ ] Replace `.unwrap()` calls in `team-server/src/listeners/smb.rs` with robust error handling.
-    - [ ] Remove `HMAC_SECRET` fallback in `start_redops.sh` and add startup validation.
+- [x] Task: Resolve P2 High-Priority Bugfixes [d2ef4631]
+    - [x] Correct CLR GUID for `CLSID_CLRRuntimeHost` in `clr.rs` (Verified correct).
+    - [x] Replace `.unwrap()` calls in `team-server/src/listeners/smb.rs` with robust error handling.
+    - [x] Remove `HMAC_SECRET` fallback in `start_redops.sh` and add startup validation.
 - [ ] Task: Complete VBA Phishing Payload
     - [ ] Implement the shellcode runner logic (VirtualAlloc/CreateThread) in `builder/phishing.rs`.
     - [ ] Write tests for VBA macro generation.
