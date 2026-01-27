@@ -12,9 +12,9 @@
 - [x] Task: Implement io_uring Asynchronous I/O [b984865]
     - [x] Write unit tests for completion queue submission and polling.
     - [x] Integrate `io-uring` crate for file/network I/O in the Team Server.
-- [ ] Task: Integrate BBR Congestion Control
-    - [ ] Write tests for BBR bandwidth and RTT estimation logic.
-    - [ ] Implement BBR algorithm in the protocol session layer.
+- [x] Task: Integrate BBR Congestion Control [421e91b9]
+    - [x] Write tests for BBR bandwidth and RTT estimation logic.
+    - [x] Implement BBR algorithm in the protocol session layer.
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Core Functionality & Protocol Acceleration' (Protocol in workflow.md)
 
 ## Phase 2: PowerShell Execution & High-Priority Fixes
