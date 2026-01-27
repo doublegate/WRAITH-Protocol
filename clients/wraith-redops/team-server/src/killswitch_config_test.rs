@@ -53,6 +53,7 @@ async fn test_kill_implant_panics_without_port() {
         static_key,
         sessions,
         listener_manager,
+        powershell_manager: Arc::new(crate::services::powershell::PowerShellManager::new()),
     };
 
     let req = Request::new(KillImplantRequest {
@@ -107,6 +108,7 @@ async fn test_kill_implant_panics_without_secret() {
         static_key,
         sessions,
         listener_manager,
+        powershell_manager: Arc::new(crate::services::powershell::PowerShellManager::new()),
     };
 
     let req = Request::new(KillImplantRequest {

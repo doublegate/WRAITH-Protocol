@@ -3,6 +3,7 @@ pub mod killswitch;
 pub mod listener;
 pub mod operator;
 pub mod playbook_loader;
+pub mod powershell;
 pub mod protocol;
 pub mod session;
 pub mod rekey_tests;

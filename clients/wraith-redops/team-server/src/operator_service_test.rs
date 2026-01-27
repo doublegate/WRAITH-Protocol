@@ -74,6 +74,7 @@ mod tests {
                 static_key,
                 event_tx,
             )),
+            powershell_manager: Arc::new(crate::services::powershell::PowerShellManager::new()),
         }
     }
 

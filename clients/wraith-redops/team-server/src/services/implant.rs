@@ -1,4 +1,5 @@
 use crate::database::Database;
+use crate::services::powershell::PowerShellManager;
 use crate::wraith::redops::implant_service_server::ImplantService;
 use crate::wraith::redops::*;
 use std::sync::Arc;
@@ -10,6 +11,7 @@ use uuid::Uuid;
 pub struct ImplantServiceImpl {
     pub db: Arc<Database>,
     pub event_tx: broadcast::Sender<Event>,
+    pub powershell_manager: Arc<PowerShellManager>,
 }
 
 #[tonic::async_trait]
@@ -158,6 +160,11 @@ impl ImplantService for ImplantServiceImpl {
         let req = req.into_inner();
         let cmd_id = Uuid::parse_str(&req.command_id)
             .map_err(|_| Status::invalid_argument("Invalid Command ID"))?;
+
+        // Update PowerShell session if applicable
+        if let Ok(plaintext) = self.db.decrypt_data(&req.encrypted_result) {
+             self.powershell_manager.append_output(cmd_id, &plaintext);
+        }
 
         // Store the result. If the implant applied application-layer encryption,
         // it remains encrypted at rest in the database.

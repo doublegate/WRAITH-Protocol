@@ -13,6 +13,7 @@ serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
 snow = { version = "0.10", default-features = false, features = ["default-resolver", "default-resolver-crypto"] }
 chacha20poly1305 = { version = "0.10", default-features = false, features = ["alloc"] }
 zeroize = { version = "1.7", default-features = false, features = ["alloc", "derive"] }
+base64 = { version = "0.21", default-features = false, features = ["alloc"] }
 wraith-crypto = { path = "../../../crates/wraith-crypto", default-features = false }
 # winapi for raw windows definitions if needed, but we prefer manual definitions for stealth
 # winapi = { version = "0.3", features = ["winnt"] }

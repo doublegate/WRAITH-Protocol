@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "7J2aZTxV2/c=",
+  "success": true,
+  "projectFilePath": "/home/parobek/Code/WRAITH-Protocol/clients/wraith-redops/spectre-implant/runner_src/Wraith.Runner/Wraith.Runner.csproj",
+  "expectedPackageFiles": [
+    "/home/parobek/.nuget/packages/microsoft.netframework.referenceassemblies/1.0.3/microsoft.netframework.referenceassemblies.1.0.3.nupkg.sha512",
+    "/home/parobek/.nuget/packages/microsoft.netframework.referenceassemblies.net48/1.0.3/microsoft.netframework.referenceassemblies.net48.1.0.3.nupkg.sha512",
+    "/home/parobek/.nuget/packages/microsoft.powershell.5.referenceassemblies/1.1.0/microsoft.powershell.5.referenceassemblies.1.1.0.nupkg.sha512"
+  ],
+  "logs": []
+}

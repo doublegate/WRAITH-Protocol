@@ -2,6 +2,7 @@ use crate::database::Database;
 use crate::governance::GovernanceEngine;
 use crate::services::listener::ListenerManager;
 use crate::services::session::SessionManager;
+use crate::services::powershell::PowerShellManager;
 use crate::wraith::redops::operator_service_server::OperatorService;
 use crate::wraith::redops::*;
 use std::sync::Arc;
@@ -19,6 +20,7 @@ pub struct OperatorServiceImpl {
     #[allow(dead_code)]
     pub sessions: Arc<SessionManager>,
     pub listener_manager: Arc<ListenerManager>,
+    pub powershell_manager: Arc<PowerShellManager>,
 }
 
 #[allow(clippy::result_large_err)]
@@ -381,11 +383,30 @@ impl OperatorService for OperatorServiceImpl {
         let implant_id = uuid::Uuid::parse_str(&req.implant_id)
             .map_err(|_| Status::invalid_argument("Invalid UUID"))?;
 
+        let mut payload = req.payload;
+
+        // Apply PowerShell profile if exists
+        if req.command_type == "powershell" {
+            if let Some(profile) = self.powershell_manager.get_profile(implant_id) {
+                if let Ok(cmd_str) = String::from_utf8(payload.clone()) {
+                    let new_cmd = format!("{}\n{}", profile, cmd_str);
+                    payload = new_cmd.into_bytes();
+                }
+            }
+        }
+
         let cmd_id = self
             .db
-            .queue_command(implant_id, &req.command_type, &req.payload)
+            .queue_command(implant_id, &req.command_type, &payload)
             .await
             .map_err(|e| Status::internal(e.to_string()))?;
+
+        // Track job with DB command ID
+        if req.command_type == "powershell" {
+            if let Ok(cmd_str) = String::from_utf8(payload.clone()) {
+                self.powershell_manager.create_job(implant_id, cmd_id, &cmd_str);
+            }
+        }
 
         // Audit Log
         let _ = self
@@ -404,7 +425,7 @@ impl OperatorService for OperatorServiceImpl {
             implant_id: req.implant_id,
             operator_id,
             command_type: req.command_type,
-            payload: req.payload,
+            payload,
             priority: req.priority,
             status: "pending".to_string(),
             created_at: None,
@@ -1280,6 +1301,33 @@ impl OperatorService for OperatorServiceImpl {
                     description: s.description.unwrap_or_default(),
                 })
                 .collect(),
+        }))
+    }
+
+    async fn set_power_shell_profile(
+        &self,
+        req: Request<SetProfileRequest>,
+    ) -> Result<Response<()>, Status> {
+        let req = req.into_inner();
+        let implant_id = uuid::Uuid::parse_str(&req.implant_id)
+            .map_err(|_| Status::invalid_argument("Invalid UUID"))?;
+        
+        self.powershell_manager.set_profile(implant_id, &req.profile_script);
+        Ok(Response::new(()))
+    }
+
+    async fn get_power_shell_profile(
+        &self,
+        req: Request<GetProfileRequest>,
+    ) -> Result<Response<ProfileResponse>, Status> {
+        let req = req.into_inner();
+        let implant_id = uuid::Uuid::parse_str(&req.implant_id)
+            .map_err(|_| Status::invalid_argument("Invalid UUID"))?;
+            
+        let profile = self.powershell_manager.get_profile(implant_id).unwrap_or_default();
+        
+        Ok(Response::new(ProfileResponse {
+            profile_script: profile,
         }))
     }
 }

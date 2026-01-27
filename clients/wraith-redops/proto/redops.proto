@@ -61,6 +61,10 @@ service OperatorService {
     // Playbooks
     rpc ListPlaybooks(ListPlaybooksRequest) returns (ListPlaybooksResponse);
     rpc InstantiatePlaybook(InstantiatePlaybookRequest) returns (AttackChain);
+
+    // PowerShell Management
+    rpc SetPowerShellProfile(SetProfileRequest) returns (google.protobuf.Empty);
+    rpc GetPowerShellProfile(GetProfileRequest) returns (ProfileResponse);
 }
 
 // Implant service (C2 protocol)
@@ -77,6 +81,22 @@ service ImplantService {
     rpc UploadArtifact(stream ArtifactChunk) returns (UploadArtifactResponse);
     rpc DownloadPayload(DownloadPayloadRequest) returns (stream PayloadChunk);
 }
+
+// Messages
+message SetProfileRequest {
+    string implant_id = 1;
+    string profile_script = 2;
+}
+
+message GetProfileRequest {
+    string implant_id = 1;
+}
+
+message ProfileResponse {
+    string profile_script = 1;
+}
+
+
 
 // Messages
 message AuthRequest {

@@ -61,7 +61,7 @@ impl Database {
 
     /// Decrypts data using XChaCha20Poly1305 and the Master Key.
     /// Expects: [Nonce (24 bytes)] + [Ciphertext]
-    fn decrypt_data(&self, data: &[u8]) -> Result<Vec<u8>> {
+    pub fn decrypt_data(&self, data: &[u8]) -> Result<Vec<u8>> {
         if data.len() < 24 {
             return Err(anyhow::anyhow!("Data too short for decryption"));
         }
@@ -349,6 +349,15 @@ impl Database {
         .execute(&self.pool)
         .await?;
         Ok(())
+    }
+
+    #[allow(dead_code)]
+    pub async fn get_command(&self, id: Uuid) -> Result<Option<Command>> {
+        let rec = sqlx::query_as::<_, Command>("SELECT * FROM commands WHERE id = $1")
+            .bind(id)
+            .fetch_optional(&self.pool)
+            .await?;
+        Ok(rec)
     }
 
     pub async fn get_command_result(&self, command_id: Uuid) -> Result<Option<CommandResult>> {

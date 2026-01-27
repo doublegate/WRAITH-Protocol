@@ -1,0 +1,62 @@
+{
+  "format": 1,
+  "restore": {
+    "/home/parobek/Code/WRAITH-Protocol/clients/wraith-redops/spectre-implant/runner_src/Wraith.Runner/Wraith.Runner.csproj": {}
+  },
+  "projects": {
+    "/home/parobek/Code/WRAITH-Protocol/clients/wraith-redops/spectre-implant/runner_src/Wraith.Runner/Wraith.Runner.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/home/parobek/Code/WRAITH-Protocol/clients/wraith-redops/spectre-implant/runner_src/Wraith.Runner/Wraith.Runner.csproj",
+        "projectName": "Wraith.Runner",
+        "projectPath": "/home/parobek/Code/WRAITH-Protocol/clients/wraith-redops/spectre-implant/runner_src/Wraith.Runner/Wraith.Runner.csproj",
+        "packagesPath": "/home/parobek/.nuget/packages/",
+        "outputPath": "/home/parobek/Code/WRAITH-Protocol/clients/wraith-redops/spectre-implant/runner_src/Wraith.Runner/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/home/parobek/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net48"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net48": {
+            "targetAlias": "net48",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        }
+      },
+      "frameworks": {
+        "net48": {
+          "targetAlias": "net48",
+          "dependencies": {
+            "Microsoft.NETFramework.ReferenceAssemblies": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[1.0.3, )",
+              "autoReferenced": true
+            },
+            "Microsoft.PowerShell.5.ReferenceAssemblies": {
+              "target": "Package",
+              "version": "[1.1.0, )"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/home/parobek/Code/WRAITH-Protocol/.dotnet/sdk/8.0.417/RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

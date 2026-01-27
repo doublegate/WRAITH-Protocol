@@ -3,7 +3,7 @@ mod tests {
     use super::super::session::TrackedSession;
     use std::time::{Duration, SystemTime};
     use wraith_crypto::noise::{NoiseHandshake, NoiseKeypair};
-    use wraith_crypto::x25519::{PrivateKey, PublicKey};
+    use wraith_crypto::x25519::PrivateKey;
     use wraith_crypto::random::SecureRng;
 
     fn create_dummy_session() -> TrackedSession {

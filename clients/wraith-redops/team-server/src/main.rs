@@ -30,6 +30,8 @@ mod auth_tests;
 mod killswitch_config_test;
 #[cfg(test)]
 mod operator_service_test;
+#[cfg(test)]
+mod powershell_test;
 
 use database::Database;
 use governance::GovernanceEngine;
@@ -145,6 +147,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map_err(|e| format!("Failed to generate static key: {:?}", e))
         .expect("Noise keypair generation failed");
     let sessions = Arc::new(SessionManager::new());
+    let powershell_manager = Arc::new(services::powershell::PowerShellManager::new());
 
     // Event broadcast channel
     let (event_tx, _rx) = tokio::sync::broadcast::channel(100);
@@ -203,10 +206,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         static_key: Arc::new(static_key.clone()),
         sessions: sessions.clone(),
         listener_manager: listener_manager.clone(),
+        powershell_manager: powershell_manager.clone(),
     };
     let implant_service = ImplantServiceImpl {
         db: db.clone(),
         event_tx: event_tx.clone(),
+        powershell_manager: powershell_manager.clone(),
     };
 
     info!("Team Server listening on {}", addr);
