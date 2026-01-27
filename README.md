@@ -149,6 +149,13 @@ WRAITH Protocol powers a comprehensive ecosystem of 12 production-ready applicat
 | **[WRAITH-Recon](clients/wraith-recon/)** | Desktop | Network reconnaissance platform for authorized security testing (RoE enforced) |
 | **[WRAITH-RedOps](clients/wraith-redops/)** | Server + Desktop | Red team operations platform with C2 infrastructure and implant framework |
 
+### Mobile Clients
+
+| Application | Platform | Description |
+|-------------|----------|-------------|
+| **[WRAITH-Android](clients/wraith-android/)** | Android 8.0+ | Native Kotlin + Jetpack Compose with JNI bindings to wraith-ffi |
+| **[WRAITH-iOS](clients/wraith-ios/)** | iOS 16.0+ | Native Swift + SwiftUI with UniFFI bindings |
+
 ### Application Highlights
 
 **WRAITH-Chat** features:
@@ -177,7 +184,13 @@ WRAITH Protocol powers a comprehensive ecosystem of 12 production-ready applicat
 - Operator Client (Tauri 2.0) with real-time dashboard and interactive terminal
 - Spectre Implant framework (no_std Rust) with C2 loop, sleep obfuscation, API hashing
 - Multi-operator support with role-based access control (RBAC)
-- Listener management for HTTP, HTTPS, DNS, TCP protocols
+- Listener management for HTTP, HTTPS, DNS tunneling, TCP, SMB Named Pipe protocols
+- Process injection: Reflective DLL, Process Hollowing, Thread Hijack (Windows)
+- BOF Loader with COFF parsing, section mapping, and relocation support
+- SOCKS4a/5 proxy for tunneling operator traffic
+- Halo's Gate SSN resolution for direct syscalls
+- Ed25519-signed Kill Switch broadcast mechanism
+- Encryption at Rest for command payloads and results
 
 For detailed client documentation, see the [Client Overview](docs/clients/overview.md).
 
@@ -364,6 +377,68 @@ For security issues, see [SECURITY.md](SECURITY.md) for our responsible disclosu
 
 ---
 
+## Wire Format
+
+WRAITH Protocol uses a compact binary wire format designed for minimal overhead and traffic analysis resistance:
+
+### Outer Packet Structure
+
+```
++----------+-------------------+----------+
+| CID (8B) | Encrypted Payload | Tag (16B)|
++----------+-------------------+----------+
+```
+
+- **Connection ID (CID):** 8-byte identifier for session multiplexing
+- **Encrypted Payload:** XChaCha20-Poly1305 AEAD-encrypted inner frame
+- **Authentication Tag:** 16-byte Poly1305 MAC for integrity verification
+
+### Inner Frame Structure
+
+```
++----------------+---------+----------------+
+| Header (28B)   | Payload | Random Padding |
++----------------+---------+----------------+
+```
+
+- **Header Fields:** Frame type (1B), flags (1B), stream ID (4B), sequence number (8B), offset (8B), payload length (4B), reserved (2B)
+- **Payload:** Variable-length application data
+- **Padding:** Random bytes per configured padding mode (PowerOfTwo, SizeClasses, ConstantRate, Statistical)
+
+### Frame Types
+
+| Type | Value | Description |
+|------|-------|-------------|
+| DATA | 0x00 | Application data transfer |
+| ACK | 0x01 | Acknowledgment with selective ACK |
+| CONTROL | 0x02 | Session control signals |
+| REKEY | 0x03 | Key rotation trigger |
+| PING | 0x04 | Keepalive probe |
+| PONG | 0x05 | Keepalive response |
+| CLOSE | 0x06 | Graceful session termination |
+| PAD | 0x07 | Cover traffic padding frame |
+| STREAM_OPEN | 0x10 | Open new multiplexed stream |
+| STREAM_CLOSE | 0x11 | Close multiplexed stream |
+| STREAM_REQUEST | 0x12 | Request data chunks |
+| STREAM_DATA | 0x13 | Deliver data chunks |
+| PATH_CHALLENGE | 0x20 | Connection migration probe |
+| PATH_RESPONSE | 0x21 | Connection migration confirmation |
+
+---
+
+## Threading Model
+
+WRAITH Protocol employs a thread-per-core architecture designed for maximum throughput with minimal contention:
+
+- **Thread-per-Core:** Each worker thread is pinned to a specific CPU core, eliminating context switches and maximizing cache locality
+- **No Locks in Hot Path:** Lock-free ring buffers (SPSC/MPSC) and atomic operations replace mutexes in the data plane
+- **Session Pinning:** Each session is assigned to a specific core, ensuring all packet processing for a session stays on the same core
+- **NUMA Awareness:** Memory allocation respects NUMA topology on multi-socket systems, minimizing cross-socket memory accesses
+- **Batch Processing:** AF_XDP batch receive/transmit operations amortize system call overhead across multiple packets
+- **Cache-Line Padding:** Data structures use 64-byte cache-line alignment to prevent false sharing between cores
+
+---
+
 ## Development
 
 ### Build Commands
@@ -378,6 +453,23 @@ cargo xtask ci                    # Full CI suite
 cargo doc --workspace --open      # API documentation
 cargo bench --workspace           # Benchmarks
 ```
+
+### Key Dependencies
+
+| Dependency | Purpose |
+|------------|---------|
+| `chacha20poly1305` | XChaCha20-Poly1305 AEAD encryption (256-bit key, 192-bit nonce) |
+| `x25519-dalek` | X25519 Diffie-Hellman key exchange |
+| `ed25519-dalek` | Ed25519 digital signatures with batch verification |
+| `curve25519-elligator2` | Elligator2 key encoding for traffic analysis resistance |
+| `blake3` | BLAKE3 cryptographic hashing with SIMD acceleration |
+| `snow` | Noise Protocol Framework (Noise_XX handshake pattern) |
+| `io-uring` | Linux io_uring async I/O for zero-copy file operations |
+| `tokio` | Async runtime for concurrent I/O operations |
+| `clap` | Command-line argument parsing |
+| `tauri` | Cross-platform desktop application framework (v2.0) |
+| `pnet` | Low-level network packet capture and construction |
+| `rusqlite` | SQLite/SQLCipher encrypted database |
 
 ### Project Structure
 
@@ -468,8 +560,9 @@ See [CI Workflow](.github/workflows/ci.yml) and [Release Workflow](.github/workf
 WRAITH Protocol v2.2.5 represents 2,740+ story points across 24 development phases:
 
 - Core protocol implementation (cryptography, transport, obfuscation, discovery)
-- 9 production-ready desktop client applications
-- Comprehensive documentation and testing
+- 12 production-ready client applications (9 desktop + 2 mobile + 1 server platform)
+- WRAITH-RedOps fully remediated with exhaustive gap analysis (v4.0.0)
+- Comprehensive documentation (113 files, ~61,000 lines) and testing (2,140 tests)
 - CI/CD infrastructure with multi-platform releases
 
 ### Future Development
