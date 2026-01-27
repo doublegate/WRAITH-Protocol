@@ -260,8 +260,16 @@ jobs:
             ${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-release-${{ matrix.target }}-
-            ${{ runner.os }}-cargo-release-
-            ${{ runner.os }}-cargo-
+
+      - name: Clean target directory for cross builds
+        if: matrix.cross
+        run: |
+          # Cross-compilation uses Docker containers with older glibc.
+          # Cached host-compiled build scripts (requiring glibc 2.32+) fail
+          # inside the container. Cleaning prevents stale artifact reuse.
+          # See: https://github.com/rust-lang/cargo/issues/10367
+          cargo clean
+        shell: bash
 
       - name: Build release binary
         env:
