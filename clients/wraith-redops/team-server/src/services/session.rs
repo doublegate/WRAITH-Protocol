@@ -1,14 +1,46 @@
 use dashmap::DashMap;
 use std::sync::Arc;
+use std::time::SystemTime;
 use wraith_crypto::noise::{NoiseHandshake, NoiseTransport};
 use wraith_crypto::x25519::PrivateKey;
+
+pub struct TrackedSession {
+    pub transport: NoiseTransport,
+    pub packet_count: u64,
+    pub last_rekey: SystemTime,
+}
+
+impl TrackedSession {
+    pub fn new(transport: NoiseTransport) -> Self {
+        Self {
+            transport,
+            packet_count: 0,
+            last_rekey: SystemTime::now(),
+        }
+    }
+
+    pub fn should_rekey(&self) -> bool {
+        let elapsed = self.last_rekey.elapsed().unwrap_or(std::time::Duration::from_secs(0));
+        self.packet_count >= 1_000_000 || elapsed >= std::time::Duration::from_secs(120)
+    }
+
+    pub fn on_packet(&mut self) {
+        self.packet_count += 1;
+    }
+
+    pub fn on_rekey(&mut self) {
+        self.transport.rekey_dh();
+        self.packet_count = 0;
+        self.last_rekey = SystemTime::now();
+    }
+}
 
 #[derive(Clone)]
 pub struct SessionManager {
     // Map temporary CIDs (from handshake) to pending handshakes and ratchet key
     pub handshakes: Arc<DashMap<[u8; 8], (NoiseHandshake, PrivateKey)>>,
     // Map session CIDs to established transports
-    pub sessions: Arc<DashMap<[u8; 8], NoiseTransport>>,
+    pub sessions: Arc<DashMap<[u8; 8], TrackedSession>>,
     // Map downstream CID to upstream CID for mesh routing
     pub p2p_links: Arc<DashMap<[u8; 8], [u8; 8]>>,
 }
@@ -40,13 +72,13 @@ impl SessionManager {
     }
 
     pub fn insert_session(&self, cid: [u8; 8], transport: NoiseTransport) {
-        self.sessions.insert(cid, transport);
+        self.sessions.insert(cid, TrackedSession::new(transport));
     }
 
     pub fn get_session(
         &self,
         cid: &[u8; 8],
-    ) -> Option<dashmap::mapref::one::RefMut<'_, [u8; 8], NoiseTransport>> {
+    ) -> Option<dashmap::mapref::one::RefMut<'_, [u8; 8], TrackedSession>> {
         self.sessions.get_mut(cid)
     }
 }

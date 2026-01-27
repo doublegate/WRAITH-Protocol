@@ -5,3 +5,4 @@ pub mod operator;
 pub mod playbook_loader;
 pub mod protocol;
 pub mod session;
+pub mod rekey_tests;

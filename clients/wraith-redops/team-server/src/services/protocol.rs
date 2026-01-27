@@ -119,8 +119,8 @@ impl ProtocolHandler {
         }
 
         // 3. Data Transport
-        if let Some(mut transport) = self.session_manager.get_session(&cid) {
-            let plaintext = match transport.read_message(payload) {
+        if let Some(mut session) = self.session_manager.get_session(&cid) {
+            let plaintext = match session.transport.read_message(payload) {
                 Ok(pt) => pt,
                 Err(e) => {
                     error!("Decryption failed: {}", e);
@@ -184,13 +184,25 @@ impl ProtocolHandler {
                     frame.extend_from_slice(&[0u8; 16]);
                     frame.extend_from_slice(&resp_json);
 
-                    let ciphertext = match transport.write_message(&frame) {
+                    // Rekey Logic: Check if we need to ratchet the sending key
+                    let elapsed = session.last_rekey.elapsed().unwrap_or(std::time::Duration::from_secs(0));
+                    if session.packet_count >= 1_000_000 || elapsed >= std::time::Duration::from_secs(120) {
+                        session.transport.rekey_dh();
+                        session.packet_count = 0;
+                        session.last_rekey = std::time::SystemTime::now();
+                        debug!("Session {} rekeyed (DH ratchet)", hex::encode(cid));
+                    }
+
+                    let ciphertext = match session.transport.write_message(&frame) {
                         Ok(ct) => ct,
                         Err(e) => {
                             error!("Encryption failed for beacon response: {}", e);
                             return None;
                         }
                     };
+
+                    // Increment packet counter
+                    session.packet_count += 1;
 
                     let mut response = Vec::new();
                     response.extend_from_slice(&cid);
@@ -200,7 +212,7 @@ impl ProtocolHandler {
             }
         } else if let Some(upstream_cid) = self.session_manager.get_upstream_cid(&cid) {
             // Mesh Routing: Relay to upstream beacon
-            if let Some(mut upstream_transport) = self.session_manager.get_session(&upstream_cid) {
+            if let Some(mut upstream_session) = self.session_manager.get_session(&upstream_cid) {
                 debug!(
                     "Mesh Routing: Relaying packet for {} via {}",
                     hex::encode(cid),
@@ -225,7 +237,7 @@ impl ProtocolHandler {
                 frame.extend_from_slice(&[0u8; 16]);
                 frame.extend_from_slice(&resp_json);
 
-                if let Ok(ciphertext) = upstream_transport.write_message(&frame) {
+                if let Ok(ciphertext) = upstream_session.transport.write_message(&frame) {
                     let mut response = Vec::new();
                     response.extend_from_slice(&upstream_cid);
                     response.extend_from_slice(&ciphertext);
