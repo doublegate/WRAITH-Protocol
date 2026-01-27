@@ -9,9 +9,9 @@
     - [x] Write unit tests for zero-copy UMEM and ring buffer management.
     - [x] Implement AF_XDP transport driver in `wraith-transport` for RedOps listeners.
     - [x] Update `team-server/src/listeners` to support AF_XDP accelerated sockets.
-- [ ] Task: Implement io_uring Asynchronous I/O
-    - [ ] Write unit tests for completion queue submission and polling.
-    - [ ] Integrate `io-uring` crate for file/network I/O in the Team Server.
+- [x] Task: Implement io_uring Asynchronous I/O [b984865]
+    - [x] Write unit tests for completion queue submission and polling.
+    - [x] Integrate `io-uring` crate for file/network I/O in the Team Server.
 - [ ] Task: Integrate BBR Congestion Control
     - [ ] Write tests for BBR bandwidth and RTT estimation logic.
     - [ ] Implement BBR algorithm in the protocol session layer.
