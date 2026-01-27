@@ -239,6 +239,16 @@ impl Database {
         Ok(recs)
     }
 
+    pub async fn get_listener(&self, id: Uuid) -> Result<Option<Listener>> {
+        let rec = sqlx::query_as::<_, Listener>(
+            "SELECT id, name, type, bind_address::text, config, status FROM listeners WHERE id = $1"
+        )
+        .bind(id)
+        .fetch_optional(&self.pool)
+        .await?;
+        Ok(rec)
+    }
+
     pub async fn update_listener_status(&self, id: Uuid, status: &str) -> Result<()> {
         sqlx::query("UPDATE listeners SET status = $1 WHERE id = $2")
             .bind(status)
@@ -372,10 +382,18 @@ impl Database {
     }
 
     pub async fn get_artifact(&self, id: Uuid) -> Result<Artifact> {
-        let rec = sqlx::query_as::<_, Artifact>("SELECT * FROM artifacts WHERE id = $1")
+        let mut rec = sqlx::query_as::<_, Artifact>("SELECT * FROM artifacts WHERE id = $1")
             .bind(id)
             .fetch_one(&self.pool)
             .await?;
+
+        // DECRYPT CONTENT
+        if let Some(cipher_content) = &rec.content {
+            if let Ok(plaintext) = self.decrypt_data(cipher_content) {
+                rec.content = Some(plaintext);
+            }
+        }
+
         Ok(rec)
     }
 
@@ -385,14 +403,15 @@ impl Database {
         filename: &str,
         content: &[u8],
     ) -> Result<Uuid> {
-        // Artifacts should also be encrypted ideally, but they are blobs.
-        // For MVP E2E Command Encryption, we skip artifacts unless requested.
+        // ENCRYPT ARTIFACT CONTENT AT REST
+        let encrypted_content = self.encrypt_data(content)?;
+
         let row = sqlx::query(
             "INSERT INTO artifacts (implant_id, filename, content, collected_at) VALUES ($1, $2, $3, NOW()) RETURNING id"
         )
         .bind(implant_id)
         .bind(filename)
-        .bind(content)
+        .bind(encrypted_content)
         .fetch_one(&self.pool)
         .await?;
         Ok(row.try_get("id")?)
@@ -503,5 +522,67 @@ impl Database {
         .execute(&self.pool)
         .await?;
         Ok(())
+    }
+
+    // --- Attack Chain Operations ---
+    pub async fn create_attack_chain(&self, name: &str, description: &str, steps: &[crate::models::ChainStep]) -> Result<crate::models::AttackChain> {
+        let mut tx = self.pool.begin().await?;
+
+        // 1. Create Chain
+        let chain_row = sqlx::query_as::<_, crate::models::AttackChain>(
+            "INSERT INTO attack_chains (name, description) VALUES ($1, $2) RETURNING *"
+        )
+        .bind(name)
+        .bind(description)
+        .fetch_one(&mut *tx)
+        .await?;
+
+        // 2. Create Steps
+        for step in steps {
+            sqlx::query(
+                "INSERT INTO chain_steps (chain_id, step_order, technique_id, command_type, payload, description) VALUES ($1, $2, $3, $4, $5, $6)"
+            )
+            .bind(chain_row.id)
+            .bind(step.step_order)
+            .bind(&step.technique_id)
+            .bind(&step.command_type)
+            .bind(&step.payload)
+            .bind(&step.description)
+            .execute(&mut *tx)
+            .await?;
+        }
+
+        tx.commit().await?;
+        Ok(chain_row)
+    }
+
+    pub async fn list_attack_chains(&self) -> Result<Vec<crate::models::AttackChain>> {
+        let recs = sqlx::query_as::<_, crate::models::AttackChain>(
+            "SELECT * FROM attack_chains ORDER BY created_at DESC"
+        )
+        .fetch_all(&self.pool)
+        .await?;
+        Ok(recs)
+    }
+
+    pub async fn get_attack_chain(&self, id: Uuid) -> Result<Option<(crate::models::AttackChain, Vec<crate::models::ChainStep>)>> {
+        let chain = sqlx::query_as::<_, crate::models::AttackChain>(
+            "SELECT * FROM attack_chains WHERE id = $1"
+        )
+        .bind(id)
+        .fetch_optional(&self.pool)
+        .await?;
+
+        if let Some(c) = chain {
+            let steps = sqlx::query_as::<_, crate::models::ChainStep>(
+                "SELECT * FROM chain_steps WHERE chain_id = $1 ORDER BY step_order ASC"
+            )
+            .bind(id)
+            .fetch_all(&self.pool)
+            .await?;
+            Ok(Some((c, steps)))
+        } else {
+            Ok(None)
+        }
     }
 }

@@ -12,6 +12,7 @@ pub struct Shell;
 
 #[cfg(target_os = "windows")]
 #[repr(C)]
+#[allow(non_snake_case)]
 struct STARTUPINFOA {
     cb: u32,
     lpReserved: PVOID,
@@ -35,6 +36,7 @@ struct STARTUPINFOA {
 
 #[cfg(target_os = "windows")]
 #[repr(C)]
+#[allow(non_snake_case)]
 struct PROCESS_INFORMATION {
     hProcess: HANDLE,
     hThread: HANDLE,
@@ -44,6 +46,7 @@ struct PROCESS_INFORMATION {
 
 #[cfg(target_os = "windows")]
 #[repr(C)]
+#[allow(non_snake_case)]
 struct SECURITY_ATTRIBUTES {
     nLength: u32,
     lpSecurityDescriptor: PVOID,

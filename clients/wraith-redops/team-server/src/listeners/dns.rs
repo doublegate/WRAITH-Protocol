@@ -233,8 +233,8 @@ pub async fn start_dns_listener(
                         continue;
                     }
 
-                    // Extract data from subdomains: <base64_payload>.<session_id>.domain.com
-                    // For now, let's assume session_id is encoded in the name
+                    // Extract data from subdomains: <label1>.<label2>...<session_id>.domain.com
+                    // Multi-label encoding: concatenate labels until we hit the session ID or base domain
                     let parts: Vec<&str> = question.name.split('.').collect();
                     if parts.len() < 3 {
                         continue;
@@ -243,14 +243,26 @@ pub async fn start_dns_listener(
                     let mut response_packet = packet.make_response();
 
                     if question.qtype == 16 { // TXT
-                        // Extract hex/base64 data from labels (simplified for now)
-                        if let Some(payload_hex) = parts.get(0) {
-                            if let Ok(data) = hex::decode(payload_hex) {
-                                if let Some(reply) = protocol.handle_packet(&data, src.to_string()).await {
-                                    // Respond with TXT record containing the reply
-                                    let reply_hex = hex::encode(reply);
-                                    response_packet.add_answer(&question.name, 16, 60, &format!("\"{}\"", reply_hex).as_bytes());
+                        // Multi-label payload extraction
+                        // Assume the last 2 parts are the domain (e.g., domain.com)
+                        // The part before that is the session ID.
+                        // All parts before that are the chunked payload.
+                        let mut payload_hex = String::new();
+                        for i in 0..parts.len().saturating_sub(3) {
+                            payload_hex.push_str(parts[i]);
+                        }
+
+                        if let Ok(data) = hex::decode(&payload_hex) {
+                            if let Some(reply) = protocol.handle_packet(&data, src.to_string()).await {
+                                // Respond with TXT record containing the reply
+                                // Note: Max TXT string length is 255. For larger replies, we use multiple strings.
+                                let reply_hex = hex::encode(reply);
+                                let mut rdata = Vec::new();
+                                for chunk in reply_hex.as_bytes().chunks(255) {
+                                    rdata.push(chunk.len() as u8);
+                                    rdata.extend_from_slice(chunk);
                                 }
+                                response_packet.add_answer(&question.name, 16, 60, &rdata);
                             }
                         }
                     } else if question.qtype == 1 { // A

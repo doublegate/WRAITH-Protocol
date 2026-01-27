@@ -8,6 +8,8 @@ pub struct SessionManager {
     pub handshakes: Arc<DashMap<[u8; 8], NoiseHandshake>>,
     // Map session CIDs to established transports
     pub sessions: Arc<DashMap<[u8; 8], NoiseTransport>>,
+    // Map downstream CID to upstream CID for mesh routing
+    pub p2p_links: Arc<DashMap<[u8; 8], [u8; 8]>>,
 }
 
 impl SessionManager {
@@ -15,7 +17,17 @@ impl SessionManager {
         Self {
             handshakes: Arc::new(DashMap::new()),
             sessions: Arc::new(DashMap::new()),
+            p2p_links: Arc::new(DashMap::new()),
         }
+    }
+
+    #[allow(dead_code)]
+    pub fn insert_p2p_link(&self, downstream: [u8; 8], upstream: [u8; 8]) {
+        self.p2p_links.insert(downstream, upstream);
+    }
+
+    pub fn get_upstream_cid(&self, downstream: &[u8; 8]) -> Option<[u8; 8]> {
+        self.p2p_links.get(downstream).map(|cid| *cid)
     }
 
     pub fn insert_handshake(&self, cid: [u8; 8], handshake: NoiseHandshake) {

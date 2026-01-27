@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { Button } from './ui/Button';
 
 interface PersistenceItem {
     id: string;
@@ -41,9 +42,9 @@ export default function PersistenceManager({ implantId }: { implantId: string })
                 <h2 className="text-lg font-bold flex items-center gap-2">
                     <span className="text-red-500">⚡</span> Persistence Manager
                 </h2>
-                <button onClick={refresh} className="text-xs bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded transition-colors">
+                <Button onClick={refresh} variant="secondary" size="sm">
                     Refresh
-                </button>
+                </Button>
             </div>
             
             <div className="space-y-3">
@@ -63,12 +64,14 @@ export default function PersistenceManager({ implantId }: { implantId: string })
                                 </div>
                                 <div className="text-sm font-mono text-slate-300 break-all">{item.details}</div>
                             </div>
-                            <button 
+                            <Button 
                                 onClick={() => handleRemove(item.id)}
-                                className="ml-4 bg-red-950 hover:bg-red-900 text-red-200 px-3 py-1.5 rounded text-xs transition-colors whitespace-nowrap"
+                                variant="danger"
+                                size="sm"
+                                className="ml-4 whitespace-nowrap"
                             >
                                 Cleanup
-                            </button>
+                            </Button>
                         </div>
                     ))
                 )}

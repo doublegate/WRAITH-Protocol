@@ -39,5 +39,16 @@ chacha20poly1305 = "0.10"
 rpassword = "7.3"
 url = "2.5"
 
+# RedOps TUI & gRPC
+tonic = "0.10"
+prost = "0.12"
+prost-types = "0.12"
+tokio-stream = "0.1"
+ratatui = "0.26"
+crossterm = "0.27"
+
+[build-dependencies]
+tonic-build = "0.10"
+
 [dev-dependencies]
 tempfile = "3.8"

@@ -1,4 +1,5 @@
 use core::arch::asm;
+use core::ffi::c_void;
 
 // Linux x86_64 Syscall Numbers
 #[cfg(not(target_os = "windows"))]
@@ -20,6 +21,8 @@ pub const SYS_SENDTO: usize = 44; // sendto/write
 #[cfg(not(target_os = "windows"))]
 pub const SYS_EXIT: usize = 60;
 #[cfg(not(target_os = "windows"))]
+pub const SYS_WAIT4: usize = 61;
+#[cfg(not(target_os = "windows"))]
 pub const SYS_PIPE: usize = 22;
 #[cfg(not(target_os = "windows"))]
 pub const SYS_DUP2: usize = 33;
@@ -27,6 +30,86 @@ pub const SYS_DUP2: usize = 33;
 pub const SYS_FORK: usize = 57;
 #[cfg(not(target_os = "windows"))]
 pub const SYS_EXECVE: usize = 59;
+#[cfg(not(target_os = "windows"))]
+pub const SYS_UNAME: usize = 63;
+#[cfg(not(target_os = "windows"))]
+pub const SYS_SYSINFO: usize = 99;
+#[cfg(not(target_os = "windows"))]
+pub const SYS_GETUID: usize = 102;
+
+#[cfg(not(target_os = "windows"))]
+pub const SYS_PTRACE: usize = 101;
+#[cfg(not(target_os = "windows"))]
+pub const SYS_PROCESS_VM_WRITEV: usize = 310;
+#[cfg(not(target_os = "windows"))]
+pub const SYS_OPENAT: usize = 257;
+
+// Ptrace Constants
+pub const PTRACE_TRACEME: usize = 0;
+pub const PTRACE_PEEKTEXT: usize = 1;
+pub const PTRACE_POKETEXT: usize = 4;
+pub const PTRACE_CONT: usize = 7;
+pub const PTRACE_KILL: usize = 8;
+pub const PTRACE_ATTACH: usize = 16;
+pub const PTRACE_DETACH: usize = 17;
+pub const PTRACE_GETREGS: usize = 12;
+pub const PTRACE_SETREGS: usize = 13;
+
+#[cfg(not(target_os = "windows"))]
+#[repr(C)]
+pub struct user_regs_struct {
+    pub r15: u64,
+    pub r14: u64,
+    pub r13: u64,
+    pub r12: u64,
+    pub rbp: u64,
+    pub rbx: u64,
+    pub r11: u64,
+    pub r10: u64,
+    pub r9: u64,
+    pub r8: u64,
+    pub rax: u64,
+    pub rcx: u64,
+    pub rdx: u64,
+    pub rsi: u64,
+    pub rdi: u64,
+    pub orig_rax: u64,
+    pub rip: u64,
+    pub cs: u64,
+    pub eflags: u64,
+    pub rsp: u64,
+    pub ss: u64,
+    pub fs_base: u64,
+    pub gs_base: u64,
+    pub ds: u64,
+    pub es: u64,
+    pub fs: u64,
+    pub gs: u64,
+}
+
+#[cfg(not(target_os = "windows"))]
+#[repr(C)]
+pub struct Sysinfo {
+    pub uptime: i64,
+    pub loads: [u64; 3],
+    pub totalram: u64,
+    pub freeram: u64,
+    pub sharedram: u64,
+    pub bufferram: u64,
+    pub totalswap: u64,
+    pub freeswap: u64,
+    pub procs: u16,
+    pub pad: u16,
+    pub totalhigh: u64,
+    pub freehigh: u64,
+    pub mem_unit: u32,
+    pub _f: [u8; 0],
+}
+
+#[cfg(not(target_os = "windows"))]
+pub unsafe fn sys_sysinfo(info: *mut Sysinfo) -> isize {
+    syscall1(SYS_SYSINFO, info as usize) as isize
+}
 
 #[cfg(not(target_os = "windows"))]
 #[inline(always)]
@@ -167,6 +250,11 @@ pub unsafe fn sys_exit(code: i32) -> ! {
 }
 
 #[cfg(not(target_os = "windows"))]
+pub unsafe fn sys_wait4(pid: i32, wstatus: *mut i32, options: i32, rusage: *mut c_void) -> isize {
+    syscall4(SYS_WAIT4, pid as usize, wstatus as usize, options as usize, rusage as usize) as isize
+}
+
+#[cfg(not(target_os = "windows"))]
 pub unsafe fn sys_fork() -> isize {
     syscall0(SYS_FORK) as isize
 }
@@ -186,10 +274,72 @@ pub unsafe fn sys_dup2(oldfd: i32, newfd: i32) -> isize {
     syscall2(SYS_DUP2, oldfd as usize, newfd as usize) as isize
 }
 
+#[cfg(not(target_os = "windows"))]
+pub unsafe fn sys_uname(buf: *mut Utsname) -> isize {
+    syscall1(SYS_UNAME, buf as usize) as isize
+}
+
+#[cfg(not(target_os = "windows"))]
+pub unsafe fn sys_getuid() -> usize {
+    syscall0(SYS_GETUID)
+}
+
+#[cfg(not(target_os = "windows"))]
+pub unsafe fn sys_process_vm_writev(
+    pid: i32,
+    local_iov: *const Iovec,
+    liovcnt: usize,
+    remote_iov: *const Iovec,
+    riovcnt: usize,
+    flags: usize,
+) -> isize {
+    syscall6(SYS_PROCESS_VM_WRITEV, pid as usize, local_iov as usize, liovcnt, remote_iov as usize, riovcnt, flags) as isize
+}
+
+#[cfg(not(target_os = "windows"))]
+pub unsafe fn sys_ptrace(request: usize, pid: i32, addr: usize, data: usize) -> isize {
+    syscall4(101, request, pid as usize, addr, data) as isize
+}
+
+#[cfg(not(target_os = "windows"))]
+#[inline(always)]
+pub unsafe fn syscall4(n: usize, a1: usize, a2: usize, a3: usize, a4: usize) -> usize {
+    let ret: usize;
+    asm!(
+        "syscall",
+        inlateout("rax") n => ret,
+        in("rdi") a1,
+        in("rsi") a2,
+        in("rdx") a3,
+        in("r10") a4,
+        out("rcx") _,
+        out("r11") _,
+        options(nostack, preserves_flags)
+    );
+    ret
+}
+
+#[repr(C)]
+pub struct Iovec {
+    pub iov_base: *mut c_void,
+    pub iov_len: usize,
+}
+
 #[repr(C)]
 pub struct Timespec {
     pub tv_sec: i64,
     pub tv_nsec: i64,
+}
+
+#[cfg(not(target_os = "windows"))]
+#[repr(C)]
+pub struct Utsname {
+    pub sysname: [u8; 65],
+    pub nodename: [u8; 65],
+    pub release: [u8; 65],
+    pub version: [u8; 65],
+    pub machine: [u8; 65],
+    pub domainname: [u8; 65],
 }
 
 #[repr(C)]
@@ -271,7 +421,6 @@ pub unsafe fn do_syscall(ssn: u16, w1: usize, w2: usize, w3: usize, w4: usize) -
 
 #[cfg(target_os = "windows")]
 pub unsafe fn sys_exit(code: i32) -> ! {
-    let ntdll_hash = hash_str(b"ntdll.dll");
     let term_hash = hash_str(b"NtTerminateProcess");
     let ssn = get_ssn(term_hash);
     if ssn != 0 {

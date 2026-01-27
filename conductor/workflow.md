@@ -2,8 +2,9 @@
 
 ## Guiding Principles
 
-1. **The Plan is the Source of Truth:** All work must be tracked in `plan.md`
-2. **The Tech Stack is Deliberate:** Changes to the tech stack must be documented in `tech-stack.md` *before* implementation
+1. **Zero Stubs Policy (Strict):** No placeholders, skeleton implementations, or "coming soon" stubs are allowed in RedOps code. Every function must attempt to perform its stated action using real system calls or APIs.
+2. **The Plan is the Source of Truth:** All work must be tracked in `plan.md`
+3. **The Tech Stack is Deliberate:** Changes to the tech stack must be documented in `tech-stack.md` *before* implementation
 3. **Test-Driven Development:** Write unit tests before implementing functionality
 4. **High Code Coverage:** Aim for >80% code coverage for all modules
 5. **User Experience First:** Every decision should prioritize user experience

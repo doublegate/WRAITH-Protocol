@@ -22,6 +22,11 @@ mod models;
 mod services;
 mod utils;
 
+#[cfg(test)]
+mod auth_tests;
+#[cfg(test)]
+mod killswitch_config_test;
+
 use database::Database;
 use governance::GovernanceEngine;
 use services::implant::ImplantServiceImpl;
@@ -30,8 +35,55 @@ use services::session::SessionManager;
 use wraith_crypto::noise::NoiseKeypair;
 
 use tonic::{Request, Status};
+use tower::{Layer, Service};
+use std::task::{Context, Poll};
+
+#[derive(Clone, Debug)]
+struct RpcPath(String);
+
+#[derive(Clone)]
+struct PathLayer;
+
+impl<S> Layer<S> for PathLayer {
+    type Service = PathService<S>;
+
+    fn layer(&self, service: S) -> Self::Service {
+        PathService { service }
+    }
+}
+
+#[derive(Clone)]
+struct PathService<S> {
+    service: S,
+}
+
+impl<S, B> Service<tonic::codegen::http::Request<B>> for PathService<S>
+where
+    S: Service<tonic::codegen::http::Request<B>>,
+{
+    type Response = S::Response;
+    type Error = S::Error;
+    type Future = S::Future;
+
+    fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        self.service.poll_ready(cx)
+    }
+
+    fn call(&mut self, mut req: tonic::codegen::http::Request<B>) -> Self::Future {
+        let path = req.uri().path().to_string();
+        req.extensions_mut().insert(RpcPath(path));
+        self.service.call(req)
+    }
+}
 
 fn auth_interceptor(mut req: Request<()>) -> Result<Request<()>, Status> {
+    // Whitelist Authenticate method
+    if let Some(path) = req.extensions().get::<RpcPath>() {
+        if path.0 == "/wraith.redops.OperatorService/Authenticate" {
+            return Ok(req);
+        }
+    }
+
     let token = match req.metadata().get("authorization") {
         Some(t) => {
             let s = t.to_str().map_err(|_| Status::unauthenticated("Invalid auth header"))?;
@@ -41,7 +93,7 @@ fn auth_interceptor(mut req: Request<()>) -> Result<Request<()>, Status> {
                 return Err(Status::unauthenticated("Invalid auth scheme"));
             }
         },
-        None => return Ok(req),
+        None => return Err(Status::unauthenticated("Missing authorization header")),
     };
 
     let claims = utils::verify_jwt(token)
@@ -80,81 +132,47 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Event broadcast channel
     let (event_tx, _rx) = tokio::sync::broadcast::channel(100);
 
-    // Start HTTP Listener for Implants
-    let http_db = db.clone();
-    let http_event_tx = event_tx.clone();
-    let http_governance = governance.clone();
-    let http_sessions = sessions.clone();
-    let http_key = static_key.clone();
+    let listener_manager = Arc::new(services::listener::ListenerManager::new(
+        db.clone(),
+        governance.clone(),
+        sessions.clone(),
+        Arc::new(static_key.clone()),
+        event_tx.clone(),
+    ));
 
-    tokio::spawn(async move {
-        listeners::http::start_http_listener(
-            http_db,
-            8080,
-            http_event_tx,
-            http_governance,
-            http_key,
-            http_sessions,
-        )
-        .await;
-    });
-
-    // Start UDP Listener
-    let udp_db = db.clone();
-    let udp_event_tx = event_tx.clone();
-    let udp_governance = governance.clone();
-    let udp_sessions = sessions.clone();
-    let udp_key = static_key.clone();
-
-    tokio::spawn(async move {
-        listeners::udp::start_udp_listener(
-            udp_db,
-            9999,
-            udp_event_tx,
-            udp_governance,
-            udp_key,
-            udp_sessions,
-        )
-        .await;
-    });
-
-    // Start DNS Listener
-    let dns_db = db.clone();
-    let dns_event_tx = event_tx.clone();
-    let dns_governance = governance.clone();
-    let dns_sessions = sessions.clone();
-    let dns_key = static_key.clone();
-
-    tokio::spawn(async move {
-        listeners::dns::start_dns_listener(
-            dns_db,
-            5454,
-            dns_event_tx,
-            dns_governance,
-            dns_key,
-            dns_sessions,
-        )
-        .await;
-    });
-
-    // Start SMB Listener
-    let smb_db = db.clone();
-    let smb_event_tx = event_tx.clone();
-    let smb_governance = governance.clone();
-    let smb_sessions = sessions.clone();
-    let smb_key = static_key.clone();
-
-    tokio::spawn(async move {
-        listeners::smb::start_smb_listener(
-            smb_db,
-            4445,
-            smb_event_tx,
-            smb_governance,
-            smb_key,
-            smb_sessions,
-        )
-        .await;
-    });
+    // Restore active listeners from database
+    if let Ok(listeners) = db.list_listeners().await {
+        for l in listeners {
+            if l.status == "active" {
+                // Determine port from environment variables or type defaults
+                let port = match l.r#type.as_str() {
+                    "http" => std::env::var("HTTP_LISTEN_PORT")
+                        .unwrap_or_else(|_| "8080".to_string())
+                        .parse()
+                        .unwrap_or(8080),
+                    "udp" => std::env::var("UDP_LISTEN_PORT")
+                        .unwrap_or_else(|_| "9999".to_string())
+                        .parse()
+                        .unwrap_or(9999),
+                    "dns" => std::env::var("DNS_LISTEN_PORT")
+                        .unwrap_or_else(|_| "5454".to_string())
+                        .parse()
+                        .unwrap_or(5454),
+                    "smb" => std::env::var("SMB_LISTEN_PORT")
+                        .unwrap_or_else(|_| "4445".to_string())
+                        .parse()
+                        .unwrap_or(4445),
+                    _ => 0,
+                };
+                
+                if port > 0 {
+                    if let Err(e) = listener_manager.start_listener(&l.id.to_string(), &l.r#type, &l.bind_address, port).await {
+                        tracing::error!("Failed to restart listener {}: {}", l.name, e);
+                    }
+                }
+            }
+        }
+    }
 
     let addr_str = std::env::var("GRPC_LISTEN_ADDR")
         .expect("GRPC_LISTEN_ADDR environment variable must be set (e.g., 0.0.0.0:50051)");
@@ -165,6 +183,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         governance: governance.clone(),
         static_key: Arc::new(static_key.clone()),
         sessions: sessions.clone(),
+        listener_manager: listener_manager.clone(),
     };
     let implant_service = ImplantServiceImpl {
         db: db.clone(),
@@ -174,6 +193,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Team Server listening on {}", addr);
 
     Server::builder()
+        .layer(PathLayer)
         .add_service(OperatorServiceServer::with_interceptor(operator_service, auth_interceptor))
         .add_service(ImplantServiceServer::new(implant_service))
         .serve(addr)

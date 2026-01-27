@@ -51,6 +51,12 @@ service OperatorService {
     // Persistence
     rpc ListPersistence(ListPersistenceRequest) returns (ListPersistenceResponse);
     rpc RemovePersistence(RemovePersistenceRequest) returns (google.protobuf.Empty);
+
+    // Attack Chains
+    rpc CreateAttackChain(CreateAttackChainRequest) returns (AttackChain);
+    rpc ListAttackChains(ListAttackChainsRequest) returns (ListAttackChainsResponse);
+    rpc ExecuteAttackChain(ExecuteAttackChainRequest) returns (google.protobuf.Empty);
+    rpc GetAttackChain(GetAttackChainRequest) returns (AttackChain);
 }
 
 // Implant service (C2 protocol)
@@ -427,4 +433,56 @@ message RemovePersistenceRequest {
 
 message RefreshRequest {
     string token = 1;
+}
+
+message AttackChain {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    repeated ChainStep steps = 4;
+    google.protobuf.Timestamp created_at = 5;
+    google.protobuf.Timestamp updated_at = 6;
+}
+
+message ChainStep {
+    string id = 1;
+    string chain_id = 2;
+    int32 step_order = 3;
+    string technique_id = 4;
+    string command_type = 5;
+    string payload = 6;
+    string description = 7;
+}
+
+message CreateAttackChainRequest {
+    string name = 1;
+    string description = 2;
+    repeated ChainStepRequest steps = 3;
+}
+
+message ChainStepRequest {
+    int32 step_order = 1;
+    string technique_id = 2;
+    string command_type = 3;
+    string payload = 4;
+    string description = 5;
+}
+
+message ListAttackChainsRequest {
+    int32 page_size = 1;
+    string page_token = 2;
+}
+
+message ListAttackChainsResponse {
+    repeated AttackChain chains = 1;
+    string next_page_token = 2;
+}
+
+message ExecuteAttackChainRequest {
+    string chain_id = 1;
+    string implant_id = 2;
+}
+
+message GetAttackChainRequest {
+    string id = 1;
 }

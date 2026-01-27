@@ -9,6 +9,7 @@ pub struct Evasion;
 
 #[cfg(target_os = "windows")]
 #[repr(C)]
+#[allow(non_snake_case)]
 struct MEMORYSTATUSEX {
     dwLength: u32,
     dwMemoryLoad: u32,
@@ -23,6 +24,7 @@ struct MEMORYSTATUSEX {
 
 #[cfg(target_os = "windows")]
 #[repr(C)]
+#[allow(non_snake_case)]
 struct FILETIME {
     dwLowDateTime: u32,
     dwHighDateTime: u32,

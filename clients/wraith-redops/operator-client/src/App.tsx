@@ -1,14 +1,34 @@
 import { useState, useEffect } from 'react'
 import { invoke } from '@tauri-apps/api/core'
-import { Console } from './components/Console'
 import { NetworkGraph } from './components/NetworkGraph'
 import BeaconInteraction from './components/BeaconInteraction'
 import PhishingBuilder from './components/PhishingBuilder'
 import LootGallery from './components/LootGallery'
+import AttackChainEditor from './components/AttackChainEditor'
 
 interface Implant {
   id: string;
-// ... (interfaces same) ...
+  hostname: string;
+  internal_ip: string;
+  status: string;
+  last_checkin?: string;
+}
+
+interface Campaign {
+  id: string;
+  name: string;
+  status: string;
+  implant_count: number;
+}
+
+interface Listener {
+  id: string;
+  name: string;
+  type_: string;
+  bind_address: string;
+  port: number;
+  status: string;
+}
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard')
@@ -100,7 +120,7 @@ function App() {
         {/* Sidebar */}
         <nav className="w-48 border-r border-slate-800 bg-slate-950 p-2 text-xs flex flex-col gap-1">
           <div className="mt-2 mb-1 px-2 text-slate-600 font-bold uppercase text-[10px] tracking-wider">Operations</div>
-          {['Dashboard', 'Campaigns', 'Beacons', 'Listeners', 'Loot', 'Phishing'].map(tab => (
+          {['Dashboard', 'Campaigns', 'Attack Chains', 'Beacons', 'Listeners', 'Loot', 'Phishing'].map(tab => (
             <button 
               key={tab}
               onClick={() => setActiveTab(tab.toLowerCase())}
@@ -112,6 +132,7 @@ function App() {
             >
               {tab === 'Dashboard' && '📊'}
               {tab === 'Campaigns' && '📁'}
+              {tab === 'Attack Chains' && '⛓️'}
               {tab === 'Beacons' && '📡'}
               {tab === 'Listeners' && '👂'}
               {tab === 'Loot' && '💰'}
@@ -206,6 +227,9 @@ function App() {
                 </div>
              </div>
           )}
+
+          {/* Attack Chains */}
+          {activeTab === 'attack chains' && <AttackChainEditor />}
 
           {/* Campaigns */}
           {activeTab === 'campaigns' && (

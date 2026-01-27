@@ -19,6 +19,7 @@ use crate::utils::windows_definitions::*;
 
 #[cfg(target_os = "windows")]
 #[repr(C)]
+#[allow(non_snake_case)]
 pub struct GUID {
     pub Data1: u32,
     pub Data2: u16,
@@ -34,17 +35,22 @@ impl GUID {
 }
 
 #[cfg(target_os = "windows")]
+#[allow(non_upper_case_globals)]
 pub const CLSID_CLRMetaHost: GUID = GUID::new(0x92801892, 0x0e52, 0x4b67, [0xac, 0x20, 0x26, 0xef, 0x6e, 0x6e, 0x02, 0x48]);
 #[cfg(target_os = "windows")]
+#[allow(non_upper_case_globals)]
 pub const IID_ICLRMetaHost: GUID = GUID::new(0xD332DB9E, 0xB9B3, 0x4125, [0x82, 0x07, 0xA1, 0x48, 0x84, 0xF5, 0x32, 0x16]);
 #[cfg(target_os = "windows")]
+#[allow(non_upper_case_globals)]
 pub const IID_ICLRRuntimeInfo: GUID = GUID::new(0xBD39D1D2, 0xBA2F, 0x486a, [0x89, 0xB0, 0xB4, 0xB0, 0xCB, 0x46, 0x68, 0x91]);
 #[cfg(target_os = "windows")]
+#[allow(non_upper_case_globals)]
 pub const IID_ICLRRuntimeHost: GUID = GUID::new(0x90F1A06C, 0x7712, 0x4762, [0x86, 0xB5, 0x7A, 0x5E, 0xBA, 0x6B, 0xDB, 0x02]);
 
 // ICLRMetaHost Interface
 #[cfg(target_os = "windows")]
 #[repr(C)]
+#[allow(non_snake_case)]
 pub struct ICLRMetaHostVtbl {
     pub QueryInterface: unsafe extern "system" fn(*mut ICLRMetaHost, *const GUID, *mut *mut c_void) -> i32,
     pub AddRef: unsafe extern "system" fn(*mut ICLRMetaHost) -> u32,
@@ -67,6 +73,7 @@ pub struct ICLRMetaHost {
 // ICLRRuntimeInfo Interface
 #[cfg(target_os = "windows")]
 #[repr(C)]
+#[allow(non_snake_case)]
 pub struct ICLRRuntimeInfoVtbl {
     pub QueryInterface: unsafe extern "system" fn(*mut ICLRRuntimeInfo, *const GUID, *mut *mut c_void) -> i32,
     pub AddRef: unsafe extern "system" fn(*mut ICLRRuntimeInfo) -> u32,
@@ -89,6 +96,7 @@ pub struct ICLRRuntimeInfo {
 // ICLRRuntimeHost Interface
 #[cfg(target_os = "windows")]
 #[repr(C)]
+#[allow(non_snake_case)]
 pub struct ICLRRuntimeHostVtbl {
     pub QueryInterface: unsafe extern "system" fn(*mut ICLRRuntimeHost, *const GUID, *mut *mut c_void) -> i32,
     pub AddRef: unsafe extern "system" fn(*mut ICLRRuntimeHost) -> u32,

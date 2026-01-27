@@ -9,6 +9,7 @@
 
 mod config;
 mod progress;
+mod redops;
 
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
@@ -180,6 +181,10 @@ enum Commands {
         #[command(subcommand)]
         action: ConfigAction,
     },
+
+    /// RedOps TUI Console
+    #[command(subcommand)]
+    RedOps(redops::RedOpsCommands),
 }
 
 #[derive(Subcommand)]
@@ -346,6 +351,9 @@ async fn main() -> anyhow::Result<()> {
                 config_set(key, value, &cli.config).await?;
             }
         },
+        Commands::RedOps(cmd) => {
+            redops::run(cmd).await?;
+        }
     }
 
     Ok(())

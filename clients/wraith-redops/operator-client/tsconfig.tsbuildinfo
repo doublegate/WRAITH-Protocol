@@ -1,1 +1,1 @@
-{"root":["./src/App.tsx","./src/main.tsx","./src/components/Console.tsx","./src/components/NetworkGraph.tsx"],"version":"5.9.3"}
+{"root":["./src/App.tsx","./src/main.tsx","./src/components/AttackChainEditor.tsx","./src/components/BeaconInteraction.tsx","./src/components/Console.tsx","./src/components/DiscoveryDashboard.tsx","./src/components/LootGallery.tsx","./src/components/NetworkGraph.tsx","./src/components/PersistenceManager.tsx","./src/components/PhishingBuilder.tsx","./src/components/ui/Button.tsx"],"version":"5.9.3"}
