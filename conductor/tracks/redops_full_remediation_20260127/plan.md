@@ -26,10 +26,10 @@
     - [x] Correct CLR GUID for `CLSID_CLRRuntimeHost` in `clr.rs` (Verified correct).
     - [x] Replace `.unwrap()` calls in `team-server/src/listeners/smb.rs` with robust error handling.
     - [x] Remove `HMAC_SECRET` fallback in `start_redops.sh` and add startup validation.
-- [ ] Task: Complete VBA Phishing Payload
-    - [ ] Implement the shellcode runner logic (VirtualAlloc/CreateThread) in `builder/phishing.rs`.
-    - [ ] Write tests for VBA macro generation.
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: PowerShell Execution & High-Priority Fixes' (Protocol in workflow.md)
+- [x] Task: Complete VBA Phishing Payload [c7cc870f]
+    - [x] Implement the shellcode runner logic (VirtualAlloc/CreateThread) in `builder/phishing.rs`.
+    - [x] Write tests for VBA macro generation.
+- [x] Task: Conductor - User Manual Verification 'Phase 2: PowerShell Execution & High-Priority Fixes' (Protocol in workflow.md)
 
 ## Phase 3: Platform Completeness & Evasion
 - [ ] Task: Implement Dynamic Memory Discovery
