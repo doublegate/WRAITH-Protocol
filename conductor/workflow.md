@@ -32,11 +32,18 @@ All tasks follow a strict lifecycle:
    - With the safety of passing tests, refactor the implementation code and the test code to improve clarity, remove duplication, and enhance performance without changing the external behavior.
    - Rerun tests to ensure they still pass after refactoring.
 
-6. **Verify Coverage:** Run coverage reports using the project's chosen tools. For example, in a Python project, this might look like:
+6. **Verify Coverage:** Run coverage reports using the project's tooling:
    ```bash
-   pytest --cov=app --cov-report=html
+   # Terminal summary
+   cargo xtask coverage
+
+   # HTML report (opens in browser)
+   cargo xtask coverage --html
+
+   # LCOV report for CI integration
+   cargo xtask coverage --lcov
    ```
-   Target: >80% coverage for new code. The specific tools and commands will vary by language and framework.
+   Target: >80% coverage for new code. Requires `cargo-llvm-cov` (install with `cargo install cargo-llvm-cov`).
 
 7. **Document Deviations:** If implementation differs from tech stack:
    - **STOP** implementation
@@ -150,49 +157,75 @@ Before marking any task complete, verify:
 
 ## Development Commands
 
-**AI AGENT INSTRUCTION: This section should be adapted to the project's specific language, framework, and build tools.**
-
 ### Setup
 ```bash
-# Example: Commands to set up the development environment (e.g., install dependencies, configure database)
-# e.g., for a Node.js project: npm install
-# e.g., for a Go project: go mod tidy
+# Install Rust toolchain (Edition 2024, MSRV 1.88)
+rustup update stable
+rustup component add clippy rustfmt
+
+# Build all workspace crates
+cargo build --workspace
+
+# For client development (Tauri 2.0 apps)
+cd clients/wraith-chat && npm install && npm run tauri dev
+cd clients/wraith-transfer && npm install && npm run tauri dev
+cd clients/wraith-sync && npm install && cd frontend && npm install && cd .. && npm run tauri:dev
 ```
 
 ### Daily Development
 ```bash
-# Example: Commands for common daily tasks (e.g., start dev server, run tests, lint, format)
-# e.g., for a Node.js project: npm run dev, npm test, npm run lint
-# e.g., for a Go project: go run main.go, go test ./..., go fmt ./...
+# Build and test
+cargo build --workspace
+cargo test --workspace
+cargo test -p wraith-core           # Test a specific crate
+cargo test -p wraith-crypto -- --nocapture  # With output
+
+# Run the CLI
+cargo run -p wraith-cli -- --help
+
+# Generate documentation
+cargo doc --workspace --no-deps --open
 ```
 
 ### Before Committing
 ```bash
-# Example: Commands to run all pre-commit checks (e.g., format, lint, type check, run tests)
-# e.g., for a Node.js project: npm run check
-# e.g., for a Go project: make check (if a Makefile exists)
+# Full CI pipeline (format check + clippy + tests)
+cargo xtask ci
+
+# Or run individually:
+cargo fmt --all -- --check           # Verify formatting
+cargo clippy --workspace -- -D warnings  # Zero-warning policy
+cargo test --all-features --workspace    # All tests with all features
 ```
 
 ## Testing Requirements
 
-### Unit Testing
-- Every module must have corresponding tests.
-- Use appropriate test setup/teardown mechanisms (e.g., fixtures, beforeEach/afterEach).
-- Mock external dependencies.
-- Test both success and failure cases.
+### Unit Testing (Rust)
+- Every module must have a corresponding `#[cfg(test)] mod tests` block.
+- Use `#[test]` for synchronous tests, `#[tokio::test]` for async tests.
+- Test both success and error paths for all `Result`-returning functions.
+- Use `proptest` for property-based testing of protocol invariants (frame encoding/decoding, crypto operations).
+- Use `criterion` for benchmarking performance-critical paths (frame parsing, hashing, encryption).
+- Test naming convention: `test_<function_name>_<scenario>` (e.g., `test_bbr_initial_state`, `test_ct_eq_different_lengths`).
+- Mock external dependencies using trait objects or conditional compilation.
 
 ### Integration Testing
-- Test complete user flows
-- Verify database transactions
-- Test authentication and authorization
-- Check form submissions
+- Integration tests reside in the `tests/` workspace crate.
+- Test complete protocol flows: handshake, session establishment, file transfer, rekeying.
+- Verify cryptographic operations end-to-end (encrypt-then-decrypt round-trip).
+- Test concurrent stream multiplexing under load.
+- Verify BBR congestion control behavior under simulated network conditions.
 
-### Mobile Testing
-- Test on actual iPhone when possible
-- Use Safari developer tools
-- Test touch interactions
-- Verify responsive layouts
-- Check performance on 3G/4G
+### Client Testing
+- **Desktop (Tauri):** Test IPC command handlers in Rust backend; test React components with TypeScript test frameworks.
+- **Android:** JNI binding tests, Keystore integration tests (require device or emulator).
+- **iOS:** UniFFI binding tests, Keychain integration tests (require device or simulator).
+- **Mobile Network:** Test DHT discovery and NAT traversal under mobile network conditions (3G/4G/5G).
+
+### Coverage Targets
+- Protocol crates: >80% line coverage (measured via `cargo xtask coverage`).
+- New code: >80% coverage required before merge.
+- Cryptographic code: 100% branch coverage for all security-critical paths.
 
 ## Code Review Process
 
@@ -201,36 +234,40 @@ Before requesting review:
 
 1. **Functionality**
    - Feature works as specified
-   - Edge cases handled
-   - Error messages are user-friendly
+   - Edge cases handled (malformed packets, oversized payloads, invalid state transitions)
+   - Error messages are descriptive with context (using `thiserror` structured variants)
 
 2. **Code Quality**
-   - Follows style guide
-   - DRY principle applied
-   - Clear variable/function names
-   - Appropriate comments
+   - Follows the [Rust style guide](./code_styleguides/rust.md) and [general principles](./code_styleguides/general.md)
+   - Zero clippy warnings (`cargo clippy --workspace -- -D warnings`)
+   - Consistent formatting (`cargo fmt --all -- --check`)
+   - All public APIs documented with `///` doc comments
+   - `#[must_use]` on pure functions returning values
 
 3. **Testing**
-   - Unit tests comprehensive
-   - Integration tests pass
-   - Coverage adequate (>80%)
+   - Unit tests in `#[cfg(test)] mod tests` block
+   - Property-based tests for protocol invariants (`proptest`)
+   - Integration tests for cross-crate interactions
+   - Coverage adequate (>80% for new code)
 
 4. **Security**
-   - No hardcoded secrets
-   - Input validation present
-   - SQL injection prevented
-   - XSS protection in place
+   - No hardcoded secrets, keys, or connection parameters
+   - All cryptographic operations use constant-time comparisons (`subtle` crate)
+   - Key material zeroized on drop (`zeroize` derive macro)
+   - Nonces never reused (monotonic counters or random generation)
+   - Input validation on all untrusted data (packet parsing, frame headers)
+   - No information leakage in error messages (no secret data in `Display` impls)
 
 5. **Performance**
-   - Database queries optimized
-   - Images optimized
-   - Caching implemented where needed
+   - Zero-copy parsing where possible (reference into buffers, not clone)
+   - No allocations in hot paths (frame processing, encryption)
+   - NUMA-aware allocation for transport workers
+   - Benchmark results for performance-critical changes (`criterion`)
 
-6. **Mobile Experience**
-   - Touch targets adequate (44x44px)
-   - Text readable without zooming
-   - Performance acceptable on mobile
-   - Interactions feel native
+6. **Unsafe Code**
+   - Minimal `unsafe` blocks with clear `// SAFETY:` comments
+   - `# Safety` section in doc comments for `unsafe fn`
+   - `#![deny(unsafe_op_in_unsafe_fn)]` in all crate roots
 
 ## Commit Guidelines
 
@@ -278,51 +315,57 @@ A task is complete when:
 
 ### Critical Bug in Production
 1. Create hotfix branch from main
-2. Write failing test for bug
-3. Implement minimal fix
-4. Test thoroughly including mobile
-5. Deploy immediately
-6. Document in plan.md
+2. Write failing test reproducing the bug
+3. Implement minimal fix with full test coverage
+4. Run `cargo xtask ci` to verify no regressions
+5. Build release binaries and verify
+6. Document in plan.md with root cause analysis
 
-### Data Loss
-1. Stop all write operations
-2. Restore from latest backup
-3. Verify data integrity
-4. Document incident
-5. Update backup procedures
+### Cryptographic Vulnerability
+1. Assess impact scope (which crate, which protocol layer)
+2. Determine if key material may have been compromised
+3. If keys compromised: force ratchet on all active sessions
+4. Patch vulnerability with constant-time fix
+5. Verify fix does not introduce timing side-channels
+6. Run full cryptographic test suite
+7. Document in `docs/security/` with CVE reference if applicable
 
 ### Security Breach
-1. Rotate all secrets immediately
-2. Review access logs
-3. Patch vulnerability
-4. Notify affected users (if any)
-5. Document and update security procedures
+1. Rotate all secrets and key material immediately
+2. Trigger kill switch for affected RedOps deployments (Ed25519-signed halt)
+3. Review audit logs (tamper-evident Merkle chain in WRAITH-Recon)
+4. Patch vulnerability
+5. Notify affected users
+6. Document and update security procedures in `SECURITY.md`
 
 ## Deployment Workflow
 
 ### Pre-Deployment Checklist
-- [ ] All tests passing
-- [ ] Coverage >80%
-- [ ] No linting errors
-- [ ] Mobile testing complete
-- [ ] Environment variables configured
-- [ ] Database migrations ready
-- [ ] Backup created
+- [ ] All 2,140+ tests passing (`cargo test --workspace`)
+- [ ] Zero clippy warnings (`cargo clippy --workspace -- -D warnings`)
+- [ ] Formatting verified (`cargo fmt --all -- --check`)
+- [ ] Coverage >80% for new code
+- [ ] No `TODO`, `FIXME`, or `unimplemented!()` in production paths
+- [ ] All `unsafe` blocks documented with `// SAFETY:` comments
+- [ ] Version bumped in workspace `Cargo.toml`
+- [ ] CHANGELOG.md updated with release notes
+- [ ] Release build succeeds (`cargo build --release`)
+- [ ] Security audit passes (zero known vulnerabilities)
 
-### Deployment Steps
-1. Merge feature branch to main
-2. Tag release with version
-3. Push to deployment service
-4. Run database migrations
-5. Verify deployment
-6. Test critical paths
-7. Monitor for errors
+### Release Build Steps
+1. Run full CI pipeline: `cargo xtask ci`
+2. Build release binaries: `cargo build --release`
+3. Tag release with semantic version: `git tag -a v2.2.5 -m "Release v2.2.5"`
+4. Build Tauri desktop clients: `npm run tauri build` (per client)
+5. Verify release artifacts (binary size, feature flags)
+6. Test critical paths with release binaries
+7. Push tag to remote: `git push origin v2.2.5`
 
-### Post-Deployment
-1. Monitor analytics
-2. Check error logs
-3. Gather user feedback
-4. Plan next iteration
+### Post-Release
+1. Verify CI/CD pipeline completes successfully
+2. Monitor for regression reports
+3. Update documentation if needed
+4. Plan next development phase
 
 ## Continuous Improvement
 

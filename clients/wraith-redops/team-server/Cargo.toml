@@ -43,18 +43,25 @@ thiserror = "2.0"
 uuid = { version = "1.6", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 rand = "0.8"
+hex = "0.4"
 
 # Authentication
 jsonwebtoken = "9.2"
 argon2 = "0.5"
 hmac = "0.12"
 sha2 = "0.10"
+chacha20poly1305 = "0.10"
 
 # WRAITH Protocol
 wraith-core = { path = "../../../crates/wraith-core" }
 wraith-crypto = { path = "../../../crates/wraith-crypto" }
 wraith-transport = { path = "../../../crates/wraith-transport" }
 dashmap = "5.5"
+
+[dev-dependencies]
+tempfile = "3.8"
+
+[workspace]
 
 [build-dependencies]
 tonic-build = "0.12"

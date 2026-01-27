@@ -106,7 +106,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tokio::spawn(async move {
         listeners::dns::start_dns_listener(
             dns_db,
-            5353,
+            5454,
             dns_event_tx,
             dns_governance,
             dns_key,

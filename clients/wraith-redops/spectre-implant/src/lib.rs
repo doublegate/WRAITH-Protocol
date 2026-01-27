@@ -17,6 +17,11 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
     loop {}
 }
 
+#[cfg(test)]
+#[no_mangle]
+pub extern "C" fn main() {}
+
+#[cfg(not(test))]
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
     // 1. Initialize

