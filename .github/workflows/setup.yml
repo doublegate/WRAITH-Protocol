@@ -87,18 +87,20 @@ jobs:
             libgtk-3-dev \
             libayatana-appindicator3-dev \
             libsqlcipher-dev \
-            libasound2-dev
+            libasound2-dev \
+            protobuf-compiler
 
       - name: Install system dependencies (macOS)
         if: inputs.os == 'macos-latest'
         run: |
-          brew install sqlcipher opus
+          brew install sqlcipher opus protobuf
 
       - name: Install system dependencies (Windows)
         if: inputs.os == 'windows-latest'
         shell: pwsh
         run: |
-          # Install SQLCipher using vcpkg
+          # Install protobuf compiler and SQLCipher
+          choco install protoc -y
           vcpkg install sqlcipher:x64-windows
 
       - name: Set SQLCipher environment (Windows)
