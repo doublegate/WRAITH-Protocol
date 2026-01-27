@@ -32,9 +32,9 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2: PowerShell Execution & High-Priority Fixes' (Protocol in workflow.md)
 
 ## Phase 3: Platform Completeness & Evasion
-- [ ] Task: Implement Dynamic Memory Discovery
-    - [ ] Implement PEB parsing to find the actual `.text` section range in `obfuscation.rs`.
-    - [ ] Implement runtime heap discovery (Windows: `GetProcessHeap`; Linux: `/proc/self/maps`).
+- [x] Task: Implement Dynamic Memory Discovery [d2d0a8b9]
+    - [x] Implement PEB parsing to find the actual `.text` section range in `obfuscation.rs`.
+    - [x] Implement runtime heap discovery (Windows: `GetProcessHeap`; Linux: `/proc/self/maps`) (Verified existing implementation).
 - [ ] Task: Build-Time LLVM Obfuscation
     - [ ] Configure `builder/mod.rs` to apply LLVM-level obfuscation passes via `RUSTFLAGS`.
     - [ ] Write tests to verify symbol stripping and control flow flattening in generated binaries.
