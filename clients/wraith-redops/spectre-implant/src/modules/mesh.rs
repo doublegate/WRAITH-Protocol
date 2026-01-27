@@ -10,6 +10,38 @@ use crate::utils::windows_definitions::{HANDLE, PVOID, GUID};
 #[cfg(target_os = "windows")]
 use core::ffi::c_void;
 
+pub struct Route {
+    pub dest_id: u64,
+    pub next_hop_idx: usize,
+    pub cost: u8,
+}
+
+pub struct MeshRouter {
+    pub routes: Vec<Route>,
+    pub local_id: u64,
+}
+
+impl MeshRouter {
+    pub fn new(local_id: u64) -> Self {
+        Self { routes: Vec::new(), local_id }
+    }
+    
+    pub fn add_route(&mut self, dest_id: u64, next_hop: usize, cost: u8) {
+        if let Some(r) = self.routes.iter_mut().find(|r| r.dest_id == dest_id) {
+            if cost < r.cost {
+                r.next_hop_idx = next_hop;
+                r.cost = cost;
+            }
+        } else {
+            self.routes.push(Route { dest_id, next_hop_idx: next_hop, cost });
+        }
+    }
+    
+    pub fn get_next_hop(&self, dest_id: u64) -> Option<usize> {
+        self.routes.iter().find(|r| r.dest_id == dest_id).map(|r| r.next_hop_idx)
+    }
+}
+
 pub struct MeshServer {
     #[cfg(not(target_os = "windows"))]
     tcp_socket: Option<usize>,
@@ -18,6 +50,7 @@ pub struct MeshServer {
     #[cfg(target_os = "windows")]
     pipe_handle: Option<HANDLE>,
     pub clients: Vec<MeshClient>,
+    pub router: MeshRouter,
 }
 
 pub struct MeshClient {
@@ -36,6 +69,7 @@ impl MeshServer {
             #[cfg(target_os = "windows")]
             pipe_handle: None,
             clients: Vec::new(),
+            router: MeshRouter::new(0),
         }
     }
 
@@ -251,5 +285,52 @@ impl MeshServer {
                 core::mem::transmute::<_, FnSend>(send_fn)(client.handle, data.as_ptr(), data.len() as i32, 0);
             }
         }
+    }
+
+    pub fn discover_peers(&self) {
+        #[cfg(not(target_os = "windows"))]
+        unsafe {
+            let sock = sys_socket(2, 2, 0);
+            if (sock as isize) < 0 { return; }
+            
+            let addr = SockAddrIn {
+                sin_family: 2,
+                sin_port: 4444u16.to_be(),
+                sin_addr: 0xFFFFFFFF,
+                sin_zero: [0; 8],
+            };
+            
+            let beacon = b"WRAITH_MESH_HELLO";
+            sys_sendto(sock, beacon.as_ptr(), beacon.len(), 0, &addr as *const _ as *const u8, 16);
+            sys_close(sock);
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_mesh_router_add_get() {
+        let mut router = MeshRouter::new(1);
+        router.add_route(2, 0, 1);
+        
+        assert_eq!(router.get_next_hop(2), Some(0));
+        assert_eq!(router.get_next_hop(3), None);
+    }
+
+    #[test]
+    fn test_mesh_router_update_cost() {
+        let mut router = MeshRouter::new(1);
+        router.add_route(2, 0, 5);
+        
+        // Better route
+        router.add_route(2, 1, 3);
+        assert_eq!(router.get_next_hop(2), Some(1));
+        
+        // Worse route (ignored)
+        router.add_route(2, 2, 10);
+        assert_eq!(router.get_next_hop(2), Some(1));
     }
 }

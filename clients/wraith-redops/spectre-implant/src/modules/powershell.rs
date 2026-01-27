@@ -1,6 +1,8 @@
 use alloc::format;
+#[cfg(target_os = "windows")]
 use alloc::vec::Vec;
 use crate::utils::sensitive::SensitiveData;
+#[cfg(target_os = "windows")]
 use base64::{Engine as _, engine::general_purpose};
 
 #[cfg(target_os = "windows")]
@@ -63,7 +65,7 @@ impl PowerShell {
 
         #[cfg(not(target_os = "windows"))]
         {
-            crate::modules::shell::Shell.exec(&format!("pwsh -c \"{ \}\"", cmd))
+            crate::modules::shell::Shell.exec(&format!("pwsh -c \"{}\"", cmd))
         }
     }
 
