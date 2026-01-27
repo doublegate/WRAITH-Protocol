@@ -46,9 +46,9 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 3: Platform Completeness & Evasion' (Protocol in workflow.md)
 
 ## Phase 4: Advanced Features & Distributed Discovery
-- [ ] Task: P2P Mesh C2 Orchestration
-    - [ ] Implement mesh routing tables and automated peer discovery in `mesh.rs`.
-    - [ ] Write tests for multi-hop command relaying through mesh nodes.
+- [x] Task: P2P Mesh C2 Orchestration [37886809]
+    - [x] Implement mesh routing tables and automated peer discovery in `mesh.rs`.
+    - [x] Write tests for multi-hop command relaying through mesh nodes. (Implemented MeshRouter tests).
 - [ ] Task: Kademlia DHT Integration
     - [ ] Integrate `wraith-discovery` DHT for decentralized RedOps peer discovery.
 - [ ] Task: Advanced Persistence & Evasion
