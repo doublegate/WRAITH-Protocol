@@ -55,16 +55,12 @@ impl Builder {
         Ok(())
     }
 
-    /// Compiles a fresh implant from source with specific features and obfuscation.
-    pub fn compile_implant(
+    fn prepare_build_command(
         source_dir: &Path,
-        output_path: &Path,
         server_addr: &str,
         features: &[&str],
         obfuscate: bool,
-    ) -> anyhow::Result<()> {
-        info!("Starting implant compilation for: {:?}", server_addr);
-
+    ) -> Command {
         let mut cmd = Command::new("cargo");
         cmd.arg("build")
             .arg("--release")
@@ -78,13 +74,30 @@ impl Builder {
 
         if obfuscate {
             info!("Applying build-time obfuscation flags...");
-            // Statically link CRT and strip symbols
+            // -C strip=symbols: Remove all symbols
+            // -C lto=fat: Full Link Time Optimization (cross-crate inlining)
+            // -C opt-level=z: Optimize for size (reduces code patterns)
+            // -C panic=abort: Removes panic messages and unwinding logic
+            // -C target-feature=+crt-static: Statically link C runtime
             cmd.env(
                 "RUSTFLAGS",
-                "-C target-feature=+crt-static -C panic=abort -C link-arg=-s",
+                "-C target-feature=+crt-static -C panic=abort -C lto=fat -C opt-level=z -C strip=symbols",
             );
         }
+        cmd
+    }
 
+    /// Compiles a fresh implant from source with specific features and obfuscation.
+    pub fn compile_implant(
+        source_dir: &Path,
+        output_path: &Path,
+        server_addr: &str,
+        features: &[&str],
+        obfuscate: bool,
+    ) -> anyhow::Result<()> {
+        info!("Starting implant compilation for: {:?}", server_addr);
+
+        let mut cmd = Self::prepare_build_command(source_dir, server_addr, features, obfuscate);
         let status = cmd.status()?;
 
         if !status.success() {
@@ -117,6 +130,22 @@ mod tests {
     use super::*;
     use std::io::Write;
     use tempfile::tempdir;
+
+    #[test]
+    fn test_obfuscation_flags() {
+        let cmd = Builder::prepare_build_command(
+            Path::new("."),
+            "127.0.0.1",
+            &[],
+            true
+        );
+        let envs: Vec<_> = cmd.get_envs().collect();
+        let flags = envs.iter().find(|(k, _)| *k == "RUSTFLAGS");
+        assert!(flags.is_some());
+        let val = flags.unwrap().1.unwrap();
+        assert!(val.to_string_lossy().contains("strip=symbols"));
+        assert!(val.to_string_lossy().contains("panic=abort"));
+    }
 
     #[test]
     fn test_patch_implant_logic() {
