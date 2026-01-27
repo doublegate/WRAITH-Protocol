@@ -10,10 +10,10 @@
     - [x] Replace simple sleep with Ekko sleep.
 
 ## Phase 2: Runtime Protection Patching
-- [ ] Task: Implement AMSI/ETW Patching
-    - [ ] Create `modules/patch.rs`.
-    - [ ] Implement `patch_amsi` and `patch_etw`.
-    - [ ] Call patching before CLR load in `powershell.rs` / `clr.rs`.
+- [x] Task: Implement AMSI/ETW Patching [47920ccd]
+    - [x] Create `modules/patch.rs`.
+    - [x] Implement `patch_amsi` and `patch_etw`.
+    - [x] Call patching before CLR load in `powershell.rs` / `clr.rs`.
 
 ## Phase 3: Capabilities & Operations
 - [ ] Task: Implement KillDate & WorkingTime
