@@ -1,5 +1,8 @@
-#![no_std]
-#![no_main]
+#![cfg_attr(not(test), no_std)]
+#![cfg_attr(not(test), no_main)]
+
+#[cfg(test)]
+extern crate std;
 
 extern crate alloc;
 
@@ -16,10 +19,6 @@ static ALLOCATOR: utils::heap::MiniHeap = utils::heap::MiniHeap::new(0x10000000,
 fn panic(_info: &core::panic::PanicInfo) -> ! {
     loop {}
 }
-
-#[cfg(test)]
-#[no_mangle]
-pub extern "C" fn main() {}
 
 #[cfg(not(test))]
 #[no_mangle]

@@ -234,6 +234,11 @@ pub unsafe fn sys_read(fd: usize, buf: *mut u8, count: usize) -> usize {
 }
 
 #[cfg(not(target_os = "windows"))]
+pub unsafe fn sys_open(path: *const u8, flags: i32, mode: i32) -> isize {
+    syscall3(SYS_OPEN, path as usize, flags as usize, mode as usize) as isize
+}
+
+#[cfg(not(target_os = "windows"))]
 pub unsafe fn sys_close(fd: usize) -> usize {
     syscall1(SYS_CLOSE, fd)
 }
