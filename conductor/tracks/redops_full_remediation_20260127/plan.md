@@ -5,10 +5,10 @@
     - [x] Write unit tests for rekeying state transitions and handshake counters.
     - [x] Implement DH ratchet logic in `team-server/src/services/protocol.rs`.
     - [x] Implement client-side rekeying in `spectre-implant/src/c2/mod.rs`.
-- [ ] Task: Integrate AF_XDP Kernel Bypass
-    - [ ] Write unit tests for zero-copy UMEM and ring buffer management.
-    - [ ] Implement AF_XDP transport driver in `wraith-transport` for RedOps listeners.
-    - [ ] Update `team-server/src/listeners` to support AF_XDP accelerated sockets.
+- [x] Task: Integrate AF_XDP Kernel Bypass [26c6d86]
+    - [x] Write unit tests for zero-copy UMEM and ring buffer management.
+    - [x] Implement AF_XDP transport driver in `wraith-transport` for RedOps listeners.
+    - [x] Update `team-server/src/listeners` to support AF_XDP accelerated sockets.
 - [ ] Task: Implement io_uring Asynchronous I/O
     - [ ] Write unit tests for completion queue submission and polling.
     - [ ] Integrate `io-uring` crate for file/network I/O in the Team Server.
