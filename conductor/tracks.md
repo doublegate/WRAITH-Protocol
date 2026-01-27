@@ -38,3 +38,8 @@ Completed or superseded tracks are preserved in the [archive/](./archive/) direc
 ---
 
 ---
+
+---
+
+- [~] **Track: APT Playbooks - [ ] **Track: APT Playbooks & SMB2 Hardening** SMB2 Hardening**
+*Link: [./tracks/apt_playbooks_smb2_hardening_20260126/](./tracks/apt_playbooks_smb2_hardening_20260126/)*
