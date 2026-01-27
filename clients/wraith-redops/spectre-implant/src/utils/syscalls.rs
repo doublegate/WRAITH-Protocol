@@ -25,6 +25,8 @@ pub const SYS_LISTEN: usize = 50;
 #[cfg(not(target_os = "windows"))]
 pub const SYS_SENDTO: usize = 44; // sendto/write
 #[cfg(not(target_os = "windows"))]
+pub const SYS_RECVFROM: usize = 45;
+#[cfg(not(target_os = "windows"))]
 pub const SYS_FCNTL: usize = 72;
 #[cfg(not(target_os = "windows"))]
 pub const SYS_EXIT: usize = 60;
@@ -249,6 +251,16 @@ pub unsafe fn sys_fcntl(fd: usize, cmd: i32, arg: usize) -> usize {
 #[cfg(not(target_os = "windows"))]
 pub unsafe fn sys_connect(sockfd: usize, addr: *const u8, addrlen: u32) -> usize {
     syscall3(SYS_CONNECT, sockfd, addr as usize, addrlen as usize)
+}
+
+#[cfg(not(target_os = "windows"))]
+pub unsafe fn sys_sendto(sockfd: usize, buf: *const u8, len: usize, flags: i32, dest_addr: *const u8, addrlen: u32) -> isize {
+    syscall6(SYS_SENDTO, sockfd, buf as usize, len, flags as usize, dest_addr as usize, addrlen as usize) as isize
+}
+
+#[cfg(not(target_os = "windows"))]
+pub unsafe fn sys_recvfrom(sockfd: usize, buf: *mut u8, len: usize, flags: i32, src_addr: *mut u8, addrlen: *mut u32) -> isize {
+    syscall6(SYS_RECVFROM, sockfd, buf as usize, len, flags as usize, src_addr as usize, addrlen as usize) as isize
 }
 
 #[cfg(not(target_os = "windows"))]
