@@ -77,3 +77,28 @@ End Sub
         vba
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_html_smuggling_generation() {
+        let payload = b"test payload";
+        let html = PhishingGenerator::generate_html_smuggling(payload, "test.exe");
+        assert!(html.contains("test.exe"));
+        // Base64 of "test payload" is "dGVzdCBwYXlsb2Fk"
+        assert!(html.contains("dGVzdCBwYXlsb2Fk"));
+    }
+
+    #[test]
+    fn test_macro_vba_generation() {
+        let payload = b"\x90\x90";
+        let vba = PhishingGenerator::generate_macro_vba(payload);
+        assert!(vba.contains("VirtualAlloc"));
+        assert!(vba.contains("CreateThread"));
+        // 0x90 = 144
+        assert!(vba.contains("code(0) = 144"));
+        assert!(vba.contains("code(1) = 144"));
+    }
+}
