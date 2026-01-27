@@ -1076,6 +1076,85 @@ impl OperatorService for OperatorServiceImpl {
 
         Ok(Response::new(()))
     }
+
+    async fn list_playbooks(
+        &self,
+        _req: Request<ListPlaybooksRequest>,
+    ) -> Result<Response<ListPlaybooksResponse>, Status> {
+        let playbooks = self.db.list_playbooks().await.map_err(|e| Status::internal(e.to_string()))?;
+        let pb_proto = playbooks.into_iter().map(|p| Playbook {
+            id: p.id.to_string(),
+            name: p.name,
+            description: p.description.unwrap_or_default(),
+            content_json: p.content.to_string(),
+        }).collect();
+        Ok(Response::new(ListPlaybooksResponse { playbooks: pb_proto }))
+    }
+
+    async fn instantiate_playbook(
+        &self,
+        req: Request<InstantiatePlaybookRequest>,
+    ) -> Result<Response<AttackChain>, Status> {
+        let req = req.into_inner();
+        let pb_id = uuid::Uuid::parse_str(&req.playbook_id).map_err(|_| Status::invalid_argument("Invalid UUID"))?;
+        
+        let playbook = self.db.get_playbook(pb_id).await.map_err(|e| Status::internal(e.to_string()))?
+            .ok_or(Status::not_found("Playbook not found"))?;
+
+        let content = playbook.content;
+        let steps_json = content.get("steps").ok_or(Status::internal("Invalid playbook content: missing steps"))?;
+        
+        #[derive(serde::Deserialize)]
+        struct StepTemplate {
+            order: i32,
+            technique: String,
+            command_type: String,
+            payload: String,
+            description: String,
+        }
+        
+        let templates: Vec<StepTemplate> = serde_json::from_value(steps_json.clone())
+            .map_err(|e| Status::internal(format!("Failed to parse steps: {}", e)))?;
+            
+        let chain_steps: Vec<crate::models::ChainStep> = templates.into_iter().map(|t| crate::models::ChainStep {
+            id: uuid::Uuid::nil(),
+            chain_id: uuid::Uuid::nil(),
+            step_order: t.order,
+            technique_id: t.technique,
+            command_type: t.command_type,
+            payload: t.payload,
+            description: Some(t.description),
+        }).collect();
+
+        let name = if req.name_override.is_empty() {
+            format!("{} (Instance)", playbook.name)
+        } else {
+            req.name_override
+        };
+
+        let chain = self.db.create_attack_chain(&name, &playbook.description.unwrap_or_default(), &chain_steps)
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?;
+
+        let (_, saved_steps) = self.db.get_attack_chain(chain.id).await.map_err(|e| Status::internal(e.to_string()))?.unwrap();
+
+        Ok(Response::new(AttackChain {
+            id: chain.id.to_string(),
+            name: chain.name,
+            description: chain.description.unwrap_or_default(),
+            created_at: None,
+            updated_at: None,
+            steps: saved_steps.into_iter().map(|s| ChainStep {
+                id: s.id.to_string(),
+                chain_id: s.chain_id.to_string(),
+                step_order: s.step_order,
+                technique_id: s.technique_id,
+                command_type: s.command_type,
+                payload: s.payload,
+                description: s.description.unwrap_or_default(),
+            }).collect(),
+        }))
+    }
 }
 
 #[cfg(test)]

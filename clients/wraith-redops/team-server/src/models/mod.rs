@@ -164,3 +164,13 @@ pub struct ChainStep {
     pub payload: String,
     pub description: Option<String>,
 }
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct Playbook {
+    pub id: Uuid,
+    pub name: String,
+    pub description: Option<String>,
+    pub content: serde_json::Value,
+    pub created_at: Option<DateTime<Utc>>,
+    pub updated_at: Option<DateTime<Utc>>,
+}

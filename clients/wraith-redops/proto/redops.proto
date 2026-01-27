@@ -57,6 +57,10 @@ service OperatorService {
     rpc ListAttackChains(ListAttackChainsRequest) returns (ListAttackChainsResponse);
     rpc ExecuteAttackChain(ExecuteAttackChainRequest) returns (google.protobuf.Empty);
     rpc GetAttackChain(GetAttackChainRequest) returns (AttackChain);
+
+    // Playbooks
+    rpc ListPlaybooks(ListPlaybooksRequest) returns (ListPlaybooksResponse);
+    rpc InstantiatePlaybook(InstantiatePlaybookRequest) returns (AttackChain);
 }
 
 // Implant service (C2 protocol)
@@ -485,4 +489,22 @@ message ExecuteAttackChainRequest {
 
 message GetAttackChainRequest {
     string id = 1;
+}
+
+message Playbook {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    string content_json = 4;
+}
+
+message ListPlaybooksRequest {}
+
+message ListPlaybooksResponse {
+    repeated Playbook playbooks = 1;
+}
+
+message InstantiatePlaybookRequest {
+    string playbook_id = 1;
+    string name_override = 2;
 }

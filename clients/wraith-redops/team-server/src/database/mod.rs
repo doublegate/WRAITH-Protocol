@@ -585,4 +585,36 @@ impl Database {
             Ok(None)
         }
     }
+
+    // --- Playbook Operations ---
+    pub async fn create_playbook(&self, name: &str, description: &str, content: serde_json::Value) -> Result<crate::models::Playbook> {
+        let rec = sqlx::query_as::<_, crate::models::Playbook>(
+            "INSERT INTO playbooks (name, description, content) VALUES ($1, $2, $3) RETURNING *"
+        )
+        .bind(name)
+        .bind(description)
+        .bind(content)
+        .fetch_one(&self.pool)
+        .await?;
+        Ok(rec)
+    }
+
+    pub async fn list_playbooks(&self) -> Result<Vec<crate::models::Playbook>> {
+        let recs = sqlx::query_as::<_, crate::models::Playbook>(
+            "SELECT * FROM playbooks ORDER BY name"
+        )
+        .fetch_all(&self.pool)
+        .await?;
+        Ok(recs)
+    }
+
+    pub async fn get_playbook(&self, id: Uuid) -> Result<Option<crate::models::Playbook>> {
+        let rec = sqlx::query_as::<_, crate::models::Playbook>(
+            "SELECT * FROM playbooks WHERE id = $1"
+        )
+        .bind(id)
+        .fetch_optional(&self.pool)
+        .await?;
+        Ok(rec)
+    }
 }
