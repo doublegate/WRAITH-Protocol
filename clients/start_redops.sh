@@ -165,8 +165,17 @@ export HTTP_LISTEN_PORT="8080"
 export UDP_LISTEN_PORT="9999"
 export DNS_LISTEN_PORT="5454"
 export SMB_LISTEN_PORT="4445"
-export HMAC_SECRET="dev_hmac_placeholder_val_1234567890"
-export MASTER_KEY=$(openssl rand -hex 32)
+
+# Security Validation
+if [ -z "$HMAC_SECRET" ]; then
+    echo -e "${YELLOW}[!] HMAC_SECRET not set. Generating ephemeral secret.${NC}"
+    export HMAC_SECRET=$(openssl rand -hex 32)
+fi
+
+if [ -z "$MASTER_KEY" ]; then
+    echo -e "${YELLOW}[!] MASTER_KEY not set. Generating ephemeral master key.${NC}"
+    export MASTER_KEY=$(openssl rand -hex 32)
+fi
 
 # Build and run in background
 cargo run &

@@ -116,9 +116,9 @@ pub async fn start_smb_listener(
                         }
 
                         let command = u16::from_le_bytes([header_buf[12], header_buf[13]]);
-                        let msg_id = u64::from_le_bytes(header_buf[24..32].try_into().unwrap());
-                        let proc_id = u32::from_le_bytes(header_buf[32..36].try_into().unwrap());
-                        let session_id = u64::from_le_bytes(header_buf[40..48].try_into().unwrap());
+                        let msg_id = u64::from_le_bytes(header_buf[24..32].try_into().unwrap_or_default());
+                        let proc_id = u32::from_le_bytes(header_buf[32..36].try_into().unwrap_or_default());
+                        let session_id = u64::from_le_bytes(header_buf[40..48].try_into().unwrap_or_default());
 
                         match command {
                             0x0000 => {
