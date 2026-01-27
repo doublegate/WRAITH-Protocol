@@ -4,6 +4,7 @@
 //! two peers. Sessions multiplex multiple streams (file transfers) over
 //! a single UDP "connection".
 
+use crate::congestion::BbrState;
 use crate::error::SessionError;
 use crate::stream::Stream;
 use std::collections::HashMap;
@@ -171,6 +172,8 @@ pub struct Session {
     packets_sent: u64,
     /// Packets received
     packets_received: u64,
+    /// BBR congestion control state
+    bbr: BbrState,
 }
 
 impl Session {
@@ -197,6 +200,7 @@ impl Session {
             bytes_received: 0,
             packets_sent: 0,
             packets_received: 0,
+            bbr: BbrState::new(),
         }
     }
 
@@ -484,6 +488,23 @@ impl Session {
         self.bytes_sent += bytes;
         self.packets_sent += 1;
         self.update_activity();
+        // Update BBR state
+        self.bbr.on_packet_sent(bytes);
+    }
+
+    /// Record packet acknowledgment
+    pub fn record_acked(&mut self, bytes: u64, rtt: Duration) {
+        self.bbr.on_packet_acked(bytes, rtt);
+    }
+
+    /// Record packet loss
+    pub fn record_lost(&mut self, bytes: u64) {
+        self.bbr.on_packet_lost(bytes);
+    }
+
+    /// Get BBR state
+    pub fn bbr(&self) -> &BbrState {
+        &self.bbr
     }
 
     /// Record bytes received
@@ -1074,5 +1095,27 @@ mod tests {
 
         // Should not trigger rekey (200 packets, 2000 bytes, <1s elapsed)
         assert!(!session.needs_rekey());
+    }
+
+    #[test]
+    fn test_session_bbr_integration() {
+        let mut session = Session::new();
+        
+        // Initial state
+        assert_eq!(session.bbr().bytes_in_flight(), 0);
+        
+        // Sending updates BBR
+        session.record_sent(1500);
+        assert_eq!(session.bbr().bytes_in_flight(), 1500);
+        
+        // Acking updates BBR
+        session.record_acked(1500, Duration::from_millis(50));
+        assert_eq!(session.bbr().bytes_in_flight(), 0);
+        assert_eq!(session.bbr().min_rtt(), Duration::from_millis(50));
+        
+        // Loss updates BBR
+        session.record_sent(1500);
+        session.record_lost(1500);
+        assert_eq!(session.bbr().bytes_in_flight(), 0);
     }
 }
