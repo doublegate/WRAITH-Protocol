@@ -4,3 +4,4 @@ pub mod listener;
 pub mod operator;
 pub mod protocol;
 pub mod session;
+pub mod playbook_loader;

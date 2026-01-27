@@ -366,6 +366,8 @@ impl NoiseHandshake {
         Ok(NoiseTransport {
             transport,
             role: self.role,
+            msg_count: 0,
+            last_rekey: std::time::Instant::now(),
         })
     }
 
@@ -425,6 +427,8 @@ fn derive_key(ikm: &[u8], context: &[u8], output: &mut [u8; 32]) {
 pub struct NoiseTransport {
     transport: TransportState,
     role: Role,
+    msg_count: u64,
+    last_rekey: std::time::Instant,
 }
 
 impl NoiseTransport {
@@ -439,6 +443,7 @@ impl NoiseTransport {
         let mut message = vec![0u8; payload.len() + 16]; // payload + tag
         let len = self.transport.write_message(payload, &mut message)?;
         message.truncate(len);
+        self.msg_count += 1;
         Ok(message)
     }
 
@@ -469,11 +474,18 @@ impl NoiseTransport {
     /// Rekey the sending cipher (for forward secrecy).
     pub fn rekey_send(&mut self) {
         self.transport.rekey_outgoing();
+        self.msg_count = 0;
+        self.last_rekey = std::time::Instant::now();
     }
 
     /// Rekey the receiving cipher.
     pub fn rekey_recv(&mut self) {
         self.transport.rekey_incoming();
+    }
+
+    /// Check if rekeying is needed (1M packets or 2 minutes)
+    pub fn should_rekey(&self) -> bool {
+        self.msg_count >= 1_000_000 || self.last_rekey.elapsed().as_secs() >= 120
     }
 }
 

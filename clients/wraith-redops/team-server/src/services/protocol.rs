@@ -160,6 +160,22 @@ impl ProtocolHandler {
                         }
                     };
 
+                    let mut rekey_packet = Vec::new();
+                    if transport.should_rekey() {
+                        debug!("Initiating REKEY for session {}", hex::encode(cid));
+                        let mut rekey_frame = Vec::with_capacity(28);
+                        rekey_frame.extend_from_slice(b"WRTH");
+                        rekey_frame.extend_from_slice(&0u32.to_be_bytes()); // Length 0
+                        rekey_frame.extend_from_slice(&4u16.to_be_bytes()); // Type 4
+                        rekey_frame.extend_from_slice(&0u16.to_be_bytes());
+                        rekey_frame.extend_from_slice(&[0u8; 16]);
+
+                        if let Ok(ct) = transport.write_message(&rekey_frame) {
+                            rekey_packet = ct;
+                            transport.rekey_send();
+                        }
+                    }
+
                     // Implement proper Frame construction (28-byte header)
                     let mut frame = Vec::with_capacity(28 + resp_json.len());
                     frame.extend_from_slice(b"WRTH"); 
@@ -179,6 +195,7 @@ impl ProtocolHandler {
 
                     let mut response = Vec::new();
                     response.extend_from_slice(&cid);
+                    response.extend_from_slice(&rekey_packet);
                     response.extend_from_slice(&ciphertext);
                     return Some(response);
                 }

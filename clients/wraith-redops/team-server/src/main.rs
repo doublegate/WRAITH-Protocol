@@ -123,6 +123,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     sqlx::migrate!("./migrations").run(&pool).await?;
 
     let db = Arc::new(Database::new(pool));
+    
+    // Load playbooks
+    if let Err(e) = services::playbook_loader::load_playbooks(db.clone()).await {
+        tracing::error!("Failed to load playbooks: {}", e);
+    }
+
     let governance = Arc::new(GovernanceEngine::new());
     let static_key = NoiseKeypair::generate()
         .map_err(|e| format!("Failed to generate static key: {:?}", e))

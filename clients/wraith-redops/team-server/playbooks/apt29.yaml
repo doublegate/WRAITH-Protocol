@@ -1,0 +1,13 @@
+name: "APT29 Discovery"
+description: "Simulates APT29 discovery phase"
+steps:
+  - order: 1
+    technique: "T1082"
+    command_type: "sys_info"
+    payload: ""
+    description: "System Information Discovery"
+  - order: 2
+    technique: "T1057"
+    command_type: "shell"
+    payload: "tasklist /v"
+    description: "Process Discovery"

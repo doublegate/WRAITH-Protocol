@@ -163,26 +163,39 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 
 **Architecture:**
 
-- **Team Server** (`team-server/`) - Rust backend (~600 lines)
-  - Axum web framework with Tonic gRPC services
-  - PostgreSQL database with SQLx and migration support
-  - Listener management: Create/Start/Stop C2 listeners (UDP, HTTP, HTTPS, DNS, TCP)
+- **Team Server** (`team-server/`) - Rust backend (~4,317 lines)
+  - Axum web framework with Tonic gRPC services (30 RPCs in OperatorService)
+  - PostgreSQL database with SQLx, 5 migrations, and XChaCha20-Poly1305 encryption at rest
+  - Listener management: Create/Start/Stop C2 listeners (UDP, HTTP, DNS, SMB) with dynamic tokio task spawning
   - Implant registry: Track active beacons, health status, metadata
-  - Task queue: Priority-based command scheduling
+  - Task queue: Priority-based command scheduling with FOR UPDATE SKIP LOCKED
   - Campaign lifecycle management (planning -> active -> completed)
-  - Multi-operator support with RBAC (role-based access control)
+  - Multi-operator support with Ed25519 authentication and RBAC
+  - Attack chain orchestration (create, list, get, execute with sequential step execution)
+  - APT Playbook system (YAML/JSON loader, DB storage, instantiation to attack chains)
+  - Ed25519-signed Kill Switch broadcast mechanism
+  - HMAC-SHA256 signed audit logging
 
-- **Operator Client** (`operator-client/`) - Tauri 2.0 + React (~540 lines)
+- **Operator Client** (`operator-client/`) - Tauri 2.0 + React (~2,436 lines: 918 Rust + 1,518 TypeScript)
+  - 23 IPC commands wired to gRPC backend (77% of 30 proto RPCs)
   - Real-time dashboard with beacon status and campaign statistics
-  - Interactive terminal for command execution
-  - gRPC-over-HTTP bridge to Team Server
+  - Interactive xterm.js terminal with 12 command types
+  - SVG radial topology visualization with hover/select/glow effects
+  - Attack chain visual editor with ReactFlow drag-and-drop and invoke() backend integration
+  - Phishing builder, loot gallery, persistence manager, discovery dashboard
   - Wayland compatibility with X11 fallback
 
-- **Spectre Implant** (`spectre-implant/`) - no_std Rust (~540 lines)
-  - Minimal footprint binary for target deployment
-  - C2 loop: Polling, task execution, result submission
-  - MiniHeap custom allocator for controlled memory
-  - Sleep mask stub for evasion timing obfuscation
+- **Spectre Implant** (`spectre-implant/`) - no_std Rust (~4,884 lines)
+  - 14 modules with 17 task types dispatched via beacon loop
+  - C2 loop with Noise_XX encryption and rekeying logic (1M packets/100 check-ins)
+  - MiniHeap custom allocator for controlled memory management
+  - Sleep mask with heap + .text XOR encryption using RDRAND key generation
+  - Hell's Gate/Halo's Gate indirect syscalls (32 neighbors each direction)
+  - Process injection: Reflective DLL, Process Hollowing, Thread Hijack (Windows + Linux)
+  - BOF loader with COFF parsing and all 6 Beacon Internal Functions
+  - SOCKS4a/5 proxy with real TCP connections
+  - SMB2 client for named pipe C2 communication (Linux functional, Windows TODO)
+  - Credential dumping via MiniDumpWriteDump, keylogging, lateral movement (PSExec)
   - Hash-based API resolution for import hiding
   - Silent panic handling for operational security
 
@@ -196,19 +209,23 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 - gRPC API for programmatic access
 - Wayland-compatible Tauri desktop client
 
-**Gap Analysis (v4.2.0 Deep Audit Refresh):**
-- Overall completion: 89% (up from 82% in v4.1.0)
-- MITRE ATT&CK coverage: 66% (25/38 techniques, up from 50%)
-- 0 P0 critical issues remaining
-- 17 findings resolved (1 P0, 5 P1, 7 P2, 3 P3, 1 stub BIF)
-- 2 new gaps identified (attack chain IPC bridge, simulated editor execution)
-- ~10,361 total lines across all three components (+22% from v4.1.0)
+**Gap Analysis (v4.3.0 Deep Audit Refresh - Post-Remediation Verification):**
+- Overall completion: ~91% (up from 89% in v4.2.0)
+- MITRE ATT&CK coverage: ~71% (27/38 techniques, up from 66%)
+- 0 P0 critical issues, 3 P1 high issues remaining (down from 5)
+- v4.3.0 resolved: 2 P1 (Attack Chain IPC bridge, AttackChainEditor invoke), 2 P3 (APT Playbooks, SMB2 Hardening)
+- v4.3.0 new gaps: NEW-17 (SMB2 struct bug), NEW-18 (Playbook IPC), NEW-19 (7 missing RPCs), NEW-20 (test coverage)
+- ~12,148 total lines across all three components (+12% from v4.2.0)
+- 48 of 52 features complete, 3 partial, 1 missing/stub
+- ~109 SP remaining across P1-P3 priorities
 
 **Technical Specifications:**
-- Backend: ~1,135 lines Rust
-- Frontend: ~141 lines TypeScript/React
+- Team Server: ~4,317 lines Rust (gRPC services, PostgreSQL, 4 listener types, playbook system)
+- Operator Client: ~918 lines Rust (Tauri IPC) + ~1,518 lines TypeScript/React (23 IPC commands)
+- Spectre Implant: ~4,884 lines Rust (no_std, 14 modules, 17 task types)
+- Proto: 511 lines (30 RPCs in OperatorService, 6 in ImplantService)
 - Protocol: gRPC with protobuf definitions
-- Database: PostgreSQL (isolated from main workspace)
+- Database: PostgreSQL with 5 migrations (isolated from main workspace)
 
 ---
 
@@ -1149,7 +1166,8 @@ RedOps                                                          [=============]
 - ✅ Zero vulnerabilities, zero clippy warnings
 - ✅ Grade A+ quality (98/100), TDR ~2.5%
 - ✅ Production-ready architecture with v2.2.5 release
-- ✅ WRAITH-RedOps gap analysis v4.2.0: 89% completion, 66% MITRE ATT&CK, 0 P0 critical
+- ✅ WRAITH-RedOps gap analysis v4.3.0: ~91% completion, ~71% MITRE ATT&CK, 0 P0 critical, ~12,148 lines
+- ✅ Conductor project management system with code style guides for development workflow tracking
 - ✅ Full WRAITH protocol integration in all clients
 - ✅ Secure key storage with platform-native keyring
 - ✅ AF_XDP socket configuration for kernel bypass
@@ -1277,6 +1295,6 @@ RedOps                                                          [=============]
 
 **WRAITH Protocol Client Applications Development History** - *From Planning to v2.2.5*
 
-**Status:** Phases 15-24 Complete (All 12 Clients) | **Total Scope:** 12 clients, 1,292 SP | **Delivered:** 1,292 SP (100%) | **Protocol:** v2.2.5 Complete | **Tests:** 2,140 total (665+ client tests) | **TDR:** ~2.5% (Grade A) | **CI/CD:** Optimized workflows with reusable setup and path filters | **RedOps:** Gap analysis v4.2.0 (89% complete, 66% MITRE ATT&CK coverage, 0 P0 critical issues, ~10,361 lines)
+**Status:** Phases 15-24 Complete (All 12 Clients) | **Total Scope:** 12 clients, 1,292 SP | **Delivered:** 1,292 SP (100%) | **Protocol:** v2.2.5 Complete | **Tests:** 2,140 total (665+ client tests) | **TDR:** ~2.5% (Grade A) | **CI/CD:** Optimized workflows with reusable setup and path filters | **RedOps:** Gap analysis v4.3.0 (~91% complete, ~71% MITRE ATT&CK coverage, 0 P0 critical issues, ~12,148 lines) | **Conductor:** Project management system with code style guides
 
 *Last Updated: 2026-01-26*

@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 # No std dependencies
@@ -23,5 +23,8 @@ strip = true        # Strip symbols
 codegen-units = 1   # Maximize optimization
 
 [profile.dev]
+panic = "abort"
+
+[profile.test]
 panic = "abort"
 [workspace]

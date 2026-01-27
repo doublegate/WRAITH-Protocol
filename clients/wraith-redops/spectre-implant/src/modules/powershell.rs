@@ -13,13 +13,7 @@ pub struct PowerShell;
 // Minimal dummy PE header to simulate a .NET assembly structure (starts with MZ)
 // In a real scenario, this would be the byte array of the compiled C# runner.
 #[cfg(target_os = "windows")]
-const RUNNER_DLL: &[u8] = &[
-    0x4D, 0x5A, 0x90, 0x00, 0x03, 0x00, 0x00, 0x00, // MZ header
-    0x04, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00,
-    0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    // ... truncated. Represents minimal PE header.
-];
+const RUNNER_DLL: &[u8] = include_bytes!("../../resources/Runner.dll");
 
 impl PowerShell {
     pub fn exec(&self, cmd: &str) -> Vec<u8> {

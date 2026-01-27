@@ -209,20 +209,58 @@ fn get_random_u8() -> u8 {
     (val & 0xFF) as u8
 }
 
-fn get_heap_range() -> (*mut u8, usize) {
+pub fn get_heap_range() -> (*mut u8, usize) {
     #[cfg(target_os = "windows")]
     unsafe {
         let kernel32 = hash_str(b"kernel32.dll");
         let get_process_heap = resolve_function(kernel32, hash_str(b"GetProcessHeap"));
+        let virtual_query = resolve_function(kernel32, hash_str(b"VirtualQuery"));
         
-        if !get_process_heap.is_null() {
+        if !get_process_heap.is_null() && !virtual_query.is_null() {
             type FnGetProcessHeap = unsafe extern "system" fn() -> crate::utils::windows_definitions::HANDLE;
             let heap = core::mem::transmute::<_, FnGetProcessHeap>(get_process_heap)();
-            // Default to 1MB from heap base as a safe approximation for obfuscation
-            // Full traversal with HeapWalk is risky during sleep mask application
-            return (heap as *mut u8, 1024 * 1024);
+            
+            type FnVirtualQuery = unsafe extern "system" fn(*const core::ffi::c_void, *mut crate::utils::windows_definitions::MEMORY_BASIC_INFORMATION, usize) -> usize;
+            let query: FnVirtualQuery = core::mem::transmute(virtual_query);
+            
+            let mut mbi: crate::utils::windows_definitions::MEMORY_BASIC_INFORMATION = core::mem::zeroed();
+            if query(heap, &mut mbi, core::mem::size_of::<crate::utils::windows_definitions::MEMORY_BASIC_INFORMATION>()) != 0 {
+                return (heap as *mut u8, mbi.RegionSize);
+            }
         }
     }
-    // Fallback or non-windows
+    
+    #[cfg(not(target_os = "windows"))]
+    unsafe {
+        let path = "/proc/self/maps\0";
+        let fd = crate::utils::syscalls::sys_open(path.as_ptr(), 0, 0);
+        if (fd as isize) > 0 {
+            let mut buf = [0u8; 4096];
+            let n = crate::utils::syscalls::sys_read(fd as usize, buf.as_mut_ptr(), 4096);
+            crate::utils::syscalls::sys_close(fd as usize);
+            
+            if n > 0 {
+                if let Ok(s) = core::str::from_utf8(&buf[..n]) {
+                    for line in s.lines() {
+                        if line.contains("[heap]") {
+                            let mut parts = line.split_whitespace();
+                            if let Some(range) = parts.next() {
+                                let mut range_parts = range.split('-');
+                                if let (Some(start_str), Some(end_str)) = (range_parts.next(), range_parts.next()) {
+                                    let start = usize::from_str_radix(start_str, 16).unwrap_or(0);
+                                    let end = usize::from_str_radix(end_str, 16).unwrap_or(0);
+                                    if start > 0 && end > start {
+                                        return (start as *mut u8, end - start);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Fallback
     (0x10000000 as *mut u8, 1024 * 1024)
 }

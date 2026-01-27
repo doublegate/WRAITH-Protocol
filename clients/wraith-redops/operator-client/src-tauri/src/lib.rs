@@ -635,6 +635,131 @@ async fn list_credentials(
     serde_json::to_string(&creds).map_err(|e| e.to_string())
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChainStepJson {
+    pub id: String,
+    pub step_order: i32,
+    pub technique_id: String,
+    pub command_type: String,
+    pub payload: String,
+    pub description: String,
+}
+
+impl From<ChainStep> for ChainStepJson {
+    fn from(s: ChainStep) -> Self {
+        Self {
+            id: s.id,
+            step_order: s.step_order,
+            technique_id: s.technique_id,
+            command_type: s.command_type,
+            payload: s.payload,
+            description: s.description,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AttackChainJson {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub steps: Vec<ChainStepJson>,
+}
+
+impl From<AttackChain> for AttackChainJson {
+    fn from(c: AttackChain) -> Self {
+        Self {
+            id: c.id,
+            name: c.name,
+            description: c.description,
+            steps: c.steps.into_iter().map(|s| s.into()).collect(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChainStepInput {
+    pub step_order: i32,
+    pub technique_id: String,
+    pub command_type: String,
+    pub payload: String,
+    pub description: String,
+}
+
+#[tauri::command]
+async fn create_attack_chain(
+    name: String,
+    description: String,
+    steps: Vec<ChainStepInput>,
+    state: State<'_, ClientState>,
+) -> Result<String, String> {
+    let mut lock = state.client.lock().await;
+    let client = lock.as_mut().ok_or("Not connected")?;
+
+    let req_steps = steps.into_iter().map(|s| ChainStepRequest {
+        step_order: s.step_order,
+        technique_id: s.technique_id,
+        command_type: s.command_type,
+        payload: s.payload,
+        description: s.description,
+    }).collect();
+
+    let request = tonic::Request::new(CreateAttackChainRequest {
+        name,
+        description,
+        steps: req_steps,
+    });
+
+    let response = client.create_attack_chain(request).await.map_err(|e| format!("gRPC error: {}", e))?;
+    let chain: AttackChainJson = response.into_inner().into();
+    serde_json::to_string(&chain).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn list_attack_chains(state: State<'_, ClientState>) -> Result<String, String> {
+    let mut lock = state.client.lock().await;
+    let client = lock.as_mut().ok_or("Not connected")?;
+
+    let response = client.list_attack_chains(tonic::Request::new(ListAttackChainsRequest {
+        page_size: 100,
+        page_token: "".to_string(),
+    })).await.map_err(|e| format!("gRPC error: {}", e))?;
+
+    let chains: Vec<AttackChainJson> = response.into_inner().chains.into_iter().map(|c| c.into()).collect();
+    serde_json::to_string(&chains).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn execute_attack_chain(
+    chain_id: String,
+    implant_id: String,
+    state: State<'_, ClientState>,
+) -> Result<(), String> {
+    let mut lock = state.client.lock().await;
+    let client = lock.as_mut().ok_or("Not connected")?;
+
+    client.execute_attack_chain(tonic::Request::new(ExecuteAttackChainRequest {
+        chain_id,
+        implant_id,
+    })).await.map_err(|e| format!("gRPC error: {}", e))?;
+    Ok(())
+}
+
+#[tauri::command]
+async fn get_attack_chain(
+    id: String,
+    state: State<'_, ClientState>,
+) -> Result<String, String> {
+    let mut lock = state.client.lock().await;
+    let client = lock.as_mut().ok_or("Not connected")?;
+
+    let response = client.get_attack_chain(tonic::Request::new(GetAttackChainRequest { id }))
+        .await.map_err(|e| format!("gRPC error: {}", e))?;
+
+    let chain: AttackChainJson = response.into_inner().into();
+    serde_json::to_string(&chain).map_err(|e| e.to_string())
+}
+
 /// Initialize and run the Tauri application
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -674,7 +799,11 @@ pub fn run() {
             create_phishing,
             list_persistence,
             remove_persistence,
-            list_credentials
+            list_credentials,
+            create_attack_chain,
+            list_attack_chains,
+            execute_attack_chain,
+            get_attack_chain
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

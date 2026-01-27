@@ -1,0 +1,13 @@
+{
+  "name": "Generic Ransomware",
+  "description": "Simulates file encryption pre-check",
+  "steps": [
+    {
+      "order": 1,
+      "technique": "T1083",
+      "command_type": "shell",
+      "payload": "dir /s C:\Users\Public",
+      "description": "File Discovery"
+    }
+  ]
+}

@@ -241,6 +241,47 @@ pub struct PROCESS_HEAP_ENTRY {
     pub u: [u8; 16],
 }
 
+#[repr(C)]
+pub struct MEMORY_BASIC_INFORMATION {
+    pub BaseAddress: PVOID,
+    pub AllocationBase: PVOID,
+    pub AllocationProtect: ULONG,
+    pub RegionSize: usize,
+    pub State: ULONG,
+    pub Protect: ULONG,
+    pub Type: ULONG,
+}
+
+#[repr(C)]
+pub struct PROCESS_BASIC_INFORMATION {
+    pub ExitStatus: i32,
+    pub PebBaseAddress: PVOID,
+    pub AffinityMask: usize,
+    pub BasePriority: i32,
+    pub UniqueProcessId: usize,
+    pub InheritedFromUniqueProcessId: usize,
+}
+
+#[repr(C)]
+pub struct ITaskServiceVtbl {
+    pub QueryInterface: PVOID,
+    pub AddRef: PVOID,
+    pub Release: PVOID,
+    pub GetTargetServer: PVOID,
+    pub GetConnected: PVOID,
+    pub GetConnectedDomain: PVOID,
+    pub GetConnectedUser: PVOID,
+    pub GetHighestVersion: PVOID,
+    pub Connect: unsafe extern "system" fn(*mut ITaskService, *mut u16, *mut u16, *mut u16, *mut u16) -> i32,
+    pub GetFolder: unsafe extern "system" fn(*mut ITaskService, *const u16, *mut *mut c_void) -> i32,
+    pub NewTask: unsafe extern "system" fn(*mut ITaskService, u32, *mut *mut c_void) -> i32,
+}
+
+#[repr(C)]
+pub struct ITaskService {
+    pub vtbl: *const ITaskServiceVtbl,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

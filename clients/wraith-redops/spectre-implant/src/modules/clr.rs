@@ -46,6 +46,9 @@ pub const IID_ICLRRuntimeInfo: GUID = GUID::new(0xBD39D1D2, 0xBA2F, 0x486a, [0x8
 #[cfg(target_os = "windows")]
 #[allow(non_upper_case_globals)]
 pub const IID_ICLRRuntimeHost: GUID = GUID::new(0x90F1A06C, 0x7712, 0x4762, [0x86, 0xB5, 0x7A, 0x5E, 0xBA, 0x6B, 0xDB, 0x02]);
+#[cfg(target_os = "windows")]
+#[allow(non_upper_case_globals)]
+pub const CLSID_CLRRuntimeHost: GUID = GUID::new(0x90F1A06E, 0x7712, 0x4762, [0x86, 0xB5, 0x7A, 0x5E, 0xBA, 0x6B, 0xDB, 0x02]);
 
 // ICLRMetaHost Interface
 #[cfg(target_os = "windows")]
@@ -168,7 +171,7 @@ impl ClrHost {
             }
 
             let mut runtime_host: *mut ICLRRuntimeHost = core::ptr::null_mut();
-            if ((*(*runtime_info).vtbl).GetInterface)(runtime_info, &CLSID_CLRMetaHost, &IID_ICLRRuntimeHost, &mut runtime_host as *mut _ as *mut *mut c_void) < 0 {
+            if ((*(*runtime_info).vtbl).GetInterface)(runtime_info, &CLSID_CLRRuntimeHost, &IID_ICLRRuntimeHost, &mut runtime_host as *mut _ as *mut *mut c_void) < 0 {
                 ((*(*runtime_info).vtbl).Release)(runtime_info);
                 ((*(*meta_host).vtbl).Release)(meta_host);
                 return Err(());

@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import ReactFlow, {
   Controls,
   Background,
@@ -24,6 +25,14 @@ const initialNodes: Node[] = [
   },
 ];
 
+function mapLabelToType(label: string): string {
+    if (label.includes("Shell")) return "shell";
+    if (label.includes("PowerShell")) return "powershell";
+    if (label.includes("Registry")) return "persist";
+    if (label.includes("SysInfo")) return "sys_info";
+    return "shell";
+}
+
 export default function AttackChainEditor() {
   const [nodes, setNodes] = useState<Node[]>(initialNodes);
   const [edges, setEdges] = useState<Edge[]>([]);
@@ -48,24 +57,48 @@ export default function AttackChainEditor() {
     event.dataTransfer.effectAllowed = 'move';
   };
 
-  const handleExecute = () => {
-      // Simulation of execution
-      const ids = nodes.map(n => n.id);
-      let i = 0;
-      const interval = setInterval(() => {
-          if (i >= ids.length) {
-              clearInterval(interval);
-              return;
-          }
-          const id = ids[i];
-          setNodeStatuses(prev => ({ ...prev, [id]: 'running' }));
-          
-          setTimeout(() => {
-              setNodeStatuses(prev => ({ ...prev, [id]: 'success' }));
-          }, 1000);
-          
-          i++;
-      }, 1500);
+  const handleSave = async () => {
+      const sorted = [...nodes].sort((a, b) => a.position.x - b.position.x);
+      const steps = sorted.filter(n => n.id !== '1').map((n, i) => ({
+          step_order: i + 1,
+          technique_id: n.data.label,
+          command_type: mapLabelToType(n.data.label),
+          payload: "whoami", // Default payload
+          description: n.data.label
+      }));
+      
+      try {
+          const json = await invoke('create_attack_chain', {
+              name: "Chain-" + Date.now(),
+              description: "Created via Editor",
+              steps: steps
+          }) as string;
+          const chain = JSON.parse(json);
+          alert("Chain saved! ID: " + chain.id);
+          return chain.id;
+      } catch (e) {
+          console.error(e);
+          alert("Save failed: " + e);
+          return null;
+      }
+  };
+
+  const handleExecute = async () => {
+      const implantId = prompt("Enter Target Implant ID:");
+      if (!implantId) return;
+
+      const chainId = await handleSave();
+      if (!chainId) return;
+
+      try {
+          await invoke('execute_attack_chain', { chainId, implantId });
+          const newStatus: Record<string, 'running'> = {};
+          nodes.forEach(n => newStatus[n.id] = 'running');
+          setNodeStatuses(newStatus);
+          alert("Execution started!");
+      } catch (e) {
+          alert("Execution failed: " + e);
+      }
   };
 
   // Apply styles based on status
@@ -123,8 +156,8 @@ export default function AttackChainEditor() {
             </div>
             
             <div className="mt-auto space-y-2">
-                <Button className="w-full">Save Chain</Button>
-                <Button className="w-full" variant="danger" onClick={handleExecute}>Execute (Sim)</Button>
+                <Button className="w-full" onClick={handleSave}>Save Chain</Button>
+                <Button className="w-full" variant="danger" onClick={handleExecute}>Execute</Button>
             </div>
         </aside>
 
