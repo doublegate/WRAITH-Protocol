@@ -135,6 +135,7 @@ use std::os::raw::{c_int, c_void};
 use std::ptr;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
+use std::sync::OnceLock;
 use thiserror::Error;
 
 // XDP socket constants
@@ -512,6 +513,41 @@ impl MmapRing {
             is_desc_ring,
             mmap_size,
         })
+    }
+
+    /// Create a new test ring backed by anonymous memory
+    #[cfg(test)]
+    pub fn new_test(size: u32, is_desc_ring: bool) -> Self {
+        let mmap_size = xdp_config::ring_size(size, is_desc_ring);
+        // SAFETY: mmap with MAP_ANONYMOUS is standard for allocating pages
+        let ptr = unsafe {
+            libc::mmap(
+                ptr::null_mut(),
+                mmap_size,
+                libc::PROT_READ | libc::PROT_WRITE,
+                libc::MAP_PRIVATE | libc::MAP_ANONYMOUS,
+                -1,
+                0,
+            )
+        };
+        
+        assert!(ptr != libc::MAP_FAILED, "Failed to allocate test ring memory");
+        let ring_ptr = ptr as *mut u8;
+        
+        // Initialize indices (offsets based on xdp_config::ring_size logic)
+        // Producer: 8, Consumer: 12
+        unsafe {
+            ptr::write(ring_ptr.add(8) as *mut AtomicU32, AtomicU32::new(0));
+            ptr::write(ring_ptr.add(12) as *mut AtomicU32, AtomicU32::new(0));
+        }
+
+        Self {
+            ring_ptr,
+            size,
+            mask: size - 1,
+            is_desc_ring,
+            mmap_size,
+        }
     }
 
     /// Get producer index pointer
@@ -1081,9 +1117,15 @@ pub struct Umem {
     buffer: *mut u8,
 
     /// Fill ring (kernel -> userspace)
+    #[cfg(target_os = "linux")]
+    fill_ring: OnceLock<MmapRing>,
+    #[cfg(not(target_os = "linux"))]
     fill_ring: RingBuffer,
 
     /// Completion ring (kernel -> userspace)
+    #[cfg(target_os = "linux")]
+    comp_ring: OnceLock<MmapRing>,
+    #[cfg(not(target_os = "linux"))]
     comp_ring: RingBuffer,
 }
 
@@ -1125,9 +1167,23 @@ impl Umem {
         Ok(Arc::new(Self {
             config: config.clone(),
             buffer: buffer as *mut u8,
+            #[cfg(target_os = "linux")]
+            fill_ring: OnceLock::new(),
+            #[cfg(not(target_os = "linux"))]
             fill_ring: RingBuffer::new(config.fill_ring_size),
+            #[cfg(target_os = "linux")]
+            comp_ring: OnceLock::new(),
+            #[cfg(not(target_os = "linux"))]
             comp_ring: RingBuffer::new(config.comp_ring_size),
         }))
+    }
+
+    /// Bind rings to UMEM (Linux only)
+    #[cfg(target_os = "linux")]
+    pub fn bind_rings(&self, fill_ring: MmapRing, comp_ring: MmapRing) -> Result<(), AfXdpError> {
+        self.fill_ring.set(fill_ring).map_err(|_| AfXdpError::InvalidConfig("Fill ring already bound".into()))?;
+        self.comp_ring.set(comp_ring).map_err(|_| AfXdpError::InvalidConfig("Comp ring already bound".into()))?;
+        Ok(())
     }
 
     /// Get the UMEM buffer pointer
@@ -1148,6 +1204,16 @@ impl Umem {
     /// Get number of frames
     pub fn num_frames(&self) -> usize {
         self.size() / self.frame_size()
+    }
+
+    /// Get fill ring size
+    pub fn fill_ring_size(&self) -> u32 {
+        self.config.fill_ring_size
+    }
+
+    /// Get completion ring size
+    pub fn comp_ring_size(&self) -> u32 {
+        self.config.comp_ring_size
     }
 
     /// Get frame at index
@@ -1176,21 +1242,33 @@ impl Umem {
     }
 
     /// Fill ring (for RX: userspace provides buffers to kernel)
+    #[cfg(target_os = "linux")]
+    pub fn fill_ring(&self) -> &MmapRing {
+        self.fill_ring.get().expect("Fill ring not bound")
+    }
+    #[cfg(not(target_os = "linux"))]
     pub fn fill_ring(&self) -> &RingBuffer {
         &self.fill_ring
     }
 
     /// Mutable fill ring access
+    #[cfg(not(target_os = "linux"))]
     pub fn fill_ring_mut(&mut self) -> &mut RingBuffer {
         &mut self.fill_ring
     }
 
     /// Completion ring (for TX: kernel returns completed buffers)
+    #[cfg(target_os = "linux")]
+    pub fn comp_ring(&self) -> &MmapRing {
+        self.comp_ring.get().expect("Comp ring not bound")
+    }
+    #[cfg(not(target_os = "linux"))]
     pub fn comp_ring(&self) -> &RingBuffer {
         &self.comp_ring
     }
 
     /// Mutable completion ring access
+    #[cfg(not(target_os = "linux"))]
     pub fn comp_ring_mut(&mut self) -> &mut RingBuffer {
         &mut self.comp_ring
     }
@@ -1392,9 +1470,15 @@ pub struct AfXdpSocket {
     config: SocketConfig,
 
     /// RX ring
+    #[cfg(target_os = "linux")]
+    rx_ring: MmapRing,
+    #[cfg(not(target_os = "linux"))]
     rx_ring: RingBuffer,
 
     /// TX ring
+    #[cfg(target_os = "linux")]
+    tx_ring: MmapRing,
+    #[cfg(not(target_os = "linux"))]
     tx_ring: RingBuffer,
 
     /// Interface name
@@ -1455,14 +1539,14 @@ impl AfXdpSocket {
             xdp_config::register_umem(fd, &umem).inspect_err(|_| close_fd_on_error())?;
 
             // Step 2: Configure fill ring (userspace -> kernel buffer addresses for RX)
-            xdp_config::configure_ring(fd, XDP_UMEM_FILL_RING, umem.fill_ring().size, "fill")
+            xdp_config::configure_ring(fd, XDP_UMEM_FILL_RING, umem.fill_ring_size(), "fill")
                 .inspect_err(|_| close_fd_on_error())?;
 
             // Step 3: Configure completion ring (kernel -> userspace TX completion notifications)
             xdp_config::configure_ring(
                 fd,
                 XDP_UMEM_COMPLETION_RING,
-                umem.comp_ring().size,
+                umem.comp_ring_size(),
                 "completion",
             )
             .inspect_err(|_| close_fd_on_error())?;
@@ -1483,13 +1567,32 @@ impl AfXdpSocket {
             xdp_config::bind_socket(fd, ifindex, queue_id, config.bind_flags)
                 .inspect_err(|_| close_fd_on_error())?;
 
-            // Note: In a complete implementation, we would also:
-            // - Get mmap offsets with xdp_config::get_mmap_offsets(fd)
-            // - mmap the fill, completion, RX, and TX rings
-            // - Initialize ring pointers from the mmap'd memory
-            //
-            // This is deferred because it requires careful memory management
-            // and testing on a system with proper XDP support
+            // Step 8: Map rings and bind to UMEM
+            let offsets = xdp_config::get_mmap_offsets(fd).inspect_err(|_| close_fd_on_error())?;
+
+            let rx_ring = MmapRing::new(fd, offsets.rx.desc, config.rx_ring_size, true)
+                .inspect_err(|_| close_fd_on_error())?;
+            let tx_ring = MmapRing::new(fd, offsets.tx.desc, config.tx_ring_size, true)
+                .inspect_err(|_| close_fd_on_error())?;
+
+            // Create fill/comp rings and bind to UMEM
+            // Note: Fill/Comp rings are shared via UMEM, but we map them using this socket's FD
+            let fill_ring = MmapRing::new(fd, offsets.fr.desc, umem.fill_ring_size(), false)
+                .inspect_err(|_| close_fd_on_error())?;
+            let comp_ring = MmapRing::new(fd, offsets.cr.desc, umem.comp_ring_size(), false)
+                .inspect_err(|_| close_fd_on_error())?;
+            
+            umem.bind_rings(fill_ring, comp_ring).inspect_err(|_| close_fd_on_error())?;
+
+            Ok(Self {
+                fd,
+                umem,
+                config: config.clone(),
+                rx_ring,
+                tx_ring,
+                ifname: ifname.to_string(),
+                stats: Arc::new(AfXdpStats::new()),
+            })
         }
 
         #[cfg(not(target_os = "linux"))]
@@ -1502,14 +1605,39 @@ impl AfXdpSocket {
                 "AF_XDP is only supported on Linux 5.3+".to_string(),
             ));
         }
+    }
+
+    /// Create a test socket with fake rings
+    #[cfg(test)]
+    pub fn new_test(
+        umem: Arc<Umem>,
+        config: SocketConfig,
+    ) -> Result<Self, AfXdpError> {
+        #[cfg(target_os = "linux")]
+        let rx_ring = MmapRing::new_test(config.rx_ring_size, true);
+        #[cfg(not(target_os = "linux"))]
+        let rx_ring = RingBuffer::new(config.rx_ring_size);
+
+        #[cfg(target_os = "linux")]
+        let tx_ring = MmapRing::new_test(config.tx_ring_size, true);
+        #[cfg(not(target_os = "linux"))]
+        let tx_ring = RingBuffer::new(config.tx_ring_size);
+        
+        #[cfg(target_os = "linux")]
+        {
+            // Bind fake rings to UMEM if needed
+            let fill_ring = MmapRing::new_test(umem.fill_ring_size(), false);
+            let comp_ring = MmapRing::new_test(umem.comp_ring_size(), false);
+            let _ = umem.bind_rings(fill_ring, comp_ring);
+        }
 
         Ok(Self {
-            fd,
+            fd: -1,
             umem,
-            config: config.clone(),
-            rx_ring: RingBuffer::new(config.rx_ring_size),
-            tx_ring: RingBuffer::new(config.tx_ring_size),
-            ifname: ifname.to_string(),
+            config,
+            rx_ring,
+            tx_ring,
+            ifname: "test".to_string(),
             stats: Arc::new(AfXdpStats::new()),
         })
     }
@@ -1521,38 +1649,62 @@ impl AfXdpSocket {
     pub fn rx_batch(&mut self, max_count: usize) -> Result<Vec<PacketDesc>, AfXdpError> {
         let mut packets = Vec::with_capacity(max_count);
 
-        // Check RX ring for available packets
-        let ready = self.rx_ring.ready();
-        if ready == 0 {
-            return Ok(packets);
-        }
+        #[cfg(target_os = "linux")]
+        {
+            let ready = self.rx_ring.available_for_consumption();
+            if ready == 0 {
+                return Ok(packets);
+            }
 
-        let count = ready.min(max_count as u32);
+            let count = ready.min(max_count as u32);
+            let idx = self.rx_ring.load_consumer();
 
-        if let Some(idx) = self.rx_ring.peek(count) {
-            // Read packet descriptors from RX ring
-            // In a complete implementation, this would access mmap'ed ring buffers
-            // For now, we simulate the structure
             let mut total_bytes: u64 = 0;
             for i in 0..count {
-                let desc_idx = (idx + i) % self.config.rx_ring_size;
-
-                // Create packet descriptor
-                // In production, these would be read from shared memory ring
-                let desc = PacketDesc {
-                    addr: (desc_idx as u64) * (self.umem.frame_size() as u64),
-                    len: 1500, // Would be actual packet length from ring
-                    options: 0,
+                // SAFETY: Ring buffer logic ensures indices are valid
+                let desc = unsafe { self.rx_ring.read_desc(idx + i) };
+                
+                // Convert XdpDesc (kernel) to PacketDesc (user API)
+                let packet = PacketDesc {
+                    addr: desc.addr,
+                    len: desc.len,
+                    options: desc.options,
                 };
-
-                total_bytes += desc.len as u64;
-                packets.push(desc);
+                
+                total_bytes += packet.len as u64;
+                packets.push(packet);
             }
 
             self.rx_ring.release(count);
-
-            // Record statistics
             self.stats.record_rx(count as u64, total_bytes);
+        }
+
+        #[cfg(not(target_os = "linux"))]
+        {
+            let ready = self.rx_ring.ready();
+            if ready == 0 {
+                return Ok(packets);
+            }
+
+            let count = ready.min(max_count as u32);
+
+            if let Some(idx) = self.rx_ring.peek(count) {
+                let mut total_bytes: u64 = 0;
+                for i in 0..count {
+                    let desc_idx = (idx + i) % self.config.rx_ring_size;
+                    let desc = PacketDesc {
+                        addr: (desc_idx as u64) * (self.umem.frame_size() as u64),
+                        len: 1500, // Simulated packet length
+                        options: 0,
+                    };
+
+                    total_bytes += desc.len as u64;
+                    packets.push(desc);
+                }
+
+                self.rx_ring.release(count);
+                self.stats.record_rx(count as u64, total_bytes);
+            }
         }
 
         Ok(packets)
@@ -1566,56 +1718,82 @@ impl AfXdpSocket {
     pub fn tx_batch(&mut self, packets: &[PacketDesc]) -> Result<usize, AfXdpError> {
         let count = packets.len() as u32;
 
-        // Check TX ring for available space
-        let available = self.tx_ring.available();
-        if available < count {
-            self.stats.record_tx_ring_full();
-            return Err(AfXdpError::RingBufferError(format!(
-                "TX ring full: {available} available, {count} requested"
-            )));
-        }
+        #[cfg(target_os = "linux")]
+        {
+            let available = self.tx_ring.available_for_production();
+            if available < count {
+                self.stats.record_tx_ring_full();
+                return Err(AfXdpError::RingBufferError(format!(
+                    "TX ring full: {available} available, {count} requested"
+                )));
+            }
 
-        if let Some(idx) = self.tx_ring.reserve(count) {
-            // Write packet descriptors to TX ring
-            // In a complete implementation, this would write to mmap'ed ring buffers
-            // For now, we validate the descriptors
+            let idx = self.tx_ring.load_producer();
             let mut total_bytes: u64 = 0;
+            
             for (i, packet) in packets.iter().enumerate() {
-                let desc_idx = (idx + i as u32) % self.config.tx_ring_size;
-
-                // Validate packet descriptor
+                // Validation
                 if packet.addr >= self.umem.size() as u64 {
                     self.stats.record_invalid_packet();
                     return Err(AfXdpError::RingBufferError(format!(
-                        "Invalid packet address: {} (UMEM size: {})",
-                        packet.addr,
-                        self.umem.size()
+                        "Invalid packet address: {} (UMEM size: {})", packet.addr, self.umem.size()
                     )));
                 }
-
                 if packet.len as usize > self.umem.frame_size() {
                     self.stats.record_invalid_packet();
                     return Err(AfXdpError::RingBufferError(format!(
-                        "Packet length {} exceeds frame size {}",
-                        packet.len,
-                        self.umem.frame_size()
+                        "Packet length {} exceeds frame size {}", packet.len, self.umem.frame_size()
                     )));
                 }
-
+                
                 total_bytes += packet.len as u64;
+                
+                // Write to mmap ring
+                unsafe {
+                    let desc = XdpDesc {
+                        addr: packet.addr,
+                        len: packet.len,
+                        options: packet.options,
+                    };
+                    self.tx_ring.write_desc(idx + i as u32, &desc);
+                }
+            }
+            
+            self.tx_ring.submit(count);
+            self.stats.record_tx(count as u64, total_bytes);
+            self.kick_tx()?;
+        }
 
-                // In production, write descriptor to shared memory:
-                // ring_buffer[desc_idx] = *packet;
-                let _ = desc_idx; // Suppress unused warning
+        #[cfg(not(target_os = "linux"))]
+        {
+            let available = self.tx_ring.available();
+            if available < count {
+                self.stats.record_tx_ring_full();
+                return Err(AfXdpError::RingBufferError(format!(
+                    "TX ring full: {available} available, {count} requested"
+                )));
             }
 
-            self.tx_ring.submit(count);
+            if let Some(idx) = self.tx_ring.reserve(count) {
+                let mut total_bytes: u64 = 0;
+                for (i, packet) in packets.iter().enumerate() {
+                    let desc_idx = (idx + i as u32) % self.config.tx_ring_size;
+                    
+                    if packet.addr >= self.umem.size() as u64 {
+                        self.stats.record_invalid_packet();
+                        return Err(AfXdpError::RingBufferError(format!(
+                            "Invalid packet address: {} (UMEM size: {})", packet.addr, self.umem.size()
+                        )));
+                    }
+                    
+                    total_bytes += packet.len as u64;
+                    let _ = desc_idx; // Suppress unused warning
+                }
 
-            // Record statistics
-            self.stats.record_tx(count as u64, total_bytes);
-
-            // Kick kernel to transmit
-            self.kick_tx()?;
+                self.tx_ring.submit(count);
+                self.stats.record_tx(count as u64, total_bytes);
+                self.kick_tx()?;
+            }
         }
 
         Ok(packets.len())
@@ -2354,5 +2532,49 @@ mod tests {
         assert_eq!(XDP_COPY, 2);
         assert_eq!(XDP_ZEROCOPY, 4);
         assert_eq!(XDP_USE_NEED_WAKEUP, 8);
+    }
+
+    #[test]
+    fn test_rx_batch_with_fake_rings() {
+        let config = UmemConfig {
+            size: 16384,
+            frame_size: 2048,
+            headroom: 256,
+            fill_ring_size: 16,
+            comp_ring_size: 16,
+        };
+
+        // Use standard new(), which works for Umem even on Linux (mmap/mlock)
+        // If mlock fails (e.g. CI), we might skip.
+        let umem = match Umem::new(config.clone()) {
+            Ok(u) => u,
+            Err(e) => {
+                eprintln!("Skipping fake ring test (UMEM creation failed: {})", e);
+                return;
+            }
+        };
+
+        let socket_config = SocketConfig {
+            rx_ring_size: 16,
+            tx_ring_size: 16,
+            bind_flags: 0,
+            queue_id: 0,
+        };
+
+        // Use new_test to create socket with anonymous memory rings
+        // This validates MmapRing logic on Linux or RingBuffer logic on non-Linux
+        let mut socket = AfXdpSocket::new_test(umem.clone(), socket_config).expect("Socket creation failed");
+
+        // Fill RX ring
+        let fill_addrs: Vec<u64> = vec![0, 2048, 4096];
+        socket.fill_rx_buffers(&fill_addrs).expect("Fill failed");
+
+        // Verify RX batch logic doesn't crash on empty rings
+        let packets = socket.rx_batch(32).expect("RX batch failed");
+        assert_eq!(packets.len(), 0);
+        
+        // Verify stats
+        let stats = socket.stats_snapshot();
+        assert_eq!(stats.rx_packets, 0);
     }
 }
