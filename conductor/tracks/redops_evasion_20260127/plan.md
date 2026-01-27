@@ -1,9 +1,9 @@
 # Plan: RedOps Advanced Evasion & Features
 
 ## Phase 1: Core Evasion (Sleep & Syscalls)
-- [ ] Task: Implement Indirect Syscalls
-    - [ ] Update `syscalls.rs` to find `syscall` instruction in `ntdll.dll`.
-    - [ ] Update `do_syscall` to jump to the found address.
+- [x] Task: Implement Indirect Syscalls [7cf2d953]
+    - [x] Update `syscalls.rs` to find `syscall` instruction in `ntdll.dll`.
+    - [x] Update `do_syscall` to jump to the found address.
 - [ ] Task: Implement Sleep Obfuscation (Ekko)
     - [ ] Define `CreateTimerQueueTimer` and related APIs in `windows_definitions.rs`.
     - [ ] Implement ROP chain construction in `obfuscation.rs`.
@@ -23,6 +23,16 @@
     - [ ] Create `modules/screenshot.rs`.
     - [ ] Implement GDI capture logic.
 - [ ] Task: Implement Browser Credential Harvesting (T1555)
-    - [ ] Create `modules/browser.rs`.
-    - [ ] Implement file search for Chrome/Edge profiles.
-    - [ ] Implement key file extraction (download for offline decryption).
+    -   [ ] Create `modules/browser.rs`.
+    -   [ ] Implement file search for Chrome/Edge profiles.
+    -   [ ] Implement key file extraction (download for offline decryption).
+
+## Phase 4: Integration & Lifecycle Management
+- [ ] Task: Tauri Client Parity & Notification Support
+    - [ ] Install and configure `tauri-plugin-log` in the Operator Client.
+    - [ ] Install and configure `tauri-plugin-notification`.
+    - [ ] Add notification triggers for high-priority events (check-ins, completions).
+- [ ] Task: Version & Workspace Synchronization
+    - [ ] Update `spectre-implant/Cargo.toml` version to `2.3.0` and edition to `2024`.
+    - [ ] Update `team-server/Cargo.toml` version to `2.3.0`.
+- [ ] Task: Conductor - Final Track Verification (All Phases)
