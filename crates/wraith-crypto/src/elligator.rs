@@ -48,6 +48,7 @@
 
 use crate::CryptoError;
 use crate::x25519::{PrivateKey, PublicKey};
+use core::fmt;
 use curve25519_elligator2::MapToPointVariant;
 use curve25519_elligator2::MontgomeryPoint;
 use curve25519_elligator2::elligator2::Randomized;
@@ -97,8 +98,8 @@ impl AsRef<[u8]> for Representative {
     }
 }
 
-impl std::fmt::Debug for Representative {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Debug for Representative {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Representative([...])")
     }
 }
@@ -299,6 +300,9 @@ impl ElligatorKeypair {
 mod tests {
     use super::*;
     use rand_core::OsRng;
+    use std::format;
+    use std::vec;
+    use std::vec::Vec;
 
     #[test]
     fn test_generate_encodable_keypair() {
@@ -508,7 +512,11 @@ mod tests {
 
         // Calculate statistics
         let mean: u128 = timings.iter().sum::<u128>() / timings.len() as u128;
-        let max_deviation = timings.iter().map(|&t| t.abs_diff(mean)).max().unwrap();
+        let max_deviation = timings
+            .iter()
+            .map(|&t: &u128| t.abs_diff(mean))
+            .max()
+            .unwrap();
 
         // Allow 75% timing variation as a sanity check in CI environments.
         // This is not a proof of constant-time behavior (that requires dudect/ctgrind),

@@ -221,7 +221,8 @@ impl StreamVariant {
     /// If already full, this is a no-op.
     pub fn activate(&mut self, config: &StreamConfig) {
         if let Self::Lite(_) = self {
-            let lite = std::mem::replace(self, Self::Lite(StreamLite::new(0))); // Temporary placeholder
+            // Swap with a temporary value to take ownership of the inner StreamLite
+            let lite = std::mem::replace(self, Self::Lite(StreamLite::new(0)));
             if let Self::Lite(s) = lite {
                 *self = Self::Full(Box::new(s.activate(config)));
             }

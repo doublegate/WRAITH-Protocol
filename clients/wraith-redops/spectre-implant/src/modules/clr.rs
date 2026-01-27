@@ -18,23 +18,6 @@ use crate::utils::windows_definitions::*;
 // CLSID_CLRRuntimeHost = {0x90F1A06E,0x7712,0x4762,{0x86,0xB5,0x7A,0x5E,0xBA,0x6B,0xDB,0x02}};
 
 #[cfg(target_os = "windows")]
-#[repr(C)]
-#[allow(non_snake_case)]
-pub struct GUID {
-    pub Data1: u32,
-    pub Data2: u16,
-    pub Data3: u16,
-    pub Data4: [u8; 8],
-}
-
-#[cfg(target_os = "windows")]
-impl GUID {
-    pub const fn new(d1: u32, d2: u16, d3: u16, d4: [u8; 8]) -> Self {
-        Self { Data1: d1, Data2: d2, Data3: d3, Data4: d4 }
-    }
-}
-
-#[cfg(target_os = "windows")]
 #[allow(non_upper_case_globals)]
 pub const CLSID_CLRMetaHost: GUID = GUID::new(0x92801892, 0x0e52, 0x4b67, [0xac, 0x20, 0x26, 0xef, 0x6e, 0x6e, 0x02, 0x48]);
 #[cfg(target_os = "windows")]

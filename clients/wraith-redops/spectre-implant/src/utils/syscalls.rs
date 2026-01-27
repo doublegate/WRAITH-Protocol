@@ -17,7 +17,15 @@ pub const SYS_SOCKET: usize = 41;
 #[cfg(not(target_os = "windows"))]
 pub const SYS_CONNECT: usize = 42;
 #[cfg(not(target_os = "windows"))]
+pub const SYS_ACCEPT: usize = 43;
+#[cfg(not(target_os = "windows"))]
+pub const SYS_BIND: usize = 49;
+#[cfg(not(target_os = "windows"))]
+pub const SYS_LISTEN: usize = 50;
+#[cfg(not(target_os = "windows"))]
 pub const SYS_SENDTO: usize = 44; // sendto/write
+#[cfg(not(target_os = "windows"))]
+pub const SYS_FCNTL: usize = 72;
 #[cfg(not(target_os = "windows"))]
 pub const SYS_EXIT: usize = 60;
 #[cfg(not(target_os = "windows"))]
@@ -219,6 +227,26 @@ pub unsafe fn sys_socket(domain: i32, type_: i32, protocol: i32) -> usize {
 }
 
 #[cfg(not(target_os = "windows"))]
+pub unsafe fn sys_bind(sockfd: usize, addr: *const u8, addrlen: u32) -> usize {
+    syscall3(SYS_BIND, sockfd, addr as usize, addrlen as usize)
+}
+
+#[cfg(not(target_os = "windows"))]
+pub unsafe fn sys_listen(sockfd: usize, backlog: i32) -> usize {
+    syscall2(SYS_LISTEN, sockfd, backlog as usize)
+}
+
+#[cfg(not(target_os = "windows"))]
+pub unsafe fn sys_accept(sockfd: usize, addr: *mut u8, addrlen: *mut u32) -> usize {
+    syscall3(SYS_ACCEPT, sockfd, addr as usize, addrlen as usize)
+}
+
+#[cfg(not(target_os = "windows"))]
+pub unsafe fn sys_fcntl(fd: usize, cmd: i32, arg: usize) -> usize {
+    syscall3(SYS_FCNTL, fd, cmd as usize, arg)
+}
+
+#[cfg(not(target_os = "windows"))]
 pub unsafe fn sys_connect(sockfd: usize, addr: *const u8, addrlen: u32) -> usize {
     syscall3(SYS_CONNECT, sockfd, addr as usize, addrlen as usize)
 }
@@ -372,18 +400,18 @@ pub unsafe fn get_ssn(function_hash: u32) -> u16 {
     }
 
     // Try current function
-    if let Some(ssn) = check_stub(addr) {
+    if let Some(ssn) = parse_syscall_stub(addr) {
         return ssn;
     }
 
     // Halo's Gate: Check neighbors
     for i in 1..32 {
         // Check neighbor above
-        if let Some(ssn) = check_stub(addr.add(i * 32)) {
+        if let Some(ssn) = parse_syscall_stub(addr.add(i * 32)) {
             return ssn - i as u16;
         }
         // Check neighbor below
-        if let Some(ssn) = check_stub(addr.sub(i * 32)) {
+        if let Some(ssn) = parse_syscall_stub(addr.sub(i * 32)) {
             return ssn + i as u16;
         }
     }
@@ -392,13 +420,22 @@ pub unsafe fn get_ssn(function_hash: u32) -> u16 {
 }
 
 #[cfg(target_os = "windows")]
-unsafe fn check_stub(addr: *const ()) -> Option<u16> {
+unsafe fn parse_syscall_stub(addr: *const ()) -> Option<u16> {
     let p = addr as *const u8;
-    // Pattern: mov r10, rcx; mov eax, <SSN>
+    // Pattern: 
+    // mov r10, rcx; mov eax, <SSN>
     // Bytes: 4c 8b d1 b8 <SSN_LOW> <SSN_HIGH> 00 00
+    // OR
+    // mov eax, <SSN>; mov r10, rcx (Alternative stub)
+    // b8 <SSN_LOW> <SSN_HIGH> 00 00 4c 8b d1
+    
     if *p == 0x4c && *p.add(1) == 0x8b && *p.add(2) == 0xd1 && *p.add(3) == 0xb8 {
         let ssn_low = *p.add(4) as u16;
         let ssn_high = *p.add(5) as u16;
+        return Some((ssn_high << 8) | ssn_low);
+    } else if *p == 0xb8 && *p.add(5) == 0x4c && *p.add(6) == 0x8b && *p.add(7) == 0xd1 {
+        let ssn_low = *p.add(1) as u16;
+        let ssn_high = *p.add(2) as u16;
         return Some((ssn_high << 8) | ssn_low);
     }
     None

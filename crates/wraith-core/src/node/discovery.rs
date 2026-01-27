@@ -134,10 +134,9 @@ impl Node {
                 .clone()
         };
 
-        // Note: wraith-discovery doesn't have an announce() method yet
-        // The DHT announcements happen automatically when the discovery manager starts
-        // This is a placeholder for future enhancement
-        // In the future, this would call _discovery.announce(announcement)
+        // Note: wraith-discovery handles periodic DHT announcements automatically
+        // when the discovery manager is started.
+        // We log the intent here for visibility.
         tracing::info!("Node announced to DHT successfully (via discovery manager startup)");
 
         Ok(())
@@ -503,7 +502,6 @@ mod tests {
         node.start().await.unwrap();
         let result = node.announce().await;
 
-        // Should succeed even with placeholder implementation
         assert!(result.is_ok());
 
         node.stop().await.unwrap();

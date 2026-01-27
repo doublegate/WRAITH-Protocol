@@ -1,11 +1,12 @@
 use dashmap::DashMap;
 use std::sync::Arc;
 use wraith_crypto::noise::{NoiseHandshake, NoiseTransport};
+use wraith_crypto::x25519::PrivateKey;
 
 #[derive(Clone)]
 pub struct SessionManager {
-    // Map temporary CIDs (from handshake) to pending handshakes
-    pub handshakes: Arc<DashMap<[u8; 8], NoiseHandshake>>,
+    // Map temporary CIDs (from handshake) to pending handshakes and ratchet key
+    pub handshakes: Arc<DashMap<[u8; 8], (NoiseHandshake, PrivateKey)>>,
     // Map session CIDs to established transports
     pub sessions: Arc<DashMap<[u8; 8], NoiseTransport>>,
     // Map downstream CID to upstream CID for mesh routing
@@ -30,11 +31,11 @@ impl SessionManager {
         self.p2p_links.get(downstream).map(|cid| *cid)
     }
 
-    pub fn insert_handshake(&self, cid: [u8; 8], handshake: NoiseHandshake) {
-        self.handshakes.insert(cid, handshake);
+    pub fn insert_handshake(&self, cid: [u8; 8], handshake: NoiseHandshake, priv_key: PrivateKey) {
+        self.handshakes.insert(cid, (handshake, priv_key));
     }
 
-    pub fn remove_handshake(&self, cid: &[u8; 8]) -> Option<NoiseHandshake> {
+    pub fn remove_handshake(&self, cid: &[u8; 8]) -> Option<(NoiseHandshake, PrivateKey)> {
         self.handshakes.remove(cid).map(|(_, h)| h)
     }
 
@@ -54,6 +55,7 @@ impl SessionManager {
 mod tests {
     use super::*;
     use wraith_crypto::noise::NoiseKeypair;
+    use wraith_crypto::random::SecureRng;
 
     #[test]
     fn test_session_manager() {
@@ -63,8 +65,11 @@ mod tests {
         let keypair = NoiseKeypair::generate().expect("Test keypair generation failed");
         let handshake = wraith_crypto::noise::NoiseHandshake::new_initiator(&keypair)
             .expect("Test handshake creation failed");
+        
+        let mut rng = SecureRng::new();
+        let priv_key = PrivateKey::generate(&mut rng);
 
-        manager.insert_handshake(cid, handshake);
+        manager.insert_handshake(cid, handshake, priv_key);
         assert!(manager.remove_handshake(&cid).is_some());
         assert!(manager.remove_handshake(&cid).is_none());
     }

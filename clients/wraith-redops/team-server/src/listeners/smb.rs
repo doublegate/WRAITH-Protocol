@@ -20,7 +20,7 @@ struct Smb2Header {
     flags: u32,
     next_command: u32,
     message_id: u64,
-    reserved: u32,
+    process_id: u32,
     tree_id: u32,
     session_id: u64,
     signature: [u8; 16],
@@ -38,7 +38,7 @@ impl Smb2Header {
             flags: 0,
             next_command: 0,
             message_id: 0,
-            reserved: 0,
+            process_id: 0,
             tree_id: 0,
             session_id: 0,
             signature: [0u8; 16],
@@ -80,6 +80,7 @@ pub async fn start_smb_listener(
                 let protocol = protocol.clone();
                 tokio::spawn(async move {
                     let mut buf = [0u8; 8192];
+                    let mut pending_data = Vec::new();
                     loop {
                         // 1. Read NetBIOS Header (4 bytes)
                         let mut netbios_header = [0u8; 4];
@@ -121,7 +122,7 @@ pub async fn start_smb_listener(
                                 h.flags = 0x00000001; // Response
                                 h.message_id = msg_id;
                                 h.process_id = proc_id;
-                                h.credit_request = 1; // Credits granted
+                                h.credits = 1; // Credits granted
                                 let h_bytes: [u8; 64] = unsafe { core::mem::transmute(h) };
                                 resp.extend_from_slice(&h_bytes);
                                 
@@ -192,8 +193,9 @@ pub async fn start_smb_listener(
                                     
                                     // Handle WRAITH packet
                                     if let Some(response_data) = protocol.handle_packet(payload, src.to_string()).await {
-                                        // We have a response. We need to queue it for the next READ request.
-                                        // But here we are just responding to WRITE.
+                                        // Buffer response for subsequent READ
+                                        pending_data.extend_from_slice(&response_data);
+
                                         // WRITE Response:
                                         let mut resp = Vec::new();
                                         let mut h = Smb2Header::new();
@@ -206,35 +208,21 @@ pub async fn start_smb_listener(
                                         resp.extend_from_slice(&h_bytes);
                                         
                                         // Write Response Body (17 bytes)
-                                        // StructureSize(2), Reserved(2), Count(4), Remaining(4), WriteChannelInfoOffset(2), Length(2)
                                         let mut body = vec![17, 0, 0, 0];
                                         body.extend_from_slice(&(length as u32).to_le_bytes()); // Count written
                                         body.extend_from_slice(&[0; 9]);
                                         resp.extend_from_slice(&body);
                                         send_netbios(&mut socket, &resp).await;
-                                        
-                                        // TODO: How to send response_data?
-                                        // Implant should send READ.
-                                        // We need to store response_data in session_manager or pending queue for this connection?
-                                        // For MVP, we'll assume implant sends READ immediately or we can push it if socket supports it? 
-                                        // SMB is request/response. We can't push async.
-                                        // We'll store it in a simple buffer associated with the socket loop.
-                                        // But we are inside `tokio::spawn`.
-                                        // We can use a channel or `Arc<Mutex<Vec<u8>>>`.
-                                        // Wait, the `protocol.handle_packet` returns `Option<Vec<u8>>`.
-                                        // This response is the C2 response.
-                                        // We need to buffer it and return it on `SMB2_READ`.
-                                        
-                                        // BUT `handle_packet` logic in `smb.rs` was inline.
-                                        // We need to persist it.
                                     }
                                 }
                             },
                             0x0008 => { // Read
-                                // Check if we have pending data.
-                                // For now, we don't have the buffer implemented.
-                                // I'll skip READ implementation details for brevity, returning 0 bytes.
-                                // To fix this properly requires state in the loop.
+                                // Parse Read Request (Length is at offset 4 in body)
+                                if len < 64 + 4 { continue; }
+                                let req_len = u32::from_le_bytes([buf[68], buf[69], buf[70], buf[71]]) as usize;
+                                
+                                let take_len = std::cmp::min(req_len, pending_data.len());
+                                let data_to_send: Vec<u8> = pending_data.drain(0..take_len).collect();
                                 
                                 let mut resp = Vec::new();
                                 let mut h = Smb2Header::new();
@@ -246,11 +234,17 @@ pub async fn start_smb_listener(
                                 let h_bytes: [u8; 64] = unsafe { core::mem::transmute(h) };
                                 resp.extend_from_slice(&h_bytes);
                                 
-                                // Read Response Body
+                                // Read Response Body (17 bytes + Data)
                                 // DataOffset(1), Reserved(1), DataLength(4), DataRemaining(4), Reserved(4)
-                                let body = [80, 0, 0,0,0,0, 0,0,0,0, 0,0,0,0]; // Offset 80 (64+16)
+                                let data_offset = 80u8; // 64 header + 16 body
+                                let mut body = vec![data_offset, 0];
+                                body.extend_from_slice(&(data_to_send.len() as u32).to_le_bytes());
+                                body.extend_from_slice(&(pending_data.len() as u32).to_le_bytes()); // Remaining
+                                body.extend_from_slice(&[0; 4]);
+                                
                                 resp.extend_from_slice(&body);
-                                // Empty payload
+                                resp.extend_from_slice(&data_to_send);
+                                
                                 send_netbios(&mut socket, &resp).await;
                             },
                             _ => {}

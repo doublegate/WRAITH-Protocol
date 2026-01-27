@@ -6,6 +6,8 @@ use std::sync::Arc;
 use tokio::sync::broadcast;
 use tracing::{debug, error};
 use wraith_crypto::noise::{NoiseHandshake, NoiseKeypair};
+use wraith_crypto::random::SecureRng;
+use wraith_crypto::x25519::{PrivateKey, PublicKey};
 
 #[derive(Clone)]
 pub struct ProtocolHandler {
@@ -50,7 +52,14 @@ impl ProtocolHandler {
                 return None;
             }
 
-            let msg2 = match handshake.write_message(&[]) {
+            // Generate ephemeral ratchet key for Responder (Team Server)
+            let mut rng = SecureRng::new();
+            let ratchet_priv = PrivateKey::generate(&mut rng);
+            let ratchet_pub = ratchet_priv.public_key();
+            let ratchet_pub_bytes = ratchet_pub.to_bytes();
+
+            // Send ratchet public key in Msg 2 payload
+            let msg2 = match handshake.write_message(&ratchet_pub_bytes) {
                 Ok(m) => m,
                 Err(e) => {
                     error!("Write msg 2 failed: {}", e);
@@ -62,7 +71,7 @@ impl ProtocolHandler {
             let mut temp_cid = [0u8; 8];
             temp_cid.copy_from_slice(&uuid_bytes[0..8]);
 
-            self.session_manager.insert_handshake(temp_cid, handshake);
+            self.session_manager.insert_handshake(temp_cid, handshake, ratchet_priv);
 
             let mut response = Vec::new();
             response.extend_from_slice(&temp_cid);
@@ -71,14 +80,28 @@ impl ProtocolHandler {
         }
 
         // 2. Handshake Continue (Msg 3)
-        if let Some(mut handshake) = self.session_manager.remove_handshake(&cid) {
+        if let Some((mut handshake, ratchet_priv)) = self.session_manager.remove_handshake(&cid) {
             debug!("Received Handshake Msg 3 from {}", src_addr);
-            if let Err(e) = handshake.read_message(payload) {
-                error!("Read msg 3 failed: {}", e);
-                return None;
-            }
+            
+            // Read Msg 3 and extract Initiator's ratchet public key
+            let peer_payload = match handshake.read_message(payload) {
+                Ok(p) => p,
+                Err(e) => {
+                    error!("Read msg 3 failed: {}", e);
+                    return None;
+                }
+            };
 
-            let transport = match handshake.into_transport() {
+            let peer_ratchet_pub = if peer_payload.len() >= 32 {
+                let mut b = [0u8; 32];
+                b.copy_from_slice(&peer_payload[0..32]);
+                Some(PublicKey::from_bytes(b))
+            } else {
+                error!("Msg 3 payload too short for ratchet key");
+                return None;
+            };
+
+            let transport = match handshake.into_transport(Some(ratchet_priv), peer_ratchet_pub) {
                 Ok(t) => t,
                 Err(e) => {
                     error!("Into transport failed: {}", e);
@@ -103,15 +126,6 @@ impl ProtocolHandler {
                     return None;
                 }
             };
-
-            // Check for Rekey Frame (Type 4)
-            if plaintext.len() >= 28 {
-                let frame_type = u16::from_be_bytes(plaintext[8..10].try_into().unwrap_or([0, 0]));
-                if frame_type == 4 {
-                    transport.rekey_recv();
-                    debug!("REKEY initiated by client for session {}", hex::encode(cid));
-                }
-            }
 
             // Minimum length for a valid frame (simplified header + minimum JSON)
             if plaintext.len() >= 28 {
@@ -160,22 +174,6 @@ impl ProtocolHandler {
                         }
                     };
 
-                    let mut rekey_packet = Vec::new();
-                    if transport.should_rekey() {
-                        debug!("Initiating REKEY for session {}", hex::encode(cid));
-                        let mut rekey_frame = Vec::with_capacity(28);
-                        rekey_frame.extend_from_slice(b"WRTH");
-                        rekey_frame.extend_from_slice(&0u32.to_be_bytes()); // Length 0
-                        rekey_frame.extend_from_slice(&4u16.to_be_bytes()); // Type 4
-                        rekey_frame.extend_from_slice(&0u16.to_be_bytes());
-                        rekey_frame.extend_from_slice(&[0u8; 16]);
-
-                        if let Ok(ct) = transport.write_message(&rekey_frame) {
-                            rekey_packet = ct;
-                            transport.rekey_send();
-                        }
-                    }
-
                     // Implement proper Frame construction (28-byte header)
                     let mut frame = Vec::with_capacity(28 + resp_json.len());
                     frame.extend_from_slice(b"WRTH"); 
@@ -195,7 +193,6 @@ impl ProtocolHandler {
 
                     let mut response = Vec::new();
                     response.extend_from_slice(&cid);
-                    response.extend_from_slice(&rekey_packet);
                     response.extend_from_slice(&ciphertext);
                     return Some(response);
                 }

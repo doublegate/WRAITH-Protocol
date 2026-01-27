@@ -36,8 +36,10 @@ use crate::aead::{AeadKey, Nonce};
 use crate::constant_time::ct_eq;
 use crate::hash::{hkdf_expand, hkdf_extract};
 use crate::x25519::{PrivateKey, PublicKey};
+use alloc::collections::BTreeMap;
+use alloc::vec::Vec;
+use core::fmt;
 use rand_core::{CryptoRng, RngCore};
-use std::collections::HashMap;
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 /// Maximum number of skipped message keys to store.
@@ -250,7 +252,7 @@ pub struct DoubleRatchet {
     prev_send_count: u32,
     /// Skipped message keys (`dh_public`, `n`) -> key
     #[zeroize(skip)]
-    skipped_keys: HashMap<([u8; 32], u32), MessageKey>,
+    skipped_keys: BTreeMap<([u8; 32], u32), MessageKey>,
 }
 
 impl DoubleRatchet {
@@ -288,7 +290,7 @@ impl DoubleRatchet {
             send_count: 0,
             recv_count: 0,
             prev_send_count: 0,
-            skipped_keys: HashMap::new(),
+            skipped_keys: BTreeMap::new(),
         }
     }
 
@@ -307,7 +309,7 @@ impl DoubleRatchet {
             send_count: 0,
             recv_count: 0,
             prev_send_count: 0,
-            skipped_keys: HashMap::new(),
+            skipped_keys: BTreeMap::new(),
         }
     }
 
@@ -359,6 +361,13 @@ impl DoubleRatchet {
             .map_err(|_| RatchetError::EncryptionFailed)?;
 
         Ok((header, ciphertext))
+    }
+
+    /// Force a DH ratchet step (rotate sending key).
+    pub fn force_dh_step<R: RngCore + CryptoRng>(&mut self, rng: &mut R) {
+        self.dh_self = PrivateKey::generate(rng);
+        self.prev_send_count = self.send_count;
+        self.send_count = 0;
     }
 
     /// Try to retrieve a skipped message key using constant-time lookup.
@@ -602,8 +611,8 @@ pub enum RatchetError {
     DecryptionFailed,
 }
 
-impl std::fmt::Display for RatchetError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for RatchetError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             RatchetError::InvalidCounter => write!(f, "invalid message counter"),
             RatchetError::TooManySkipped => write!(f, "too many skipped messages"),
@@ -618,7 +627,7 @@ impl std::fmt::Display for RatchetError {
     }
 }
 
-impl std::error::Error for RatchetError {}
+impl core::error::Error for RatchetError {}
 
 impl From<RatchetError> for CryptoError {
     fn from(err: RatchetError) -> Self {

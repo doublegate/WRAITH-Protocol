@@ -77,9 +77,9 @@ impl Builder {
         }
 
         if obfuscate {
-            // In a real implementation, we might use RUSTFLAGS for LLVM-level obfuscation
-            // e.g., cmd.env("RUSTFLAGS", "-C target-feature=+crt-static -C panic=abort");
             info!("Applying build-time obfuscation flags...");
+            // Statically link CRT and strip symbols
+            cmd.env("RUSTFLAGS", "-C target-feature=+crt-static -C panic=abort -C link-arg=-s");
         }
 
         let status = cmd.status()?;

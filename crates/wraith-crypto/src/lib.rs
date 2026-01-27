@@ -25,6 +25,11 @@
 #![warn(missing_docs)]
 #![warn(clippy::all)]
 #![deny(unsafe_op_in_unsafe_fn)]
+#![no_std]
+
+extern crate alloc;
+#[cfg(test)]
+extern crate std;
 
 pub mod aead;
 pub mod constant_time;

@@ -3,6 +3,47 @@
 //! All randomness comes from the operating system CSPRNG.
 
 use crate::CryptoError;
+use rand_core::{CryptoRng, Error, RngCore};
+
+/// A secure random number generator backed by the OS CSPRNG.
+pub struct SecureRng;
+
+impl SecureRng {
+    /// Create a new instance.
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+impl Default for SecureRng {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl RngCore for SecureRng {
+    fn next_u32(&mut self) -> u32 {
+        rand_core::impls::next_u32_via_fill(self)
+    }
+
+    fn next_u64(&mut self) -> u64 {
+        rand_core::impls::next_u64_via_fill(self)
+    }
+
+    fn fill_bytes(&mut self, dest: &mut [u8]) {
+        self.try_fill_bytes(dest).expect("Random generation failed")
+    }
+
+    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Error> {
+        // Map getrandom error to rand_core::Error
+        getrandom::getrandom(dest).map_err(|e| {
+            // Compiler says e.code() is NonZeroU32
+            Error::from(e.code())
+        })
+    }
+}
+
+impl CryptoRng for SecureRng {}
 
 /// Fill a buffer with random bytes from the OS CSPRNG.
 ///

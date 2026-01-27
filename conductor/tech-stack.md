@@ -56,6 +56,16 @@
 | Android | Kotlin + Jetpack Compose | JNI via cargo-ndk | Android Keystore (hardware-backed) | FCM |
 | iOS | Swift + SwiftUI | UniFFI | iOS Keychain + Secure Enclave | APNs |
 
+## RedOps Implant (Spectre)
+
+| Component | Technology | Version / Details |
+|-----------|-----------|-------------------|
+| Language | Rust | no_std, no_main |
+| OS APIs | Windows API (hashed), Syscalls (Linux) | Dynamic resolution, Indirect syscalls |
+| Persistence | COM (ITaskService), Registry, Service | Native implementation (no shell fallback) |
+| C2 | HTTP, SMB (Named Pipes), TCP (Socks) | Custom implementation |
+| Scripting | PowerShell (CLR Hosting) | Unmanaged execution via .NET runtime |
+
 ## Architecture
 
 - **Monorepo Structure:** Cargo workspace with 8 protocol crates, 9 Tauri desktop clients, 1 build automation crate (`xtask`), and 1 integration test crate.

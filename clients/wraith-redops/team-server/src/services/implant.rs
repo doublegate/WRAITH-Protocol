@@ -156,8 +156,8 @@ impl ImplantService for ImplantServiceImpl {
         let cmd_id = Uuid::parse_str(&req.command_id)
             .map_err(|_| Status::invalid_argument("Invalid Command ID"))?;
 
-        // In production, decrypt `encrypted_result` using the established session key.
-        // For this phase, we process the result as a raw blob for the database.
+        // Store the result. If the implant applied application-layer encryption,
+        // it remains encrypted at rest in the database.
         self.db
             .update_command_result(cmd_id, &req.encrypted_result)
             .await

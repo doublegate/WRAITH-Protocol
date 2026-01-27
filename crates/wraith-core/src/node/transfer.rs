@@ -708,12 +708,30 @@ mod tests {
 
     #[tokio::test]
     async fn test_list_available_files() {
+        use std::io::Write;
         let node = Node::new_random().await.unwrap();
 
         let files = node.list_available_files().await;
-
-        // Placeholder returns empty list
+        // Verify empty list initially
         assert_eq!(files.len(), 0);
+
+        // Create and announce a file
+        let temp_dir = std::env::temp_dir();
+        let file_path = temp_dir.join("wraith_list_test.dat");
+        let mut file = std::fs::File::create(&file_path).unwrap();
+        file.write_all(&[0u8; 1024]).unwrap();
+        drop(file);
+
+        let _ = node.announce_file(&file_path).await;
+
+        // Verify list now contains the file
+        let files_after = node.list_available_files().await;
+        assert_eq!(files_after.len(), 1);
+        assert_eq!(files_after[0].name, "wraith_list_test.dat");
+        assert_eq!(files_after[0].size, 1024);
+
+        // Cleanup
+        let _ = std::fs::remove_file(&file_path);
     }
 
     #[tokio::test]

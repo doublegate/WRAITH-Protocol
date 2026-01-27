@@ -151,6 +151,8 @@ pub fn hkdf(salt: &[u8], ikm: &[u8], info: &[u8], output: &mut [u8]) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::vec;
+    use std::vec::Vec;
 
     #[test]
     fn test_blake3_basic() {

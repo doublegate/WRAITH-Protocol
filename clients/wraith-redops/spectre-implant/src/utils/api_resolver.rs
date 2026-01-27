@@ -36,12 +36,7 @@ pub unsafe fn get_peb() -> *mut PEB {
     peb
 }
 
-#[cfg(not(target_os = "windows"))]
-pub unsafe fn get_peb() -> *mut PEB {
-    // Stub for non-windows verification
-    core::ptr::null_mut()
-}
-
+#[cfg(target_os = "windows")]
 pub unsafe fn get_module_base(module_hash: u32) -> *const () {
     let peb = get_peb();
     if peb.is_null() {
@@ -68,6 +63,7 @@ pub unsafe fn get_module_base(module_hash: u32) -> *const () {
     core::ptr::null()
 }
 
+#[cfg(target_os = "windows")]
 pub unsafe fn resolve_function(module_hash: u32, function_hash: u32) -> *const () {
     let base = get_module_base(module_hash);
     if base.is_null() {
@@ -76,6 +72,7 @@ pub unsafe fn resolve_function(module_hash: u32, function_hash: u32) -> *const (
     find_export(base as PVOID, function_hash)
 }
 
+#[cfg(target_os = "windows")]
 unsafe fn find_export(base: PVOID, func_hash: u32) -> *const () {
     let dos_header = base as *const IMAGE_DOS_HEADER;
     if (*dos_header).e_magic != 0x5A4D {
@@ -129,6 +126,7 @@ unsafe fn find_export(base: PVOID, func_hash: u32) -> *const () {
     core::ptr::null()
 }
 
+#[cfg(target_os = "windows")]
 unsafe fn c_strlen(p: *const u8) -> usize {
     let mut len = 0;
     while *p.add(len) != 0 {

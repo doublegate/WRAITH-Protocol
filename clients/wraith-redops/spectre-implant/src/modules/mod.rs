@@ -12,3 +12,4 @@ pub mod discovery;
 pub mod lateral;
 pub mod collection;
 pub mod smb;
+pub mod mesh;

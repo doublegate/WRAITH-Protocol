@@ -8,6 +8,7 @@
 //! - In-place encryption/decryption for zero-copy operations
 
 use crate::CryptoError;
+use alloc::vec::Vec;
 use chacha20poly1305::{
     XChaCha20Poly1305,
     aead::{Aead, AeadInPlace, KeyInit},

@@ -22,10 +22,10 @@ For the current production README, see [../../README.md](../../README.md).
 
 **Total Development Effort:** 2,685 story points delivered across 24 phases
 
-**Project Metrics (2026-01-26):**
-- **Code Volume:** ~131,000 lines of Rust code across protocol and client crates + ~35,000 lines TypeScript
-- **Test Coverage:** 2,140 tests passing (16 ignored) - 100% pass rate
-- **Documentation:** 113 markdown files, ~61,000 lines of comprehensive documentation
+**Project Metrics (2026-01-27):**
+- **Code Volume:** ~141,000 lines of Rust code across protocol and client crates + ~36,600 lines TypeScript
+- **Test Coverage:** 2,120 tests passing (16 ignored) - 100% pass rate
+- **Documentation:** 114 markdown files, ~62,800 lines of comprehensive documentation
 - **Dependencies:** 295 audited packages (zero vulnerabilities via cargo-audit)
 - **Security:** Grade A+ (EXCELLENT) - zero vulnerabilities, 100% unsafe documentation, comprehensive audits
 - **Technical Debt Ratio:** ~2.5% (Grade A - Excellent)
@@ -36,27 +36,26 @@ For the current production README, see [../../README.md](../../README.md).
 **Quality Metrics:**
 - **Quality Grade:** 98/100 (Production-ready)
 - **Technical Debt Ratio:** ~2.5% (Grade A - Excellent)
-- **Test Coverage:** 2,140 tests passing (16 ignored) - 100% pass rate
-  - 414 wraith-core - frame parsing (SIMD), sessions, streams, BBR, migration, ring buffers, Node API
-  - 127 wraith-crypto - Ed25519, X25519+Elligator2, AEAD, Noise_XX, Double Ratchet (+ test vectors + zeroization)
-  - 130 wraith-transport - AF_XDP socket config, io_uring, UDP, worker pools, NUMA-aware allocation
-  - 111 wraith-obfuscation - padding modes (5), timing distributions (5), protocol mimicry (TLS/WS/DoH)
-  - 231 wraith-discovery - Kademlia DHT, STUN with DNS resolution, ICE signaling, relay infrastructure
-  - 34 wraith-files - chunking, reassembly, BLAKE3 tree hashing, io_uring I/O
-  - 8 wraith-cli - CLI interface with ping/config commands, Node API integration
-  - 6 wraith-ffi - Foreign function interface (C-compatible API, JNI bindings)
-  - 68 wraith-transfer - Desktop file transfer (Tauri IPC commands + React UI tests)
-  - 96 wraith-android - Mobile protocol integration, Keystore, FCM
-  - 103 wraith-ios - Mobile protocol integration, Keychain, APNs
-  - 76 wraith-chat - E2EE messaging + voice/video/groups (49 IPC commands)
+- **Test Coverage:** 2,120 tests passing (16 ignored) - 100% pass rate
+  - 455 wraith-core - frame parsing (SIMD), sessions, streams, BBR, migration, ring buffers, Node API, security monitor
+  - 165 wraith-crypto - Ed25519, X25519+Elligator2, AEAD, Noise_XX, Double Ratchet (+ test vectors + zeroization + Noise integration)
+  - 181 wraith-transport - AF_XDP socket config, io_uring, UDP, worker pools, NUMA-aware allocation, buffer pools
+  - 167 wraith-obfuscation - padding modes (5), timing distributions (5), protocol mimicry (TLS/WS/DoH), cover traffic
+  - 318 wraith-discovery - Kademlia DHT, STUN with DNS resolution, ICE signaling (RFC 8445), relay infrastructure
+  - 44 wraith-files - chunking, reassembly, BLAKE3 tree hashing, io_uring I/O
+  - 87 wraith-cli - CLI interface with ping/config commands, Node API integration
+  - 111 wraith-ffi - Foreign function interface (C-compatible API, JNI bindings, UniFFI)
+  - 6 wraith-transfer - Desktop file transfer (Tauri IPC commands)
+  - 107 wraith-chat - E2EE messaging + voice/video/groups (49 IPC commands)
   - 17 wraith-sync - Desktop file synchronization (delta sync, conflict resolution)
-  - 24 wraith-share - Distributed file sharing (swarm transfers, link sharing)
+  - 31 wraith-share - Distributed file sharing (swarm transfers, link sharing)
   - 27 wraith-stream - Secure media streaming (AV1/VP9/H.264, adaptive bitrate)
   - 21 wraith-mesh - IoT mesh networking (topology visualization, DHT inspection)
   - 56 wraith-publish - Decentralized content publishing (Ed25519 signatures, RSS feeds)
-  - 99 wraith-vault - Distributed secret storage (Shamir SSS, erasure coding, guardians)
-  - 78 wraith-recon - Network reconnaissance (packet capture, protocol analysis, mapping)
-  - wraith-redops - Red team operations (Team Server, Operator Client, Spectre Implant)
+  - 101 wraith-vault - Distributed secret storage (Shamir SSS, erasure coding, guardians)
+  - 98 wraith-recon - Network reconnaissance (packet capture, protocol analysis, mapping)
+  - 128 wraith-integration-tests - Cross-crate integration tests
+  - wraith-redops - Red team operations (Team Server, Operator Client, Spectre Implant) - isolated workspace
 - **Security Vulnerabilities:** Zero (295 dependencies scanned with cargo-audit, CodeQL verified)
 - **Clippy Warnings:** Zero (strict `-D warnings` enforcement)
 - **Compiler Warnings:** Zero
@@ -69,7 +68,7 @@ For the current production README, see [../../README.md](../../README.md).
   - tree_hash: Merkle tree construction with incremental hashing
 - **Property Tests:** 15 QuickCheck-style property tests validating state machine invariants
 - **Unsafe Code:** 100% SAFETY documentation coverage (zero unsafe in crypto paths)
-- **Documentation:** 113 markdown files, ~61,000 lines, complete API coverage
+- **Documentation:** 114 markdown files, ~62,800 lines, complete API coverage
 
 ---
 

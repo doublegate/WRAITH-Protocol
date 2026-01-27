@@ -1257,14 +1257,17 @@ impl IceAgent {
         Err(IceError::StunError("No MAPPED-ADDRESS in response".into()))
     }
 
-    /// Gather relay candidates via TURN (placeholder - full TURN not implemented)
+    /// Gather relay candidates via TURN
+    ///
+    /// Note: WRAITH primarily uses its own decentralized relay network (via wraith-discovery).
+    /// Standard TURN support is currently deferred.
     async fn gather_relay_candidates(
         &self,
         _host_candidates: &[IceCandidate],
     ) -> IceResult<Vec<IceCandidate>> {
-        // TURN implementation would go here
-        // For now, return empty - relay is handled via wraith-discovery relay servers
-        tracing::debug!("TURN relay gathering not implemented - using wraith-discovery relay");
+        tracing::debug!(
+            "Standard TURN relay gathering deferred - using WRAITH-native relay network"
+        );
         Ok(Vec::new())
     }
 

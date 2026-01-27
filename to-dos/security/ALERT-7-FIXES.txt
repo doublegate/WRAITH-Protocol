@@ -1,0 +1,211 @@
+       Task: Implement Full Remediation for CodeQL Alert #7                                                                                                   
+                                                                                                                                                              
+       Objective                                                                                                                                              
+                                                                                                                                                              
+       Implement all 6 remediation steps from to-dos/security/CODEQL-ALERT-7-CLEARTEXT-CREDENTIALS.md to address the CodeQL "Cleartext logging of             
+       sensitive information" alert in the Spectre implant.                                                                                                   
+                                                                                                                                                              
+       Project Context                                                                                                                                        
+                                                                                                                                                              
+       - Project: WRAITH-Protocol                                                                                                                             
+       - Location: /home/parobek/Code/WRAITH-Protocol                                                                                                         
+       - Target crate: clients/wraith-redops/spectre-implant/ (a no_std Rust crate)                                                                           
+       - Rust edition: 2021 (the spectre-implant uses 2021, NOT 2024)                                                                                         
+       - Key constraint: This is a #![no_std] crate with extern crate alloc; — NO access to std. Uses a custom MiniHeap global allocator.                     
+       - Dependencies already available: snow (Noise protocol), serde/serde_json (with alloc feature)                                                         
+       - Crypto available in project: wraith-crypto crate has XChaCha20-Poly1305 (AeadKey, Nonce, etc.) BUT is currently commented out in Cargo.toml: #       
+       wraith-crypto = { path = "../../../crates/wraith-crypto", default-features = false }                                                                   
+                                                                                                                                                              
+       CRITICAL CONSTRAINTS                                                                                                                                   
+                                                                                                                                                              
+       - This is a no_std environment. You CANNOT use std::* anything.                                                                                        
+       - The wraith-crypto crate uses std features (rand_core with OsRng, etc.) so it likely cannot be directly imported into the no_std spectre-implant      
+       without modification.                                                                                                                                  
+       - You need to implement crypto primitives locally or use chacha20poly1305 crate directly with default-features = false.                                
+       - For randomness in no_std, you'll need a seed from somewhere (e.g., rdrand/rdtsc on x86, or a counter-based approach with a static seed).             
+       - zeroize crate works in no_std with default-features = false.                                                                                         
+       - mlock is a raw syscall (mlock2 = syscall 325 on x86_64 Linux). On Windows, VirtualLock via API resolver.                                             
+                                                                                                                                                              
+       Spectre Implant Structure                                                                                                                              
+                                                                                                                                                              
+       clients/wraith-redops/spectre-implant/                                                                                                                 
+       ├── Cargo.toml                                                                                                                                         
+       ├── src/                                                                                                                                               
+       │   ├── lib.rs              # no_std, no_main, custom allocator                                                                                        
+       │   ├── modules/                                                                                                                                       
+       │   │   ├── mod.rs           # Module re-exports                                                                                                       
+       │   │   ├── shell.rs         # Shell::exec() - PRIMARY target (line 75)                                                                                
+       │   │   ├── credentials.rs   # Credentials::dump_lsass() - LSASS dump                                                                                  
+       │   │   ├── powershell.rs    # PowerShell::exec() - delegates to shell or CLR                                                                          
+       │   │   ├── lateral.rs       # Lateral::psexec() - service creation                                                                                    
+       │   │   ├── collection.rs    # Collection::keylogger_poll() - keystroke data                                                                           
+       │   │   ├── discovery.rs     # Discovery::get_username(), sys_info(), net_scan()                                                                       
+       │   │   ├── injection.rs                                                                                                                               
+       │   │   ├── bof_loader.rs                                                                                                                              
+       │   │   ├── socks.rs                                                                                                                                   
+       │   │   ├── clr.rs                                                                                                                                     
+       │   │   ├── persistence.rs                                                                                                                             
+       │   │   ├── evasion.rs                                                                                                                                 
+       │   │   └── smb.rs                                                                                                                                     
+       │   ├── c2/                                                                                                                                            
+       │   │   ├── mod.rs           # C2 beacon loop, dispatch_tasks()                                                                                        
+       │   │   └── packet.rs        # WraithFrame                                                                                                             
+       │   └── utils/                                                                                                                                         
+       │       ├── heap.rs          # MiniHeap global allocator                                                                                               
+       │       ├── syscalls.rs      # Raw syscall wrappers                                                                                                    
+       │       ├── api_resolver.rs  # Windows PEB walking                                                                                                     
+       │       ├── windows_definitions.rs                                                                                                                     
+       │       └── obfuscation.rs   # Sleep, jitter                                                                                                           
+                                                                                                                                                              
+       Current Cargo.toml                                                                                                                                     
+                                                                                                                                                              
+       [package]                                                                                                                                              
+       name = "spectre-implant"                                                                                                                               
+       version = "0.1.0"                                                                                                                                      
+       edition = "2021"                                                                                                                                       
+                                                                                                                                                              
+       [lib]                                                                                                                                                  
+       crate-type = ["cdylib", "rlib"]                                                                                                                        
+                                                                                                                                                              
+       [dependencies]                                                                                                                                         
+       serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }                                                                  
+       serde_json = { version = "1.0", default-features = false, features = ["alloc"] }                                                                       
+       snow = { version = "0.10", default-features = false, features = ["default-resolver", "default-resolver-crypto"] }                                      
+                                                                                                                                                              
+       [profile.release]                                                                                                                                      
+       opt-level = "z"                                                                                                                                        
+       lto = true                                                                                                                                             
+       panic = "abort"                                                                                                                                        
+       strip = true                                                                                                                                           
+       codegen-units = 1                                                                                                                                      
+                                                                                                                                                              
+       [profile.dev]                                                                                                                                          
+       panic = "abort"                                                                                                                                        
+                                                                                                                                                              
+       [profile.test]                                                                                                                                         
+       panic = "abort"                                                                                                                                        
+       [workspace]                                                                                                                                            
+                                                                                                                                                              
+       The 6 Remediation Steps to Implement                                                                                                                   
+                                                                                                                                                              
+       Step 1: Create SensitiveData Wrapper Type                                                                                                              
+                                                                                                                                                              
+       Create a new file clients/wraith-redops/spectre-implant/src/utils/sensitive.rs containing:                                                             
+                                                                                                                                                              
+       - SensitiveData struct that wraps data encrypted with XChaCha20-Poly1305                                                                               
+       - Uses an ephemeral key generated at creation time                                                                                                     
+       - .unlock() method returns a SensitiveGuard that holds decrypted data                                                                                  
+       - Guard re-encrypts (or just zeroizes) on drop                                                                                                         
+       - All fields zeroized on drop                                                                                                                          
+                                                                                                                                                              
+       Since this is no_std, add chacha20poly1305 and zeroize to Cargo.toml with default-features = false:                                                    
+       chacha20poly1305 = { version = "0.5", default-features = false, features = ["alloc"] }                                                                 
+       zeroize = { version = "1.8", default-features = false, features = ["alloc", "derive"] }                                                                
+                                                                                                                                                              
+       For key generation without OsRng, use a simple approach:                                                                                               
+       - On x86_64 Linux: use rdtsc instruction (inline asm) mixed with stack address entropy                                                                 
+       - Create a generate_ephemeral_key() function that combines multiple entropy sources                                                                    
+       - This doesn't need to be cryptographically perfect — it's an in-memory protection layer, not a transport key                                          
+                                                                                                                                                              
+       Step 2: Apply SensitiveData to Shell Output                                                                                                            
+                                                                                                                                                              
+       Modify Shell::exec() to return SensitiveData instead of Vec<u8>:                                                                                       
+       - Change return type from Vec<u8> to SensitiveData                                                                                                     
+       - Wrap the output buffer before returning                                                                                                              
+       - Zeroize the plaintext buffer after wrapping                                                                                                          
+                                                                                                                                                              
+       Update callers in c2/mod.rs dispatch_tasks():                                                                                                          
+       - The "shell" match arm calls Shell.exec(&task.payload) and assigns to result: Vec<u8>                                                                 
+       - After the change, it needs to .unlock() the SensitiveData to get the raw bytes for transmission                                                      
+       - The data is ultimately encrypted via Noise session (session.write_message) before transmission, so unlocking for transmission is correct             
+                                                                                                                                                              
+       Step 3: Encrypt LSASS Dump at Rest                                                                                                                     
+                                                                                                                                                              
+       Modify Credentials::dump_lsass():                                                                                                                      
+       - After MiniDumpWriteDump writes to the file handle, the dump is on disk in cleartext                                                                  
+       - Instead: write to a memory buffer first, encrypt with XChaCha20-Poly1305, then write encrypted data to disk                                          
+       - Prepend a simple header: [24-byte nonce][encrypted data][16-byte auth tag]                                                                           
+       - Use an ephemeral key derived from the Noise session or a fixed operator key                                                                          
+       - Since the function currently takes just target_path: &str, add a key parameter or use the ephemeral key approach                                     
+                                                                                                                                                              
+       Step 4: Add Zeroize Implementations                                                                                                                    
+                                                                                                                                                              
+       - Add #[derive(Zeroize, ZeroizeOnDrop)] or manual impl Zeroize for buffers                                                                             
+       - In shell.rs: zeroize cmd_c Vec after execve, zeroize output after wrapping in SensitiveData                                                          
+       - In credentials.rs: zeroize process handles/intermediate data                                                                                         
+       - In powershell.rs: zeroize command buffers                                                                                                            
+       - In collection.rs: zeroize the KEY_BUFFER when polled                                                                                                 
+                                                                                                                                                              
+       Step 5: Create SecureBuffer Type                                                                                                                       
+                                                                                                                                                              
+       Create in sensitive.rs:                                                                                                                                
+       - SecureBuffer struct wrapping a Vec<u8>                                                                                                               
+       - On Linux: call mlock syscall (syscall number 149 on x86_64) to lock pages in RAM                                                                     
+       - On Windows: call VirtualLock via API resolver                                                                                                        
+       - Auto-zeroize on drop                                                                                                                                 
+       - Implement AsRef<[u8]>, AsMut<[u8]>, Deref, DerefMut                                                                                                  
+                                                                                                                                                              
+       For the mlock syscall on Linux (the primary platform):                                                                                                 
+       #[cfg(not(target_os = "windows"))]                                                                                                                     
+       unsafe fn sys_mlock(addr: *const u8, len: usize) -> isize {                                                                                            
+           // syscall number 149 on x86_64                                                                                                                    
+           let ret: isize;                                                                                                                                    
+           core::arch::asm!(                                                                                                                                  
+               "syscall",                                                                                                                                     
+               in("rax") 149_usize,                                                                                                                           
+               in("rdi") addr as usize,                                                                                                                       
+               in("rsi") len,                                                                                                                                 
+               lateout("rax") ret,                                                                                                                            
+               out("rcx") _,                                                                                                                                  
+               out("r11") _,                                                                                                                                  
+           );                                                                                                                                                 
+           ret                                                                                                                                                
+       }                                                                                                                                                      
+                                                                                                                                                              
+       Step 6: Audit All Modules                                                                                                                              
+                                                                                                                                                              
+       Review and apply SensitiveData/SecureBuffer/Zeroize to:                                                                                                
+       - powershell.rs — exec() returns Vec<u8> via shell, wrap in SensitiveData                                                                              
+       - collection.rs — keylogger_poll() returns String with keystrokes, wrap or zeroize                                                                     
+       - discovery.rs — get_username() returns String with username, wrap or zeroize                                                                          
+       - lateral.rs — target/service_name/binary_path strings contain sensitive paths                                                                         
+       - c2/mod.rs — dispatch_tasks() handles all task results, ensure proper zeroization                                                                     
+                                                                                                                                                              
+       Implementation Order                                                                                                                                   
+                                                                                                                                                              
+       1. Add dependencies to Cargo.toml (chacha20poly1305, zeroize)                                                                                          
+       2. Create utils/sensitive.rs with SensitiveData, SensitiveGuard, SecureBuffer                                                                          
+       3. Add pub mod sensitive; to utils/mod.rs (or however utils is structured)                                                                             
+       4. Modify shell.rs to return SensitiveData                                                                                                             
+       5. Modify credentials.rs for encrypted dumps                                                                                                           
+       6. Apply Zeroize across all modules                                                                                                                    
+       7. Update c2/mod.rs dispatch to handle new types                                                                                                       
+       8. Add tests                                                                                                                                           
+       9. Run cargo fmt --all and cargo clippy --workspace -- -D warnings and cargo test --workspace                                                          
+                                                                                                                                                              
+       Testing                                                                                                                                                
+                                                                                                                                                              
+       - Run cargo test -p spectre-implant (note: tests use #[cfg(test)] extern crate std;)                                                                   
+       - Run cargo test --workspace to ensure no regressions                                                                                                  
+       - Add tests for:                                                                                                                                       
+         - SensitiveData encrypt/decrypt roundtrip                                                                                                            
+         - SensitiveGuard zeroize on drop                                                                                                                     
+         - SecureBuffer basic operations                                                                                                                      
+                                                                                                                                                              
+       Quality Standards                                                                                                                                      
+                                                                                                                                                              
+       - cargo fmt --all -- --check must pass                                                                                                                 
+       - cargo clippy --workspace -- -D warnings must pass (excluding wraith-xdp)                                                                             
+       - All existing tests must pass                                                                                                                         
+       - New code must follow the existing style (no_std patterns, unsafe blocks where needed)                                                                
+                                                                                                                                                              
+       IMPORTANT                                                                                                                                              
+                                                                                                                                                              
+       - Do NOT commit or push — just make the changes locally                                                                                                
+       - The crate is no_std — every import and type must work without std                                                                                    
+       - Check that chacha20poly1305 version 0.5 supports no_std with alloc; if not, find the right version (the project's wraith-crypto uses                 
+       chacha20poly1305 — check its version in the workspace Cargo.toml)                                                                                      
+       - Check the utils directory structure before adding files — read utils/mod.rs or check if it's a directory module                                      
+       - The spectre-implant has its own [workspace] marker at the bottom of its Cargo.toml — it's a standalone workspace member, NOT part of the main        
+       WRAITH workspace                                                                                                                                       
+       - Update the TODO file to mark acceptance criteria as completed

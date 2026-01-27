@@ -1,5 +1,14 @@
 #![cfg_attr(not(test), no_std)]
 #![cfg_attr(not(test), no_main)]
+#![allow(clippy::missing_safety_doc)]
+#![allow(clippy::result_unit_err)]
+#![allow(clippy::new_without_default)]
+#![allow(clippy::empty_loop)]
+#![allow(clippy::manual_range_contains)]
+#![allow(clippy::ptr_eq)]
+#![allow(clippy::unnecessary_cast)]
+#![allow(clippy::needless_range_loop)]
+#![allow(clippy::collapsible_if)]
 
 #[cfg(test)]
 extern crate std;

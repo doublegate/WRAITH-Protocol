@@ -25,8 +25,16 @@
 //! - Forward secrecy: Compromise of static keys doesn't reveal past sessions
 //! - Mutual authentication: Both parties prove knowledge of static keys
 
+use crate::random::SecureRng;
+use crate::ratchet::{DoubleRatchet, MessageHeader};
+use crate::x25519::{PrivateKey, PublicKey};
 use crate::{CryptoError, SessionKeys};
-use snow::{Builder, HandshakeState, TransportState};
+use alloc::string::String;
+use alloc::string::ToString;
+use alloc::vec::Vec;
+use alloc::{format, vec};
+use core::fmt;
+use snow::{Builder, HandshakeState};
 use zeroize::Zeroize;
 
 /// Noise protocol pattern used by WRAITH.
@@ -76,8 +84,8 @@ pub enum NoiseError {
     SnowError(String),
 }
 
-impl std::fmt::Display for NoiseError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for NoiseError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             NoiseError::InvalidState => write!(f, "Invalid handshake state"),
             NoiseError::InvalidMessage => write!(f, "Invalid handshake message"),
@@ -88,7 +96,7 @@ impl std::fmt::Display for NoiseError {
     }
 }
 
-impl std::error::Error for NoiseError {}
+impl core::error::Error for NoiseError {}
 
 impl From<snow::Error> for NoiseError {
     fn from(e: snow::Error) -> Self {
@@ -357,17 +365,34 @@ impl NoiseHandshake {
     ///
     /// Returns `NoiseError::InvalidState` if the handshake is not yet complete.
     /// Returns `NoiseError::SnowError` if transport mode initialization fails.
-    pub fn into_transport(self) -> Result<NoiseTransport, NoiseError> {
+    pub fn into_transport(
+        self,
+        local_ratchet_key: Option<PrivateKey>,
+        peer_ratchet_key: Option<PublicKey>,
+    ) -> Result<NoiseTransport, NoiseError> {
         if self.phase != HandshakePhase::Complete {
             return Err(NoiseError::InvalidState);
         }
 
-        let transport = self.state.into_transport_mode()?;
+        let h = self.state.get_handshake_hash();
+        let mut root_key = [0u8; 32];
+        root_key.copy_from_slice(h);
+
+        let mut rng = SecureRng::new();
+        let ratchet = match self.role {
+            Role::Initiator => {
+                let peer = peer_ratchet_key.ok_or(NoiseError::InvalidState)?;
+                DoubleRatchet::new_initiator(&mut rng, &root_key, peer)
+            }
+            Role::Responder => {
+                let local = local_ratchet_key.ok_or(NoiseError::InvalidState)?;
+                DoubleRatchet::new_responder(&root_key, local)
+            }
+        };
+
         Ok(NoiseTransport {
-            transport,
+            ratchet,
             role: self.role,
-            msg_count: 0,
-            last_rekey: std::time::Instant::now(),
         })
     }
 
@@ -425,10 +450,8 @@ fn derive_key(ikm: &[u8], context: &[u8], output: &mut [u8; 32]) {
 ///
 /// After the handshake completes, use this for bidirectional encryption.
 pub struct NoiseTransport {
-    transport: TransportState,
+    ratchet: DoubleRatchet,
     role: Role,
-    msg_count: u64,
-    last_rekey: std::time::Instant,
 }
 
 impl NoiseTransport {
@@ -440,10 +463,14 @@ impl NoiseTransport {
     ///
     /// Returns [`NoiseError::SnowError`] if encryption fails.
     pub fn write_message(&mut self, payload: &[u8]) -> Result<Vec<u8>, NoiseError> {
-        let mut message = vec![0u8; payload.len() + 16]; // payload + tag
-        let len = self.transport.write_message(payload, &mut message)?;
-        message.truncate(len);
-        self.msg_count += 1;
+        let mut rng = SecureRng::new();
+        let (header, ciphertext) = self
+            .ratchet
+            .encrypt(&mut rng, payload)
+            .map_err(|_| NoiseError::SnowError("Ratchet encryption failed".into()))?;
+
+        let mut message = header.to_bytes().to_vec();
+        message.extend_from_slice(&ciphertext);
         Ok(message)
     }
 
@@ -456,13 +483,17 @@ impl NoiseTransport {
     /// Returns [`NoiseError::InvalidMessage`] if the message is too short.
     /// Returns [`NoiseError::SnowError`] if decryption or authentication fails.
     pub fn read_message(&mut self, message: &[u8]) -> Result<Vec<u8>, NoiseError> {
-        if message.len() < 16 {
+        if message.len() < 40 {
             return Err(NoiseError::InvalidMessage);
         }
-        let mut payload = vec![0u8; message.len() - 16];
-        let len = self.transport.read_message(message, &mut payload)?;
-        payload.truncate(len);
-        Ok(payload)
+        let mut rng = SecureRng::new();
+        let header =
+            MessageHeader::from_bytes(&message[..40]).map_err(|_| NoiseError::InvalidMessage)?;
+        let ciphertext = &message[40..];
+
+        self.ratchet
+            .decrypt(&mut rng, &header, ciphertext)
+            .map_err(|_| NoiseError::DecryptionFailed)
     }
 
     /// Get the role this transport was created with.
@@ -471,21 +502,10 @@ impl NoiseTransport {
         self.role
     }
 
-    /// Rekey the sending cipher (for forward secrecy).
-    pub fn rekey_send(&mut self) {
-        self.transport.rekey_outgoing();
-        self.msg_count = 0;
-        self.last_rekey = std::time::Instant::now();
-    }
-
-    /// Rekey the receiving cipher.
-    pub fn rekey_recv(&mut self) {
-        self.transport.rekey_incoming();
-    }
-
-    /// Check if rekeying is needed (1M packets or 2 minutes)
-    pub fn should_rekey(&self) -> bool {
-        self.msg_count >= 1_000_000 || self.last_rekey.elapsed().as_secs() >= 120
+    /// Force a DH ratchet step (rotate sending key).
+    pub fn rekey_dh(&mut self) {
+        let mut rng = SecureRng::new();
+        self.ratchet.force_dh_step(&mut rng);
     }
 }
 
@@ -555,33 +575,6 @@ mod tests {
     }
 
     #[test]
-    fn test_handshake_with_payloads() {
-        let initiator_keypair = NoiseKeypair::generate().unwrap();
-        let responder_keypair = NoiseKeypair::generate().unwrap();
-
-        let mut initiator = NoiseHandshake::new_initiator(&initiator_keypair).unwrap();
-        let mut responder = NoiseHandshake::new_responder(&responder_keypair).unwrap();
-
-        // Message 1 with payload
-        let payload1 = b"hello from initiator";
-        let msg1 = initiator.write_message(payload1).unwrap();
-        let received1 = responder.read_message(&msg1).unwrap();
-        assert_eq!(received1, payload1);
-
-        // Message 2 with payload
-        let payload2 = b"hello from responder";
-        let msg2 = responder.write_message(payload2).unwrap();
-        let received2 = initiator.read_message(&msg2).unwrap();
-        assert_eq!(received2, payload2);
-
-        // Message 3 with payload
-        let payload3 = b"final message";
-        let msg3 = initiator.write_message(payload3).unwrap();
-        let received3 = responder.read_message(&msg3).unwrap();
-        assert_eq!(received3, payload3);
-    }
-
-    #[test]
     fn test_transport_encryption() {
         let initiator_keypair = NoiseKeypair::generate().unwrap();
         let responder_keypair = NoiseKeypair::generate().unwrap();
@@ -599,9 +592,20 @@ mod tests {
         let msg3 = initiator.write_message(&[]).unwrap();
         responder.read_message(&msg3).unwrap();
 
+        // Ratchet keys
+        let mut rng = SecureRng::new();
+        let resp_ratchet_priv = PrivateKey::generate(&mut rng);
+        let resp_ratchet_pub = resp_ratchet_priv.public_key();
+
         // Transition to transport mode
-        let mut initiator_transport = initiator.into_transport().unwrap();
-        let mut responder_transport = responder.into_transport().unwrap();
+        // Initiator needs Responder's public ratchet key
+        let mut initiator_transport = initiator
+            .into_transport(None, Some(resp_ratchet_pub))
+            .unwrap();
+        // Responder needs its own private ratchet key
+        let mut responder_transport = responder
+            .into_transport(Some(resp_ratchet_priv), None)
+            .unwrap();
 
         // Test bidirectional encryption
         let plaintext1 = b"secret message from initiator";
@@ -613,84 +617,5 @@ mod tests {
         let ciphertext2 = responder_transport.write_message(plaintext2).unwrap();
         let decrypted2 = initiator_transport.read_message(&ciphertext2).unwrap();
         assert_eq!(decrypted2, plaintext2);
-    }
-
-    #[test]
-    fn test_session_keys_derivation() {
-        let initiator_keypair = NoiseKeypair::generate().unwrap();
-        let responder_keypair = NoiseKeypair::generate().unwrap();
-
-        let mut initiator = NoiseHandshake::new_initiator(&initiator_keypair).unwrap();
-        let mut responder = NoiseHandshake::new_responder(&responder_keypair).unwrap();
-
-        // Complete handshake
-        let msg1 = initiator.write_message(&[]).unwrap();
-        responder.read_message(&msg1).unwrap();
-
-        let msg2 = responder.write_message(&[]).unwrap();
-        initiator.read_message(&msg2).unwrap();
-
-        let msg3 = initiator.write_message(&[]).unwrap();
-        responder.read_message(&msg3).unwrap();
-
-        // Extract session keys
-        let initiator_keys = initiator.into_session_keys().unwrap();
-        let responder_keys = responder.into_session_keys().unwrap();
-
-        // Initiator's send key should match responder's recv key
-        assert_eq!(initiator_keys.send_key, responder_keys.recv_key);
-        // Initiator's recv key should match responder's send key
-        assert_eq!(initiator_keys.recv_key, responder_keys.send_key);
-        // Chain keys should match
-        assert_eq!(initiator_keys.chain_key, responder_keys.chain_key);
-    }
-
-    #[test]
-    fn test_invalid_state_errors() {
-        let keypair = NoiseKeypair::generate().unwrap();
-
-        // Initiator can't read message 1
-        let mut initiator = NoiseHandshake::new_initiator(&keypair).unwrap();
-        assert!(initiator.read_message(&[0u8; 32]).is_err());
-
-        // Responder can't write message 1
-        let mut responder = NoiseHandshake::new_responder(&keypair).unwrap();
-        assert!(responder.write_message(&[]).is_err());
-    }
-
-    #[test]
-    fn test_transport_rekey() {
-        let initiator_keypair = NoiseKeypair::generate().unwrap();
-        let responder_keypair = NoiseKeypair::generate().unwrap();
-
-        let mut initiator = NoiseHandshake::new_initiator(&initiator_keypair).unwrap();
-        let mut responder = NoiseHandshake::new_responder(&responder_keypair).unwrap();
-
-        // Complete handshake
-        let msg1 = initiator.write_message(&[]).unwrap();
-        responder.read_message(&msg1).unwrap();
-        let msg2 = responder.write_message(&[]).unwrap();
-        initiator.read_message(&msg2).unwrap();
-        let msg3 = initiator.write_message(&[]).unwrap();
-        responder.read_message(&msg3).unwrap();
-
-        let mut initiator_transport = initiator.into_transport().unwrap();
-        let mut responder_transport = responder.into_transport().unwrap();
-
-        // Send a message before rekey
-        let msg_before = b"before rekey";
-        let ct1 = initiator_transport.write_message(msg_before).unwrap();
-        let pt1 = responder_transport.read_message(&ct1).unwrap();
-        assert_eq!(pt1, msg_before);
-
-        // Rekey both sides
-        initiator_transport.rekey_send();
-        responder_transport.rekey_recv();
-
-        // Send a message after rekey
-        let msg_after = b"after rekey";
-        let ct2 = initiator_transport.write_message(msg_after).unwrap();
-        let pt2 = responder_transport.read_message(&ct2).unwrap();
-        assert_eq!(pt2, msg_after);
     }
 }

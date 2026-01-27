@@ -14,6 +14,21 @@ pub type PWSTR = *mut u16;
 pub type LPCSTR = *const u8;
 pub type FARPROC = *const c_void;
 
+#[repr(C)]
+#[allow(non_snake_case)]
+pub struct GUID {
+    pub Data1: u32,
+    pub Data2: u16,
+    pub Data3: u16,
+    pub Data4: [u8; 8],
+}
+
+impl GUID {
+    pub const fn new(d1: u32, d2: u16, d3: u16, d4: [u8; 8]) -> Self {
+        Self { Data1: d1, Data2: d2, Data3: d3, Data4: d4 }
+    }
+}
+
 // PEB Related Structures
 #[repr(C)]
 pub struct UNICODE_STRING {
@@ -274,12 +289,119 @@ pub struct ITaskServiceVtbl {
     pub GetHighestVersion: PVOID,
     pub Connect: unsafe extern "system" fn(*mut ITaskService, *mut u16, *mut u16, *mut u16, *mut u16) -> i32,
     pub GetFolder: unsafe extern "system" fn(*mut ITaskService, *const u16, *mut *mut c_void) -> i32,
-    pub NewTask: unsafe extern "system" fn(*mut ITaskService, u32, *mut *mut c_void) -> i32,
+    pub NewTask: unsafe extern "system" fn(*mut ITaskService, u32, *mut *mut ITaskDefinition) -> i32,
 }
 
 #[repr(C)]
 pub struct ITaskService {
     pub vtbl: *const ITaskServiceVtbl,
+}
+
+#[repr(C)]
+pub struct ITaskFolderVtbl {
+    pub QueryInterface: PVOID,
+    pub AddRef: PVOID,
+    pub Release: PVOID,
+    pub GetName: PVOID,
+    pub GetPath: PVOID,
+    pub GetFolder: PVOID,
+    pub GetFolders: PVOID,
+    pub CreateFolder: PVOID,
+    pub DeleteFolder: PVOID,
+    pub GetTask: PVOID,
+    pub GetTasks: PVOID,
+    pub DeleteTask: PVOID,
+    pub RegisterTask: PVOID,
+    pub RegisterTaskDefinition: unsafe extern "system" fn(*mut ITaskFolder, *const u16, *mut ITaskDefinition, i32, *mut u16, *mut u16, i32, *mut u16, *mut *mut c_void) -> i32,
+}
+
+#[repr(C)]
+pub struct ITaskFolder {
+    pub vtbl: *const ITaskFolderVtbl,
+}
+
+#[repr(C)]
+pub struct ITaskDefinitionVtbl {
+    pub QueryInterface: PVOID,
+    pub AddRef: PVOID,
+    pub Release: PVOID,
+    pub get_RegistrationInfo: PVOID,
+    pub put_RegistrationInfo: PVOID,
+    pub get_Triggers: PVOID,
+    pub put_Triggers: PVOID,
+    pub get_Settings: PVOID,
+    pub put_Settings: PVOID,
+    pub get_Data: PVOID,
+    pub put_Data: PVOID,
+    pub get_Principal: PVOID,
+    pub put_Principal: PVOID,
+    pub get_Actions: unsafe extern "system" fn(*mut ITaskDefinition, *mut *mut IActionCollection) -> i32,
+}
+
+#[repr(C)]
+pub struct ITaskDefinition {
+    pub vtbl: *const ITaskDefinitionVtbl,
+}
+
+#[repr(C)]
+pub struct IActionCollectionVtbl {
+    pub QueryInterface: PVOID,
+    pub AddRef: PVOID,
+    pub Release: PVOID,
+    pub get_Count: PVOID,
+    pub get_Item: PVOID,
+    pub get__NewEnum: PVOID,
+    pub Create: unsafe extern "system" fn(*mut IActionCollection, i32, *mut *mut IExecAction) -> i32,
+}
+
+#[repr(C)]
+pub struct IActionCollection {
+    pub vtbl: *const IActionCollectionVtbl,
+}
+
+#[repr(C)]
+pub struct IExecActionVtbl {
+    pub QueryInterface: unsafe extern "system" fn(*mut IExecAction, *const GUID, *mut *mut c_void) -> i32,
+    pub AddRef: unsafe extern "system" fn(*mut IExecAction) -> u32,
+    pub Release: unsafe extern "system" fn(*mut IExecAction) -> u32,
+    pub get_Id: PVOID,
+    pub put_Id: PVOID,
+    pub get_Path: PVOID,
+    pub put_Path: unsafe extern "system" fn(*mut IExecAction, *const u16) -> i32,
+    pub get_Arguments: PVOID,
+    pub put_Arguments: unsafe extern "system" fn(*mut IExecAction, *const u16) -> i32,
+}
+
+#[repr(C)]
+pub struct IExecAction {
+    pub vtbl: *const IExecActionVtbl,
+}
+
+#[repr(C)]
+pub struct MINIDUMP_CALLBACK_INFORMATION {
+    pub CallbackRoutine: PVOID,
+    pub CallbackParam: PVOID,
+}
+
+#[repr(C)]
+pub struct MINIDUMP_CALLBACK_INPUT {
+    pub ProcessId: ULONG,
+    pub ProcessHandle: HANDLE,
+    pub CallbackType: u32,
+    pub Io: MINIDUMP_IO_CALLBACK,
+}
+
+#[repr(C)]
+pub struct MINIDUMP_IO_CALLBACK {
+    pub Handle: HANDLE,
+    pub Offset: u64,
+    pub Buffer: PVOID,
+    pub BufferBytes: u32,
+}
+
+#[repr(C)]
+pub struct MINIDUMP_CALLBACK_OUTPUT {
+    pub Status: i32,
 }
 
 #[cfg(test)]

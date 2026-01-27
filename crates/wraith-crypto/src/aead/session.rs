@@ -14,6 +14,7 @@
 use super::cipher::{AeadKey, Nonce};
 use super::replay::ReplayProtection;
 use crate::CryptoError;
+use alloc::vec::Vec;
 use zeroize::ZeroizeOnDrop;
 
 /// Reusable buffer pool to avoid allocation in hot path.

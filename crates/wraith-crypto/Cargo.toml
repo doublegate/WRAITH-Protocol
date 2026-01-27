@@ -9,19 +9,19 @@ repository.workspace = true
 authors.workspace = true
 
 [dependencies]
-chacha20poly1305 = { workspace = true }
-x25519-dalek = { workspace = true }
-ed25519-dalek = { workspace = true }
-blake3 = { workspace = true }
-snow = { workspace = true }
-rand_core = { workspace = true }
-zeroize = { workspace = true }
-getrandom = { workspace = true }
-thiserror = { workspace = true }
-argon2 = { workspace = true }
-serde = { workspace = true }
-subtle = "2.5"
-curve25519-elligator2 = { version = "0.1.0-alpha.2", features = ["elligator2"] }
+chacha20poly1305 = { version = "0.10", default-features = false, features = ["alloc"] }
+x25519-dalek = { version = "2.0", default-features = false, features = ["static_secrets", "zeroize"] }
+ed25519-dalek = { version = "2.1", default-features = false, features = ["alloc", "rand_core", "zeroize"] }
+blake3 = { version = "1.5", default-features = false }
+snow = { version = "0.10", default-features = false, features = ["default-resolver", "default-resolver-crypto"] }
+rand_core = { version = "0.6", default-features = false, features = ["getrandom"] }
+zeroize = { version = "1.7", default-features = false, features = ["alloc", "derive"] }
+getrandom = { version = "0.2", default-features = false }
+thiserror = { version = "2.0", default-features = false }
+argon2 = { version = "0.5", default-features = false, features = ["alloc"] }
+serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
+subtle = { version = "2.5", default-features = false }
+curve25519-elligator2 = { version = "0.1.0-alpha.2", features = ["elligator2"], default-features = false }
 
 [dev-dependencies]
 proptest = { workspace = true }

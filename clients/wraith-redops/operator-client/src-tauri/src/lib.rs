@@ -686,6 +686,25 @@ pub struct ChainStepInput {
     pub description: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PlaybookJson {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub content: String,
+}
+
+impl From<Playbook> for PlaybookJson {
+    fn from(p: Playbook) -> Self {
+        Self {
+            id: p.id,
+            name: p.name,
+            description: p.description,
+            content: p.content,
+        }
+    }
+}
+
 #[tauri::command]
 async fn create_attack_chain(
     name: String,
@@ -742,6 +761,145 @@ async fn execute_attack_chain(
         chain_id,
         implant_id,
     })).await.map_err(|e| format!("gRPC error: {}", e))?;
+    Ok(())
+}
+
+#[tauri::command]
+async fn refresh_token(state: State<'_, ClientState>) -> Result<String, String> {
+    let mut lock = state.client.lock().await;
+    let client = lock.as_mut().ok_or("Not connected")?;
+    let response = client.refresh_token(tonic::Request::new(RefreshTokenRequest {}))
+        .await.map_err(|e| format!("gRPC error: {}", e))?;
+    Ok(response.into_inner().token)
+}
+
+#[tauri::command]
+async fn get_campaign(id: String, state: State<'_, ClientState>) -> Result<String, String> {
+    let mut lock = state.client.lock().await;
+    let client = lock.as_mut().ok_or("Not connected")?;
+    let response = client.get_campaign(tonic::Request::new(GetCampaignRequest { id }))
+        .await.map_err(|e| format!("gRPC error: {}", e))?;
+    let c: CampaignJson = response.into_inner().into();
+    serde_json::to_string(&c).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn get_implant(id: String, state: State<'_, ClientState>) -> Result<String, String> {
+    let mut lock = state.client.lock().await;
+    let client = lock.as_mut().ok_or("Not connected")?;
+    let response = client.get_implant(tonic::Request::new(GetImplantRequest { id }))
+        .await.map_err(|e| format!("gRPC error: {}", e))?;
+    let i: ImplantJson = response.into_inner().into();
+    serde_json::to_string(&i).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn cancel_command(command_id: String, state: State<'_, ClientState>) -> Result<(), String> {
+    let mut lock = state.client.lock().await;
+    let client = lock.as_mut().ok_or("Not connected")?;
+    client.cancel_command(tonic::Request::new(CancelCommandRequest { command_id }))
+        .await.map_err(|e| format!("gRPC error: {}", e))?;
+    Ok(())
+}
+
+#[tauri::command]
+async fn generate_implant(
+    campaign_id: String,
+    os: String,
+    arch: String,
+    format: String,
+    save_path: String,
+    state: State<'_, ClientState>,
+) -> Result<String, String> {
+    let mut lock = state.client.lock().await;
+    let client = lock.as_mut().ok_or("Not connected")?;
+
+    let req = tonic::Request::new(GenerateImplantRequest {
+        campaign_id,
+        os,
+        arch,
+        format,
+        config_override: std::collections::HashMap::new(),
+    });
+
+    let mut stream = client.generate_implant(req).await
+        .map_err(|e| format!("gRPC error: {}", e))?
+        .into_inner();
+
+    let mut file = tokio::fs::File::create(&save_path).await.map_err(|e| e.to_string())?;
+    use tokio::io::AsyncWriteExt;
+    while let Some(chunk) = stream.message().await.map_err(|e| e.to_string())? {
+        file.write_all(&chunk.data).await.map_err(|e| e.to_string())?;
+    }
+
+    Ok("Implant generated".to_string())
+}
+
+#[tauri::command]
+async fn list_playbooks(state: State<'_, ClientState>) -> Result<String, String> {
+    let mut lock = state.client.lock().await;
+    let client = lock.as_mut().ok_or("Not connected")?;
+    let response = client.list_playbooks(tonic::Request::new(ListPlaybooksRequest {
+        page_size: 100, page_token: "".to_string()
+    })).await.map_err(|e| format!("gRPC error: {}", e))?;
+    
+    let playbooks: Vec<PlaybookJson> = response.into_inner().playbooks.into_iter().map(|p| p.into()).collect();
+    serde_json::to_string(&playbooks).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn instantiate_playbook(
+    playbook_id: String,
+    name: String,
+    description: String,
+    state: State<'_, ClientState>,
+) -> Result<String, String> {
+    let mut lock = state.client.lock().await;
+    let client = lock.as_mut().ok_or("Not connected")?;
+    let response = client.instantiate_playbook(tonic::Request::new(InstantiatePlaybookRequest {
+        playbook_id, name, description
+    })).await.map_err(|e| format!("gRPC error: {}", e))?;
+    
+    let chain: AttackChainJson = response.into_inner().into();
+    serde_json::to_string(&chain).map_err(|e| e.to_string())
+}
+
+#[derive(Clone, Serialize)]
+struct StreamEventPayload {
+    id: String,
+    #[serde(rename = "type")]
+    type_: String,
+    implant_id: String,
+    data: std::collections::HashMap<String, String>,
+}
+
+#[tauri::command]
+async fn stream_events(
+    app: tauri::AppHandle,
+    state: State<'_, ClientState>,
+) -> Result<(), String> {
+    let mut lock = state.client.lock().await;
+    let client = lock.as_mut().ok_or("Not connected")?;
+    let mut stream_client = client.clone();
+    
+    let response = stream_client.stream_events(tonic::Request::new(StreamEventsRequest {}))
+        .await.map_err(|e| format!("gRPC error: {}", e))?;
+    
+    let mut stream = response.into_inner();
+    
+    tauri::async_runtime::spawn(async move {
+        use tauri::Emitter;
+        while let Ok(Some(event)) = stream.message().await {
+            let payload = StreamEventPayload {
+                id: event.id,
+                type_: event.r#type,
+                implant_id: event.implant_id,
+                data: event.data,
+            };
+            let _ = app.emit("server-event", payload);
+        }
+    });
+    
     Ok(())
 }
 
@@ -803,7 +961,15 @@ pub fn run() {
             create_attack_chain,
             list_attack_chains,
             execute_attack_chain,
-            get_attack_chain
+            get_attack_chain,
+            refresh_token,
+            get_campaign,
+            get_implant,
+            cancel_command,
+            generate_implant,
+            list_playbooks,
+            instantiate_playbook,
+            stream_events
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

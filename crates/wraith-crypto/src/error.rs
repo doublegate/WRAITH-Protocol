@@ -1,5 +1,6 @@
 //! Cryptographic error types.
 
+use alloc::string::String;
 use thiserror::Error;
 
 /// Cryptographic errors

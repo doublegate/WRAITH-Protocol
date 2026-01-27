@@ -119,7 +119,6 @@ impl SocksProxy {
     }
 
     pub fn handle_auth(&self, _data: &[u8]) -> Vec<u8> {
-        // Placeholder for future auth methods (e.g. User/Pass)
         // Currently we only support 'No Auth'
         Vec::new()
     }

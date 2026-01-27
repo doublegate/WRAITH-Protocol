@@ -16,6 +16,9 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
 
+/// Per-IP event history for pattern detection
+type IpEventMap = HashMap<IpAddr, Vec<(Instant, SecurityEventType)>>;
+
 /// Security event types
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum SecurityEventType {
@@ -176,7 +179,7 @@ pub struct SecurityMonitor {
     event_history: Arc<RwLock<Vec<(Instant, SecurityEventType)>>>,
 
     /// Per-IP event counts (for pattern detection)
-    ip_events: Arc<RwLock<HashMap<IpAddr, HashMap<SecurityEventType, u32>>>>,
+    ip_events: Arc<RwLock<IpEventMap>>,
 
     /// Optional callback for events
     callback: Arc<RwLock<Option<SecurityEventCallback>>>,
@@ -231,10 +234,8 @@ impl SecurityMonitor {
         }
 
         // Update per-IP event counts
-        let ip_entry = ip_events
-            .entry(event.source_ip)
-            .or_insert_with(HashMap::new);
-        *ip_entry.entry(event.event_type.clone()).or_insert(0) += 1;
+        let ip_entry = ip_events.entry(event.source_ip).or_default();
+        ip_entry.push((event.timestamp, event.event_type.clone()));
 
         // Log event if enabled
         if self.config.enable_logging {
@@ -382,11 +383,11 @@ impl SecurityMonitor {
     pub async fn get_ip_event_count(&self, ip: IpAddr, event_type: SecurityEventType) -> u32 {
         let ip_events = self.ip_events.read().await;
 
-        ip_events
-            .get(&ip)
-            .and_then(|events| events.get(&event_type))
-            .copied()
-            .unwrap_or(0)
+        if let Some(events) = ip_events.get(&ip) {
+            events.iter().filter(|(_, t)| *t == event_type).count() as u32
+        } else {
+            0
+        }
     }
 
     /// Clean up old event history
@@ -408,11 +409,12 @@ impl SecurityMonitor {
         // Remove old events from history
         history.retain(|(timestamp, _)| *timestamp >= cutoff);
 
-        // Clear IP event counts older than retention period
-        // (This is a simplified approach - in production, you'd track per-event timestamps)
-        if history.is_empty() {
-            ip_events.clear();
+        // Remove old events from IP history
+        for events in ip_events.values_mut() {
+            events.retain(|(timestamp, _)| *timestamp >= cutoff);
         }
+        // Remove IPs with no events
+        ip_events.retain(|_, events| !events.is_empty());
     }
 
     /// Detect suspicious patterns for an IP
@@ -421,28 +423,29 @@ impl SecurityMonitor {
 
         if let Some(events) = ip_events.get(&ip) {
             // Pattern 1: High rate of handshake failures (> 5 in history)
-            if events
-                .get(&SecurityEventType::HandshakeFailed)
-                .copied()
-                .unwrap_or(0)
-                > 5
-            {
+            let handshake_fails = events
+                .iter()
+                .filter(|(_, t)| *t == SecurityEventType::HandshakeFailed)
+                .count();
+            if handshake_fails > 5 {
                 return true;
             }
 
             // Pattern 2: Multiple different attack types
-            let attack_types = events.len();
-            if attack_types >= 3 {
+            let mut unique_types = std::collections::HashSet::new();
+            for (_, t) in events {
+                unique_types.insert(t);
+            }
+            if unique_types.len() >= 3 {
                 return true;
             }
 
             // Pattern 3: Repeated rate limit violations
-            if events
-                .get(&SecurityEventType::RateLimitExceeded)
-                .copied()
-                .unwrap_or(0)
-                > 10
-            {
+            let rate_limits = events
+                .iter()
+                .filter(|(_, t)| *t == SecurityEventType::RateLimitExceeded)
+                .count();
+            if rate_limits > 10 {
                 return true;
             }
         }

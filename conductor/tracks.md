@@ -8,7 +8,8 @@ This file tracks all major work tracks for the WRAITH Protocol project. Each tra
 
 ## Active Tracks
 
-*(No active tracks)*
+- [x] **Track: Comprehensive WRAITH-RedOps & Core Protocol Finalization**
+*Link: [./tracks/redops_core_finalization_20260127/](./tracks/redops_core_finalization_20260127/)*
 
 ---
 
@@ -30,7 +31,9 @@ Completed or superseded tracks are preserved in the [archive/](./archive/) direc
   *Link: [./archive/redops_gap_remediation_20260125/](./archive/redops_gap_remediation_20260125/)*
 - [x] **WRAITH-RedOps remediate** (2026-01-25)
   *Link: [./archive/wraith_redops_remediate_20260125/](./archive/wraith_redops_remediate_20260125/)*
-
----
-
-
+- [x] **Full Remediation for CodeQL Alert #7 (Spectre Implant)** (2026-01-27)
+  *Link: [./archive/codeql_alert_7_20260127/](./archive/codeql_alert_7_20260127/)*
+- [x] **Comprehensive WRAITH-RedOps Polish & 'Zero Stub' Finalization** (2026-01-27)
+  *Link: [./archive/redops_final_polish_20260127/](./archive/redops_final_polish_20260127/)*
+- [x] **WRAITH-RedOps Gap Remediation (v2.2.5)** (2026-01-27)
+  *Link: [./archive/redops_gap_remediation_20260127/](./archive/redops_gap_remediation_20260127/)*

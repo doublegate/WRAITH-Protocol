@@ -180,6 +180,8 @@ impl VerifyingKey {
 mod tests {
     use super::*;
     use rand_core::OsRng;
+    use std::vec;
+    use std::vec::Vec;
 
     #[test]
     fn test_signing_key_generation() {

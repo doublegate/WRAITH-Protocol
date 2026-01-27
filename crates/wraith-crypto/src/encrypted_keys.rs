@@ -42,6 +42,9 @@
 //! +----------------+-----------------------------------+
 //! ```
 
+use alloc::format;
+use alloc::string::ToString;
+use alloc::vec::Vec;
 use argon2::{Algorithm, Argon2, Params, ParamsBuilder, Version};
 use chacha20poly1305::{
     XChaCha20Poly1305, XNonce,

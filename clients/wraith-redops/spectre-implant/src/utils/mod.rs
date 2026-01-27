@@ -4,3 +4,6 @@ pub mod obfuscation;
 pub mod syscalls;
 pub mod windows_definitions;
 pub mod test_heap;
+pub mod entropy;
+pub mod sensitive;
+pub mod test_sensitive;

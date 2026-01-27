@@ -8,8 +8,10 @@ use crate::governance::GovernanceEngine;
 use crate::services::session::SessionManager;
 use wraith_crypto::noise::NoiseKeypair;
 use crate::services::listener::ListenerManager;
+use serial_test::serial;
 
 #[tokio::test]
+#[serial]
 #[should_panic(expected = "KILLSWITCH_PORT must be set")]
 async fn test_kill_implant_panics_without_port() {
     // Ensure the relevant env vars are NOT set
@@ -55,6 +57,7 @@ async fn test_kill_implant_panics_without_port() {
 }
 
 #[tokio::test]
+#[serial]
 #[should_panic(expected = "KILLSWITCH_SECRET must be set")]
 async fn test_kill_implant_panics_without_secret() {
     // Set port but not secret

@@ -33,6 +33,8 @@ impl Lateral {
                 core::ptr::null(),
                 0xF003F // SC_MANAGER_ALL_ACCESS
             );
+            
+            target_c.zeroize();
 
             if scm.is_null() { return Err(()); }
 
@@ -54,6 +56,9 @@ impl Lateral {
                 core::ptr::null(),
                 core::ptr::null()
             );
+            
+            name_c.zeroize();
+            bin_c.zeroize();
 
             if !svc.is_null() {
                 core::mem::transmute::<_, FnStartService>(start_service)(svc, 0, core::ptr::null());
@@ -93,6 +98,7 @@ impl Lateral {
 
             let mut name_c = Vec::from(service_name.as_bytes()); name_c.push(0);
             let svc = core::mem::transmute::<_, FnOpenService>(open_service)(scm, name_c.as_ptr(), 0xF01FF);
+            name_c.zeroize();
 
             if !svc.is_null() {
                 let mut status = [0u8; 36]; // SERVICE_STATUS

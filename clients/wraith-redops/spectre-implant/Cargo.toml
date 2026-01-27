@@ -11,7 +11,9 @@ crate-type = ["cdylib", "rlib"]
 serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
 serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
 snow = { version = "0.10", default-features = false, features = ["default-resolver", "default-resolver-crypto"] }
-# wraith-crypto = { path = "../../../crates/wraith-crypto", default-features = false }
+chacha20poly1305 = { version = "0.10", default-features = false, features = ["alloc"] }
+zeroize = { version = "1.7", default-features = false, features = ["alloc", "derive"] }
+wraith-crypto = { path = "../../../crates/wraith-crypto", default-features = false }
 # winapi for raw windows definitions if needed, but we prefer manual definitions for stealth
 # winapi = { version = "0.3", features = ["winnt"] }
 
