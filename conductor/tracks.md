@@ -13,7 +13,7 @@ This file tracks all major work tracks for the WRAITH Protocol project. Each tra
 
 ---
 
-- [ ] [WRAITH-RedOps Full Remediation (2026-01-27)](./tracks/redops_full_remediation_20260127/index.md)
+- [x] [WRAITH-RedOps Full Remediation (2026-01-27)](./tracks/redops_full_remediation_20260127/index.md)
 - [ ] [RedOps Advanced Evasion & Features (2026-01-27)](./tracks/redops_evasion_20260127/index.md)
 
 ---
