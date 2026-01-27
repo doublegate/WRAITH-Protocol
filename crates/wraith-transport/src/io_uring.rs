@@ -46,6 +46,8 @@
 //! ```
 
 #[cfg(target_os = "linux")]
+use io_uring::{IoUring, opcode, types};
+#[cfg(target_os = "linux")]
 use std::collections::HashMap;
 use std::io;
 use thiserror::Error;
@@ -96,6 +98,8 @@ pub struct PendingOp {
     pub offset: u64,
     /// Buffer length
     pub len: usize,
+    /// Data buffer (kept alive for io_uring)
+    pub buffer: Option<Vec<u8>>,
 }
 
 /// Operation types
@@ -118,11 +122,15 @@ pub struct Completion {
     pub result: i32,
     /// Operation type
     pub op_type: OpType,
+    /// Result data (for reads)
+    pub data: Option<Vec<u8>>,
 }
 
 /// io_uring context for asynchronous I/O
 #[cfg(target_os = "linux")]
 pub struct IoUringContext {
+    /// The io_uring instance
+    ring: IoUring,
     /// Queue depth
     queue_depth: u32,
     /// Next operation ID
@@ -145,16 +153,17 @@ impl IoUringContext {
     ///
     /// Returns `IoUringError::RingCreation` if the ring cannot be initialized.
     pub fn new(queue_depth: u32) -> Result<Self, IoUringError> {
-        // In production, this would initialize io_uring via io-uring crate
-        // For now, we validate parameters and create the structure
-
         if queue_depth == 0 || queue_depth > 4096 {
             return Err(IoUringError::RingCreation(format!(
                 "Invalid queue depth: {queue_depth} (must be 1-4096)"
             )));
         }
 
+        let ring = IoUring::new(queue_depth)
+            .map_err(|e| IoUringError::RingCreation(e.to_string()))?;
+
         Ok(Self {
+            ring,
             queue_depth,
             next_id: 0,
             pending: HashMap::new(),
@@ -177,15 +186,29 @@ impl IoUringContext {
         let id = self.next_id;
         self.next_id += 1;
 
+        let mut buffer = vec![0u8; len];
+        let ptr = buffer.as_mut_ptr();
+
+        let entry = opcode::Read::new(types::Fd(fd), ptr, len as u32)
+            .offset(offset)
+            .build()
+            .user_data(id);
+
+        unsafe {
+            self.ring.submission()
+                .push(&entry)
+                .map_err(|_| IoUringError::Submission("Submission queue full".into()))?;
+        }
+
         let op = PendingOp {
             id,
             op_type: OpType::Read,
             fd,
             offset,
             len,
+            buffer: Some(buffer),
         };
 
-        // In production, would create SQE and submit to ring
         self.pending.insert(id, op);
 
         Ok(id)
@@ -211,15 +234,30 @@ impl IoUringContext {
         let id = self.next_id;
         self.next_id += 1;
 
+        let buffer = data.to_vec();
+        let ptr = buffer.as_ptr();
+        let len = buffer.len();
+
+        let entry = opcode::Write::new(types::Fd(fd), ptr, len as u32)
+            .offset(offset)
+            .build()
+            .user_data(id);
+
+        unsafe {
+            self.ring.submission()
+                .push(&entry)
+                .map_err(|_| IoUringError::Submission("Submission queue full".into()))?;
+        }
+
         let op = PendingOp {
             id,
             op_type: OpType::Write,
             fd,
             offset,
-            len: data.len(),
+            len,
+            buffer: Some(buffer),
         };
 
-        // In production, would create SQE and submit to ring
         self.pending.insert(id, op);
 
         Ok(id)
@@ -238,15 +276,25 @@ impl IoUringContext {
         let id = self.next_id;
         self.next_id += 1;
 
+        let entry = opcode::Fsync::new(types::Fd(fd))
+            .build()
+            .user_data(id);
+
+        unsafe {
+            self.ring.submission()
+                .push(&entry)
+                .map_err(|_| IoUringError::Submission("Submission queue full".into()))?;
+        }
+
         let op = PendingOp {
             id,
             op_type: OpType::Fsync,
             fd,
             offset: 0,
             len: 0,
+            buffer: None,
         };
 
-        // In production, would create SQE and submit to ring
         self.pending.insert(id, op);
 
         Ok(id)
@@ -267,24 +315,24 @@ impl IoUringContext {
         &mut self,
         min_complete: usize,
     ) -> Result<Vec<Completion>, IoUringError> {
-        let mut completions = Vec::with_capacity(min_complete);
+        if self.pending.is_empty() && min_complete > 0 {
+             return Ok(Vec::new());
+        }
 
-        // In production, would poll completion queue
-        // For now, simulate completion of pending operations
-        let to_complete: Vec<u64> = self.pending.keys().copied().take(min_complete).collect();
+        self.ring.submit_and_wait(min_complete)
+            .map_err(|e| IoUringError::Completion(e.to_string()))?;
 
-        for id in to_complete {
+        let mut completions = Vec::new();
+        let cq = self.ring.completion();
+        
+        for cqe in cq {
+            let id = cqe.user_data();
             if let Some(op) = self.pending.remove(&id) {
-                // Simulate successful completion
-                let result = match op.op_type {
-                    OpType::Read | OpType::Write => op.len as i32,
-                    OpType::Fsync => 0,
-                };
-
                 completions.push(Completion {
                     id,
-                    result,
+                    result: cqe.result(),
                     op_type: op.op_type,
+                    data: if op.op_type == OpType::Read { op.buffer } else { None },
                 });
             }
         }
@@ -296,14 +344,25 @@ impl IoUringContext {
     ///
     /// Returns any available completions immediately.
     pub fn poll_completions(&mut self) -> Result<Vec<Completion>, IoUringError> {
-        // In production, would check CQ without blocking
-        // For now, return empty if no pending ops
-        if self.pending.is_empty() {
-            return Ok(Vec::new());
+        self.ring.submit()
+            .map_err(|e| IoUringError::Submission(e.to_string()))?;
+
+        let mut completions = Vec::new();
+        let cq = self.ring.completion();
+        
+        for cqe in cq {
+            let id = cqe.user_data();
+            if let Some(op) = self.pending.remove(&id) {
+                completions.push(Completion {
+                    id,
+                    result: cqe.result(),
+                    op_type: op.op_type,
+                    data: if op.op_type == OpType::Read { op.buffer } else { None },
+                });
+            }
         }
 
-        // Simulate up to 16 completions
-        self.wait_completions(self.pending.len().min(16))
+        Ok(completions)
     }
 
     /// Register buffers for zero-copy I/O
@@ -691,6 +750,7 @@ mod tests {
             fd: 10,
             offset: 4096,
             len: 1024,
+            buffer: None,
         };
 
         assert_eq!(op.id, 42);
@@ -698,6 +758,7 @@ mod tests {
         assert_eq!(op.fd, 10);
         assert_eq!(op.offset, 4096);
         assert_eq!(op.len, 1024);
+        assert!(op.buffer.is_none());
     }
 
     #[test]
@@ -707,6 +768,7 @@ mod tests {
             id: 123,
             result: 1024,
             op_type: OpType::Write,
+            data: None,
         };
 
         assert_eq!(completion.id, 123);
@@ -722,6 +784,59 @@ mod tests {
 
         assert_ne!(OpType::Read, OpType::Write);
         assert_ne!(OpType::Write, OpType::Fsync);
+    }
+
+    #[test]
+    #[cfg(target_os = "linux")]
+    fn test_real_io_read_write() {
+        let path = "test_io_uring.tmp";
+        let file = std::fs::OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open(path)
+            .unwrap();
+            
+        use std::os::fd::AsRawFd;
+        let fd = file.as_raw_fd();
+        
+        let mut ctx = IoUringContext::new(64).unwrap();
+        
+        let data = b"Hello io_uring";
+        let write_op = ctx.submit_write(fd, 0, data).unwrap();
+        
+        // Polling loop
+        let mut comps = Vec::new();
+        for _ in 0..100 {
+            comps = ctx.poll_completions().unwrap();
+            if !comps.is_empty() { break; }
+            std::thread::sleep(std::time::Duration::from_millis(1));
+        }
+        
+        assert_eq!(comps.len(), 1);
+        assert_eq!(comps[0].id, write_op);
+        assert_eq!(comps[0].result, data.len() as i32);
+        
+        let read_len = data.len();
+        let read_op = ctx.submit_read(fd, 0, read_len).unwrap();
+        
+        for _ in 0..100 {
+            comps = ctx.poll_completions().unwrap();
+            if !comps.is_empty() { break; }
+            std::thread::sleep(std::time::Duration::from_millis(1));
+        }
+        
+        assert_eq!(comps.len(), 1);
+        assert_eq!(comps[0].id, read_op);
+        assert_eq!(comps[0].result, read_len as i32);
+        
+        // Verify data
+        let read_data = comps[0].data.as_ref().unwrap();
+        assert_eq!(read_data, data);
+        
+        // Cleanup
+        let _ = std::fs::remove_file(path);
     }
 
     #[test]
