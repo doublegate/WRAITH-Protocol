@@ -84,26 +84,33 @@ pub async fn start_smb_listener(
                     loop {
                         // 1. Read NetBIOS Header (4 bytes)
                         let mut netbios_header = [0u8; 4];
-                        if let Err(_) = socket.read_exact(&mut netbios_header).await {
+                        if socket.read_exact(&mut netbios_header).await.is_err() {
                             break;
                         }
-                        
-                        let len = u32::from_be_bytes([0, netbios_header[1], netbios_header[2], netbios_header[3]]) as usize;
+
+                        let len = u32::from_be_bytes([
+                            0,
+                            netbios_header[1],
+                            netbios_header[2],
+                            netbios_header[3],
+                        ]) as usize;
                         if len > buf.len() {
                             tracing::error!("SMB packet too large: {}", len);
                             break;
                         }
 
                         // 2. Read SMB2 Packet
-                        if let Err(_) = socket.read_exact(&mut buf[..len]).await {
+                        if socket.read_exact(&mut buf[..len]).await.is_err() {
                             break;
                         }
-                        
+
                         let header_buf = &buf[..64];
-                        if header_buf.len() < 64 { break; }
+                        if header_buf.len() < 64 {
+                            break;
+                        }
 
                         // Verify magic
-                        if &header_buf[0..4] != &[0xFE, b'S', b'M', b'B'] {
+                        if header_buf[0..4] != [0xFE, b'S', b'M', b'B'] {
                             tracing::error!("Invalid SMB2 magic from {}", src);
                             break;
                         }
@@ -114,7 +121,8 @@ pub async fn start_smb_listener(
                         let session_id = u64::from_le_bytes(header_buf[40..48].try_into().unwrap());
 
                         match command {
-                            0x0000 => { // Negotiate
+                            0x0000 => {
+                                // Negotiate
                                 // Construct Negotiate Response
                                 let mut resp = Vec::new();
                                 let mut h = Smb2Header::new();
@@ -125,7 +133,7 @@ pub async fn start_smb_listener(
                                 h.credits = 1; // Credits granted
                                 let h_bytes: [u8; 64] = unsafe { core::mem::transmute(h) };
                                 resp.extend_from_slice(&h_bytes);
-                                
+
                                 // Body (Simplified 2.0.2)
                                 // StructureSize(2) + SecurityMode(2) + DialectRevision(2) + Reserved(2) + Guid(16) + Caps(4) + Max(4*3) + Time(8*2) + SecurityBuffer(4)
                                 let body = [
@@ -133,19 +141,20 @@ pub async fn start_smb_listener(
                                     1, 0, // SecurityMode
                                     0x02, 0x02, // Dialect
                                     0, 0, // Reserved
-                                    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // Guid
+                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // Guid
                                     0, 0, 0, 0, // Caps
                                     0, 0, 0, 1, // MaxTrans
                                     0, 0, 0, 1, // MaxRead
                                     0, 0, 0, 1, // MaxWrite
-                                    0,0,0,0,0,0,0,0, // SystemTime
-                                    0,0,0,0,0,0,0,0, // BootTime
-                                    0,0, 0,0 // SecurityBuffer Offset/Len
+                                    0, 0, 0, 0, 0, 0, 0, 0, // SystemTime
+                                    0, 0, 0, 0, 0, 0, 0, 0, // BootTime
+                                    0, 0, 0, 0, // SecurityBuffer Offset/Len
                                 ];
                                 resp.extend_from_slice(&body);
                                 send_netbios(&mut socket, &resp).await;
-                            },
-                            0x0001 => { // Session Setup
+                            }
+                            0x0001 => {
+                                // Session Setup
                                 // Accept any setup
                                 let mut resp = Vec::new();
                                 let mut h = Smb2Header::new();
@@ -156,12 +165,13 @@ pub async fn start_smb_listener(
                                 h.session_id = 0x10000001; // Assign session ID
                                 let h_bytes: [u8; 64] = unsafe { core::mem::transmute(h) };
                                 resp.extend_from_slice(&h_bytes);
-                                
+
                                 let body = [9, 0, 0, 0]; // StructureSize 9, Flags 0
                                 resp.extend_from_slice(&body);
                                 send_netbios(&mut socket, &resp).await;
-                            },
-                            0x0003 => { // Tree Connect
+                            }
+                            0x0003 => {
+                                // Tree Connect
                                 let mut resp = Vec::new();
                                 let mut h = Smb2Header::new();
                                 h.command = 0x0003;
@@ -172,27 +182,34 @@ pub async fn start_smb_listener(
                                 h.tree_id = 0x20000001; // Assign tree ID
                                 let h_bytes: [u8; 64] = unsafe { core::mem::transmute(h) };
                                 resp.extend_from_slice(&h_bytes);
-                                
+
                                 let body = [16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; // StructureSize 16
                                 resp.extend_from_slice(&body);
                                 send_netbios(&mut socket, &resp).await;
-                            },
-                            0x0009 => { // Write (Data from Implant)
+                            }
+                            0x0009 => {
+                                // Write (Data from Implant)
                                 // Parse Write Request Body
                                 // Header(64) + Body. Body starts at 64.
-                                if len < 64 + 48 { continue; } // Min body size
+                                if len < 64 + 48 {
+                                    continue;
+                                } // Min body size
                                 let body = &buf[64..];
                                 // Offset is at 16 (u16), Length is at 20 (u32)
                                 let offset = u16::from_le_bytes([body[16], body[17]]) as usize;
-                                let length = u32::from_le_bytes([body[20], body[21], body[22], body[23]]) as usize;
-                                
+                                let length =
+                                    u32::from_le_bytes([body[20], body[21], body[22], body[23]])
+                                        as usize;
+
                                 // Offset is from header start.
                                 // Typically offset >= 64 + 48.
                                 if offset + length <= len {
-                                    let payload = &buf[offset..offset+length];
-                                    
+                                    let payload = &buf[offset..offset + length];
+
                                     // Handle WRAITH packet
-                                    if let Some(response_data) = protocol.handle_packet(payload, src.to_string()).await {
+                                    if let Some(response_data) =
+                                        protocol.handle_packet(payload, src.to_string()).await
+                                    {
                                         // Buffer response for subsequent READ
                                         pending_data.extend_from_slice(&response_data);
 
@@ -206,7 +223,7 @@ pub async fn start_smb_listener(
                                         h.session_id = session_id;
                                         let h_bytes: [u8; 64] = unsafe { core::mem::transmute(h) };
                                         resp.extend_from_slice(&h_bytes);
-                                        
+
                                         // Write Response Body (17 bytes)
                                         let mut body = vec![17, 0, 0, 0];
                                         body.extend_from_slice(&(length as u32).to_le_bytes()); // Count written
@@ -215,15 +232,21 @@ pub async fn start_smb_listener(
                                         send_netbios(&mut socket, &resp).await;
                                     }
                                 }
-                            },
-                            0x0008 => { // Read
+                            }
+                            0x0008 => {
+                                // Read
                                 // Parse Read Request (Length is at offset 4 in body)
-                                if len < 64 + 4 { continue; }
-                                let req_len = u32::from_le_bytes([buf[68], buf[69], buf[70], buf[71]]) as usize;
-                                
+                                if len < 64 + 4 {
+                                    continue;
+                                }
+                                let req_len =
+                                    u32::from_le_bytes([buf[68], buf[69], buf[70], buf[71]])
+                                        as usize;
+
                                 let take_len = std::cmp::min(req_len, pending_data.len());
-                                let data_to_send: Vec<u8> = pending_data.drain(0..take_len).collect();
-                                
+                                let data_to_send: Vec<u8> =
+                                    pending_data.drain(0..take_len).collect();
+
                                 let mut resp = Vec::new();
                                 let mut h = Smb2Header::new();
                                 h.command = 0x0008;
@@ -233,7 +256,7 @@ pub async fn start_smb_listener(
                                 h.session_id = session_id;
                                 let h_bytes: [u8; 64] = unsafe { core::mem::transmute(h) };
                                 resp.extend_from_slice(&h_bytes);
-                                
+
                                 // Read Response Body (17 bytes + Data)
                                 // DataOffset(1), Reserved(1), DataLength(4), DataRemaining(4), Reserved(4)
                                 let data_offset = 80u8; // 64 header + 16 body
@@ -241,12 +264,12 @@ pub async fn start_smb_listener(
                                 body.extend_from_slice(&(data_to_send.len() as u32).to_le_bytes());
                                 body.extend_from_slice(&(pending_data.len() as u32).to_le_bytes()); // Remaining
                                 body.extend_from_slice(&[0; 4]);
-                                
+
                                 resp.extend_from_slice(&body);
                                 resp.extend_from_slice(&data_to_send);
-                                
+
                                 send_netbios(&mut socket, &resp).await;
-                            },
+                            }
                             _ => {}
                         }
                     }
@@ -264,7 +287,7 @@ async fn send_netbios(socket: &mut tokio::net::TcpStream, data: &[u8]) {
     header[2] = ((len >> 8) & 0xFF) as u8;
     header[1] = ((len >> 16) & 0xFF) as u8;
     // header[0] is 0 (Session Message)
-    
+
     let _ = socket.write_all(&header).await;
     let _ = socket.write_all(data).await;
 }

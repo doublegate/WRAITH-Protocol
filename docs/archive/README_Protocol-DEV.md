@@ -23,8 +23,8 @@ For the current production README, see [../../README.md](../../README.md).
 **Total Development Effort:** 2,685 story points delivered across 24 phases
 
 **Project Metrics (2026-01-27):**
-- **Code Volume:** ~141,000 lines of Rust code across protocol and client crates + ~36,600 lines TypeScript
-- **Test Coverage:** 2,120 tests passing (16 ignored) - 100% pass rate
+- **Code Volume:** ~131,000 lines of Rust code across protocol and client crates + ~35,000 lines TypeScript
+- **Test Coverage:** 2,153 tests passing (16 ignored) - 100% pass rate
 - **Documentation:** 114 markdown files, ~62,800 lines of comprehensive documentation
 - **Dependencies:** 295 audited packages (zero vulnerabilities via cargo-audit)
 - **Security:** Grade A+ (EXCELLENT) - zero vulnerabilities, 100% unsafe documentation, comprehensive audits
@@ -36,7 +36,7 @@ For the current production README, see [../../README.md](../../README.md).
 **Quality Metrics:**
 - **Quality Grade:** 98/100 (Production-ready)
 - **Technical Debt Ratio:** ~2.5% (Grade A - Excellent)
-- **Test Coverage:** 2,120 tests passing (16 ignored) - 100% pass rate
+- **Test Coverage:** 2,153 tests passing (16 ignored) - 100% pass rate
   - 455 wraith-core - frame parsing (SIMD), sessions, streams, BBR, migration, ring buffers, Node API, security monitor
   - 165 wraith-crypto - Ed25519, X25519+Elligator2, AEAD, Noise_XX, Double Ratchet (+ test vectors + zeroization + Noise integration)
   - 181 wraith-transport - AF_XDP socket config, io_uring, UDP, worker pools, NUMA-aware allocation, buffer pools
@@ -55,7 +55,7 @@ For the current production README, see [../../README.md](../../README.md).
   - 101 wraith-vault - Distributed secret storage (Shamir SSS, erasure coding, guardians)
   - 98 wraith-recon - Network reconnaissance (packet capture, protocol analysis, mapping)
   - 128 wraith-integration-tests - Cross-crate integration tests
-  - wraith-redops - Red team operations (Team Server, Operator Client, Spectre Implant) - isolated workspace
+  - wraith-redops - Red team operations (Team Server + Operator Client as workspace members; Spectre Implant excluded for no_std)
 - **Security Vulnerabilities:** Zero (295 dependencies scanned with cargo-audit, CodeQL verified)
 - **Clippy Warnings:** Zero (strict `-D warnings` enforcement)
 - **Compiler Warnings:** Zero
@@ -1222,6 +1222,8 @@ Red team operations platform for authorized adversary emulation:
 
 **Total Protocol:** ~131,000 lines Rust across protocol and client crates + ~35,000 lines TypeScript/Kotlin/Swift
 
+**Workspace:** 22 members (8 protocol crates + 9 Tauri clients + team-server + operator-client + xtask + tests), 2 excluded (wraith-xdp, spectre-implant)
+
 **Client Applications:** 12 production-ready applications with full protocol integration
 - WRAITH-Transfer: Desktop P2P file transfer (Tauri 2.0 + React 18, 68 tests)
 - WRAITH-Chat: E2EE messaging with voice/video/groups (Tauri 2.0 + React 18 + Double Ratchet + SQLCipher, 49 IPC commands, 76 tests)
@@ -1234,7 +1236,7 @@ Red team operations platform for authorized adversary emulation:
 - WRAITH-Publish: Decentralized content publishing (Ed25519 signatures, RSS feeds, 56 tests)
 - WRAITH-Vault: Distributed secret storage (Shamir SSS, erasure coding, guardians, 99 tests)
 - WRAITH-Recon: Network reconnaissance platform (Tauri 2.0 + React 18, packet capture, protocol analysis, 78 tests)
-- WRAITH-RedOps: Red team operations platform (Team Server + Operator Client + Spectre Implant)
+- WRAITH-RedOps: Red team operations platform (Team Server + Operator Client as workspace members; Spectre Implant excluded for no_std)
 
 ---
 
@@ -1369,9 +1371,9 @@ Red team operations platform for authorized adversary emulation:
 
 ## Current Status & Next Steps
 
-**Version 2.2.5 Status (2026-01-26):**
+**Version 2.2.5 Status (2026-01-27):**
 - ✅ All 24 development phases complete (2,740+ SP delivered)
-- ✅ 2,140 tests (16 ignored) - 100% pass rate
+- ✅ 2,153 tests (16 ignored) - 100% pass rate
 - ✅ Zero vulnerabilities, zero warnings
 - ✅ Code quality: 98/100 (production-ready)
 - ✅ 12 production client applications deployed (9 desktop + 2 mobile + 1 server platform)
@@ -1447,6 +1449,6 @@ See [../../to-dos/ROADMAP.md](../../to-dos/ROADMAP.md) for detailed future plann
 
 **WRAITH Protocol Development History** - *From Foundation to v2.2.5 (Phases 1-24 + Infrastructure Sprints)*
 
-**Development Period:** 2024 - 2026-01-26 | **Total Effort:** 2,740+ story points delivered across 24 phases + infrastructure sprints | **Quality:** Production-ready (98/100), 2,140 tests (100% pass rate), 0 vulnerabilities, Grade A+ security | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server) | **TDR:** ~2.5% (Grade A - Excellent) | **CI/CD:** Optimized workflows with reusable setup and path filters | **v2.2.5:** MSRV 1.88, WRAITH-RedOps ~91% complete (gap analysis v4.3.0), ~71% MITRE ATT&CK coverage, 0 P0 critical issues, ~12,148 lines RedOps codebase | **Conductor:** Project management system with code style guides
+**Development Period:** 2024 - 2026-01-27 | **Total Effort:** 2,740+ story points delivered across 24 phases + infrastructure sprints | **Quality:** Production-ready (98/100), 2,153 tests (100% pass rate), 0 vulnerabilities, Grade A+ security | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server) | **Workspace:** 22 members + 2 excluded (team-server and operator-client integrated) | **TDR:** ~2.5% (Grade A - Excellent) | **CI/CD:** Optimized workflows with reusable setup and path filters | **v2.2.5:** MSRV 1.88, WRAITH-RedOps ~94% complete (gap analysis v5.0.0), ~71% MITRE ATT&CK coverage, 0 P0 critical issues, ~12,819 lines RedOps codebase | **Conductor:** Project management system with code style guides
 
-*Last Updated: 2026-01-26*
+*Last Updated: 2026-01-27*

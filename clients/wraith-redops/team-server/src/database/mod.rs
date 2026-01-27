@@ -24,7 +24,7 @@ impl Database {
 
         let master_key_str = env::var("MASTER_KEY")
             .expect("MASTER_KEY environment variable must be set (64 hex chars)");
-        
+
         let mut master_key = [0u8; 32];
         let decoded = hex::decode(&master_key_str).expect("Failed to decode MASTER_KEY hex");
         if decoded.len() != 32 {
@@ -360,12 +360,11 @@ impl Database {
         .await?;
 
         // DECRYPT RESULT
-        if let Some(r) = &mut rec {
-            if let Some(cipher_output) = &r.output {
-                if let Ok(plaintext) = self.decrypt_data(cipher_output) {
-                    r.output = Some(plaintext);
-                }
-            }
+        if let Some(r) = &mut rec
+            && let Some(cipher_output) = &r.output
+            && let Ok(plaintext) = self.decrypt_data(cipher_output)
+        {
+            r.output = Some(plaintext);
         }
 
         Ok(rec)
@@ -388,10 +387,10 @@ impl Database {
             .await?;
 
         // DECRYPT CONTENT
-        if let Some(cipher_content) = &rec.content {
-            if let Ok(plaintext) = self.decrypt_data(cipher_content) {
-                rec.content = Some(plaintext);
-            }
+        if let Some(cipher_content) = &rec.content
+            && let Ok(plaintext) = self.decrypt_data(cipher_content)
+        {
+            rec.content = Some(plaintext);
         }
 
         Ok(rec)
@@ -493,9 +492,12 @@ impl Database {
     }
 
     // --- Persistence Operations ---
-    pub async fn list_persistence(&self, implant_id: Uuid) -> Result<Vec<crate::models::PersistenceItem>> {
+    pub async fn list_persistence(
+        &self,
+        implant_id: Uuid,
+    ) -> Result<Vec<crate::models::PersistenceItem>> {
         let recs = sqlx::query_as::<_, crate::models::PersistenceItem>(
-            "SELECT * FROM persistence WHERE implant_id = $1 ORDER BY created_at DESC"
+            "SELECT * FROM persistence WHERE implant_id = $1 ORDER BY created_at DESC",
         )
         .bind(implant_id)
         .fetch_all(&self.pool)
@@ -512,25 +514,33 @@ impl Database {
     }
 
     #[allow(dead_code)]
-    pub async fn add_persistence(&self, implant_id: Uuid, method: &str, details: &str) -> Result<()> {
-        sqlx::query(
-            "INSERT INTO persistence (implant_id, method, details) VALUES ($1, $2, $3)"
-        )
-        .bind(implant_id)
-        .bind(method)
-        .bind(details)
-        .execute(&self.pool)
-        .await?;
+    pub async fn add_persistence(
+        &self,
+        implant_id: Uuid,
+        method: &str,
+        details: &str,
+    ) -> Result<()> {
+        sqlx::query("INSERT INTO persistence (implant_id, method, details) VALUES ($1, $2, $3)")
+            .bind(implant_id)
+            .bind(method)
+            .bind(details)
+            .execute(&self.pool)
+            .await?;
         Ok(())
     }
 
     // --- Attack Chain Operations ---
-    pub async fn create_attack_chain(&self, name: &str, description: &str, steps: &[crate::models::ChainStep]) -> Result<crate::models::AttackChain> {
+    pub async fn create_attack_chain(
+        &self,
+        name: &str,
+        description: &str,
+        steps: &[crate::models::ChainStep],
+    ) -> Result<crate::models::AttackChain> {
         let mut tx = self.pool.begin().await?;
 
         // 1. Create Chain
         let chain_row = sqlx::query_as::<_, crate::models::AttackChain>(
-            "INSERT INTO attack_chains (name, description) VALUES ($1, $2) RETURNING *"
+            "INSERT INTO attack_chains (name, description) VALUES ($1, $2) RETURNING *",
         )
         .bind(name)
         .bind(description)
@@ -558,16 +568,19 @@ impl Database {
 
     pub async fn list_attack_chains(&self) -> Result<Vec<crate::models::AttackChain>> {
         let recs = sqlx::query_as::<_, crate::models::AttackChain>(
-            "SELECT * FROM attack_chains ORDER BY created_at DESC"
+            "SELECT * FROM attack_chains ORDER BY created_at DESC",
         )
         .fetch_all(&self.pool)
         .await?;
         Ok(recs)
     }
 
-    pub async fn get_attack_chain(&self, id: Uuid) -> Result<Option<(crate::models::AttackChain, Vec<crate::models::ChainStep>)>> {
+    pub async fn get_attack_chain(
+        &self,
+        id: Uuid,
+    ) -> Result<Option<(crate::models::AttackChain, Vec<crate::models::ChainStep>)>> {
         let chain = sqlx::query_as::<_, crate::models::AttackChain>(
-            "SELECT * FROM attack_chains WHERE id = $1"
+            "SELECT * FROM attack_chains WHERE id = $1",
         )
         .bind(id)
         .fetch_optional(&self.pool)
@@ -575,7 +588,7 @@ impl Database {
 
         if let Some(c) = chain {
             let steps = sqlx::query_as::<_, crate::models::ChainStep>(
-                "SELECT * FROM chain_steps WHERE chain_id = $1 ORDER BY step_order ASC"
+                "SELECT * FROM chain_steps WHERE chain_id = $1 ORDER BY step_order ASC",
             )
             .bind(id)
             .fetch_all(&self.pool)
@@ -587,9 +600,14 @@ impl Database {
     }
 
     // --- Playbook Operations ---
-    pub async fn create_playbook(&self, name: &str, description: &str, content: serde_json::Value) -> Result<crate::models::Playbook> {
+    pub async fn create_playbook(
+        &self,
+        name: &str,
+        description: &str,
+        content: serde_json::Value,
+    ) -> Result<crate::models::Playbook> {
         let rec = sqlx::query_as::<_, crate::models::Playbook>(
-            "INSERT INTO playbooks (name, description, content) VALUES ($1, $2, $3) RETURNING *"
+            "INSERT INTO playbooks (name, description, content) VALUES ($1, $2, $3) RETURNING *",
         )
         .bind(name)
         .bind(description)
@@ -600,21 +618,19 @@ impl Database {
     }
 
     pub async fn list_playbooks(&self) -> Result<Vec<crate::models::Playbook>> {
-        let recs = sqlx::query_as::<_, crate::models::Playbook>(
-            "SELECT * FROM playbooks ORDER BY name"
-        )
-        .fetch_all(&self.pool)
-        .await?;
+        let recs =
+            sqlx::query_as::<_, crate::models::Playbook>("SELECT * FROM playbooks ORDER BY name")
+                .fetch_all(&self.pool)
+                .await?;
         Ok(recs)
     }
 
     pub async fn get_playbook(&self, id: Uuid) -> Result<Option<crate::models::Playbook>> {
-        let rec = sqlx::query_as::<_, crate::models::Playbook>(
-            "SELECT * FROM playbooks WHERE id = $1"
-        )
-        .bind(id)
-        .fetch_optional(&self.pool)
-        .await?;
+        let rec =
+            sqlx::query_as::<_, crate::models::Playbook>("SELECT * FROM playbooks WHERE id = $1")
+                .bind(id)
+                .fetch_optional(&self.pool)
+                .await?;
         Ok(rec)
     }
 }

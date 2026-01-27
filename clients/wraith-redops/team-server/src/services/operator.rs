@@ -1,7 +1,7 @@
 use crate::database::Database;
 use crate::governance::GovernanceEngine;
-use crate::services::session::SessionManager;
 use crate::services::listener::ListenerManager;
+use crate::services::session::SessionManager;
 use crate::wraith::redops::operator_service_server::OperatorService;
 use crate::wraith::redops::*;
 use std::sync::Arc;
@@ -21,24 +21,28 @@ pub struct OperatorServiceImpl {
     pub listener_manager: Arc<ListenerManager>,
 }
 
+#[allow(clippy::result_large_err)]
 fn extract_operator_id<T>(req: &Request<T>) -> Result<String, Status> {
     if let Some(claims) = req.extensions().get::<crate::utils::Claims>() {
         return Ok(claims.sub.clone());
     }
-    
+
     // If no claims found in extensions, check if we have a direct header (fallback/test)
     // or return error. Since interceptor handles verification, absence means unauthenticated.
-    Err(Status::unauthenticated("Authentication required: Missing valid token"))
+    Err(Status::unauthenticated(
+        "Authentication required: Missing valid token",
+    ))
 }
 
 #[tonic::async_trait]
+#[allow(clippy::result_large_err)]
 impl OperatorService for OperatorServiceImpl {
     type StreamEventsStream = tokio_stream::wrappers::ReceiverStream<Result<Event, Status>>;
     type DownloadArtifactStream =
         tokio_stream::wrappers::ReceiverStream<Result<ArtifactChunk, Status>>;
     type GenerateImplantStream =
         tokio_stream::wrappers::ReceiverStream<Result<PayloadChunk, Status>>;
-    type GeneratePhishingStream = 
+    type GeneratePhishingStream =
         tokio_stream::wrappers::ReceiverStream<Result<PayloadChunk, Status>>;
 
     async fn authenticate(
@@ -61,8 +65,9 @@ impl OperatorService for OperatorServiceImpl {
             return Err(Status::unauthenticated("Missing signature"));
         }
 
-        let vk_bytes: [u8; 32] = op_model.public_key.clone().try_into()
-            .map_err(|_| Status::internal("Stored operator public key is invalid (not 32 bytes)"))?;
+        let vk_bytes: [u8; 32] = op_model.public_key.clone().try_into().map_err(|_| {
+            Status::internal("Stored operator public key is invalid (not 32 bytes)")
+        })?;
 
         let vk = wraith_crypto::signatures::VerifyingKey::from_bytes(&vk_bytes)
             .map_err(|_| Status::internal("Failed to parse operator public key"))?;
@@ -347,7 +352,9 @@ impl OperatorService for OperatorServiceImpl {
     async fn kill_implant(&self, req: Request<KillImplantRequest>) -> Result<Response<()>, Status> {
         // Fail fast if configuration is missing
         let port_str = std::env::var("KILLSWITCH_PORT").expect("KILLSWITCH_PORT must be set");
-        let port = port_str.parse().expect("KILLSWITCH_PORT must be a valid u16");
+        let port = port_str
+            .parse()
+            .expect("KILLSWITCH_PORT must be a valid u16");
         let secret = std::env::var("KILLSWITCH_SECRET").expect("KILLSWITCH_SECRET must be set");
 
         let req = req.into_inner();
@@ -672,16 +679,21 @@ impl OperatorService for OperatorServiceImpl {
 
         // Start it via manager
         // Default port if not in config? Assuming stored in DB or config
-        let port = listener_model.config.get("port")
+        let port = listener_model
+            .config
+            .get("port")
             .and_then(|v| v.as_u64())
             .unwrap_or(8080) as u16;
-        
-        self.listener_manager.start_listener(
-            &listener_model.id.to_string(),
-            &listener_model.r#type,
-            &listener_model.bind_address,
-            port
-        ).await.map_err(|e| Status::internal(e))?;
+
+        self.listener_manager
+            .start_listener(
+                &listener_model.id.to_string(),
+                &listener_model.r#type,
+                &listener_model.bind_address,
+                port,
+            )
+            .await
+            .map_err(Status::internal)?;
 
         self.db
             .update_listener_status(id, "active")
@@ -707,9 +719,10 @@ impl OperatorService for OperatorServiceImpl {
         let id = uuid::Uuid::parse_str(&req.id).map_err(|_| Status::invalid_argument("Bad ID"))?;
 
         // Stop via manager
-        self.listener_manager.stop_listener(&req.id)
+        self.listener_manager
+            .stop_listener(&req.id)
             .await
-            .map_err(|e| Status::internal(e))?;
+            .map_err(Status::internal)?;
 
         self.db
             .update_listener_status(id, "stopped")
@@ -717,7 +730,12 @@ impl OperatorService for OperatorServiceImpl {
             .map_err(|e| Status::internal(e.to_string()))?;
 
         // Re-fetch to return
-        let listener_model = self.db.get_listener(id).await.map_err(|e| Status::internal(e.to_string()))?.unwrap();
+        let listener_model = self
+            .db
+            .get_listener(id)
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?
+            .unwrap();
 
         Ok(Response::new(Listener {
             id: req.id,
@@ -763,14 +781,15 @@ impl OperatorService for OperatorServiceImpl {
             if !source_dir.exists() {
                 return Err(Status::failed_precondition("Implant source code not found"));
             }
-            
+
             crate::builder::Builder::compile_implant(
                 source_dir,
                 &output_path,
                 &req.c2_url,
-                &[], // No special features
-                true // Obfuscate by default
-            ).map_err(|e| Status::internal(format!("Compilation failed: {}", e)))?;
+                &[],  // No special features
+                true, // Obfuscate by default
+            )
+            .map_err(|e| Status::internal(format!("Compilation failed: {}", e)))?;
         } else if req.platform == "phishing-html" {
             // Generate payload then wrap in HTML
             crate::builder::Builder::patch_implant(
@@ -778,10 +797,15 @@ impl OperatorService for OperatorServiceImpl {
                 &output_path,
                 &req.c2_url,
                 req.sleep_interval as u64,
-            ).map_err(|e| Status::internal(format!("Payload build failed: {}", e)))?;
-            
-            let payload = std::fs::read(&output_path).map_err(|e| Status::internal(e.to_string()))?;
-            let html = crate::builder::phishing::PhishingGenerator::generate_html_smuggling(&payload, "update.exe");
+            )
+            .map_err(|e| Status::internal(format!("Payload build failed: {}", e)))?;
+
+            let payload =
+                std::fs::read(&output_path).map_err(|e| Status::internal(e.to_string()))?;
+            let html = crate::builder::phishing::PhishingGenerator::generate_html_smuggling(
+                &payload,
+                "update.exe",
+            );
             std::fs::write(&output_path, html).map_err(|e| Status::internal(e.to_string()))?;
         } else if req.platform == "phishing-macro" {
             // Generate payload then wrap in VBA
@@ -790,9 +814,11 @@ impl OperatorService for OperatorServiceImpl {
                 &output_path,
                 &req.c2_url,
                 req.sleep_interval as u64,
-            ).map_err(|e| Status::internal(format!("Payload build failed: {}", e)))?;
-            
-            let payload = std::fs::read(&output_path).map_err(|e| Status::internal(e.to_string()))?;
+            )
+            .map_err(|e| Status::internal(format!("Payload build failed: {}", e)))?;
+
+            let payload =
+                std::fs::read(&output_path).map_err(|e| Status::internal(e.to_string()))?;
             let vba = crate::builder::phishing::PhishingGenerator::generate_macro_vba(&payload);
             std::fs::write(&output_path, vba).map_err(|e| Status::internal(e.to_string()))?;
         } else {
@@ -845,28 +871,28 @@ impl OperatorService for OperatorServiceImpl {
         if !template_path.exists() {
             return Err(Status::failed_precondition("Spectre template not found"));
         }
-        
+
         let output_dir = std::env::temp_dir();
         let payload_path = output_dir.join(format!("raw_{}.bin", uuid::Uuid::new_v4()));
         let final_path = output_dir.join(format!("phish_{}.out", uuid::Uuid::new_v4()));
-        
-        crate::builder::Builder::patch_implant(
-            &template_path,
-            &payload_path,
-            &req.c2_url,
-            5 
-        ).map_err(|e| Status::internal(format!("Payload generation failed: {}", e)))?;
-        
-        let raw_bytes = std::fs::read(&payload_path).map_err(|e| Status::internal(e.to_string()))?;
-        
+
+        crate::builder::Builder::patch_implant(&template_path, &payload_path, &req.c2_url, 5)
+            .map_err(|e| Status::internal(format!("Payload generation failed: {}", e)))?;
+
+        let raw_bytes =
+            std::fs::read(&payload_path).map_err(|e| Status::internal(e.to_string()))?;
+
         let content = if req.r#type == "html" {
-            crate::builder::phishing::PhishingGenerator::generate_html_smuggling(&raw_bytes, "update.exe")
+            crate::builder::phishing::PhishingGenerator::generate_html_smuggling(
+                &raw_bytes,
+                "update.exe",
+            )
         } else if req.r#type == "macro" {
             crate::builder::phishing::PhishingGenerator::generate_macro_vba(&raw_bytes)
         } else {
             return Err(Status::invalid_argument("Unknown phishing type"));
         };
-        
+
         std::fs::write(&final_path, content).map_err(|e| Status::internal(e.to_string()))?;
         let _ = std::fs::remove_file(payload_path);
 
@@ -884,11 +910,15 @@ impl OperatorService for OperatorServiceImpl {
                 }
                 let _ = tokio::fs::remove_file(final_path).await;
             } else {
-                let _ = tx.send(Err(Status::internal("Failed to read output"))).await;
+                let _ = tx
+                    .send(Err(Status::internal("Failed to read output")))
+                    .await;
             }
         });
 
-        Ok(Response::new(tokio_stream::wrappers::ReceiverStream::new(rx)))
+        Ok(Response::new(tokio_stream::wrappers::ReceiverStream::new(
+            rx,
+        )))
     }
 
     async fn list_persistence(
@@ -898,18 +928,24 @@ impl OperatorService for OperatorServiceImpl {
         let req = req.into_inner();
         let implant_id = uuid::Uuid::parse_str(&req.implant_id)
             .map_err(|_| Status::invalid_argument("Invalid UUID"))?;
-            
-        let items = self.db.list_persistence(implant_id).await
+
+        let items = self
+            .db
+            .list_persistence(implant_id)
+            .await
             .map_err(|e| Status::internal(e.to_string()))?;
-            
-        let list = items.into_iter().map(|p| PersistenceItem {
-            id: p.id.to_string(),
-            implant_id: p.implant_id.unwrap_or_default().to_string(),
-            method: p.method,
-            details: p.details,
-            created_at: None, 
-        }).collect();
-        
+
+        let list = items
+            .into_iter()
+            .map(|p| PersistenceItem {
+                id: p.id.to_string(),
+                implant_id: p.implant_id.unwrap_or_default().to_string(),
+                method: p.method,
+                details: p.details,
+                created_at: None,
+            })
+            .collect();
+
         Ok(Response::new(ListPersistenceResponse { items: list }))
     }
 
@@ -918,8 +954,12 @@ impl OperatorService for OperatorServiceImpl {
         req: Request<RemovePersistenceRequest>,
     ) -> Result<Response<()>, Status> {
         let req = req.into_inner();
-        let id = uuid::Uuid::parse_str(&req.id).map_err(|_| Status::invalid_argument("Invalid UUID"))?;
-        self.db.remove_persistence(id).await.map_err(|e| Status::internal(e.to_string()))?;
+        let id =
+            uuid::Uuid::parse_str(&req.id).map_err(|_| Status::invalid_argument("Invalid UUID"))?;
+        self.db
+            .remove_persistence(id)
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?;
         Ok(Response::new(()))
     }
 
@@ -928,38 +968,56 @@ impl OperatorService for OperatorServiceImpl {
         req: Request<CreateAttackChainRequest>,
     ) -> Result<Response<AttackChain>, Status> {
         let req = req.into_inner();
-        
-        let steps: Vec<crate::models::ChainStep> = req.steps.into_iter().map(|s| crate::models::ChainStep {
-            id: uuid::Uuid::nil(), 
-            chain_id: uuid::Uuid::nil(),
-            step_order: s.step_order,
-            technique_id: s.technique_id,
-            command_type: s.command_type,
-            payload: s.payload,
-            description: if s.description.is_empty() { None } else { Some(s.description) },
-        }).collect();
 
-        let chain = self.db.create_attack_chain(&req.name, &req.description, &steps)
+        let steps: Vec<crate::models::ChainStep> = req
+            .steps
+            .into_iter()
+            .map(|s| crate::models::ChainStep {
+                id: uuid::Uuid::nil(),
+                chain_id: uuid::Uuid::nil(),
+                step_order: s.step_order,
+                technique_id: s.technique_id,
+                command_type: s.command_type,
+                payload: s.payload,
+                description: if s.description.is_empty() {
+                    None
+                } else {
+                    Some(s.description)
+                },
+            })
+            .collect();
+
+        let chain = self
+            .db
+            .create_attack_chain(&req.name, &req.description, &steps)
             .await
             .map_err(|e| Status::internal(e.to_string()))?;
 
-        let (_, saved_steps) = self.db.get_attack_chain(chain.id).await.map_err(|e| Status::internal(e.to_string()))?.unwrap();
+        let (_, saved_steps) = self
+            .db
+            .get_attack_chain(chain.id)
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?
+            .unwrap();
 
         Ok(Response::new(AttackChain {
             id: chain.id.to_string(),
             name: chain.name,
             description: chain.description.unwrap_or_default(),
-            created_at: None, 
+            created_at: None,
             updated_at: None,
-            steps: saved_steps.into_iter().map(|s| ChainStep {
-                id: s.id.to_string(),
-                chain_id: s.chain_id.to_string(),
-                step_order: s.step_order,
-                technique_id: s.technique_id,
-                command_type: s.command_type,
-                payload: s.payload,
-                description: s.description.unwrap_or_default(),
-            }).collect(),
+            steps: saved_steps
+                .into_iter()
+                .map(|s| ChainStep {
+                    id: s.id.to_string(),
+                    chain_id: s.chain_id.to_string(),
+                    step_order: s.step_order,
+                    technique_id: s.technique_id,
+                    command_type: s.command_type,
+                    payload: s.payload,
+                    description: s.description.unwrap_or_default(),
+                })
+                .collect(),
         }))
     }
 
@@ -967,18 +1025,22 @@ impl OperatorService for OperatorServiceImpl {
         &self,
         _req: Request<ListAttackChainsRequest>,
     ) -> Result<Response<ListAttackChainsResponse>, Status> {
-        let chains = self.db.list_attack_chains().await.map_err(|e| Status::internal(e.to_string()))?;
-        
+        let chains = self
+            .db
+            .list_attack_chains()
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?;
+
         let mut list = Vec::new();
         for c in chains {
-             list.push(AttackChain {
+            list.push(AttackChain {
                 id: c.id.to_string(),
                 name: c.name,
                 description: c.description.unwrap_or_default(),
                 created_at: None,
                 updated_at: None,
                 steps: vec![],
-             });
+            });
         }
 
         Ok(Response::new(ListAttackChainsResponse {
@@ -992,9 +1054,14 @@ impl OperatorService for OperatorServiceImpl {
         req: Request<GetAttackChainRequest>,
     ) -> Result<Response<AttackChain>, Status> {
         let req = req.into_inner();
-        let id = uuid::Uuid::parse_str(&req.id).map_err(|_| Status::invalid_argument("Invalid UUID"))?;
-        
-        let (chain, steps) = self.db.get_attack_chain(id).await.map_err(|e| Status::internal(e.to_string()))?
+        let id =
+            uuid::Uuid::parse_str(&req.id).map_err(|_| Status::invalid_argument("Invalid UUID"))?;
+
+        let (chain, steps) = self
+            .db
+            .get_attack_chain(id)
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?
             .ok_or(Status::not_found("Chain not found"))?;
 
         Ok(Response::new(AttackChain {
@@ -1003,15 +1070,18 @@ impl OperatorService for OperatorServiceImpl {
             description: chain.description.unwrap_or_default(),
             created_at: None,
             updated_at: None,
-            steps: steps.into_iter().map(|s| ChainStep {
-                id: s.id.to_string(),
-                chain_id: s.chain_id.to_string(),
-                step_order: s.step_order,
-                technique_id: s.technique_id,
-                command_type: s.command_type,
-                payload: s.payload,
-                description: s.description.unwrap_or_default(),
-            }).collect(),
+            steps: steps
+                .into_iter()
+                .map(|s| ChainStep {
+                    id: s.id.to_string(),
+                    chain_id: s.chain_id.to_string(),
+                    step_order: s.step_order,
+                    technique_id: s.technique_id,
+                    command_type: s.command_type,
+                    payload: s.payload,
+                    description: s.description.unwrap_or_default(),
+                })
+                .collect(),
         }))
     }
 
@@ -1020,24 +1090,41 @@ impl OperatorService for OperatorServiceImpl {
         req: Request<ExecuteAttackChainRequest>,
     ) -> Result<Response<()>, Status> {
         let req = req.into_inner();
-        let chain_id = uuid::Uuid::parse_str(&req.chain_id).map_err(|_| Status::invalid_argument("Invalid Chain UUID"))?;
-        let implant_id = uuid::Uuid::parse_str(&req.implant_id).map_err(|_| Status::invalid_argument("Invalid Implant UUID"))?;
+        let chain_id = uuid::Uuid::parse_str(&req.chain_id)
+            .map_err(|_| Status::invalid_argument("Invalid Chain UUID"))?;
+        let implant_id = uuid::Uuid::parse_str(&req.implant_id)
+            .map_err(|_| Status::invalid_argument("Invalid Implant UUID"))?;
 
-        let (chain, steps) = self.db.get_attack_chain(chain_id).await.map_err(|e| Status::internal(e.to_string()))?
+        let (chain, steps) = self
+            .db
+            .get_attack_chain(chain_id)
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?
             .ok_or(Status::not_found("Chain not found"))?;
 
         let db = self.db.clone();
-        
+
         tokio::spawn(async move {
-            tracing::info!("Starting execution of chain {} on implant {}", chain.name, implant_id);
-            
+            tracing::info!(
+                "Starting execution of chain {} on implant {}",
+                chain.name,
+                implant_id
+            );
+
             for step in steps {
-                tracing::info!("Executing step {}: {} ({})", step.step_order, step.technique_id, step.command_type);
-                
-                let cmd_id_res = db.queue_command(implant_id, &step.command_type, step.payload.as_bytes()).await;
+                tracing::info!(
+                    "Executing step {}: {} ({})",
+                    step.step_order,
+                    step.technique_id,
+                    step.command_type
+                );
+
+                let cmd_id_res = db
+                    .queue_command(implant_id, &step.command_type, step.payload.as_bytes())
+                    .await;
                 if let Err(e) = cmd_id_res {
                     tracing::error!("Failed to queue step {}: {}", step.step_order, e);
-                    break; 
+                    break;
                 }
                 let cmd_id = cmd_id_res.unwrap();
 
@@ -1050,10 +1137,14 @@ impl OperatorService for OperatorServiceImpl {
                         tracing::error!("Step {} timed out", step.step_order);
                         break;
                     }
-                    
+
                     if let Ok(Some(res)) = db.get_command_result(cmd_id).await {
-                        tracing::info!("Step {} completed with exit code {}", step.step_order, res.exit_code.unwrap_or(-1));
-                        
+                        tracing::info!(
+                            "Step {} completed with exit code {}",
+                            step.step_order,
+                            res.exit_code.unwrap_or(-1)
+                        );
+
                         if res.exit_code.unwrap_or(1) == 0 {
                             success = true;
                         } else {
@@ -1061,13 +1152,16 @@ impl OperatorService for OperatorServiceImpl {
                         }
                         break;
                     }
-                    
+
                     tokio::time::sleep(std::time::Duration::from_secs(1)).await;
                     attempts += 1;
                 }
 
                 if !success {
-                    tracing::error!("Chain execution stopped due to failure at step {}", step.step_order);
+                    tracing::error!(
+                        "Chain execution stopped due to failure at step {}",
+                        step.step_order
+                    );
                     break;
                 }
             }
@@ -1081,14 +1175,23 @@ impl OperatorService for OperatorServiceImpl {
         &self,
         _req: Request<ListPlaybooksRequest>,
     ) -> Result<Response<ListPlaybooksResponse>, Status> {
-        let playbooks = self.db.list_playbooks().await.map_err(|e| Status::internal(e.to_string()))?;
-        let pb_proto = playbooks.into_iter().map(|p| Playbook {
-            id: p.id.to_string(),
-            name: p.name,
-            description: p.description.unwrap_or_default(),
-            content_json: p.content.to_string(),
-        }).collect();
-        Ok(Response::new(ListPlaybooksResponse { playbooks: pb_proto }))
+        let playbooks = self
+            .db
+            .list_playbooks()
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?;
+        let pb_proto = playbooks
+            .into_iter()
+            .map(|p| Playbook {
+                id: p.id.to_string(),
+                name: p.name,
+                description: p.description.unwrap_or_default(),
+                content_json: p.content.to_string(),
+            })
+            .collect();
+        Ok(Response::new(ListPlaybooksResponse {
+            playbooks: pb_proto,
+        }))
     }
 
     async fn instantiate_playbook(
@@ -1096,14 +1199,21 @@ impl OperatorService for OperatorServiceImpl {
         req: Request<InstantiatePlaybookRequest>,
     ) -> Result<Response<AttackChain>, Status> {
         let req = req.into_inner();
-        let pb_id = uuid::Uuid::parse_str(&req.playbook_id).map_err(|_| Status::invalid_argument("Invalid UUID"))?;
-        
-        let playbook = self.db.get_playbook(pb_id).await.map_err(|e| Status::internal(e.to_string()))?
+        let pb_id = uuid::Uuid::parse_str(&req.playbook_id)
+            .map_err(|_| Status::invalid_argument("Invalid UUID"))?;
+
+        let playbook = self
+            .db
+            .get_playbook(pb_id)
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?
             .ok_or(Status::not_found("Playbook not found"))?;
 
         let content = playbook.content;
-        let steps_json = content.get("steps").ok_or(Status::internal("Invalid playbook content: missing steps"))?;
-        
+        let steps_json = content
+            .get("steps")
+            .ok_or(Status::internal("Invalid playbook content: missing steps"))?;
+
         #[derive(serde::Deserialize)]
         struct StepTemplate {
             order: i32,
@@ -1112,19 +1222,22 @@ impl OperatorService for OperatorServiceImpl {
             payload: String,
             description: String,
         }
-        
+
         let templates: Vec<StepTemplate> = serde_json::from_value(steps_json.clone())
             .map_err(|e| Status::internal(format!("Failed to parse steps: {}", e)))?;
-            
-        let chain_steps: Vec<crate::models::ChainStep> = templates.into_iter().map(|t| crate::models::ChainStep {
-            id: uuid::Uuid::nil(),
-            chain_id: uuid::Uuid::nil(),
-            step_order: t.order,
-            technique_id: t.technique,
-            command_type: t.command_type,
-            payload: t.payload,
-            description: Some(t.description),
-        }).collect();
+
+        let chain_steps: Vec<crate::models::ChainStep> = templates
+            .into_iter()
+            .map(|t| crate::models::ChainStep {
+                id: uuid::Uuid::nil(),
+                chain_id: uuid::Uuid::nil(),
+                step_order: t.order,
+                technique_id: t.technique,
+                command_type: t.command_type,
+                payload: t.payload,
+                description: Some(t.description),
+            })
+            .collect();
 
         let name = if req.name_override.is_empty() {
             format!("{} (Instance)", playbook.name)
@@ -1132,11 +1245,22 @@ impl OperatorService for OperatorServiceImpl {
             req.name_override
         };
 
-        let chain = self.db.create_attack_chain(&name, &playbook.description.unwrap_or_default(), &chain_steps)
+        let chain = self
+            .db
+            .create_attack_chain(
+                &name,
+                &playbook.description.unwrap_or_default(),
+                &chain_steps,
+            )
             .await
             .map_err(|e| Status::internal(e.to_string()))?;
 
-        let (_, saved_steps) = self.db.get_attack_chain(chain.id).await.map_err(|e| Status::internal(e.to_string()))?.unwrap();
+        let (_, saved_steps) = self
+            .db
+            .get_attack_chain(chain.id)
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?
+            .unwrap();
 
         Ok(Response::new(AttackChain {
             id: chain.id.to_string(),
@@ -1144,15 +1268,18 @@ impl OperatorService for OperatorServiceImpl {
             description: chain.description.unwrap_or_default(),
             created_at: None,
             updated_at: None,
-            steps: saved_steps.into_iter().map(|s| ChainStep {
-                id: s.id.to_string(),
-                chain_id: s.chain_id.to_string(),
-                step_order: s.step_order,
-                technique_id: s.technique_id,
-                command_type: s.command_type,
-                payload: s.payload,
-                description: s.description.unwrap_or_default(),
-            }).collect(),
+            steps: saved_steps
+                .into_iter()
+                .map(|s| ChainStep {
+                    id: s.id.to_string(),
+                    chain_id: s.chain_id.to_string(),
+                    step_order: s.step_order,
+                    technique_id: s.technique_id,
+                    command_type: s.command_type,
+                    payload: s.payload,
+                    description: s.description.unwrap_or_default(),
+                })
+                .collect(),
         }))
     }
 }
@@ -1160,22 +1287,22 @@ impl OperatorService for OperatorServiceImpl {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tonic::metadata::MetadataValue;
     use std::str::FromStr;
+    use tonic::metadata::MetadataValue;
 
     #[test]
     fn test_extract_operator_id_success() {
         unsafe {
             std::env::set_var("JWT_SECRET", "test_secret_key_must_be_long_enough_32_chars");
         }
-        
+
         let user_id = "550e8400-e29b-41d4-a716-446655440000";
         let token = crate::utils::create_jwt(user_id, "admin").unwrap();
-        
+
         let mut req = Request::new(());
         let claims = crate::utils::verify_jwt(&token).unwrap();
         req.extensions_mut().insert(claims);
-        
+
         let val = MetadataValue::from_str(&format!("Bearer {}", token)).unwrap();
         req.metadata_mut().insert("authorization", val);
 

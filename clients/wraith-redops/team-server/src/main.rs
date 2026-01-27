@@ -1,5 +1,7 @@
 use sqlx::postgres::PgPoolOptions;
+use sqlx_core::migrate::Migrator;
 use std::net::SocketAddr;
+use std::path::Path;
 use std::sync::Arc;
 use tonic::transport::Server;
 use tracing::info;
@@ -36,9 +38,9 @@ use services::operator::OperatorServiceImpl;
 use services::session::SessionManager;
 use wraith_crypto::noise::NoiseKeypair;
 
+use std::task::{Context, Poll};
 use tonic::{Request, Status};
 use tower::{Layer, Service};
-use std::task::{Context, Poll};
 
 #[derive(Clone, Debug)]
 struct RpcPath(String);
@@ -78,29 +80,32 @@ where
     }
 }
 
+#[allow(clippy::result_large_err)]
 fn auth_interceptor(mut req: Request<()>) -> Result<Request<()>, Status> {
     // Whitelist Authenticate method
-    if let Some(path) = req.extensions().get::<RpcPath>() {
-        if path.0 == "/wraith.redops.OperatorService/Authenticate" {
-            return Ok(req);
-        }
+    if let Some(path) = req.extensions().get::<RpcPath>()
+        && path.0 == "/wraith.redops.OperatorService/Authenticate"
+    {
+        return Ok(req);
     }
 
     let token = match req.metadata().get("authorization") {
         Some(t) => {
-            let s = t.to_str().map_err(|_| Status::unauthenticated("Invalid auth header"))?;
-            if s.starts_with("Bearer ") {
-                &s[7..]
+            let s = t
+                .to_str()
+                .map_err(|_| Status::unauthenticated("Invalid auth header"))?;
+            if let Some(stripped) = s.strip_prefix("Bearer ") {
+                stripped
             } else {
                 return Err(Status::unauthenticated("Invalid auth scheme"));
             }
-        },
+        }
         None => return Err(Status::unauthenticated("Missing authorization header")),
     };
 
     let claims = utils::verify_jwt(token)
         .map_err(|e| Status::unauthenticated(format!("Invalid token: {}", e)))?;
-        
+
     req.extensions_mut().insert(claims);
     Ok(req)
 }
@@ -120,12 +125,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .connect(&database_url)
         .await?;
 
-    // Run migrations
+    // Run migrations (runtime-loaded to avoid sqlx umbrella's migrate feature
+    // which triggers a libsqlite3-sys links conflict with workspace rusqlite)
     info!("Running database migrations...");
-    sqlx::migrate!("./migrations").run(&pool).await?;
+    Migrator::new(Path::new("./migrations"))
+        .await?
+        .run(&pool)
+        .await?;
 
     let db = Arc::new(Database::new(pool));
-    
+
     // Load playbooks
     if let Err(e) = services::playbook_loader::load_playbooks(db.clone()).await {
         tracing::error!("Failed to load playbooks: {}", e);
@@ -172,11 +181,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         .unwrap_or(4445),
                     _ => 0,
                 };
-                
-                if port > 0 {
-                    if let Err(e) = listener_manager.start_listener(&l.id.to_string(), &l.r#type, &l.bind_address, port).await {
-                        tracing::error!("Failed to restart listener {}: {}", l.name, e);
-                    }
+
+                if port > 0
+                    && let Err(e) = listener_manager
+                        .start_listener(&l.id.to_string(), &l.r#type, &l.bind_address, port)
+                        .await
+                {
+                    tracing::error!("Failed to restart listener {}: {}", l.name, e);
                 }
             }
         }
@@ -202,7 +213,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Server::builder()
         .layer(PathLayer)
-        .add_service(OperatorServiceServer::with_interceptor(operator_service, auth_interceptor))
+        .add_service(OperatorServiceServer::with_interceptor(
+            operator_service,
+            auth_interceptor,
+        ))
         .add_service(ImplantServiceServer::new(implant_service))
         .serve(addr)
         .await?;

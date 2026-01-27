@@ -65,7 +65,7 @@ mod tests {
         let keypair = NoiseKeypair::generate().expect("Test keypair generation failed");
         let handshake = wraith_crypto::noise::NoiseHandshake::new_initiator(&keypair)
             .expect("Test handshake creation failed");
-        
+
         let mut rng = SecureRng::new();
         let priv_key = PrivateKey::generate(&mut rng);
 

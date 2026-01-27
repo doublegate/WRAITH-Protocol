@@ -71,7 +71,8 @@ impl ProtocolHandler {
             let mut temp_cid = [0u8; 8];
             temp_cid.copy_from_slice(&uuid_bytes[0..8]);
 
-            self.session_manager.insert_handshake(temp_cid, handshake, ratchet_priv);
+            self.session_manager
+                .insert_handshake(temp_cid, handshake, ratchet_priv);
 
             let mut response = Vec::new();
             response.extend_from_slice(&temp_cid);
@@ -82,7 +83,7 @@ impl ProtocolHandler {
         // 2. Handshake Continue (Msg 3)
         if let Some((mut handshake, ratchet_priv)) = self.session_manager.remove_handshake(&cid) {
             debug!("Received Handshake Msg 3 from {}", src_addr);
-            
+
             // Read Msg 3 and extract Initiator's ratchet public key
             let peer_payload = match handshake.read_message(payload) {
                 Ok(p) => p,
@@ -176,11 +177,11 @@ impl ProtocolHandler {
 
                     // Implement proper Frame construction (28-byte header)
                     let mut frame = Vec::with_capacity(28 + resp_json.len());
-                    frame.extend_from_slice(b"WRTH"); 
+                    frame.extend_from_slice(b"WRTH");
                     frame.extend_from_slice(&(resp_json.len() as u32).to_be_bytes());
-                    frame.extend_from_slice(&0u16.to_be_bytes()); 
-                    frame.extend_from_slice(&0u16.to_be_bytes()); 
-                    frame.extend_from_slice(&[0u8; 16]); 
+                    frame.extend_from_slice(&0u16.to_be_bytes());
+                    frame.extend_from_slice(&0u16.to_be_bytes());
+                    frame.extend_from_slice(&[0u8; 16]);
                     frame.extend_from_slice(&resp_json);
 
                     let ciphertext = match transport.write_message(&frame) {
@@ -200,15 +201,22 @@ impl ProtocolHandler {
         } else if let Some(upstream_cid) = self.session_manager.get_upstream_cid(&cid) {
             // Mesh Routing: Relay to upstream beacon
             if let Some(mut upstream_transport) = self.session_manager.get_session(&upstream_cid) {
-                debug!("Mesh Routing: Relaying packet for {} via {}", hex::encode(cid), hex::encode(upstream_cid));
-                
+                debug!(
+                    "Mesh Routing: Relaying packet for {} via {}",
+                    hex::encode(cid),
+                    hex::encode(upstream_cid)
+                );
+
                 let relay_task = BeaconTask {
                     id: uuid::Uuid::new_v4().to_string(),
                     type_: "mesh_relay".to_string(),
                     payload: hex::encode(data),
                 };
-                
-                let resp_json = serde_json::to_vec(&BeaconResponse { tasks: vec![relay_task] }).unwrap_or_default();
+
+                let resp_json = serde_json::to_vec(&BeaconResponse {
+                    tasks: vec![relay_task],
+                })
+                .unwrap_or_default();
                 let mut frame = Vec::with_capacity(28 + resp_json.len());
                 frame.extend_from_slice(b"WRTH");
                 frame.extend_from_slice(&(resp_json.len() as u32).to_be_bytes());

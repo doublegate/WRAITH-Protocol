@@ -76,7 +76,11 @@ impl DnsPacket {
             let qtype = u16::from_be_bytes([buf[pos], buf[pos + 1]]);
             let qclass = u16::from_be_bytes([buf[pos + 2], buf[pos + 3]]);
             pos += 4;
-            questions.push(DnsQuestion { name, qtype, qclass });
+            questions.push(DnsQuestion {
+                name,
+                qtype,
+                qclass,
+            });
         }
 
         Ok(DnsPacket {
@@ -242,32 +246,35 @@ pub async fn start_dns_listener(
 
                     let mut response_packet = packet.make_response();
 
-                    if question.qtype == 16 { // TXT
+                    if question.qtype == 16 {
+                        // TXT
                         // Multi-label payload extraction
                         // Assume the last 2 parts are the domain (e.g., domain.com)
                         // The part before that is the session ID.
                         // All parts before that are the chunked payload.
                         let mut payload_hex = String::new();
-                        for i in 0..parts.len().saturating_sub(3) {
-                            payload_hex.push_str(parts[i]);
+                        for part in parts.iter().take(parts.len().saturating_sub(3)) {
+                            payload_hex.push_str(part);
                         }
 
-                        if let Ok(data) = hex::decode(&payload_hex) {
-                            if let Some(reply) = protocol.handle_packet(&data, src.to_string()).await {
-                                // Respond with TXT record containing the reply
-                                // Note: Max TXT string length is 255. For larger replies, we use multiple strings.
-                                let reply_hex = hex::encode(reply);
-                                let mut rdata = Vec::new();
-                                for chunk in reply_hex.as_bytes().chunks(255) {
-                                    rdata.push(chunk.len() as u8);
-                                    rdata.extend_from_slice(chunk);
-                                }
-                                response_packet.add_answer(&question.name, 16, 60, &rdata);
+                        if let Ok(data) = hex::decode(&payload_hex)
+                            && let Some(reply) =
+                                protocol.handle_packet(&data, src.to_string()).await
+                        {
+                            // Respond with TXT record containing the reply
+                            // Note: Max TXT string length is 255. For larger replies, we use multiple strings.
+                            let reply_hex = hex::encode(reply);
+                            let mut rdata = Vec::new();
+                            for chunk in reply_hex.as_bytes().chunks(255) {
+                                rdata.push(chunk.len() as u8);
+                                rdata.extend_from_slice(chunk);
                             }
+                            response_packet.add_answer(&question.name, 16, 60, &rdata);
                         }
-                    } else if question.qtype == 1 { // A
-                         // A record beaconing - respond with a signaling IP
-                         response_packet.add_answer(&question.name, 1, 60, &[127, 0, 0, 1]);
+                    } else if question.qtype == 1 {
+                        // A
+                        // A record beaconing - respond with a signaling IP
+                        response_packet.add_answer(&question.name, 1, 60, &[127, 0, 0, 1]);
                     }
 
                     let resp_bytes = response_packet.to_bytes();
@@ -288,7 +295,8 @@ mod tests {
     #[test]
     fn test_dns_parsing() {
         // Standard query for example.com A record
-        let packet = hex::decode("123401000001000000000000076578616d706c6503636f6d0000010001").unwrap();
+        let packet =
+            hex::decode("123401000001000000000000076578616d706c6503636f6d0000010001").unwrap();
         let dns = DnsPacket::from_bytes(&packet).unwrap();
         assert_eq!(dns.header.id, 0x1234);
         assert_eq!(dns.questions.len(), 1);

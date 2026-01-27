@@ -1,48 +1,72 @@
 # WRAITH-RedOps
 
 **Status:** Implementation Complete (Phase 1-4 Logic Integrated)
+**Version:** 2.2.5
 
-This directory contains the fully implemented WRAITH-RedOps adversary emulation platform.
+WRAITH-RedOps is a comprehensive adversary emulation platform designed for authorized red teaming operations. It features a distributed architecture with a high-performance team server, a cross-platform implant (`Spectre`), and a modern operator console.
 
-## Components
+## 🏗️ Architecture
 
-### 1. Team Server (`team-server/`)
-*   **Tech:** Rust, Axum, Tonic (gRPC), SQLx (PostgreSQL).
-*   **Features:**
-    *   **Listener Management:** Create/Start/Stop C2 listeners (UDP/HTTP).
-    *   **Implant Registry:** Track active beacons, health status, and metadata.
-    *   **Task Queue:** Priority-based command scheduling.
-    *   **RBAC:** Operator role management.
-*   **Database:** Full PostgreSQL schema with migrations for persistence.
+The platform consists of four main components:
 
-### 2. Operator Client (`operator-client/`)
-*   **Tech:** Tauri, React, TypeScript, Tailwind CSS.
-*   **Features:**
-    *   **Dashboard:** Real-time stats.
-    *   **Beacon Table:** Live status updates.
-    *   **Terminal:** Interactive command shell.
-*   **Connectivity:** gRPC over HTTP bridge to Team Server.
+| Component | Directory | Description |
+|:---|:---|:---|
+| **Team Server** | [`team-server/`](./team-server) | Central C2 controller. Rust, Axum, Tonic (gRPC), PostgreSQL. Handles listener management, task queuing, and governance enforcement. |
+| **Operator Client** | [`operator-client/`](./operator-client) | Operator GUI. Tauri v2, React 19, TypeScript. Provides real-time dashboard, interactive terminal, and campaign visualization. |
+| **Spectre Implant** | [`spectre-implant/`](./spectre-implant) | Advanced agent. `no_std` Rust. Features sleep masking, heap encryption, and WRAITH-native secure communications. |
+| **Protocol** | [`proto/`](./proto) | Shared API definitions. gRPC/Protobuf. Defines the contract between Operators, Servers, and Implants. |
 
-### 3. Spectre Implant (`spectre-implant/`)
-*   **Tech:** Rust `no_std`, `winapi` (conceptual for cross-platform stub).
-*   **Features:**
-    *   **C2 Loop:** Polling, Task execution, Result submission.
-    *   **Obfuscation:** Sleep mask stub, Heap encryption stub.
-    *   **API Resolution:** Hash-based import resolution logic.
-    *   **Panic Handling:** Silent abort for stealth.
+## 🚀 Quick Start
 
-## Usage
+The easiest way to stand up the entire infrastructure is using the provided orchestration script.
 
-**1. Start Infrastructure:**
+### Prerequisites
+*   **Docker:** For the PostgreSQL database.
+*   **Rust (Latest Stable):** For building Server and Implant.
+*   **Node.js (LTS):** For the Client frontend.
+*   **System Tools:** `ss` or `lsof` (for port checking).
+
+### Automated Startup
+This script handles database initialization (including conflict resolution), environment configuration, and process orchestration.
+
 ```bash
+cd ..  # Go to 'clients/' directory
 ./start_redops.sh
 ```
-This script handles Database (Docker), Team Server, and Client startup.
 
-**2. Manual Workflow:**
-*   **Server:** `cd team-server && cargo run`
-*   **Client:** `cd operator-client && npm run tauri dev`
-*   **Implant:** `cd spectre-implant && cargo build --release`
+### Manual Startup
+If you prefer to run components individually:
 
-## Dependency Note
-This project is excluded from the root workspace to manage conflicting versions of `sqlite` (used by `wraith-chat`) and `sqlx` (used here).
+1.  **Database:**
+    ```bash
+    docker run --name wraith-postgres -e POSTGRES_PASSWORD=postgres -d -p 5432:5432 postgres
+    docker exec -it wraith-postgres createdb -U postgres wraith_redops
+    ```
+
+2.  **Team Server:**
+    ```bash
+    cd team-server
+    export DATABASE_URL="postgres://postgres:postgres@127.0.0.1/wraith_redops"
+    export HMAC_SECRET="dev_secret"
+    export MASTER_KEY="<64-char-hex-string>"
+    export GRPC_LISTEN_ADDR="0.0.0.0:50051"
+    cargo run
+    ```
+
+3.  **Operator Client:**
+    ```bash
+    cd operator-client
+    npm install
+    npm run tauri dev
+    ```
+
+## 🛡️ Security & Governance
+
+WRAITH-RedOps is built with strict governance controls for authorized engagements:
+*   **Rules of Engagement (RoE):** Digitally signed scopes that restrict implant callbacks to specific CIDRs and domains.
+*   **Audit Logging:** HMAC-signed immutable logs of all operator actions.
+*   **Kill Switch:** Global broadcast capability to terminate all active implants immediately.
+
+## ⚠️ Disclaimer
+
+This tool is strictly for **authorized security testing** and **educational purposes**. Misuse of this software is a violation of federal and/or state law. The authors and contributors assume no liability for misuse.

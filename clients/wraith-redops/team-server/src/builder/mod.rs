@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::{Read, Write};
 use std::path::Path;
 use std::process::Command;
-use tracing::{info, error};
+use tracing::{error, info};
 
 pub mod phishing;
 
@@ -79,19 +79,25 @@ impl Builder {
         if obfuscate {
             info!("Applying build-time obfuscation flags...");
             // Statically link CRT and strip symbols
-            cmd.env("RUSTFLAGS", "-C target-feature=+crt-static -C panic=abort -C link-arg=-s");
+            cmd.env(
+                "RUSTFLAGS",
+                "-C target-feature=+crt-static -C panic=abort -C link-arg=-s",
+            );
         }
 
         let status = cmd.status()?;
 
         if !status.success() {
             error!("Compilation failed for {:?}", server_addr);
-            return Err(anyhow::anyhow!("Compilation failed with status: {}", status));
+            return Err(anyhow::anyhow!(
+                "Compilation failed with status: {}",
+                status
+            ));
         }
 
         // Find the compiled artifact (binary name should match package name in Cargo.toml)
-        let artifact = source_dir.join("target/release/spectre-implant"); 
-        
+        let artifact = source_dir.join("target/release/spectre-implant");
+
         if artifact.exists() {
             if let Some(parent) = output_path.parent() {
                 std::fs::create_dir_all(parent)?;
@@ -122,7 +128,7 @@ mod tests {
         let mut template_data = vec![0u8; 256];
         let magic_pos = 50;
         template_data[magic_pos..magic_pos + CONFIG_MAGIC.len()].copy_from_slice(CONFIG_MAGIC);
-        
+
         let mut file = File::create(&template_path).unwrap();
         file.write_all(&template_data).unwrap();
 
@@ -133,14 +139,22 @@ mod tests {
 
         // Verify
         let mut patched_data = Vec::new();
-        File::open(&output_path).unwrap().read_to_end(&mut patched_data).unwrap();
+        File::open(&output_path)
+            .unwrap()
+            .read_to_end(&mut patched_data)
+            .unwrap();
 
         let addr_start = magic_pos + CONFIG_MAGIC.len();
-        let extracted_addr = std::str::from_utf8(&patched_data[addr_start..addr_start + server_addr.len()]).unwrap();
+        let extracted_addr =
+            std::str::from_utf8(&patched_data[addr_start..addr_start + server_addr.len()]).unwrap();
         assert_eq!(extracted_addr, server_addr);
 
         let sleep_start = addr_start + 64;
-        let extracted_sleep = u64::from_le_bytes(patched_data[sleep_start..sleep_start + 8].try_into().unwrap());
+        let extracted_sleep = u64::from_le_bytes(
+            patched_data[sleep_start..sleep_start + 8]
+                .try_into()
+                .unwrap(),
+        );
         assert_eq!(extracted_sleep, sleep_interval);
     }
 }

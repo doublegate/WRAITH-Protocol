@@ -46,10 +46,10 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
   - WRAITH-Publish: Decentralized content publishing (56 tests)
   - WRAITH-Vault: Distributed secret storage (101 tests)
   - WRAITH-Recon: Network reconnaissance platform (98 tests)
-  - WRAITH-RedOps: Red team operations platform (Team Server + Operator Client + Implant) - isolated workspace
+  - WRAITH-RedOps: Red team operations platform (Team Server + Operator Client as workspace members; Spectre Implant excluded for no_std)
 - **Development Status:** 12 of 12 clients complete (1,292 SP delivered)
 - **CI/CD:** GitHub Actions optimized with reusable setup.yml, path filters, client build support
-- **Test Coverage:** 663+ client tests across all applications (excluding RedOps isolated workspace)
+- **Test Coverage:** 663+ client tests across all applications (RedOps team-server and operator-client now part of workspace build/test)
 - **Templates:** 17 configuration/ROE templates in centralized `templates/` directory (7 ROE, 3 config, 1 transfer, 2 integration)
 
 ---
@@ -161,9 +161,16 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 **Story Points:** 89 SP
 **Platform:** Server + Desktop (Linux, Windows, macOS)
 
+**Workspace Integration (2026-01-27):**
+- `team-server` and `operator-client` integrated as root Cargo workspace members
+- sqlx restructured to PostgreSQL-only (avoids `libsqlite3-sys` link conflict with Tauri `rusqlite`)
+- Runtime migration loading (`Migrator::new()`) replaces compile-time `sqlx::migrate!` macro
+- 16 pre-existing clippy warnings fixed; `#[serial]` added to test_operator_service_comprehensive
+- `spectre-implant` remains excluded (no_std with custom `#[panic_handler]` and `#[global_allocator]`)
+
 **Architecture:**
 
-- **Team Server** (`team-server/`) - Rust backend (~4,317 lines)
+- **Team Server** (`team-server/`) - Rust backend (~4,317 lines, workspace member)
   - Axum web framework with Tonic gRPC services (30 RPCs in OperatorService)
   - PostgreSQL database with SQLx, 5 migrations, and XChaCha20-Poly1305 encryption at rest
   - Listener management: Create/Start/Stop C2 listeners (UDP, HTTP, DNS, SMB) with dynamic tokio task spawning
@@ -176,7 +183,7 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
   - Ed25519-signed Kill Switch broadcast mechanism
   - HMAC-SHA256 signed audit logging
 
-- **Operator Client** (`operator-client/`) - Tauri 2.0 + React (~2,436 lines: 918 Rust + 1,518 TypeScript)
+- **Operator Client** (`operator-client/`) - Tauri 2.0 + React (~2,436 lines: 918 Rust + 1,518 TypeScript, workspace member)
   - 31 IPC commands wired to gRPC backend (100% of 30 proto RPCs + `connect_to_server`)
   - Real-time dashboard with beacon status and campaign statistics
   - Interactive xterm.js terminal with 12 command types
@@ -185,7 +192,7 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
   - Phishing builder, loot gallery, persistence manager, discovery dashboard
   - Wayland compatibility with X11 fallback
 
-- **Spectre Implant** (`spectre-implant/`) - no_std Rust (~4,884 lines)
+- **Spectre Implant** (`spectre-implant/`) - no_std Rust (~4,884 lines, excluded from workspace)
   - 15 modules with 17 task types dispatched via beacon loop (mesh module added in v5.0.0 audit)
   - C2 loop with Noise_XX encryption and rekeying logic (1M packets/100 check-ins)
   - MiniHeap custom allocator for controlled memory management
@@ -226,7 +233,8 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 - Spectre Implant: ~4,884 lines Rust (no_std, 15 modules, 17 task types)
 - Proto: 511 lines (30 RPCs in OperatorService, 6 in ImplantService)
 - Protocol: gRPC with protobuf definitions
-- Database: PostgreSQL with 5 migrations (isolated from main workspace)
+- Database: PostgreSQL with 5 migrations, runtime migration loading via `Migrator::new()`
+- Workspace: team-server and operator-client are workspace members; spectre-implant excluded (no_std)
 
 ---
 
@@ -1163,7 +1171,7 @@ RedOps                                                          [=============]
 
 **Protocol Status (2026-01-27):**
 - ✅ All 24 protocol development phases complete (2,740+ SP delivered)
-- ✅ 2,120 tests passing (16 ignored) - 100% pass rate
+- ✅ 2,153 tests passing (16 ignored) - 100% pass rate
 - ✅ Zero vulnerabilities, zero clippy warnings
 - ✅ Grade A+ quality (98/100), TDR ~2.5%
 - ✅ Production-ready architecture with v2.2.5 release
@@ -1296,6 +1304,6 @@ RedOps                                                          [=============]
 
 **WRAITH Protocol Client Applications Development History** - *From Planning to v2.2.5*
 
-**Status:** Phases 15-24 Complete (All 12 Clients) | **Total Scope:** 12 clients, 1,292 SP | **Delivered:** 1,292 SP (100%) | **Protocol:** v2.2.5 Complete | **Tests:** 2,120 total (663+ client tests) | **TDR:** ~2.5% (Grade A) | **CI/CD:** Optimized workflows with reusable setup and path filters | **RedOps:** Gap analysis v5.0.0 (~94% complete, ~71% MITRE ATT&CK coverage, 0 P0 critical issues, ~12,819 lines, ~69 SP remaining) | **Conductor:** Project management system with code style guides
+**Status:** Phases 15-24 Complete (All 12 Clients) | **Total Scope:** 12 clients, 1,292 SP | **Delivered:** 1,292 SP (100%) | **Protocol:** v2.2.5 Complete | **Tests:** 2,153 total (663+ client tests) | **Workspace:** 22 members (team-server + operator-client integrated) | **TDR:** ~2.5% (Grade A) | **CI/CD:** Optimized workflows with reusable setup and path filters | **RedOps:** Gap analysis v5.0.0 (~94% complete, ~71% MITRE ATT&CK coverage, 0 P0 critical issues, ~12,819 lines, ~69 SP remaining) | **Conductor:** Project management system with code style guides
 
 *Last Updated: 2026-01-27*

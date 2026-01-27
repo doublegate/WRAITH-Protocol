@@ -23,8 +23,12 @@ tonic = "0.12"
 prost = "0.13"
 prost-types = "0.13"
 
-# Database - Updated to 0.8.1 to fix CVE (Dependabot alert #3)
-sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json", "macros", "migrate", "ipnetwork"] }
+# Database - sqlx umbrella uses only features that don't reference sqlx-sqlite
+# (avoids libsqlite3-sys links conflict with rusqlite in workspace)
+# Type features (json, chrono, uuid, migrate) go through sqlx-postgres directly
+sqlx = { version = "0.8.6", default-features = false, features = ["runtime-tokio-rustls", "postgres", "macros", "ipnetwork"] }
+sqlx-core = { version = "=0.8.6", features = ["migrate"] }
+sqlx-postgres = { version = "=0.8.6", features = ["json", "chrono", "uuid", "migrate"] }
 ipnetwork = "0.20"
 
 # Serialization
@@ -63,8 +67,6 @@ dashmap = "5.5"
 [dev-dependencies]
 tempfile = "3.8"
 serial_test = "2.0"
-
-[workspace]
 
 [build-dependencies]
 tonic-build = "0.12"

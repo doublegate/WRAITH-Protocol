@@ -532,14 +532,20 @@ async fn create_phishing(
         template_name: "".to_string(),
     });
 
-    let mut stream = client.generate_phishing(req).await
+    let mut stream = client
+        .generate_phishing(req)
+        .await
         .map_err(|e| format!("gRPC error: {}", e))?
         .into_inner();
 
-    let mut file = tokio::fs::File::create(&save_path).await.map_err(|e| e.to_string())?;
+    let mut file = tokio::fs::File::create(&save_path)
+        .await
+        .map_err(|e| e.to_string())?;
     use tokio::io::AsyncWriteExt;
     while let Some(chunk) = stream.message().await.map_err(|e| e.to_string())? {
-        file.write_all(&chunk.data).await.map_err(|e| e.to_string())?;
+        file.write_all(&chunk.data)
+            .await
+            .map_err(|e| e.to_string())?;
     }
 
     Ok("Phishing payload generated".to_string())
@@ -572,24 +578,29 @@ async fn list_persistence(
     let mut lock = state.client.lock().await;
     let client = lock.as_mut().ok_or("Not connected")?;
 
-    let response = client.list_persistence(tonic::Request::new(ListPersistenceRequest {
-        implant_id,
-    })).await.map_err(|e| format!("gRPC error: {}", e))?;
+    let response = client
+        .list_persistence(tonic::Request::new(ListPersistenceRequest { implant_id }))
+        .await
+        .map_err(|e| format!("gRPC error: {}", e))?;
 
-    let items: Vec<PersistenceItemJson> = response.into_inner().items.into_iter().map(|i| i.into()).collect();
+    let items: Vec<PersistenceItemJson> = response
+        .into_inner()
+        .items
+        .into_iter()
+        .map(|i| i.into())
+        .collect();
     serde_json::to_string(&items).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-async fn remove_persistence(
-    id: String,
-    state: State<'_, ClientState>,
-) -> Result<(), String> {
+async fn remove_persistence(id: String, state: State<'_, ClientState>) -> Result<(), String> {
     let mut lock = state.client.lock().await;
     let client = lock.as_mut().ok_or("Not connected")?;
 
-    client.remove_persistence(tonic::Request::new(RemovePersistenceRequest { id }))
-        .await.map_err(|e| format!("gRPC error: {}", e))?;
+    client
+        .remove_persistence(tonic::Request::new(RemovePersistenceRequest { id }))
+        .await
+        .map_err(|e| format!("gRPC error: {}", e))?;
     Ok(())
 }
 
@@ -617,21 +628,27 @@ impl From<Credential> for CredentialJson {
 }
 
 #[tauri::command]
-async fn list_credentials(
-    state: State<'_, ClientState>,
-) -> Result<String, String> {
+async fn list_credentials(state: State<'_, ClientState>) -> Result<String, String> {
     let mut lock = state.client.lock().await;
     let client = lock.as_mut().ok_or("Not connected")?;
 
-    let response = client.list_credentials(tonic::Request::new(ListCredentialsRequest {
-        campaign_id: "".to_string(),
-        implant_id: "".to_string(),
-        credential_type: "".to_string(),
-        page_size: 100,
-        page_token: "".to_string(),
-    })).await.map_err(|e| format!("gRPC error: {}", e))?;
+    let response = client
+        .list_credentials(tonic::Request::new(ListCredentialsRequest {
+            campaign_id: "".to_string(),
+            implant_id: "".to_string(),
+            credential_type: "".to_string(),
+            page_size: 100,
+            page_token: "".to_string(),
+        }))
+        .await
+        .map_err(|e| format!("gRPC error: {}", e))?;
 
-    let creds: Vec<CredentialJson> = response.into_inner().credentials.into_iter().map(|c| c.into()).collect();
+    let creds: Vec<CredentialJson> = response
+        .into_inner()
+        .credentials
+        .into_iter()
+        .map(|c| c.into())
+        .collect();
     serde_json::to_string(&creds).map_err(|e| e.to_string())
 }
 
@@ -700,7 +717,7 @@ impl From<Playbook> for PlaybookJson {
             id: p.id,
             name: p.name,
             description: p.description,
-            content: p.content,
+            content: p.content_json,
         }
     }
 }
@@ -715,13 +732,16 @@ async fn create_attack_chain(
     let mut lock = state.client.lock().await;
     let client = lock.as_mut().ok_or("Not connected")?;
 
-    let req_steps = steps.into_iter().map(|s| ChainStepRequest {
-        step_order: s.step_order,
-        technique_id: s.technique_id,
-        command_type: s.command_type,
-        payload: s.payload,
-        description: s.description,
-    }).collect();
+    let req_steps = steps
+        .into_iter()
+        .map(|s| ChainStepRequest {
+            step_order: s.step_order,
+            technique_id: s.technique_id,
+            command_type: s.command_type,
+            payload: s.payload,
+            description: s.description,
+        })
+        .collect();
 
     let request = tonic::Request::new(CreateAttackChainRequest {
         name,
@@ -729,7 +749,10 @@ async fn create_attack_chain(
         steps: req_steps,
     });
 
-    let response = client.create_attack_chain(request).await.map_err(|e| format!("gRPC error: {}", e))?;
+    let response = client
+        .create_attack_chain(request)
+        .await
+        .map_err(|e| format!("gRPC error: {}", e))?;
     let chain: AttackChainJson = response.into_inner().into();
     serde_json::to_string(&chain).map_err(|e| e.to_string())
 }
@@ -739,12 +762,20 @@ async fn list_attack_chains(state: State<'_, ClientState>) -> Result<String, Str
     let mut lock = state.client.lock().await;
     let client = lock.as_mut().ok_or("Not connected")?;
 
-    let response = client.list_attack_chains(tonic::Request::new(ListAttackChainsRequest {
-        page_size: 100,
-        page_token: "".to_string(),
-    })).await.map_err(|e| format!("gRPC error: {}", e))?;
+    let response = client
+        .list_attack_chains(tonic::Request::new(ListAttackChainsRequest {
+            page_size: 100,
+            page_token: "".to_string(),
+        }))
+        .await
+        .map_err(|e| format!("gRPC error: {}", e))?;
 
-    let chains: Vec<AttackChainJson> = response.into_inner().chains.into_iter().map(|c| c.into()).collect();
+    let chains: Vec<AttackChainJson> = response
+        .into_inner()
+        .chains
+        .into_iter()
+        .map(|c| c.into())
+        .collect();
     serde_json::to_string(&chains).map_err(|e| e.to_string())
 }
 
@@ -757,19 +788,24 @@ async fn execute_attack_chain(
     let mut lock = state.client.lock().await;
     let client = lock.as_mut().ok_or("Not connected")?;
 
-    client.execute_attack_chain(tonic::Request::new(ExecuteAttackChainRequest {
-        chain_id,
-        implant_id,
-    })).await.map_err(|e| format!("gRPC error: {}", e))?;
+    client
+        .execute_attack_chain(tonic::Request::new(ExecuteAttackChainRequest {
+            chain_id,
+            implant_id,
+        }))
+        .await
+        .map_err(|e| format!("gRPC error: {}", e))?;
     Ok(())
 }
 
 #[tauri::command]
-async fn refresh_token(state: State<'_, ClientState>) -> Result<String, String> {
+async fn refresh_token(token: String, state: State<'_, ClientState>) -> Result<String, String> {
     let mut lock = state.client.lock().await;
     let client = lock.as_mut().ok_or("Not connected")?;
-    let response = client.refresh_token(tonic::Request::new(RefreshTokenRequest {}))
-        .await.map_err(|e| format!("gRPC error: {}", e))?;
+    let response = client
+        .refresh_token(tonic::Request::new(RefreshRequest { token }))
+        .await
+        .map_err(|e| format!("gRPC error: {}", e))?;
     Ok(response.into_inner().token)
 }
 
@@ -777,8 +813,10 @@ async fn refresh_token(state: State<'_, ClientState>) -> Result<String, String> 
 async fn get_campaign(id: String, state: State<'_, ClientState>) -> Result<String, String> {
     let mut lock = state.client.lock().await;
     let client = lock.as_mut().ok_or("Not connected")?;
-    let response = client.get_campaign(tonic::Request::new(GetCampaignRequest { id }))
-        .await.map_err(|e| format!("gRPC error: {}", e))?;
+    let response = client
+        .get_campaign(tonic::Request::new(GetCampaignRequest { id }))
+        .await
+        .map_err(|e| format!("gRPC error: {}", e))?;
     let c: CampaignJson = response.into_inner().into();
     serde_json::to_string(&c).map_err(|e| e.to_string())
 }
@@ -787,8 +825,10 @@ async fn get_campaign(id: String, state: State<'_, ClientState>) -> Result<Strin
 async fn get_implant(id: String, state: State<'_, ClientState>) -> Result<String, String> {
     let mut lock = state.client.lock().await;
     let client = lock.as_mut().ok_or("Not connected")?;
-    let response = client.get_implant(tonic::Request::new(GetImplantRequest { id }))
-        .await.map_err(|e| format!("gRPC error: {}", e))?;
+    let response = client
+        .get_implant(tonic::Request::new(GetImplantRequest { id }))
+        .await
+        .map_err(|e| format!("gRPC error: {}", e))?;
     let i: ImplantJson = response.into_inner().into();
     serde_json::to_string(&i).map_err(|e| e.to_string())
 }
@@ -797,17 +837,20 @@ async fn get_implant(id: String, state: State<'_, ClientState>) -> Result<String
 async fn cancel_command(command_id: String, state: State<'_, ClientState>) -> Result<(), String> {
     let mut lock = state.client.lock().await;
     let client = lock.as_mut().ok_or("Not connected")?;
-    client.cancel_command(tonic::Request::new(CancelCommandRequest { command_id }))
-        .await.map_err(|e| format!("gRPC error: {}", e))?;
+    client
+        .cancel_command(tonic::Request::new(CancelCommandRequest { command_id }))
+        .await
+        .map_err(|e| format!("gRPC error: {}", e))?;
     Ok(())
 }
 
 #[tauri::command]
 async fn generate_implant(
-    campaign_id: String,
-    os: String,
+    platform: String,
     arch: String,
     format: String,
+    c2_url: String,
+    sleep_interval: i32,
     save_path: String,
     state: State<'_, ClientState>,
 ) -> Result<String, String> {
@@ -815,21 +858,27 @@ async fn generate_implant(
     let client = lock.as_mut().ok_or("Not connected")?;
 
     let req = tonic::Request::new(GenerateImplantRequest {
-        campaign_id,
-        os,
+        platform,
         arch,
         format,
-        config_override: std::collections::HashMap::new(),
+        c2_url,
+        sleep_interval,
     });
 
-    let mut stream = client.generate_implant(req).await
+    let mut stream = client
+        .generate_implant(req)
+        .await
         .map_err(|e| format!("gRPC error: {}", e))?
         .into_inner();
 
-    let mut file = tokio::fs::File::create(&save_path).await.map_err(|e| e.to_string())?;
+    let mut file = tokio::fs::File::create(&save_path)
+        .await
+        .map_err(|e| e.to_string())?;
     use tokio::io::AsyncWriteExt;
     while let Some(chunk) = stream.message().await.map_err(|e| e.to_string())? {
-        file.write_all(&chunk.data).await.map_err(|e| e.to_string())?;
+        file.write_all(&chunk.data)
+            .await
+            .map_err(|e| e.to_string())?;
     }
 
     Ok("Implant generated".to_string())
@@ -839,27 +888,36 @@ async fn generate_implant(
 async fn list_playbooks(state: State<'_, ClientState>) -> Result<String, String> {
     let mut lock = state.client.lock().await;
     let client = lock.as_mut().ok_or("Not connected")?;
-    let response = client.list_playbooks(tonic::Request::new(ListPlaybooksRequest {
-        page_size: 100, page_token: "".to_string()
-    })).await.map_err(|e| format!("gRPC error: {}", e))?;
-    
-    let playbooks: Vec<PlaybookJson> = response.into_inner().playbooks.into_iter().map(|p| p.into()).collect();
+    let response = client
+        .list_playbooks(tonic::Request::new(ListPlaybooksRequest {}))
+        .await
+        .map_err(|e| format!("gRPC error: {}", e))?;
+
+    let playbooks: Vec<PlaybookJson> = response
+        .into_inner()
+        .playbooks
+        .into_iter()
+        .map(|p| p.into())
+        .collect();
     serde_json::to_string(&playbooks).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 async fn instantiate_playbook(
     playbook_id: String,
-    name: String,
-    description: String,
+    name_override: String,
     state: State<'_, ClientState>,
 ) -> Result<String, String> {
     let mut lock = state.client.lock().await;
     let client = lock.as_mut().ok_or("Not connected")?;
-    let response = client.instantiate_playbook(tonic::Request::new(InstantiatePlaybookRequest {
-        playbook_id, name, description
-    })).await.map_err(|e| format!("gRPC error: {}", e))?;
-    
+    let response = client
+        .instantiate_playbook(tonic::Request::new(InstantiatePlaybookRequest {
+            playbook_id,
+            name_override,
+        }))
+        .await
+        .map_err(|e| format!("gRPC error: {}", e))?;
+
     let chain: AttackChainJson = response.into_inner().into();
     serde_json::to_string(&chain).map_err(|e| e.to_string())
 }
@@ -874,19 +932,21 @@ struct StreamEventPayload {
 }
 
 #[tauri::command]
-async fn stream_events(
-    app: tauri::AppHandle,
-    state: State<'_, ClientState>,
-) -> Result<(), String> {
+async fn stream_events(app: tauri::AppHandle, state: State<'_, ClientState>) -> Result<(), String> {
     let mut lock = state.client.lock().await;
     let client = lock.as_mut().ok_or("Not connected")?;
     let mut stream_client = client.clone();
-    
-    let response = stream_client.stream_events(tonic::Request::new(StreamEventsRequest {}))
-        .await.map_err(|e| format!("gRPC error: {}", e))?;
-    
+
+    let response = stream_client
+        .stream_events(tonic::Request::new(StreamEventsRequest {
+            campaign_id: "".to_string(),
+            event_types: vec![],
+        }))
+        .await
+        .map_err(|e| format!("gRPC error: {}", e))?;
+
     let mut stream = response.into_inner();
-    
+
     tauri::async_runtime::spawn(async move {
         use tauri::Emitter;
         while let Ok(Some(event)) = stream.message().await {
@@ -899,20 +959,19 @@ async fn stream_events(
             let _ = app.emit("server-event", payload);
         }
     });
-    
+
     Ok(())
 }
 
 #[tauri::command]
-async fn get_attack_chain(
-    id: String,
-    state: State<'_, ClientState>,
-) -> Result<String, String> {
+async fn get_attack_chain(id: String, state: State<'_, ClientState>) -> Result<String, String> {
     let mut lock = state.client.lock().await;
     let client = lock.as_mut().ok_or("Not connected")?;
 
-    let response = client.get_attack_chain(tonic::Request::new(GetAttackChainRequest { id }))
-        .await.map_err(|e| format!("gRPC error: {}", e))?;
+    let response = client
+        .get_attack_chain(tonic::Request::new(GetAttackChainRequest { id }))
+        .await
+        .map_err(|e| format!("gRPC error: {}", e))?;
 
     let chain: AttackChainJson = response.into_inner().into();
     serde_json::to_string(&chain).map_err(|e| e.to_string())

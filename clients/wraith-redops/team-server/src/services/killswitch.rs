@@ -1,13 +1,13 @@
+use std::env;
 use tokio::net::UdpSocket;
 use wraith_crypto::signatures::SigningKey;
-use std::env;
 
 pub async fn broadcast_kill_signal(port: u16, secret_msg: &[u8]) -> std::io::Result<()> {
     let socket = UdpSocket::bind("0.0.0.0:0").await?;
     socket.set_broadcast(true)?;
 
     let target = format!("255.255.255.255:{}", port);
-    
+
     // Construct Payload: [MAGIC: 8] + [TIMESTAMP: 8] + [SECRET: N]
     // MAGIC "WRAITH_K" is 8 bytes
     let magic = b"WRAITH_K";
@@ -15,7 +15,7 @@ pub async fn broadcast_kill_signal(port: u16, secret_msg: &[u8]) -> std::io::Res
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
         .as_secs();
-    
+
     let mut data = Vec::new();
     data.extend_from_slice(magic);
     data.extend_from_slice(&timestamp.to_be_bytes());
@@ -25,7 +25,7 @@ pub async fn broadcast_kill_signal(port: u16, secret_msg: &[u8]) -> std::io::Res
     let seed_hex = env::var("KILLSWITCH_KEY").expect("KILLSWITCH_KEY env var must be set");
     let seed = hex::decode(&seed_hex).expect("Failed to decode KILLSWITCH_KEY");
     let key_bytes: [u8; 32] = seed.try_into().expect("KILLSWITCH_KEY must be 32 bytes");
-    
+
     let key = SigningKey::from_bytes(&key_bytes);
     let signature = key.sign(&data);
 
@@ -42,7 +42,6 @@ pub async fn broadcast_kill_signal(port: u16, secret_msg: &[u8]) -> std::io::Res
 #[cfg(test)]
 mod tests {
     use super::*;
-    
 
     #[test]
     fn test_kill_signal_structure() {
@@ -50,12 +49,12 @@ mod tests {
         unsafe {
             std::env::set_var("KILLSWITCH_KEY", dummy_key);
         }
-        
+
         let seed = hex::decode(dummy_key).unwrap();
         let key_bytes: [u8; 32] = seed.try_into().unwrap();
         let key = SigningKey::from_bytes(&key_bytes);
         let msg = b"TEST";
-        
+
         // This just verifies we can sign without panic
         let _sig = key.sign(msg);
     }

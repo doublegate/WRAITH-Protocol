@@ -9,6 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### RedOps Workspace Integration (2026-01-27)
+
+Integrated WRAITH-RedOps `team-server` and `operator-client` into the root Cargo workspace as full members. Previously these were standalone crates excluded from workspace builds. The `spectre-implant` remains excluded due to `no_std` with custom `#[panic_handler]` and `#[global_allocator]` incompatible with workspace feature unification.
+
+- **Workspace Integration**
+  - Added `clients/wraith-redops/team-server` and `clients/wraith-redops/operator-client/src-tauri` as workspace members
+  - Root workspace now has 22 members (8 protocol crates + 9 Tauri clients + team-server + operator-client + xtask + tests)
+  - Excluded crates: `wraith-xdp` (eBPF toolchain), `spectre-implant` (no_std incompatibility)
+
+- **sqlx Dependency Restructuring**
+  - Resolved `libsqlite3-sys` native library link conflict between `rusqlite` (used by Tauri clients) and `sqlx-sqlite`
+  - Removed `sqlx` `sqlite` feature from team-server to avoid dual SQLite linking
+  - Replaced compile-time `sqlx::migrate!` macro with runtime `Migrator::new()` loading from `./migrations` directory
+  - Team-server now uses PostgreSQL-only sqlx configuration (`runtime-tokio-rustls`, `postgres`)
+
+- **Clippy Warning Remediation**
+  - Fixed 16 pre-existing clippy warnings in team-server codebase
+  - Resolved: needless borrows, redundant closures, manual `map()` patterns, unused imports, `write!` in `Display` impl, clone-on-copy, manual string extension, collapsible `if` blocks
+  - All warnings surfaced by workspace-level `cargo clippy --workspace -- -D warnings` enforcement
+
+- **Test Race Condition Fix**
+  - Added `#[serial]` attribute (via `serial_test` crate) to `test_operator_service_comprehensive` in team-server
+  - Prevents shared PostgreSQL state conflicts during parallel test execution
+
+- **Test Count:** 2,153 passing (16 ignored), zero failures
+
 #### Gap Analysis v5.0.0 Comprehensive Re-Verification (2026-01-27)
 
 Full codebase re-audit of WRAITH-RedOps with independent verification of every source file (~12,819 lines across 15 modules). This refresh corrected 4 prior assessments from v4.3.0 and added two new analysis sections.
@@ -36,8 +62,11 @@ Full codebase re-audit of WRAITH-RedOps with independent verification of every s
 
 ### Changed
 
+- **Workspace:** Integrated team-server and operator-client as workspace members; spectre-implant remains excluded (no_std)
+- **team-server:** Restructured sqlx from sqlite+postgres to postgres-only; runtime migration loading via `Migrator::new()`
+- **team-server:** Fixed 16 clippy warnings and added `#[serial]` to test_operator_service_comprehensive
 - **wraith-core:** Added `IpEventMap` type alias in `security_monitor.rs` to reduce type complexity (clippy fix)
-- Updated project metrics: 2,120 tests passing, ~141,000 lines Rust, ~36,600 lines TypeScript, 114 doc files (~62,800 lines)
+- Updated project metrics: 2,153 tests passing, ~131,000 lines Rust, ~35,000 lines TypeScript, 114 doc files (~62,800 lines)
 - Updated README.md with v5.0.0 gap analysis metrics
 - Updated README_Protocol-DEV.md with current project metrics
 - Updated README_Clients-DEV.md with v5.0.0 gap analysis data
