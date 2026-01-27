@@ -165,9 +165,22 @@ fn get_text_range() -> (*mut u8, usize) {
         let dos_header = base as *const IMAGE_DOS_HEADER;
         let nt_headers = (base as usize + (*dos_header).e_lfanew as usize) as *const IMAGE_NT_HEADERS64;
         
-        // .text is usually the first section
+        // Iterate sections to find ".text"
+        let num_sections = (*nt_headers).FileHeader.NumberOfSections;
+        let mut section_header_ptr = (nt_headers as usize + core::mem::size_of::<IMAGE_NT_HEADERS64>()) as *const SectionHeader;
+        
+        for _ in 0..num_sections {
+            let section = &*section_header_ptr;
+            if section.name.starts_with(b".text") {
+                let text_rva = section.virtual_address;
+                let text_size = section.virtual_size;
+                return ((base as usize + text_rva as usize) as *mut u8, text_size as usize);
+            }
+            section_header_ptr = section_header_ptr.add(1);
+        }
+        
+        // Fallback: first section
         let section_header_ptr = (nt_headers as usize + core::mem::size_of::<IMAGE_NT_HEADERS64>()) as *const SectionHeader;
-        // In a more robust impl we'd look for ".text" name
         let text_rva = (*section_header_ptr).virtual_address;
         let text_size = (*section_header_ptr).virtual_size;
         
