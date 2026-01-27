@@ -15,13 +15,13 @@
 - [x] Task: Integrate BBR Congestion Control [421e91b9]
     - [x] Write tests for BBR bandwidth and RTT estimation logic.
     - [x] Implement BBR algorithm in the protocol session layer.
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Core Functionality & Protocol Acceleration' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Core Functionality & Protocol Acceleration' (Protocol in workflow.md)
 
 ## Phase 2: PowerShell Execution & High-Priority Fixes
-- [ ] Task: Deliver Production-Grade PowerShell Runner
-    - [ ] Develop and compile a native C# .NET assembly for unmanaged PowerShell execution.
-    - [ ] Embed the compiled runner into `spectre-implant/src/modules/powershell.rs`.
-    - [ ] Write integration tests for in-memory PowerShell execution.
+- [x] Task: Deliver Production-Grade PowerShell Runner [a97ea980]
+    - [x] Develop and compile a native C# .NET assembly for unmanaged PowerShell execution.
+    - [x] Embed the compiled runner into `spectre-implant/src/modules/powershell.rs`.
+    - [x] Write integration tests for in-memory PowerShell execution.
 - [ ] Task: Resolve P2 High-Priority Bugfixes
     - [ ] Correct CLR GUID for `CLSID_CLRRuntimeHost` in `clr.rs`.
     - [ ] Replace `.unwrap()` calls in `team-server/src/listeners/smb.rs` with robust error handling.
