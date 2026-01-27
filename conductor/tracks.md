@@ -38,6 +38,3 @@ Completed or superseded tracks are preserved in the [archive/](./archive/) direc
 ---
 
 ---
-
-- [x] **Track: WRAITH-RedOps Gap Remediation (v2.2.5)**
-*Link: [./tracks/redops_gap_remediation_20260126/](./tracks/redops_gap_remediation_20260126/)*
