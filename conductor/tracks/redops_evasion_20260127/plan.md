@@ -4,10 +4,10 @@
 - [x] Task: Implement Indirect Syscalls [7cf2d953]
     - [x] Update `syscalls.rs` to find `syscall` instruction in `ntdll.dll`.
     - [x] Update `do_syscall` to jump to the found address.
-- [ ] Task: Implement Sleep Obfuscation (Ekko)
-    - [ ] Define `CreateTimerQueueTimer` and related APIs in `windows_definitions.rs`.
-    - [ ] Implement ROP chain construction in `obfuscation.rs`.
-    - [ ] Replace simple sleep with Ekko sleep.
+- [x] Task: Implement Sleep Obfuscation (Ekko) [2d8b0771]
+    - [x] Define `CreateTimerQueueTimer` and related APIs in `windows_definitions.rs`.
+    - [x] Implement ROP chain construction in `obfuscation.rs`.
+    - [x] Replace simple sleep with Ekko sleep.
 
 ## Phase 2: Runtime Protection Patching
 - [ ] Task: Implement AMSI/ETW Patching
