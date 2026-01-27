@@ -35,9 +35,9 @@
 - [x] Task: Implement Dynamic Memory Discovery [d2d0a8b9]
     - [x] Implement PEB parsing to find the actual `.text` section range in `obfuscation.rs`.
     - [x] Implement runtime heap discovery (Windows: `GetProcessHeap`; Linux: `/proc/self/maps`) (Verified existing implementation).
-- [ ] Task: Build-Time LLVM Obfuscation
-    - [ ] Configure `builder/mod.rs` to apply LLVM-level obfuscation passes via `RUSTFLAGS`.
-    - [ ] Write tests to verify symbol stripping and control flow flattening in generated binaries.
+- [x] Task: Build-Time LLVM Obfuscation [ff0bba70]
+    - [x] Configure `builder/mod.rs` to apply LLVM-level obfuscation passes via `RUSTFLAGS`.
+    - [x] Write tests to verify symbol stripping and control flow flattening in generated binaries.
 - [ ] Task: Hardware-Based ARM64 Entropy
     - [ ] Implement `CNTVCT_EL0` register reading for ARM64 entropy in `entropy.rs`.
 - [ ] Task: Multi-Transport Failover
