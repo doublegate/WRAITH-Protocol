@@ -8,25 +8,21 @@ This file tracks all major work tracks for the WRAITH Protocol project. Each tra
 
 ## Active Tracks
 
-- [x] **Track: Comprehensive WRAITH-RedOps & Core Protocol Finalization**
-*Link: [./tracks/redops_core_finalization_20260127/](./tracks/redops_core_finalization_20260127/)*
-
-- [~] **Track: Comprehensive WRAITH-RedOps Final Integration**
-*Link: [./tracks/redops_final_integration_20260127/](./tracks/redops_final_integration_20260127/)*
-
----
-
-- [x] [WRAITH-RedOps Full Remediation (2026-01-27)](./tracks/redops_full_remediation_20260127/index.md)
-- [x] **RedOps Advanced Evasion & Features** (2026-01-27)
-  *Link: [./archive/redops_evasion_20260127/](./archive/redops_evasion_20260127/)*
-
-
 ---
 
 ## Archived Tracks
 
 Completed or superseded tracks are preserved in the [archive/](./archive/) directory:
 
+- [x] **Track: Comprehensive WRAITH-RedOps Final Integration** (2026-01-28)
+*Link: [./archive/redops_final_integration_20260127/](./archive/redops_final_integration_20260127/)*
+
+- [x] **Track: Comprehensive WRAITH-RedOps & Core Protocol Finalization** (2026-01-27)
+*Link: [./tracks/redops_core_finalization_20260127/](./tracks/redops_core_finalization_20260127/)*
+
+- [x] [WRAITH-RedOps Full Remediation (2026-01-27)](./tracks/redops_full_remediation_20260127/index.md)
+- [x] **RedOps Advanced Evasion & Features** (2026-01-27)
+  *Link: [./archive/redops_evasion_20260127/](./archive/redops_evasion_20260127/)*
 - [x] **MITRE ATT&CK Full-Stack Integration** (2026-01-25)
   *Link: [./archive/redops_mitre_ui_integration_20260125/](./archive/redops_mitre_ui_integration_20260125/)*
 - [x] **RedOps Full Completion** (2026-01-25)
