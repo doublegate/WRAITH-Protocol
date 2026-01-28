@@ -14,3 +14,4 @@ pub mod collection;
 pub mod smb;
 pub mod mesh;
 pub mod patch;
+pub mod screenshot;

