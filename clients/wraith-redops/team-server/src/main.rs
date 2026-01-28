@@ -212,6 +212,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         db: db.clone(),
         event_tx: event_tx.clone(),
         powershell_manager: powershell_manager.clone(),
+        static_key: Arc::new(static_key.clone()),
     };
 
     info!("Team Server listening on {}", addr);

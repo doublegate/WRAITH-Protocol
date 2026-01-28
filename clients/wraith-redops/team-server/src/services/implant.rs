@@ -7,11 +7,13 @@ use tokio::sync::broadcast;
 use tokio_stream::StreamExt;
 use tonic::{Request, Response, Status};
 use uuid::Uuid;
+use wraith_crypto::noise::NoiseKeypair;
 
 pub struct ImplantServiceImpl {
     pub db: Arc<Database>,
     pub event_tx: broadcast::Sender<Event>,
     pub powershell_manager: Arc<PowerShellManager>,
+    pub static_key: Arc<NoiseKeypair>,
 }
 
 #[tonic::async_trait]
@@ -24,11 +26,9 @@ impl ImplantService for ImplantServiceImpl {
         &self,
         req: Request<RegisterRequest>,
     ) -> Result<Response<RegisterResponse>, Status> {
-        // In a production implementation, we extract registration data.
-        // For gRPC agents, this typically involves a pre-shared key or initial Noise handshake.
-        let _req = req.into_inner();
+        let req = req.into_inner();
 
-        let implant_data = crate::models::Implant {
+        let mut implant_data = crate::models::Implant {
             id: Uuid::new_v4(),
             campaign_id: None,
             hostname: Some(format!(
@@ -52,6 +52,52 @@ impl ImplantService for ImplantServiceImpl {
             notes: None,
             metadata: None,
         };
+
+        // Decrypt registration data if provided
+        if !req.encrypted_registration.is_empty() && req.ephemeral_public.len() == 32 {
+            let mut my_priv_bytes = [0u8; 32];
+            my_priv_bytes.copy_from_slice(self.static_key.private_key());
+            let my_priv = wraith_crypto::x25519::PrivateKey::from_bytes(my_priv_bytes);
+            
+            let mut peer_pub_bytes = [0u8; 32];
+            peer_pub_bytes.copy_from_slice(&req.ephemeral_public);
+            let peer_pub = wraith_crypto::x25519::PublicKey::from_bytes(peer_pub_bytes);
+            
+            if let Some(shared_secret) = my_priv.exchange(&peer_pub) {
+                // KDF: BLAKE3(shared_secret || "wraith_register")
+                let mut hasher = blake3::Hasher::new();
+                hasher.update(shared_secret.as_bytes());
+                hasher.update(b"wraith_register");
+                let key_hash = hasher.finalize();
+                let key_bytes: [u8; 32] = *key_hash.as_bytes();
+
+                if req.encrypted_registration.len() > 24 + 16 {
+                    let nonce_slice = &req.encrypted_registration[0..24];
+                    let ciphertext = &req.encrypted_registration[24..];
+                    
+                    let mut nonce_arr = [0u8; 24];
+                    nonce_arr.copy_from_slice(nonce_slice);
+                    let nonce = wraith_crypto::aead::Nonce::from_bytes(nonce_arr);
+                    let aead_key = wraith_crypto::aead::AeadKey::new(key_bytes);
+
+                    if let Ok(plaintext) = aead_key.decrypt(&nonce, ciphertext, &[]) {
+                        if let Ok(info) = serde_json::from_slice::<serde_json::Value>(&plaintext) {
+                            if let Some(h) = info["hostname"].as_str() { implant_data.hostname = Some(h.to_string()); }
+                            if let Some(u) = info["username"].as_str() { implant_data.username = Some(u.to_string()); }
+                            if let Some(os) = info["os_type"].as_str() { implant_data.os_type = Some(os.to_string()); }
+                            if let Some(arch) = info["architecture"].as_str() { implant_data.architecture = Some(arch.to_string()); }
+                            if let Some(ver) = info["implant_version"].as_str() { implant_data.implant_version = Some(ver.to_string()); }
+                        }
+                    } else {
+                        // If decryption fails, we can either reject or log warning. 
+                        // For P2-4 "Validate", rejection is safer.
+                        return Err(Status::unauthenticated("Registration decryption failed"));
+                    }
+                }
+            } else {
+                return Err(Status::invalid_argument("Invalid ephemeral public key"));
+            }
+        }
 
         let id = self
             .db

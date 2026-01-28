@@ -63,6 +63,7 @@ wraith-core = { path = "../../../crates/wraith-core" }
 wraith-crypto = { path = "../../../crates/wraith-crypto" }
 wraith-transport = { path = "../../../crates/wraith-transport" }
 dashmap = "5.5"
+blake3.workspace = true
 
 [dev-dependencies]
 tempfile = "3.8"
