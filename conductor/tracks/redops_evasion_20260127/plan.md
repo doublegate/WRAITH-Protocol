@@ -22,10 +22,10 @@
 - [x] Task: Implement Screen Capture (T1113) [d79f65d4]
     - [x] Create `modules/screenshot.rs`.
     - [x] Implement GDI capture logic.
-- [ ] Task: Implement Browser Credential Harvesting (T1555)
-    -   [ ] Create `modules/browser.rs`.
-    -   [ ] Implement file search for Chrome/Edge profiles.
-    -   [ ] Implement key file extraction (download for offline decryption).
+- [x] Task: Implement Browser Credential Harvesting (T1555) [f39d2aa2]
+    - [x] Create `modules/browser.rs`.
+    - [x] Implement file search for Chrome/Edge profiles.
+    - [x] Implement key file extraction (download for offline decryption).
 
 ## Phase 4: Integration & Lifecycle Management
 - [ ] Task: Tauri Client Parity & Notification Support
