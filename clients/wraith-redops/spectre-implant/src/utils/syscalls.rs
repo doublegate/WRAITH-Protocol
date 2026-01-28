@@ -53,6 +53,8 @@ pub const SYS_PTRACE: usize = 101;
 pub const SYS_PROCESS_VM_WRITEV: usize = 310;
 #[cfg(not(target_os = "windows"))]
 pub const SYS_OPENAT: usize = 257;
+#[cfg(not(target_os = "windows"))]
+pub const SYS_CLOCK_GETTIME: usize = 228;
 
 // Ptrace Constants
 pub const PTRACE_TRACEME: usize = 0;
@@ -295,6 +297,11 @@ pub unsafe fn sys_exit(code: i32) -> ! {
 }
 
 #[cfg(not(target_os = "windows"))]
+pub unsafe fn sys_clock_gettime(clock_id: i32, tp: *mut Timespec) -> i32 {
+    syscall2(SYS_CLOCK_GETTIME, clock_id as usize, tp as usize) as i32
+}
+
+#[cfg(not(target_os = "windows"))]
 pub unsafe fn sys_wait4(pid: i32, wstatus: *mut i32, options: i32, rusage: *mut c_void) -> isize {
     syscall4(SYS_WAIT4, pid as usize, wstatus as usize, options as usize, rusage as usize) as isize
 }
@@ -481,13 +488,20 @@ unsafe fn get_syscall_gadget() -> Option<*const ()> {
 
 #[cfg(target_os = "windows")]
 #[inline(always)]
-pub unsafe fn do_syscall(ssn: u16, w1: usize, w2: usize, w3: usize, w4: usize) -> usize {
+pub unsafe fn do_syscall(ssn: u16, w1: usize, w2: usize, w3: usize, w4: usize, w5: usize) -> usize {
     let ret: usize;
     if let Some(gadget) = get_syscall_gadget() {
-        asm!(
+        core::arch::asm!(
+            "mov [rsp+0x28], {w5}", // 5th arg. 0x28 because of sub rsp below?
+            // Actually, we should sub rsp first.
+            "sub rsp, 0x30",        // Align + shadow + args
+            "mov rax, {w5}",
+            "mov [rsp+0x20], rax",  // 5th arg at offset 0x20
             "mov r10, rcx",
-            "call {}",
-            in(reg) gadget,
+            "call {gadget}",
+            "add rsp, 0x30",
+            gadget = in(reg) gadget,
+            w5 = in(reg) w5,
             in("eax") ssn as u32,
             in("rcx") w1,
             in("rdx") w2,
@@ -496,12 +510,16 @@ pub unsafe fn do_syscall(ssn: u16, w1: usize, w2: usize, w3: usize, w4: usize) -
             lateout("rax") ret,
             out("r10") _,
             out("r11") _,
-            options(nostack)
         );
     } else {
-        asm!(
+        core::arch::asm!(
+            "sub rsp, 0x30",
+            "mov rax, {w5}",
+            "mov [rsp+0x20], rax",
             "mov r10, rcx",
             "syscall",
+            "add rsp, 0x30",
+            w5 = in(reg) w5,
             in("eax") ssn as u32,
             in("rcx") w1,
             in("rdx") w2,
@@ -510,7 +528,6 @@ pub unsafe fn do_syscall(ssn: u16, w1: usize, w2: usize, w3: usize, w4: usize) -
             lateout("rax") ret,
             out("r10") _,
             out("r11") _,
-            options(nostack)
         );
     }
     ret
@@ -522,7 +539,7 @@ pub unsafe fn sys_exit(code: i32) -> ! {
     let ssn = get_ssn(term_hash);
     if ssn != 0 {
         // Handle -1 (Current Process)
-        do_syscall(ssn, 0xFFFFFFFFFFFFFFFF, code as usize, 0, 0);
+        do_syscall(ssn, 0xFFFFFFFFFFFFFFFF, code as usize, 0, 0, 0);
     }
 
     loop {}

