@@ -24,9 +24,9 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 1: P1 & Foundational Fixes' (Protocol in workflow.md)
 
 ## Phase 2: P2 (Medium) Issues & Integration
-- [ ] Task: Wire PowerShell Management IPC (P2-1)
-    - [ ] Implement Tauri commands for `SetPowerShellProfile` and `GetPowerShellProfile`
-    - [ ] Update `operator-client` frontend to use new commands
+- [x] Task: Wire PowerShell Management IPC (P2-1) 223876a
+    - [x] Implement Tauri commands for `SetPowerShellProfile` and `GetPowerShellProfile`
+    - [x] Update `operator-client` frontend to use new commands
 - [ ] Task: Expand Console Command Parity (P2-2)
     - [ ] Add `inject`, `bof`, `socks`, `screenshot`, `browser`, `net_scan`, and `service_stop` to `Console.tsx`
     - [ ] Implement UI handlers for command arguments
