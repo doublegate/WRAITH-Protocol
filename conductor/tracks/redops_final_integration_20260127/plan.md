@@ -14,9 +14,9 @@
 - [x] Task: Fix CLR MetaHost CLSID (P2-5) 551937d
     - [x] Verify CLSID in `clr.rs` against official COM GUID
     - [x] Correct if necessary
-- [ ] Task: Modernize SMB Header Serialization (P2-7)
-    - [ ] Remove `unsafe` transmutes in `smb.rs`
-    - [ ] Implement explicit byte-by-byte serialization/deserialization
+- [x] Task: Modernize SMB Header Serialization (P2-7) 251d2b0
+    - [x] Remove `unsafe` transmutes in `smb.rs`
+    - [x] Implement explicit byte-by-byte serialization/deserialization
 - [ ] Task: Enhance Entropy Engine (P2-6 / 8.5)
     - [ ] Update `entropy.rs` to check RDRAND CF flag
     - [ ] Integrate `/dev/urandom` for Linux entropy
