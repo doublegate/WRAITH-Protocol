@@ -7,10 +7,10 @@
     - [x] Update `Team Server` to process rekey and return new public key
     - [x] Implement fallback to full Handshake Re-trigger
     - [x] Implement fallback to In-Band Piggybacking
-- [ ] Task: Finalize and Verify PowerShell Runner.dll (P1-2)
-    - [ ] Verify existing `Runner.dll` integrity and functionality
-    - [ ] Integrate C# source and build script for local compilation
-    - [ ] Implement runtime MSIL generation for fallback
+- [x] Task: Finalize and Verify PowerShell Runner.dll (P1-2) cdc77d1
+    - [x] Verify existing `Runner.dll` integrity and functionality
+    - [x] Integrate C# source and build script for local compilation
+    - [x] Implement runtime MSIL generation for fallback
 - [ ] Task: Fix CLR MetaHost CLSID (P2-5)
     - [ ] Verify CLSID in `clr.rs` against official COM GUID
     - [ ] Correct if necessary
