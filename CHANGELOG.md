@@ -9,6 +9,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.3.1] - 2026-01-28 - RedOps Operator Client UI/UX Enhancement
+
+### Overview
+
+Full UI/UX overhaul of the WRAITH-RedOps Operator Client frontend, wiring all 34 backend IPC commands (previously only 19 were wired), replacing broken UI elements, adding 6 new feature sections, and introducing professional notification, state management, and interaction systems.
+
+### Added
+
+#### Operator Client UI/UX Enhancement (2026-01-28)
+
+Complete frontend rewrite of `clients/wraith-redops/operator-client/src/` with 17 new files and 7 modified files:
+
+- **Foundation Infrastructure**
+  - `src/types/index.ts` - All TypeScript interfaces matching Rust JSON types (Implant with 15 fields, Campaign with 6 fields, Listener, Command, CommandResult, Credential, Artifact, PersistenceItem, AttackChain, ChainStep, Playbook, StreamEvent)
+  - `src/lib/ipc.ts` - Typed wrapper for all 34 `invoke()` calls with centralized JSON parsing and error handling
+  - `src/lib/utils.ts` - `cn()` utility using `clsx` + `tailwind-merge` (both were installed but unused)
+  - `src/stores/appStore.ts` - Zustand global state store replacing App.tsx inline `useState` (connection, data, auth, settings, navigation)
+  - `src/stores/toastStore.ts` - Toast notification state management with auto-dismiss timers
+
+- **UI Components**
+  - `src/components/ui/Toast.tsx` - Bottom-right toast overlay with success/error/warning/info variants and lucide-react icons, replacing all `alert()` and `console.error()` calls
+  - `src/components/ui/ConfirmDialog.tsx` - Modal confirmation dialog replacing all native `confirm()` calls
+  - `src/components/ui/Modal.tsx` - Input modal dialog replacing all native `prompt()` calls
+  - `src/components/ui/ContextMenu.tsx` - Right-click context menus for beacons (interact, details, copy ID, kill)
+
+- **Missing Feature Sections (15 IPC commands newly wired)**
+  - `src/components/ListenerManager.tsx` - Full CRUD listener management: wires `create_listener`, `start_listener`, `stop_listener` with confirmation dialogs
+  - `src/components/ImplantDetailPanel.tsx` - Detailed implant view with all 15 fields: wires `get_implant`, `kill_implant`
+  - `src/components/CampaignDetail.tsx` - Campaign detail/edit panel: wires `get_campaign`, `update_campaign`
+  - `src/components/ImplantGenerator.tsx` - Binary implant generator (platform/arch/format/C2/sleep): wires `generate_implant`
+  - `src/components/PlaybookBrowser.tsx` - Playbook browser + saved chain list: wires `list_playbooks`, `instantiate_playbook`, `list_attack_chains`, `get_attack_chain`
+  - `src/components/EventLog.tsx` - Full event log table + dashboard widget: wires `stream_events` via Tauri event listener
+
+- **Enhanced Interactions**
+  - `src/hooks/useKeyboardShortcuts.ts` - Ctrl+1-9 tab switching, Ctrl+R refresh
+  - Right-click context menus on beacon table rows (interact, view details, copy ID, kill)
+  - Dashboard split layout: network graph (60%) + live events feed (40%)
+  - Enhanced settings: auto-refresh interval selector, auth token display/refresh, about section with version info and shortcut reference
+
+### Fixed
+
+- **Console Clear/History buttons** (`Console.tsx:212-213`) - Added `onClick` handlers using existing `xtermRef`/`commandHistoryRef`; buttons were previously non-functional
+- **Console Cancel command** - Added `cancel` command to console and Ctrl+X shortcut, wiring `cancel_command` IPC
+- **Native dialog replacement** - Replaced all `confirm()` calls (PersistenceManager, AttackChainEditor) with `ConfirmDialog` component
+- **Native prompt replacement** - Replaced all `prompt()` calls (AttackChainEditor execute) with `Modal` component
+- **Error notification replacement** - Replaced all `console.error()` and `alert()` calls across all components with toast notifications
+- **Emoji icon replacement** - Replaced all sidebar and component emoji icons with `lucide-react` SVG icons (already installed but unused)
+
+### Changed
+
+- **App.tsx** - Full rewrite: extracted inline interfaces to `types/index.ts`, extracted state to zustand `appStore`, uses `ipc.ts` service layer, adds 3 new sidebar tabs (Generator, Playbooks, Events)
+- **Console.tsx** - Added cancel command support, fixed Clear/History buttons, stores last command ID for cancellation
+- **AttackChainEditor.tsx** - Replaced `alert()`/`prompt()` with toast/modal, uses `ipc.ts` service
+- **PersistenceManager.tsx** - Replaced `confirm()`/`alert()` with ConfirmDialog/toast, uses `ipc.ts` service and shared types
+- **IPC command coverage** - 34/34 commands wired (was 19/34): `create_listener`, `start_listener`, `stop_listener`, `get_implant`, `kill_implant`, `get_campaign`, `update_campaign`, `generate_implant`, `list_playbooks`, `instantiate_playbook`, `list_attack_chains`, `get_attack_chain`, `stream_events`, `cancel_command`, `refresh_token`
+- **Operator Client lines** - ~5,800 lines TypeScript/React (up from ~4,200)
+- **Console commands** - 21 (was 20; added `cancel`)
+- Updated project metrics in README.md, README_Protocol-DEV.md, README_Clients-DEV.md
+
+---
+
 ## [2.3.0] - 2026-01-27 - RedOps Workspace Integration & CI/CD Fixes
 
 ### Overview

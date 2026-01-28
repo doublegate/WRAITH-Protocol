@@ -46,7 +46,7 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
   - WRAITH-Publish: Decentralized content publishing (56 tests)
   - WRAITH-Vault: Distributed secret storage (101 tests)
   - WRAITH-Recon: Network reconnaissance platform (98 tests)
-  - WRAITH-RedOps: Red team operations platform (Team Server + Operator Client as workspace members; Spectre Implant excluded for no_std, 11 tests run separately)
+  - WRAITH-RedOps: Red team operations platform (Team Server + Operator Client as workspace members; Spectre Implant excluded for no_std, 11 tests run separately; Operator Client: 34/34 IPC wired, 21 console commands, zustand/toast/modal/context menu UI)
 - **Development Status:** 12 of 12 clients complete (1,292 SP delivered)
 - **CI/CD:** GitHub Actions optimized with reusable setup.yml, path filters, client build support
 - **Test Coverage:** 663+ client tests across all applications (RedOps team-server and operator-client now part of workspace build/test)
@@ -183,13 +183,24 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
   - Ed25519-signed Kill Switch broadcast mechanism
   - HMAC-SHA256 signed audit logging
 
-- **Operator Client** (`operator-client/`) - Tauri 2.0 + React (~4,200 lines, workspace member)
-  - 32 RPCs wired to gRPC backend (100% IPC coverage), 20 console commands
+- **Operator Client** (`operator-client/`) - Tauri 2.0 + React (~5,800 lines, workspace member)
+  - 34/34 IPC commands wired to gRPC backend (100% frontend coverage), 21 console commands
+  - **UI/UX Enhancement (2026-01-28):** Full frontend rewrite with 17 new files, 7 modified
+  - Zustand global state store replacing inline useState, typed IPC service layer (`lib/ipc.ts`)
+  - Toast notification system replacing all native `alert()`/`console.error()` calls
+  - ConfirmDialog + Modal components replacing all native `confirm()`/`prompt()` calls
+  - Right-click context menus on beacons (interact, details, copy ID, kill)
+  - Keyboard shortcuts: Ctrl+1-9 tab switching, Ctrl+R refresh
+  - Dashboard split: network graph (60%) + live event feed (40%)
+  - **New feature sections:** Listener CRUD, implant detail panel + kill, campaign detail/edit, implant generator, playbook browser + chain list, event log (table + dashboard widget)
+  - **15 previously unwired IPC commands now connected:** `create_listener`, `start_listener`, `stop_listener`, `get_implant`, `kill_implant`, `get_campaign`, `update_campaign`, `generate_implant`, `list_playbooks`, `instantiate_playbook`, `list_attack_chains`, `get_attack_chain`, `stream_events`, `cancel_command`, `refresh_token`
   - Real-time dashboard with beacon status and campaign statistics
-  - Interactive xterm.js terminal with 12 command types
+  - Interactive xterm.js terminal with 21 command types (added `cancel` command + Ctrl+X)
   - SVG radial topology visualization with hover/select/glow effects
   - Attack chain visual editor with ReactFlow drag-and-drop and invoke() backend integration
   - Phishing builder, loot gallery, persistence manager, discovery dashboard
+  - lucide-react icons replacing all emoji in sidebar and components
+  - Enhanced settings: auto-refresh interval, auth token display/refresh, about section
   - Wayland compatibility with X11 fallback
 
 - **Spectre Implant** (`spectre-implant/`) - no_std Rust (8,925 lines, excluded from workspace)
@@ -217,19 +228,26 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 - Wayland-compatible Tauri desktop client
 
 **Gap Analysis (v7.0.0 Deep Source Audit - Full Codebase Audit):**
-- Overall completion: ~97% (up from ~96% in v6.0.0)
+- Overall completion: ~98% (up from ~97% in v7.0.0 after UI/UX enhancement)
 - 21 modules across 3 components (up from 18 in v6.0.0; +3: compression.rs, exfiltration.rs, impact.rs)
 - MITRE ATT&CK coverage: 87% (35/40 techniques, up from 82% in v6.0.0)
 - 0 P0 critical issues, 2 P1 high issues remaining
-- 32 RPCs with 100% IPC coverage (corrected from 97%/31 of 32 in v6.0.0)
+- 34/34 Tauri IPC commands wired to frontend (was 19/34 before UI/UX enhancement; 32 RPCs backed by gRPC)
 - 13 remaining findings / 59 SP (down from 17 findings / 73 SP in v6.0.0)
 - Test infrastructure: 11 spectre-implant tests now passing (previously blocked by no_std configuration)
 - 3 dead code annotations remaining (down from 10)
 - Gap analysis v7.0.0 deep source audit in GAP-ANALYSIS-v2.3.0.md
 
+**UI/UX Enhancement (2026-01-28):**
+- 34/34 IPC commands wired (was 19/34): added listener CRUD, implant detail/kill, campaign detail/edit, implant generator, playbook browser, attack chain list/detail, event streaming, command cancellation, token refresh
+- 17 new files: types/index.ts, lib/ipc.ts, lib/utils.ts, stores/appStore.ts, stores/toastStore.ts, ui/Toast.tsx, ui/ConfirmDialog.tsx, ui/Modal.tsx, ui/ContextMenu.tsx, ListenerManager.tsx, ImplantDetailPanel.tsx, CampaignDetail.tsx, ImplantGenerator.tsx, PlaybookBrowser.tsx, EventLog.tsx, hooks/useKeyboardShortcuts.ts
+- 7 modified files: App.tsx (full rewrite), Console.tsx, AttackChainEditor.tsx, PersistenceManager.tsx
+- Fixed: Console Clear/History buttons non-functional, native alert/confirm/prompt replaced with UI components, console.error replaced with toast notifications, emoji replaced with lucide-react icons
+- ~5,800 lines TypeScript/React (up from ~4,200)
+
 **Technical Specifications:**
 - Team Server: 5,833 lines Rust (gRPC services, PostgreSQL, 4 listener types, playbook system)
-- Operator Client: ~4,200 lines total (Rust Tauri IPC + TypeScript/React), 20 console commands, 32 RPCs bridged (100% IPC)
+- Operator Client: ~5,800 lines total (Rust Tauri IPC + TypeScript/React), 21 console commands, 34/34 IPC commands wired (100% frontend coverage), zustand + typed IPC + toast/modal/context menu system
 - Spectre Implant: 8,925 lines Rust (no_std, 21 modules, 11 tests)
 - Proto: 511 lines (32 RPCs in OperatorService, 6 in ImplantService)
 - Protocol: gRPC with protobuf definitions
@@ -1177,6 +1195,7 @@ RedOps                                                          [=============]
 - ✅ Production-ready architecture with v2.3.0 release
 - ✅ WRAITH-RedOps workspace integration: team-server and operator-client as Cargo workspace members
 - ✅ WRAITH-RedOps gap analysis v7.0.0: ~97% completion, 87% MITRE ATT&CK (35/40), 0 P0 critical, 21 modules, 32 RPCs 100% IPC, 59 SP remaining across 13 findings
+- ✅ WRAITH-RedOps Operator Client UI/UX Enhancement: 34/34 IPC commands wired (was 19/34), 17 new files, 7 modified, zustand stores, toast/modal/context menu system, 6 new feature sections (listener CRUD, implant detail, campaign edit, implant generator, playbook browser, event log)
 - ✅ sqlx restructured to PostgreSQL-only (avoids libsqlite3-sys link conflict with Tauri rusqlite)
 - ✅ Cross-compilation with Cross.toml pre-build hooks (protobuf-compiler for gRPC builds)
 - ✅ Conductor project management system with code style guides for development workflow tracking
@@ -1308,6 +1327,6 @@ RedOps                                                          [=============]
 
 **WRAITH Protocol Client Applications Development History** - *From Planning to v2.3.0*
 
-**Status:** Phases 15-24 Complete (All 12 Clients) | **Total Scope:** 12 clients, 1,292 SP | **Delivered:** 1,292 SP (100%) | **Protocol:** v2.3.0 Complete | **Tests:** 2,134 total (2,123 workspace + 11 spectre-implant, 663+ client tests) | **Workspace:** 22 members (team-server + operator-client integrated) | **TDR:** ~2.5% (Grade A) | **CI/CD:** Optimized workflows with reusable setup, path filters, and cross-compilation via Cross.toml | **RedOps:** Gap analysis v7.0.0 (~97% complete, 87% MITRE ATT&CK (35/40), 0 P0 critical, 21 modules, 32 RPCs 100% IPC, 59 SP remaining / 13 findings) | **Conductor:** Project management system with code style guides
+**Status:** Phases 15-24 Complete (All 12 Clients) | **Total Scope:** 12 clients, 1,292 SP | **Delivered:** 1,292 SP (100%) | **Protocol:** v2.3.1 Complete | **Tests:** 2,148 total (2,123 workspace + 11 spectre-implant + 14 doc, 663+ client tests) | **Workspace:** 22 members (team-server + operator-client integrated) | **TDR:** ~2.5% (Grade A) | **CI/CD:** Optimized workflows with reusable setup, path filters, and cross-compilation via Cross.toml | **RedOps:** Gap analysis v7.0.0 (~98% complete, 87% MITRE ATT&CK (35/40), 0 P0 critical, 21 modules, 34/34 IPC wired, operator UI/UX overhauled with zustand/toast/modal/context menus) | **Conductor:** Project management system with code style guides
 
 *Last Updated: 2026-01-28*

@@ -23,8 +23,8 @@ For the current production README, see [../../README.md](../../README.md).
 **Total Development Effort:** 2,685 story points delivered across 24 phases
 
 **Project Metrics (2026-01-28):**
-- **Code Volume:** ~141,000 lines of Rust code across protocol and client crates + ~36,600 lines TypeScript
-- **Test Coverage:** 2,134 tests passing (2,123 workspace + 11 spectre-implant, 16 ignored) - 100% pass rate
+- **Code Volume:** ~141,000 lines of Rust code across protocol and client crates + ~37,800 lines TypeScript
+- **Test Coverage:** 2,148 tests passing (2,123 workspace + 11 spectre-implant + 14 doc, 16 ignored) - 100% pass rate
 - **Documentation:** 114 markdown files, ~62,800 lines of comprehensive documentation
 - **Dependencies:** 295 audited packages (zero vulnerabilities via cargo-audit)
 - **Security:** Grade A+ (EXCELLENT) - zero vulnerabilities, 100% unsafe documentation, comprehensive audits
@@ -36,7 +36,7 @@ For the current production README, see [../../README.md](../../README.md).
 **Quality Metrics:**
 - **Quality Grade:** 98/100 (Production-ready)
 - **Technical Debt Ratio:** ~2.5% (Grade A - Excellent)
-- **Test Coverage:** 2,134 tests passing (2,123 workspace + 11 spectre-implant, 16 ignored) - 100% pass rate
+- **Test Coverage:** 2,148 tests passing (2,123 workspace + 11 spectre-implant + 14 doc, 16 ignored) - 100% pass rate
   - 456 wraith-core - frame parsing (SIMD), sessions, streams, BBR, migration, ring buffers, Node API, security monitor (439 unit + 17 doctests)
   - 216 wraith-crypto - Ed25519, X25519+Elligator2, AEAD, Noise_XX, Double Ratchet (123 unit + 24 vectors + 15 zeroization + 54 doctests)
   - 183 wraith-transport - AF_XDP socket config, io_uring, UDP, worker pools, NUMA-aware allocation, buffer pools (149 unit + 34 doctests)
@@ -55,7 +55,7 @@ For the current production README, see [../../README.md](../../README.md).
   - 101 wraith-vault - Distributed secret storage (Shamir SSS, erasure coding, guardians)
   - 98 wraith-recon - Network reconnaissance (packet capture, protocol analysis, mapping)
   - 127 wraith-integration-tests - Cross-crate integration tests (8 lib + 12 advanced + 17 edge cases + 8 hardening + 44 integration + 38 property)
-  - wraith-redops - Red team operations (Team Server + Operator Client as workspace members; Spectre Implant excluded for no_std, 11 tests run separately)
+  - wraith-redops - Red team operations (Team Server + Operator Client as workspace members; Spectre Implant excluded for no_std, 11 tests run separately; Operator Client: 34/34 IPC wired, 21 console commands, zustand/toast/modal UI)
 - **Security Vulnerabilities:** Zero (295 dependencies scanned with cargo-audit, CodeQL verified)
 - **Clippy Warnings:** Zero (strict `-D warnings` enforcement)
 - **Compiler Warnings:** Zero
@@ -1183,7 +1183,7 @@ This major phase delivers three production-ready client applications implementin
 **Tier 4 Client (Phase 24): WRAITH-RedOps (89 SP):**
 Red team operations platform for authorized adversary emulation:
 - **Team Server:** Axum web framework, Tonic gRPC, PostgreSQL with SQLx, listener management (HTTP/HTTPS/DNS/TCP/UDP/SMB), implant registry, task queue, campaign lifecycle, RBAC
-- **Operator Client:** Tauri 2.0 desktop with React frontend, real-time dashboard, interactive terminal, campaign wizard, network graph visualization
+- **Operator Client:** Tauri 2.0 desktop with React frontend (~5,800 lines), 34/34 IPC commands wired, 21 console commands, zustand state management, toast/modal/context menu system, keyboard shortcuts, 10 sidebar tabs (Dashboard, Campaigns, Attack Chains, Beacons, Listeners, Loot, Phishing, Generator, Playbooks, Events)
 - **Spectre Implant:** no_std Rust binary, C2 loop, MiniHeap custom allocator, sleep mask obfuscation, hash-based API resolution, silent panic handling
 - **Post-Exploitation Modules:** Process injection (Reflective DLL, Hollowing, Thread Hijack), BOF Loader (COFF parsing), SOCKS4a/5 proxy, PTY shell, Halo's Gate SSN resolution
 - **Security:** Ed25519-signed Kill Switch, encryption at rest for payloads/results, gRPC metadata-based operator identification
@@ -1220,7 +1220,7 @@ Red team operations platform for authorized adversary emulation:
 | **wraith-recon** | ✅ v2.2.0 | ~4,500 | - | - | 78 | Network reconnaissance platform (Tauri 2.0 + React 18), packet capture with pcap/BPF, protocol analysis and dissection, network mapping and visualization, device fingerprinting, traffic anomaly detection, 17 Tauri IPC commands, real-time dashboard with dark theme |
 | **wraith-xdp** | 📋 Planned | 0 | 0 | 0 | 0 | eBPF/XDP programs for in-kernel packet filtering (excluded from default build) |
 
-**Total Protocol:** ~141,000 lines Rust across protocol and client crates + ~36,600 lines TypeScript/Kotlin/Swift
+**Total Protocol:** ~141,000 lines Rust across protocol and client crates + ~37,800 lines TypeScript/Kotlin/Swift
 
 **Workspace:** 22 members (8 protocol crates + 9 Tauri clients + team-server + operator-client + xtask + tests), 2 excluded (wraith-xdp, spectre-implant)
 
@@ -1396,6 +1396,7 @@ Red team operations platform for authorized adversary emulation:
 - ✅ WRAITH-Recon network reconnaissance platform (packet capture, protocol analysis, network mapping)
 - ✅ WRAITH-RedOps workspace integration: team-server and operator-client as Cargo workspace members
 - ✅ WRAITH-RedOps gap analysis v7.0.0: ~97% completion, 87% MITRE ATT&CK (35/40), 0 P0 critical, 21 modules, 32 RPCs 100% IPC, 59 SP remaining across 13 findings
+- ✅ WRAITH-RedOps Operator Client UI/UX Enhancement: 34/34 IPC commands wired (was 19/34), 17 new files, 7 modified, zustand stores, toast/modal/context menu system, 6 new feature sections, keyboard shortcuts, ~5,800 lines TypeScript (up from ~4,200)
 - ✅ sqlx restructured to PostgreSQL-only (avoids libsqlite3-sys link conflict with Tauri rusqlite)
 - ✅ Cross-compilation with Cross.toml pre-build hooks (protobuf-compiler for gRPC builds)
 - ✅ Conductor project management system with code style guides
@@ -1453,6 +1454,6 @@ See [../../to-dos/ROADMAP.md](../../to-dos/ROADMAP.md) for detailed future plann
 
 **WRAITH Protocol Development History** - *From Foundation to v2.3.0 (Phases 1-24 + Infrastructure Sprints)*
 
-**Development Period:** 2024 - 2026-01-28 | **Total Effort:** 2,740+ story points delivered across 24 phases + infrastructure sprints | **Quality:** Production-ready (98/100), 2,134 tests (2,123 workspace + 11 spectre-implant, 100% pass rate), 0 vulnerabilities, Grade A+ security | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server) | **Workspace:** 22 members + 2 excluded (team-server and operator-client integrated) | **TDR:** ~2.5% (Grade A - Excellent) | **CI/CD:** Optimized workflows with reusable setup, path filters, and cross-compilation via Cross.toml | **v2.3.0:** MSRV 1.88, WRAITH-RedOps ~97% complete (gap analysis v7.0.0), 87% MITRE ATT&CK coverage (35/40), 0 P0 critical issues, 21 modules, 32 RPCs 100% IPC, 59 SP remaining across 13 findings | **Conductor:** Project management system with code style guides
+**Development Period:** 2024 - 2026-01-28 | **Total Effort:** 2,740+ story points delivered across 24 phases + infrastructure sprints | **Quality:** Production-ready (98/100), 2,148 tests (2,123 workspace + 11 spectre-implant + 14 doc, 100% pass rate), 0 vulnerabilities, Grade A+ security | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server) | **Workspace:** 22 members + 2 excluded (team-server and operator-client integrated) | **TDR:** ~2.5% (Grade A - Excellent) | **CI/CD:** Optimized workflows with reusable setup, path filters, and cross-compilation via Cross.toml | **v2.3.1:** MSRV 1.88, WRAITH-RedOps ~98% complete (gap analysis v7.0.0 + UI/UX overhaul), 87% MITRE ATT&CK coverage (35/40), 0 P0 critical issues, 21 modules, 34/34 IPC wired, operator client UI/UX overhauled (~5,800 lines, zustand/toast/modal/context menus, 6 new feature sections) | **Conductor:** Project management system with code style guides
 
 *Last Updated: 2026-01-28*

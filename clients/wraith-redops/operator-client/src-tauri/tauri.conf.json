@@ -47,7 +47,6 @@
     }
   },
   "plugins": {
-    "log": {},
-    "notification": {}
+    "notification": null
   }
 }

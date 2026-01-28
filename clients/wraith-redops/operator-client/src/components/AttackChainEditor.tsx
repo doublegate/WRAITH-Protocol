@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import ReactFlow, {
   Controls,
   Background,
@@ -14,6 +13,9 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Button } from './ui/Button';
+import { Modal } from './ui/Modal';
+import { useToastStore } from '../stores/toastStore';
+import * as ipc from '../lib/ipc';
 
 const initialNodes: Node[] = [
   {
@@ -37,6 +39,9 @@ export default function AttackChainEditor() {
   const [nodes, setNodes] = useState<Node[]>(initialNodes);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [nodeStatuses, setNodeStatuses] = useState<Record<string, 'pending' | 'running' | 'success' | 'failed'>>({});
+  const [showImplantModal, setShowImplantModal] = useState(false);
+  const [pendingChainId, setPendingChainId] = useState<string | null>(null);
+  const addToast = useToastStore((s) => s.addToast);
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
@@ -57,48 +62,51 @@ export default function AttackChainEditor() {
     event.dataTransfer.effectAllowed = 'move';
   };
 
-  const handleSave = async () => {
+  const handleSave = async (): Promise<string | null> => {
       const sorted = [...nodes].sort((a, b) => a.position.x - b.position.x);
       const steps = sorted.filter(n => n.id !== '1').map((n, i) => ({
           step_order: i + 1,
           technique_id: n.data.label,
           command_type: mapLabelToType(n.data.label),
-          payload: "whoami", // Default payload
+          payload: "whoami",
           description: n.data.label
       }));
-      
+
       try {
-          const json = await invoke('create_attack_chain', {
-              name: "Chain-" + Date.now(),
-              description: "Created via Editor",
-              steps: steps
-          }) as string;
-          const chain = JSON.parse(json);
-          alert("Chain saved! ID: " + chain.id);
+          const chain = await ipc.createAttackChain(
+              "Chain-" + Date.now(),
+              "Created via Editor",
+              steps
+          );
+          addToast('success', `Chain saved: ${chain.id.substring(0, 8)}`);
           return chain.id;
       } catch (e) {
-          console.error(e);
-          alert("Save failed: " + e);
+          addToast('error', 'Save failed: ' + e);
           return null;
       }
   };
 
   const handleExecute = async () => {
-      const implantId = prompt("Enter Target Implant ID:");
-      if (!implantId) return;
-
       const chainId = await handleSave();
       if (!chainId) return;
+      setPendingChainId(chainId);
+      setShowImplantModal(true);
+  };
+
+  const handleExecuteConfirm = async (implantId: string) => {
+      setShowImplantModal(false);
+      if (!pendingChainId) return;
 
       try {
-          await invoke('execute_attack_chain', { chainId, implantId });
+          await ipc.executeAttackChain(pendingChainId, implantId);
           const newStatus: Record<string, 'running'> = {};
           nodes.forEach(n => newStatus[n.id] = 'running');
           setNodeStatuses(newStatus);
-          alert("Execution started!");
+          addToast('success', 'Chain execution started');
       } catch (e) {
-          alert("Execution failed: " + e);
+          addToast('error', 'Execution failed: ' + e);
       }
+      setPendingChainId(null);
   };
 
   // Apply styles based on status
@@ -106,8 +114,8 @@ export default function AttackChainEditor() {
       ...node,
       style: {
           ...node.style,
-          borderColor: nodeStatuses[node.id] === 'success' ? '#22c55e' : 
-                       nodeStatuses[node.id] === 'failed' ? '#ef4444' : 
+          borderColor: nodeStatuses[node.id] === 'success' ? '#22c55e' :
+                       nodeStatuses[node.id] === 'failed' ? '#ef4444' :
                        nodeStatuses[node.id] === 'running' ? '#eab308' : '#334155',
           borderWidth: nodeStatuses[node.id] ? '2px' : '1px',
           boxShadow: nodeStatuses[node.id] === 'running' ? '0 0 10px rgba(234, 179, 8, 0.5)' : 'none'
@@ -116,37 +124,49 @@ export default function AttackChainEditor() {
 
   return (
     <div className="flex h-full bg-slate-950 text-white rounded-lg shadow border border-slate-800 overflow-hidden">
+        <Modal
+          open={showImplantModal}
+          title="Execute Chain"
+          message="Enter the target implant ID to execute this attack chain against."
+          placeholder="Implant ID..."
+          onSubmit={handleExecuteConfirm}
+          onCancel={() => {
+            setShowImplantModal(false);
+            setPendingChainId(null);
+          }}
+        />
+
         {/* Sidebar Palette */}
         <aside className="w-64 bg-slate-900 border-r border-slate-800 p-4 flex flex-col gap-4">
             <h3 className="font-bold text-red-500 uppercase tracking-wider text-sm">Technique Palette</h3>
             <div className="space-y-2">
                 <div className="text-xs text-slate-500 font-bold uppercase">Execution</div>
-                <div 
+                <div
                     className="p-2 bg-slate-800 border border-slate-700 rounded cursor-grab hover:border-red-500 transition-colors"
                     draggable
                     onDragStart={(e) => onDragStart(e, 'default', 'Shell Command')}
                 >
                     Shell Command
                 </div>
-                <div 
+                <div
                     className="p-2 bg-slate-800 border border-slate-700 rounded cursor-grab hover:border-red-500 transition-colors"
                     draggable
                     onDragStart={(e) => onDragStart(e, 'default', 'PowerShell')}
                 >
                     PowerShell
                 </div>
-                
+
                 <div className="text-xs text-slate-500 font-bold uppercase mt-4">Persistence</div>
-                <div 
+                <div
                     className="p-2 bg-slate-800 border border-slate-700 rounded cursor-grab hover:border-red-500 transition-colors"
                     draggable
                     onDragStart={(e) => onDragStart(e, 'default', 'Registry Run')}
                 >
                     Registry Run Key
                 </div>
-                
+
                 <div className="text-xs text-slate-500 font-bold uppercase mt-4">Discovery</div>
-                <div 
+                <div
                     className="p-2 bg-slate-800 border border-slate-700 rounded cursor-grab hover:border-red-500 transition-colors"
                     draggable
                     onDragStart={(e) => onDragStart(e, 'default', 'SysInfo')}
@@ -154,7 +174,7 @@ export default function AttackChainEditor() {
                     System Info
                 </div>
             </div>
-            
+
             <div className="mt-auto space-y-2">
                 <Button className="w-full" onClick={handleSave}>Save Chain</Button>
                 <Button className="w-full" variant="danger" onClick={handleExecute}>Execute</Button>
@@ -162,17 +182,15 @@ export default function AttackChainEditor() {
         </aside>
 
         {/* Canvas */}
-        <div className="flex-1 h-full" 
+        <div className="flex-1 h-full"
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => {
                 e.preventDefault();
                 const type = e.dataTransfer.getData('application/reactflow/type');
                 const label = e.dataTransfer.getData('application/reactflow/label');
-                
-                // Get drop position (simplified, needs bounds ref)
-                // In real app, project to flow coordinates
+
                 const position = { x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY };
-                
+
                 const newNode: Node = {
                     id: crypto.randomUUID(),
                     type,
@@ -180,7 +198,7 @@ export default function AttackChainEditor() {
                     data: { label: label },
                     style: { background: '#1e293b', color: '#fff', border: '1px solid #334155', minWidth: '150px' },
                 };
-                
+
                 setNodes((nds) => nds.concat(newNode));
             }}
         >
