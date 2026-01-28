@@ -45,8 +45,8 @@
 ## Phase 3: P3 (Low) Issues
 - [x] Task: Implement Browser Credential Decryption (P3-1) 1269496
     - [x] Integrate DPAPI decryption in `browser.rs`
-- [ ] Task: Dynamic Linux .text Base Detection (P3-2)
-    - [ ] Parse `/proc/self/maps` to find actual `.text` base in `obfuscation.rs`
+- [x] Task: Dynamic Linux .text Base Detection (P3-2) 5176ecd
+    - [x] Parse `/proc/self/maps` to find actual `.text` base in `obfuscation.rs`
 - [ ] Task: Encrypt Mesh Discovery (P3-3)
     - [ ] Replace "WRAITH_MESH_HELLO" with encrypted discovery handshake
 - [ ] Task: Implement Windows SMB Client (P3-4)
