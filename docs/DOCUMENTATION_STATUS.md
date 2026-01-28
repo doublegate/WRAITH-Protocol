@@ -25,7 +25,7 @@
 | Root-level docs | 10 | 7,900 | Complete |
 | **Total** | **114** | **~62,800** | **100%** |
 
-**Note:** Documentation expanded significantly for v2.0.0 with client applications and comprehensive development history. As of v2.3.0, all 12 client applications (9 desktop + 2 mobile + 1 server) are documented.
+**Note:** Documentation expanded significantly for v2.0.0 with client applications and comprehensive development history. As of v2.3.1, all 12 client applications (9 desktop + 2 mobile + 1 server) are documented.
 
 ---
 

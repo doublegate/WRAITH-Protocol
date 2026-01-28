@@ -1,6 +1,6 @@
 {
   "name": "wraith-recon",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "WRAITH Recon - Network reconnaissance and data exfiltration assessment platform",
   "private": true,
   "scripts": {

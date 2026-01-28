@@ -1,6 +1,6 @@
 {
   "name": "wraith-chat-frontend",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "WRAITH-Chat React Frontend",
   "type": "module",
   "scripts": {

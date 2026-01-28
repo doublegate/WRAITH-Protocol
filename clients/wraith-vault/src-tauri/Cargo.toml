@@ -1,6 +1,6 @@
 [package]
 name = "wraith-vault"
-version = "2.3.0"
+version = "2.3.1"
 description = "WRAITH-Vault - Distributed Secret Storage with Shamir's Secret Sharing"
 authors = ["WRAITH Protocol Contributors"]
 license = "MIT OR Apache-2.0"
