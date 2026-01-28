@@ -288,6 +288,9 @@ impl MeshServer {
     }
 
     pub fn discover_peers(&self) {
+        let beacon_raw = b"WRAITH_MESH_HELLO";
+        let beacon = obfuscate_mesh_packet(beacon_raw);
+
         #[cfg(not(target_os = "windows"))]
         unsafe {
             let sock = sys_socket(2, 2, 0);
@@ -300,11 +303,20 @@ impl MeshServer {
                 sin_zero: [0; 8],
             };
             
-            let beacon = b"WRAITH_MESH_HELLO";
             sys_sendto(sock, beacon.as_ptr(), beacon.len(), 0, &addr as *const _ as *const u8, 16);
             sys_close(sock);
         }
     }
+}
+
+fn obfuscate_mesh_packet(data: &[u8]) -> Vec<u8> {
+    // Simple XOR obfuscation with a static key to prevent plaintext signatures
+    let key = b"WRAITH_MESH_KEY_2026"; 
+    let mut out = Vec::with_capacity(data.len());
+    for (i, b) in data.iter().enumerate() {
+        out.push(b ^ key[i % key.len()]);
+    }
+    out
 }
 
 #[cfg(test)]
