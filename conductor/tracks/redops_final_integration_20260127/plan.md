@@ -33,9 +33,9 @@
 - [x] Task: Implement Windows UDP Transport (P2-3) 270c4d3
     - [x] Implement WinSock2 logic in `spectre-implant` using hash-resolved APIs
     - [x] Ensure parity with HTTP transport for encryption and frame handling
-- [ ] Task: Secure Implant Registration (P2-4)
-    - [ ] Update `Register` RPC on Team Server to decrypt registration data
-    - [ ] Validate `ephemeral_public` from `RegisterRequest`
+- [x] Task: Secure Implant Registration (P2-4) e262b1d
+    - [x] Update `Register` RPC on Team Server to decrypt registration data
+    - [x] Validate `ephemeral_public` from `RegisterRequest`
 - [ ] Task: Complete VBA Macro Generation (P2-8)
     - [ ] Finalize VBA logic in `phishing.rs` for attachment-based initial access
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: P2 (Medium) Issues & Integration' (Protocol in workflow.md)
