@@ -298,7 +298,12 @@ impl Database {
         Ok(recs)
     }
 
-    pub async fn update_command_result(&self, command_id: Uuid, output: &[u8], exit_code: i32) -> Result<()> {
+    pub async fn update_command_result(
+        &self,
+        command_id: Uuid,
+        output: &[u8],
+        exit_code: i32,
+    ) -> Result<()> {
         // ENCRYPT RESULT AT REST
         let encrypted_output = self.encrypt_data(output)?;
 
@@ -309,12 +314,14 @@ impl Database {
             .execute(&mut *tx)
             .await?;
 
-        sqlx::query("INSERT INTO command_results (command_id, output, exit_code) VALUES ($1, $2, $3)")
-            .bind(command_id)
-            .bind(encrypted_output)
-            .bind(exit_code)
-            .execute(&mut *tx)
-            .await?;
+        sqlx::query(
+            "INSERT INTO command_results (command_id, output, exit_code) VALUES ($1, $2, $3)",
+        )
+        .bind(command_id)
+        .bind(encrypted_output)
+        .bind(exit_code)
+        .execute(&mut *tx)
+        .await?;
 
         tx.commit().await?;
         Ok(())

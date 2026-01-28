@@ -831,7 +831,8 @@ impl OperatorService for OperatorServiceImpl {
 
             let payload =
                 std::fs::read(&output_path).map_err(|e| Status::internal(e.to_string()))?;
-            let vba = crate::builder::phishing::PhishingGenerator::generate_macro_vba(&payload, "drop");
+            let vba =
+                crate::builder::phishing::PhishingGenerator::generate_macro_vba(&payload, "drop");
             std::fs::write(&output_path, vba).map_err(|e| Status::internal(e.to_string()))?;
         } else {
             // Patch existing template

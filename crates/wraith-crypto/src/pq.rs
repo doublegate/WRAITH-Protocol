@@ -47,15 +47,25 @@ pub fn public_key_to_vec(pk: &PqPublicKey) -> alloc::vec::Vec<u8> {
     pk.as_bytes().to_vec()
 }
 
+/// Error returned when parsing PQ key material from bytes fails.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PqParseError;
+
+impl core::fmt::Display for PqParseError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_str("invalid post-quantum key material")
+    }
+}
+
 /// Parse a public key from bytes.
-pub fn public_key_from_bytes(bytes: &[u8]) -> Result<PqPublicKey, ()> {
-    let arr = Encoded::<PqPublicKey>::try_from(bytes).map_err(|_| ())?;
+pub fn public_key_from_bytes(bytes: &[u8]) -> Result<PqPublicKey, PqParseError> {
+    let arr = Encoded::<PqPublicKey>::try_from(bytes).map_err(|_| PqParseError)?;
     Ok(PqPublicKey::from_bytes(&arr))
 }
 
 /// Parse a ciphertext from bytes.
-pub fn ciphertext_from_bytes(bytes: &[u8]) -> Result<PqCiphertext, ()> {
-    PqCiphertext::try_from(bytes).map_err(|_| ())
+pub fn ciphertext_from_bytes(bytes: &[u8]) -> Result<PqCiphertext, PqParseError> {
+    PqCiphertext::try_from(bytes).map_err(|_| PqParseError)
 }
 
 /// Convert a ciphertext to a byte vector.

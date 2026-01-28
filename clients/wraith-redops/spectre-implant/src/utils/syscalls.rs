@@ -62,12 +62,17 @@ pub const SYS_GETRANDOM: usize = 318;
 #[cfg(all(not(target_os = "windows"), target_arch = "aarch64"))]
 pub const SYS_GETRANDOM: usize = 278;
 
-#[cfg(all(not(target_os = "windows"), not(any(target_arch = "x86_64", target_arch = "aarch64"))))]
+#[cfg(all(
+    not(target_os = "windows"),
+    not(any(target_arch = "x86_64", target_arch = "aarch64"))
+))]
 pub const SYS_GETRANDOM: usize = 0; // Fallback/Unsupported
 
 #[cfg(not(target_os = "windows"))]
 pub unsafe fn sys_getrandom(buf: *mut u8, len: usize, flags: u32) -> isize {
-    if SYS_GETRANDOM == 0 { return -1; }
+    if SYS_GETRANDOM == 0 {
+        return -1;
+    }
     syscall3(SYS_GETRANDOM, buf as usize, len, flags as usize) as isize
 }
 
@@ -190,7 +195,15 @@ pub const SYS_MPROTECT: usize = 10;
 
 #[cfg(not(target_os = "windows"))]
 #[inline(always)]
-pub unsafe fn syscall6(n: usize, a1: usize, a2: usize, a3: usize, a4: usize, a5: usize, a6: usize) -> usize {
+pub unsafe fn syscall6(
+    n: usize,
+    a1: usize,
+    a2: usize,
+    a3: usize,
+    a4: usize,
+    a5: usize,
+    a6: usize,
+) -> usize {
     let ret: usize;
     asm!(
         "syscall",
@@ -209,8 +222,23 @@ pub unsafe fn syscall6(n: usize, a1: usize, a2: usize, a3: usize, a4: usize, a5:
 }
 
 #[cfg(not(target_os = "windows"))]
-pub unsafe fn sys_mmap(addr: usize, len: usize, prot: i32, flags: i32, fd: i32, offset: usize) -> usize {
-    syscall6(SYS_MMAP, addr, len, prot as usize, flags as usize, fd as usize, offset)
+pub unsafe fn sys_mmap(
+    addr: usize,
+    len: usize,
+    prot: i32,
+    flags: i32,
+    fd: i32,
+    offset: usize,
+) -> usize {
+    syscall6(
+        SYS_MMAP,
+        addr,
+        len,
+        prot as usize,
+        flags as usize,
+        fd as usize,
+        offset,
+    )
 }
 
 #[cfg(not(target_os = "windows"))]
@@ -271,13 +299,43 @@ pub unsafe fn sys_connect(sockfd: usize, addr: *const u8, addrlen: u32) -> usize
 }
 
 #[cfg(not(target_os = "windows"))]
-pub unsafe fn sys_sendto(sockfd: usize, buf: *const u8, len: usize, flags: i32, dest_addr: *const u8, addrlen: u32) -> isize {
-    syscall6(SYS_SENDTO, sockfd, buf as usize, len, flags as usize, dest_addr as usize, addrlen as usize) as isize
+pub unsafe fn sys_sendto(
+    sockfd: usize,
+    buf: *const u8,
+    len: usize,
+    flags: i32,
+    dest_addr: *const u8,
+    addrlen: u32,
+) -> isize {
+    syscall6(
+        SYS_SENDTO,
+        sockfd,
+        buf as usize,
+        len,
+        flags as usize,
+        dest_addr as usize,
+        addrlen as usize,
+    ) as isize
 }
 
 #[cfg(not(target_os = "windows"))]
-pub unsafe fn sys_recvfrom(sockfd: usize, buf: *mut u8, len: usize, flags: i32, src_addr: *mut u8, addrlen: *mut u32) -> isize {
-    syscall6(SYS_RECVFROM, sockfd, buf as usize, len, flags as usize, src_addr as usize, addrlen as usize) as isize
+pub unsafe fn sys_recvfrom(
+    sockfd: usize,
+    buf: *mut u8,
+    len: usize,
+    flags: i32,
+    src_addr: *mut u8,
+    addrlen: *mut u32,
+) -> isize {
+    syscall6(
+        SYS_RECVFROM,
+        sockfd,
+        buf as usize,
+        len,
+        flags as usize,
+        src_addr as usize,
+        addrlen as usize,
+    ) as isize
 }
 
 #[cfg(not(target_os = "windows"))]
@@ -318,7 +376,13 @@ pub unsafe fn sys_clock_gettime(clock_id: i32, tp: *mut Timespec) -> i32 {
 
 #[cfg(not(target_os = "windows"))]
 pub unsafe fn sys_wait4(pid: i32, wstatus: *mut i32, options: i32, rusage: *mut c_void) -> isize {
-    syscall4(SYS_WAIT4, pid as usize, wstatus as usize, options as usize, rusage as usize) as isize
+    syscall4(
+        SYS_WAIT4,
+        pid as usize,
+        wstatus as usize,
+        options as usize,
+        rusage as usize,
+    ) as isize
 }
 
 #[cfg(not(target_os = "windows"))]
@@ -327,7 +391,11 @@ pub unsafe fn sys_fork() -> isize {
 }
 
 #[cfg(not(target_os = "windows"))]
-pub unsafe fn sys_execve(filename: *const u8, argv: *const *const u8, envp: *const *const u8) -> isize {
+pub unsafe fn sys_execve(
+    filename: *const u8,
+    argv: *const *const u8,
+    envp: *const *const u8,
+) -> isize {
     syscall3(SYS_EXECVE, filename as usize, argv as usize, envp as usize) as isize
 }
 
@@ -360,7 +428,15 @@ pub unsafe fn sys_process_vm_writev(
     riovcnt: usize,
     flags: usize,
 ) -> isize {
-    syscall6(SYS_PROCESS_VM_WRITEV, pid as usize, local_iov as usize, liovcnt, remote_iov as usize, riovcnt, flags) as isize
+    syscall6(
+        SYS_PROCESS_VM_WRITEV,
+        pid as usize,
+        local_iov as usize,
+        liovcnt,
+        remote_iov as usize,
+        riovcnt,
+        flags,
+    ) as isize
 }
 
 #[cfg(not(target_os = "windows"))]
@@ -478,13 +554,13 @@ pub unsafe fn get_ssn(function_hash: u32) -> u16 {
 #[cfg(target_os = "windows")]
 unsafe fn parse_syscall_stub(addr: *const ()) -> Option<u16> {
     let p = addr as *const u8;
-    // Pattern: 
+    // Pattern:
     // mov r10, rcx; mov eax, <SSN>
     // Bytes: 4c 8b d1 b8 <SSN_LOW> <SSN_HIGH> 00 00
     // OR
     // mov eax, <SSN>; mov r10, rcx (Alternative stub)
     // b8 <SSN_LOW> <SSN_HIGH> 00 00 4c 8b d1
-    
+
     if *p == 0x4c && *p.add(1) == 0x8b && *p.add(2) == 0xd1 && *p.add(3) == 0xb8 {
         let ssn_low = *p.add(4) as u16;
         let ssn_high = *p.add(5) as u16;
@@ -507,7 +583,7 @@ unsafe fn get_syscall_gadget() -> Option<*const ()> {
     }
 
     let ntdll_hash = hash_str(b"ntdll.dll");
-    
+
     // Multiple gadget sources for redundancy
     let targets = [
         hash_str(b"NtYieldExecution"),
@@ -517,7 +593,9 @@ unsafe fn get_syscall_gadget() -> Option<*const ()> {
 
     for &func_hash in &targets {
         let addr = resolve_function(ntdll_hash, func_hash) as *const u8;
-        if addr.is_null() { continue; }
+        if addr.is_null() {
+            continue;
+        }
 
         // Scan for syscall; ret (0F 05 C3) within the function stub
         for i in 0..32 {

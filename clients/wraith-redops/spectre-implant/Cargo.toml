@@ -3,10 +3,12 @@ name = "spectre-implant"
 version = "2.3.0"
 edition = "2021"
 
+[features]
+default = []
+std = []
+
 [lib]
-crate-type = ["cdylib", "rlib"]
-test = false
-doctest = false
+crate-type = ["rlib"]
 
 [dependencies]
 # No std dependencies
@@ -28,6 +30,9 @@ strip = true        # Strip symbols
 codegen-units = 1   # Maximize optimization
 
 [profile.dev]
-panic = "abort"
+# panic = "abort" removed: test harness requires unwinding (catch_unwind).
+# Release profile retains panic = "abort" for the actual implant binary.
+# no_std/panic_handler/global_allocator are gated with
+# #[cfg(not(any(test, feature = "std")))] in lib.rs.
 
 [workspace]

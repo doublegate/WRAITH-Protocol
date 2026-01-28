@@ -1,9 +1,9 @@
 pub mod api_resolver;
+pub mod entropy;
 pub mod heap;
 pub mod obfuscation;
-pub mod syscalls;
-pub mod windows_definitions;
-pub mod test_heap;
-pub mod entropy;
 pub mod sensitive;
+pub mod syscalls;
+pub mod test_heap;
 pub mod test_sensitive;
+pub mod windows_definitions;

@@ -96,15 +96,17 @@ impl SmbClient {
             tree_id: 0,
         }
     }
-    
+
     // Serialization helpers would go here
-    
+
     pub fn connect(&mut self, ip: [u8; 4], port: u16) -> Result<(), ()> {
         #[cfg(not(target_os = "windows"))]
         unsafe {
             use crate::utils::syscalls::*;
             let sock = sys_socket(2, 1, 0);
-            if (sock as isize) < 0 { return Err(()); }
+            if (sock as isize) < 0 {
+                return Err(());
+            }
 
             let addr = SockAddrIn {
                 sin_family: 2,
@@ -125,20 +127,22 @@ impl SmbClient {
             sys_close(sock);
             Err(())
         }
-        
+
         #[cfg(target_os = "windows")]
         unsafe {
             use crate::utils::api_resolver::{hash_str, resolve_function};
-            use crate::utils::windows_definitions::HANDLE;
             use crate::utils::syscalls::SockAddrIn;
-            
+            use crate::utils::windows_definitions::HANDLE;
+
             let ws2_32 = hash_str(b"ws2_32.dll");
             let socket_fn = resolve_function(ws2_32, hash_str(b"socket"));
             let connect_fn = resolve_function(ws2_32, hash_str(b"connect"));
             let closesocket = resolve_function(ws2_32, hash_str(b"closesocket"));
             let wsa_startup = resolve_function(ws2_32, hash_str(b"WSAStartup"));
-            
-            if socket_fn.is_null() || connect_fn.is_null() || wsa_startup.is_null() { return Err(()); }
+
+            if socket_fn.is_null() || connect_fn.is_null() || wsa_startup.is_null() {
+                return Err(());
+            }
 
             type FnWSAStartup = unsafe extern "system" fn(u16, *mut u8) -> i32;
             type FnSocket = unsafe extern "system" fn(i32, i32, i32) -> HANDLE;
@@ -149,7 +153,9 @@ impl SmbClient {
             core::mem::transmute::<_, FnWSAStartup>(wsa_startup)(0x0202, wsa_data.as_mut_ptr());
 
             let sock = core::mem::transmute::<_, FnSocket>(socket_fn)(2, 1, 0);
-            if sock == (-1isize as HANDLE) { return Err(()); }
+            if sock == (-1isize as HANDLE) {
+                return Err(());
+            }
 
             let addr = SockAddrIn {
                 sin_family: 2,
@@ -158,7 +164,12 @@ impl SmbClient {
                 sin_zero: [0; 8],
             };
 
-            if core::mem::transmute::<_, FnConnect>(connect_fn)(sock, &addr as *const _ as *const u8, 16) == 0 {
+            if core::mem::transmute::<_, FnConnect>(connect_fn)(
+                sock,
+                &addr as *const _ as *const u8,
+                16,
+            ) == 0
+            {
                 if self.negotiate_win(sock).is_ok() {
                     if self.session_setup_win(sock).is_ok() {
                         if self.tree_connect_win(sock).is_ok() {
@@ -173,85 +184,164 @@ impl SmbClient {
     }
 
     fn check_status(&self, buf: &[u8]) -> bool {
-        if buf.len() < 16 { return false; }
+        if buf.len() < 16 {
+            return false;
+        }
         let status = u32::from_le_bytes([buf[12], buf[13], buf[14], buf[15]]);
         status == 0
     }
 
     #[cfg(target_os = "windows")]
-    unsafe fn negotiate_win(&mut self, sock: crate::utils::windows_definitions::HANDLE) -> Result<(), ()> {
+    unsafe fn negotiate_win(
+        &mut self,
+        sock: crate::utils::windows_definitions::HANDLE,
+    ) -> Result<(), ()> {
         use crate::utils::api_resolver::{hash_str, resolve_function};
         let ws2_32 = hash_str(b"ws2_32.dll");
         let send_fn = resolve_function(ws2_32, hash_str(b"send"));
         let recv_fn = resolve_function(ws2_32, hash_str(b"recv"));
-        type FnSend = unsafe extern "system" fn(crate::utils::windows_definitions::HANDLE, *const u8, i32, i32) -> i32;
-        type FnRecv = unsafe extern "system" fn(crate::utils::windows_definitions::HANDLE, *mut u8, i32, i32) -> i32;
+        type FnSend = unsafe extern "system" fn(
+            crate::utils::windows_definitions::HANDLE,
+            *const u8,
+            i32,
+            i32,
+        ) -> i32;
+        type FnRecv = unsafe extern "system" fn(
+            crate::utils::windows_definitions::HANDLE,
+            *mut u8,
+            i32,
+            i32,
+        ) -> i32;
 
         let mut req = Vec::new();
         req.extend_from_slice(&[0, 0, 0, 0]);
         let header = SMB2Header::new(SMB2_NEGOTIATE, self.message_id, self.process_id);
         let body = SMB2NegotiateReq {
-            structure_size: 36, dialect_count: 1, security_mode: 1, reserved: 0, capabilities: 0,
-            client_guid: [0xAA; 16], negotiate_context_offset: 0, negotiate_context_count: 0, reserved2: 0, dialects: [0x0202],
+            structure_size: 36,
+            dialect_count: 1,
+            security_mode: 1,
+            reserved: 0,
+            capabilities: 0,
+            client_guid: [0xAA; 16],
+            negotiate_context_offset: 0,
+            negotiate_context_count: 0,
+            reserved2: 0,
+            dialects: [0x0202],
         };
-        let header_bytes = core::slice::from_raw_parts(&header as *const _ as *const u8, core::mem::size_of::<SMB2Header>());
-        let body_bytes = core::slice::from_raw_parts(&body as *const _ as *const u8, core::mem::size_of::<SMB2NegotiateReq>());
+        let header_bytes = core::slice::from_raw_parts(
+            &header as *const _ as *const u8,
+            core::mem::size_of::<SMB2Header>(),
+        );
+        let body_bytes = core::slice::from_raw_parts(
+            &body as *const _ as *const u8,
+            core::mem::size_of::<SMB2NegotiateReq>(),
+        );
         req.extend_from_slice(header_bytes);
         req.extend_from_slice(body_bytes);
         let len = (req.len() - 4) as u32;
-        req[3] = (len & 0xFF) as u8; req[2] = ((len >> 8) & 0xFF) as u8; req[1] = ((len >> 16) & 0xFF) as u8;
+        req[3] = (len & 0xFF) as u8;
+        req[2] = ((len >> 8) & 0xFF) as u8;
+        req[1] = ((len >> 16) & 0xFF) as u8;
 
         core::mem::transmute::<_, FnSend>(send_fn)(sock, req.as_ptr(), req.len() as i32, 0);
 
         let mut buf = [0u8; 1024];
         let n = core::mem::transmute::<_, FnRecv>(recv_fn)(sock, buf.as_mut_ptr(), 1024, 0);
-        if n > 0 && self.check_status(&buf[..n as usize]) { self.message_id += 1; Ok(()) } else { Err(()) }
+        if n > 0 && self.check_status(&buf[..n as usize]) {
+            self.message_id += 1;
+            Ok(())
+        } else {
+            Err(())
+        }
     }
 
     #[cfg(target_os = "windows")]
-    unsafe fn session_setup_win(&mut self, sock: crate::utils::windows_definitions::HANDLE) -> Result<(), ()> {
+    unsafe fn session_setup_win(
+        &mut self,
+        sock: crate::utils::windows_definitions::HANDLE,
+    ) -> Result<(), ()> {
         use crate::utils::api_resolver::{hash_str, resolve_function};
         let ws2_32 = hash_str(b"ws2_32.dll");
         let send_fn = resolve_function(ws2_32, hash_str(b"send"));
         let recv_fn = resolve_function(ws2_32, hash_str(b"recv"));
-        type FnSend = unsafe extern "system" fn(crate::utils::windows_definitions::HANDLE, *const u8, i32, i32) -> i32;
-        type FnRecv = unsafe extern "system" fn(crate::utils::windows_definitions::HANDLE, *mut u8, i32, i32) -> i32;
+        type FnSend = unsafe extern "system" fn(
+            crate::utils::windows_definitions::HANDLE,
+            *const u8,
+            i32,
+            i32,
+        ) -> i32;
+        type FnRecv = unsafe extern "system" fn(
+            crate::utils::windows_definitions::HANDLE,
+            *mut u8,
+            i32,
+            i32,
+        ) -> i32;
 
         let mut req = Vec::new();
         req.extend_from_slice(&[0, 0, 0, 0]);
         let header = SMB2Header::new(SMB2_SESSION_SETUP, self.message_id, self.process_id);
         let body = SMB2SessionSetupReq {
-            structure_size: 25, flags: 0, security_mode: 1, capabilities: 0, channel: 0,
-            security_buffer_offset: 88, security_buffer_length: 0, previous_session_id: 0,
+            structure_size: 25,
+            flags: 0,
+            security_mode: 1,
+            capabilities: 0,
+            channel: 0,
+            security_buffer_offset: 88,
+            security_buffer_length: 0,
+            previous_session_id: 0,
         };
-        let header_bytes = core::slice::from_raw_parts(&header as *const _ as *const u8, core::mem::size_of::<SMB2Header>());
-        let body_bytes = core::slice::from_raw_parts(&body as *const _ as *const u8, core::mem::size_of::<SMB2SessionSetupReq>());
+        let header_bytes = core::slice::from_raw_parts(
+            &header as *const _ as *const u8,
+            core::mem::size_of::<SMB2Header>(),
+        );
+        let body_bytes = core::slice::from_raw_parts(
+            &body as *const _ as *const u8,
+            core::mem::size_of::<SMB2SessionSetupReq>(),
+        );
         req.extend_from_slice(header_bytes);
         req.extend_from_slice(body_bytes);
         let len = (req.len() - 4) as u32;
-        req[3] = (len & 0xFF) as u8; req[2] = ((len >> 8) & 0xFF) as u8; req[1] = ((len >> 16) & 0xFF) as u8;
+        req[3] = (len & 0xFF) as u8;
+        req[2] = ((len >> 8) & 0xFF) as u8;
+        req[1] = ((len >> 16) & 0xFF) as u8;
 
         core::mem::transmute::<_, FnSend>(send_fn)(sock, req.as_ptr(), req.len() as i32, 0);
 
         let mut buf = [0u8; 1024];
         let n = core::mem::transmute::<_, FnRecv>(recv_fn)(sock, buf.as_mut_ptr(), 1024, 0);
         if n > 64 && self.check_status(&buf[..n as usize]) {
-             if buf[0] == 0 {
+            if buf[0] == 0 {
                 let session_id_ptr = buf.as_ptr().add(4 + 40) as *const u64;
                 self.session_id = *session_id_ptr;
             }
-            self.message_id += 1; Ok(())
-        } else { Err(()) }
+            self.message_id += 1;
+            Ok(())
+        } else {
+            Err(())
+        }
     }
 
     #[cfg(target_os = "windows")]
-    unsafe fn tree_connect_win(&mut self, sock: crate::utils::windows_definitions::HANDLE) -> Result<(), ()> {
+    unsafe fn tree_connect_win(
+        &mut self,
+        sock: crate::utils::windows_definitions::HANDLE,
+    ) -> Result<(), ()> {
         use crate::utils::api_resolver::{hash_str, resolve_function};
         let ws2_32 = hash_str(b"ws2_32.dll");
         let send_fn = resolve_function(ws2_32, hash_str(b"send"));
         let recv_fn = resolve_function(ws2_32, hash_str(b"recv"));
-        type FnSend = unsafe extern "system" fn(crate::utils::windows_definitions::HANDLE, *const u8, i32, i32) -> i32;
-        type FnRecv = unsafe extern "system" fn(crate::utils::windows_definitions::HANDLE, *mut u8, i32, i32) -> i32;
+        type FnSend = unsafe extern "system" fn(
+            crate::utils::windows_definitions::HANDLE,
+            *const u8,
+            i32,
+            i32,
+        ) -> i32;
+        type FnRecv = unsafe extern "system" fn(
+            crate::utils::windows_definitions::HANDLE,
+            *mut u8,
+            i32,
+            i32,
+        ) -> i32;
 
         let mut req = Vec::new();
         req.extend_from_slice(&[0, 0, 0, 0]);
@@ -259,37 +349,54 @@ impl SmbClient {
         header.session_id = self.session_id;
         let path = b"\\\\127.0.0.1\\IPC$\0";
         let path_utf16: Vec<u16> = path.iter().map(|&c| c as u16).collect();
-        let path_bytes = core::slice::from_raw_parts(path_utf16.as_ptr() as *const u8, path_utf16.len() * 2);
-        let body = SMB2TreeConnectReq { structure_size: 9, reserved: 0, path_offset: 72, path_length: path_bytes.len() as u16 };
-        let header_bytes = core::slice::from_raw_parts(&header as *const _ as *const u8, core::mem::size_of::<SMB2Header>());
-        let body_bytes = core::slice::from_raw_parts(&body as *const _ as *const u8, core::mem::size_of::<SMB2TreeConnectReq>());
+        let path_bytes =
+            core::slice::from_raw_parts(path_utf16.as_ptr() as *const u8, path_utf16.len() * 2);
+        let body = SMB2TreeConnectReq {
+            structure_size: 9,
+            reserved: 0,
+            path_offset: 72,
+            path_length: path_bytes.len() as u16,
+        };
+        let header_bytes = core::slice::from_raw_parts(
+            &header as *const _ as *const u8,
+            core::mem::size_of::<SMB2Header>(),
+        );
+        let body_bytes = core::slice::from_raw_parts(
+            &body as *const _ as *const u8,
+            core::mem::size_of::<SMB2TreeConnectReq>(),
+        );
         req.extend_from_slice(header_bytes);
         req.extend_from_slice(body_bytes);
         req.extend_from_slice(path_bytes);
         let len = (req.len() - 4) as u32;
-        req[3] = (len & 0xFF) as u8; req[2] = ((len >> 8) & 0xFF) as u8; req[1] = ((len >> 16) & 0xFF) as u8;
+        req[3] = (len & 0xFF) as u8;
+        req[2] = ((len >> 8) & 0xFF) as u8;
+        req[1] = ((len >> 16) & 0xFF) as u8;
 
         core::mem::transmute::<_, FnSend>(send_fn)(sock, req.as_ptr(), req.len() as i32, 0);
 
         let mut buf = [0u8; 1024];
         let n = core::mem::transmute::<_, FnRecv>(recv_fn)(sock, buf.as_mut_ptr(), 1024, 0);
         if n > 64 && self.check_status(&buf[..n as usize]) {
-             if buf[0] == 0 {
+            if buf[0] == 0 {
                 let tree_id_ptr = buf.as_ptr().add(4 + 36) as *const u32;
                 self.tree_id = *tree_id_ptr;
             }
-            self.message_id += 1; Ok(())
-        } else { Err(()) }
+            self.message_id += 1;
+            Ok(())
+        } else {
+            Err(())
+        }
     }
 
     #[cfg(not(target_os = "windows"))]
     unsafe fn negotiate(&mut self, fd: usize) -> Result<(), ()> {
         use crate::utils::syscalls::*;
-        
+
         let mut req = Vec::new();
         // NetBIOS Header (4 bytes)
         req.extend_from_slice(&[0, 0, 0, 0]);
-        
+
         let header = SMB2Header::new(SMB2_NEGOTIATE, self.message_id, self.process_id);
         let body = SMB2NegotiateReq {
             structure_size: 36,
@@ -304,12 +411,18 @@ impl SmbClient {
             dialects: [0x0202],
         };
 
-        let header_bytes = core::slice::from_raw_parts(&header as *const _ as *const u8, core::mem::size_of::<SMB2Header>());
-        let body_bytes = core::slice::from_raw_parts(&body as *const _ as *const u8, core::mem::size_of::<SMB2NegotiateReq>());
-        
+        let header_bytes = core::slice::from_raw_parts(
+            &header as *const _ as *const u8,
+            core::mem::size_of::<SMB2Header>(),
+        );
+        let body_bytes = core::slice::from_raw_parts(
+            &body as *const _ as *const u8,
+            core::mem::size_of::<SMB2NegotiateReq>(),
+        );
+
         req.extend_from_slice(header_bytes);
         req.extend_from_slice(body_bytes);
-        
+
         // Fix NetBIOS length (Big Endian)
         let len = (req.len() - 4) as u32;
         req[3] = (len & 0xFF) as u8;
@@ -332,10 +445,10 @@ impl SmbClient {
     #[cfg(not(target_os = "windows"))]
     unsafe fn session_setup(&mut self, fd: usize) -> Result<(), ()> {
         use crate::utils::syscalls::*;
-        
+
         let mut req = Vec::new();
         req.extend_from_slice(&[0, 0, 0, 0]); // NetBIOS
-        
+
         let header = SMB2Header::new(SMB2_SESSION_SETUP, self.message_id, self.process_id);
         let body = SMB2SessionSetupReq {
             structure_size: 25,
@@ -344,16 +457,22 @@ impl SmbClient {
             capabilities: 0,
             channel: 0,
             security_buffer_offset: 88, // 64 + 24
-            security_buffer_length: 0, // Anonymous
+            security_buffer_length: 0,  // Anonymous
             previous_session_id: 0,
         };
 
-        let header_bytes = core::slice::from_raw_parts(&header as *const _ as *const u8, core::mem::size_of::<SMB2Header>());
-        let body_bytes = core::slice::from_raw_parts(&body as *const _ as *const u8, core::mem::size_of::<SMB2SessionSetupReq>());
-        
+        let header_bytes = core::slice::from_raw_parts(
+            &header as *const _ as *const u8,
+            core::mem::size_of::<SMB2Header>(),
+        );
+        let body_bytes = core::slice::from_raw_parts(
+            &body as *const _ as *const u8,
+            core::mem::size_of::<SMB2SessionSetupReq>(),
+        );
+
         req.extend_from_slice(header_bytes);
         req.extend_from_slice(body_bytes);
-        
+
         let len = (req.len() - 4) as u32;
         req[3] = (len & 0xFF) as u8;
         req[2] = ((len >> 8) & 0xFF) as u8;
@@ -364,7 +483,8 @@ impl SmbClient {
         let mut buf = [0u8; 1024];
         let n = sys_read(fd, buf.as_mut_ptr(), 1024);
         if n > 64 && self.check_status(&buf[..n as usize]) {
-            if buf[0] == 0 { // Session Message
+            if buf[0] == 0 {
+                // Session Message
                 let session_id_ptr = buf.as_ptr().add(4 + 40) as *const u64;
                 self.session_id = *session_id_ptr;
             }
@@ -378,16 +498,17 @@ impl SmbClient {
     #[cfg(not(target_os = "windows"))]
     unsafe fn tree_connect(&mut self, fd: usize) -> Result<(), ()> {
         use crate::utils::syscalls::*;
-        
+
         let mut req = Vec::new();
         req.extend_from_slice(&[0, 0, 0, 0]);
-        
+
         let mut header = SMB2Header::new(SMB2_TREE_CONNECT, self.message_id, self.process_id);
         header.session_id = self.session_id;
-        
+
         let path = b"\\\\127.0.0.1\\IPC$\0";
         let path_utf16: Vec<u16> = path.iter().map(|&c| c as u16).collect();
-        let path_bytes = core::slice::from_raw_parts(path_utf16.as_ptr() as *const u8, path_utf16.len() * 2);
+        let path_bytes =
+            core::slice::from_raw_parts(path_utf16.as_ptr() as *const u8, path_utf16.len() * 2);
 
         let body = SMB2TreeConnectReq {
             structure_size: 9,
@@ -396,13 +517,19 @@ impl SmbClient {
             path_length: path_bytes.len() as u16,
         };
 
-        let header_bytes = core::slice::from_raw_parts(&header as *const _ as *const u8, core::mem::size_of::<SMB2Header>());
-        let body_bytes = core::slice::from_raw_parts(&body as *const _ as *const u8, core::mem::size_of::<SMB2TreeConnectReq>());
-        
+        let header_bytes = core::slice::from_raw_parts(
+            &header as *const _ as *const u8,
+            core::mem::size_of::<SMB2Header>(),
+        );
+        let body_bytes = core::slice::from_raw_parts(
+            &body as *const _ as *const u8,
+            core::mem::size_of::<SMB2TreeConnectReq>(),
+        );
+
         req.extend_from_slice(header_bytes);
         req.extend_from_slice(body_bytes);
         req.extend_from_slice(path_bytes);
-        
+
         let len = (req.len() - 4) as u32;
         req[3] = (len & 0xFF) as u8;
         req[2] = ((len >> 8) & 0xFF) as u8;
@@ -422,5 +549,22 @@ impl SmbClient {
         } else {
             Err(())
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use core::mem::size_of;
+
+    #[test]
+    fn test_smb_struct_sizes() {
+        assert_eq!(size_of::<SMB2Header>(), 64);
+    }
+
+    #[test]
+    fn test_smb_client_init() {
+        let client = SmbClient::new();
+        assert_eq!(client.process_id, 0xFEFF);
     }
 }

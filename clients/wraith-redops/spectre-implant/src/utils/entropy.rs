@@ -20,7 +20,7 @@ fn get_random_u8() -> u8 {
     let mut val: u64 = 0;
     let mut success: u8 = 0;
     let tsc: u64;
-    
+
     unsafe {
         // RDRAND - Hardware random number generator
         // We check the Carry Flag (CF) which is set to 1 if RDRAND succeeded.
@@ -31,7 +31,7 @@ fn get_random_u8() -> u8 {
             out(reg_byte) success,
             options(nomem, nostack)
         );
-        
+
         // RDTSC - Time Stamp Counter
         asm!(
             "rdtsc",
@@ -40,20 +40,22 @@ fn get_random_u8() -> u8 {
             options(nomem, nostack)
         );
     }
-    
+
     // If RDRAND failed (success=0), val might be 0 or stale.
     if success == 0 {
         // Mix constant to differentiate from valid 0
         val = val.wrapping_add(0xCAFEBABE);
     }
-    
+
     let stack_addr = &val as *const u64 as u64;
-    
+
     let mixed = val.wrapping_add(tsc).wrapping_add(stack_addr);
-    
+
     // PCG-like mixing step
-    let mixed = mixed.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
-    
+    let mixed = mixed
+        .wrapping_mul(6364136223846793005)
+        .wrapping_add(1442695040888963407);
+
     (mixed >> 56) as u8
 }
 
@@ -67,16 +69,18 @@ fn get_random_u8() -> u8 {
             options(nomem, nostack)
         );
     }
-    
+
     // Mix with stack address (ASLR entropy)
     let stack_var = 0u8;
     let stack_addr = &stack_var as *const u8 as u64;
-    
+
     let mixed = cntvct.wrapping_add(stack_addr);
-    
+
     // Simple mixing function
-    let mixed = mixed.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
-    
+    let mixed = mixed
+        .wrapping_mul(6364136223846793005)
+        .wrapping_add(1442695040888963407);
+
     (mixed >> 56) as u8
 }
 

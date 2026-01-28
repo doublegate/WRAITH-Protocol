@@ -1,5 +1,5 @@
-#![cfg_attr(not(test), no_std)]
-#![cfg_attr(not(test), no_main)]
+#![cfg_attr(not(any(test, feature = "std")), no_std)]
+#![cfg_attr(not(any(test, feature = "std")), no_main)]
 #![allow(clippy::missing_safety_doc)]
 #![allow(clippy::result_unit_err)]
 #![allow(clippy::new_without_default)]
@@ -10,27 +10,27 @@
 #![allow(clippy::needless_range_loop)]
 #![allow(clippy::collapsible_if)]
 
-#[cfg(test)]
+#[cfg(any(test, feature = "std"))]
 extern crate std;
 
 extern crate alloc;
 
-pub mod utils;
 pub mod c2;
 pub mod modules;
+pub mod utils;
 
 // Global Allocator
-#[cfg(not(test))]
+#[cfg(not(any(test, feature = "std")))]
 #[global_allocator]
 static ALLOCATOR: utils::heap::MiniHeap = utils::heap::MiniHeap::new(0x10000000, 1024 * 1024);
 
-#[cfg(not(test))]
+#[cfg(not(any(test, feature = "std")))]
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
     loop {}
 }
 
-#[cfg(not(test))]
+#[cfg(not(any(test, feature = "std")))]
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
     // 1. Initialize

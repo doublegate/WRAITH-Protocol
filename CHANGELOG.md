@@ -41,7 +41,7 @@ Integrated WRAITH-RedOps `team-server` and `operator-client` into the root Cargo
   - Added `#[serial]` attribute (via `serial_test` crate) to `test_operator_service_comprehensive` in team-server
   - Prevents shared PostgreSQL state conflicts during parallel test execution
 
-- **Test Count:** 2,123 passing (16 ignored), zero failures
+- **Test Count:** 2,134 total (2,123 workspace + 11 spectre-implant), 16 ignored, zero failures
 
 #### Gap Analysis v6.0.0 Deep Audit Consolidation (2026-01-27)
 
@@ -85,6 +85,21 @@ Full codebase re-audit of WRAITH-RedOps with independent verification of every s
 
 ### Fixed
 
+#### Spectre-Implant Test Infrastructure (2026-01-28)
+
+- **no_std test compilation fix** - Spectre-implant tests were completely broken (0 tests could run):
+  - Removed `test = false` and `doctest = false` from `[lib]` in Cargo.toml
+  - Removed `panic = "abort"` from `[profile.dev]` (incompatible with test harness)
+  - Changed crate-type from `["cdylib", "rlib"]` to `["rlib"]` for test compatibility
+  - Added `[features] std = []` feature flag for integration test compatibility
+  - Changed `cfg(not(test))` gates to `cfg(not(any(test, feature = "std")))` in lib.rs
+  - Moved integration test `tests/test_smb.rs` to inline tests in `modules/smb.rs`
+  - Gated `windows_definitions::tests` module to `#[cfg(all(test, target_os = "windows"))]`
+- **11 spectre-implant tests now passing** (was 0 -- could not compile):
+  - bof_loader, injection, mesh (x2), shell, smb (x2), socks (x2), heap, sensitive
+- **Total project tests:** 2,134 (2,123 workspace + 11 spectre-implant)
+- **Clippy fixes:** Added `PqParseError` type in `wraith-crypto/src/pq.rs` to replace `Result<_, ()>`, fixed `to_bytes` self-convention in `team-server/src/listeners/smb.rs`
+
 #### CI/CD Workflow Fixes (2026-01-27)
 
 - **GitHub Actions Exclusion Lists** - Added `--exclude wraith-redops-client` and `--exclude team-server` to all workspace-wide cargo commands across 4 workflow files:
@@ -102,7 +117,7 @@ Full codebase re-audit of WRAITH-RedOps with independent verification of every s
 - **team-server:** Restructured sqlx from sqlite+postgres to postgres-only; runtime migration loading via `Migrator::new()`
 - **team-server:** Fixed 16 clippy warnings and added `#[serial]` to test_operator_service_comprehensive
 - **wraith-core:** Added `IpEventMap` type alias in `security_monitor.rs` to reduce type complexity (clippy fix)
-- Updated project metrics: 2,123 tests passing, ~131,000 lines Rust, ~35,000 lines TypeScript, 114 doc files (~62,800 lines)
+- Updated project metrics: 2,134 total tests (2,123 workspace + 11 spectre-implant), ~131,000 lines Rust, ~35,000 lines TypeScript, 114 doc files (~62,800 lines)
 - Updated README.md with v6.0.0 gap analysis metrics (82% MITRE, ~96% completion, 18 modules, 32 RPCs)
 - Updated README_Protocol-DEV.md with current project metrics
 - Updated README_Clients-DEV.md with v6.0.0 gap analysis data

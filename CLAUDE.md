@@ -11,7 +11,7 @@ WRAITH (Wire-speed Resilient Authenticated Invisible Transfer Handler) is a dece
 ### Metrics
 | Metric | Value |
 |--------|-------|
-| Tests | 2,123 passing (16 ignored) - 100% pass rate |
+| Tests | 2,134 passing (2,123 workspace + 11 spectre-implant), 16 ignored - 100% pass rate |
 | Code | ~141,000 lines Rust (protocol + clients) + ~36,600 lines TypeScript |
 | Documentation | 114 files, ~62,800 lines |
 | Templates | 17 configuration/ROE templates |
@@ -151,6 +151,6 @@ Thread-per-core with no locks in hot path. Sessions pinned to cores, NUMA-aware 
 | wraith-publish | ✅ Complete | 56 | Ed25519 signatures, RSS feeds |
 | wraith-vault | ✅ Complete | 101 | Shamir SSS, erasure coding, guardians |
 | wraith-recon | ✅ Complete | 98 | Packet capture, protocol analysis |
-| wraith-redops | ✅ Complete | - | Team Server, Operator Client, Spectre Implant (isolated workspace) |
+| wraith-redops | ✅ Complete | 11 | Team Server, Operator Client, Spectre Implant (isolated workspace, 11 tests run separately) |
 
-**Total:** 2,120 tests passing (16 ignored)
+**Total:** 2,134 tests passing (2,123 workspace + 11 spectre-implant, 16 ignored)

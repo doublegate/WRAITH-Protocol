@@ -25,7 +25,12 @@ pub struct GUID {
 
 impl GUID {
     pub const fn new(d1: u32, d2: u16, d3: u16, d4: [u8; 8]) -> Self {
-        Self { Data1: d1, Data2: d2, Data3: d3, Data4: d4 }
+        Self {
+            Data1: d1,
+            Data2: d2,
+            Data3: d3,
+            Data4: d4,
+        }
     }
 }
 
@@ -211,8 +216,8 @@ pub struct CONTEXT {
     pub Rbp: u64,
     pub Rsi: u64,
     pub Rdi: u64,
-    pub R8:  u64,
-    pub R9:  u64,
+    pub R8: u64,
+    pub R9: u64,
     pub R10: u64,
     pub R11: u64,
     pub R12: u64,
@@ -287,9 +292,12 @@ pub struct ITaskServiceVtbl {
     pub GetConnectedDomain: PVOID,
     pub GetConnectedUser: PVOID,
     pub GetHighestVersion: PVOID,
-    pub Connect: unsafe extern "system" fn(*mut ITaskService, *mut u16, *mut u16, *mut u16, *mut u16) -> i32,
-    pub GetFolder: unsafe extern "system" fn(*mut ITaskService, *const u16, *mut *mut c_void) -> i32,
-    pub NewTask: unsafe extern "system" fn(*mut ITaskService, u32, *mut *mut ITaskDefinition) -> i32,
+    pub Connect:
+        unsafe extern "system" fn(*mut ITaskService, *mut u16, *mut u16, *mut u16, *mut u16) -> i32,
+    pub GetFolder:
+        unsafe extern "system" fn(*mut ITaskService, *const u16, *mut *mut c_void) -> i32,
+    pub NewTask:
+        unsafe extern "system" fn(*mut ITaskService, u32, *mut *mut ITaskDefinition) -> i32,
 }
 
 #[repr(C)]
@@ -312,7 +320,17 @@ pub struct ITaskFolderVtbl {
     pub GetTasks: PVOID,
     pub DeleteTask: PVOID,
     pub RegisterTask: PVOID,
-    pub RegisterTaskDefinition: unsafe extern "system" fn(*mut ITaskFolder, *const u16, *mut ITaskDefinition, i32, *mut u16, *mut u16, i32, *mut u16, *mut *mut c_void) -> i32,
+    pub RegisterTaskDefinition: unsafe extern "system" fn(
+        *mut ITaskFolder,
+        *const u16,
+        *mut ITaskDefinition,
+        i32,
+        *mut u16,
+        *mut u16,
+        i32,
+        *mut u16,
+        *mut *mut c_void,
+    ) -> i32,
 }
 
 #[repr(C)]
@@ -335,7 +353,8 @@ pub struct ITaskDefinitionVtbl {
     pub put_Data: PVOID,
     pub get_Principal: PVOID,
     pub put_Principal: PVOID,
-    pub get_Actions: unsafe extern "system" fn(*mut ITaskDefinition, *mut *mut IActionCollection) -> i32,
+    pub get_Actions:
+        unsafe extern "system" fn(*mut ITaskDefinition, *mut *mut IActionCollection) -> i32,
 }
 
 #[repr(C)]
@@ -351,7 +370,8 @@ pub struct IActionCollectionVtbl {
     pub get_Count: PVOID,
     pub get_Item: PVOID,
     pub get__NewEnum: PVOID,
-    pub Create: unsafe extern "system" fn(*mut IActionCollection, i32, *mut *mut IExecAction) -> i32,
+    pub Create:
+        unsafe extern "system" fn(*mut IActionCollection, i32, *mut *mut IExecAction) -> i32,
 }
 
 #[repr(C)]
@@ -361,7 +381,8 @@ pub struct IActionCollection {
 
 #[repr(C)]
 pub struct IExecActionVtbl {
-    pub QueryInterface: unsafe extern "system" fn(*mut IExecAction, *const GUID, *mut *mut c_void) -> i32,
+    pub QueryInterface:
+        unsafe extern "system" fn(*mut IExecAction, *const GUID, *mut *mut c_void) -> i32,
     pub AddRef: unsafe extern "system" fn(*mut IExecAction) -> u32,
     pub Release: unsafe extern "system" fn(*mut IExecAction) -> u32,
     pub get_Id: PVOID,
@@ -404,7 +425,7 @@ pub struct MINIDUMP_CALLBACK_OUTPUT {
     pub Status: i32,
 }
 
-#[cfg(test)]
+#[cfg(all(test, target_os = "windows"))]
 mod tests {
     use super::*;
     use core::mem::size_of;

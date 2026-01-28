@@ -50,7 +50,7 @@ impl PhishingGenerator {
     pub fn generate_macro_vba(payload: &[u8], method: &str) -> String {
         let b64 = general_purpose::STANDARD.encode(payload);
         let mut chunks = String::new();
-        
+
         for chunk in b64.as_bytes().chunks(80) {
             let s = std::str::from_utf8(chunk).unwrap();
             chunks.push_str(&format!("    payload = payload & \"{}\"\n", s));

