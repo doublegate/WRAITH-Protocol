@@ -36,8 +36,10 @@
 - [x] Task: Secure Implant Registration (P2-4) e262b1d
     - [x] Update `Register` RPC on Team Server to decrypt registration data
     - [x] Validate `ephemeral_public` from `RegisterRequest`
-- [x] Task: Complete VBA Macro Generation (P2-8) 51e8b48
+- [x] Task: Complete VBA Macro Generation (P2-8) 51e8b48 / d5b7462
     - [x] Finalize VBA logic in `phishing.rs` for attachment-based initial access
+    - [x] Implement VBA PE Loader (Reflective Injection) for memory execution
+    - [x] Update UI for method selection (Drop vs Memory)
 - [x] Task: Conductor - User Manual Verification 'Phase 2: P2 (Medium) Issues & Integration' (Protocol in workflow.md)
 
 ## Phase 3: P3 (Low) Issues
