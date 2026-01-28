@@ -30,9 +30,9 @@
 - [x] Task: Expand Console Command Parity (P2-2) d5abe3a
     - [x] Add `inject`, `bof`, `socks`, `screenshot`, `browser`, `net_scan`, and `service_stop` to `Console.tsx`
     - [x] Implement UI handlers for command arguments
-- [ ] Task: Implement Windows UDP Transport (P2-3)
-    - [ ] Implement WinSock2 logic in `spectre-implant` using hash-resolved APIs
-    - [ ] Ensure parity with HTTP transport for encryption and frame handling
+- [x] Task: Implement Windows UDP Transport (P2-3) 270c4d3
+    - [x] Implement WinSock2 logic in `spectre-implant` using hash-resolved APIs
+    - [x] Ensure parity with HTTP transport for encryption and frame handling
 - [ ] Task: Secure Implant Registration (P2-4)
     - [ ] Update `Register` RPC on Team Server to decrypt registration data
     - [ ] Validate `ephemeral_public` from `RegisterRequest`
