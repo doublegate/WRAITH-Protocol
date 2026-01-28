@@ -4,6 +4,7 @@ pub const FRAME_TYPE_DATA: u8 = 0x01;
 pub const FRAME_TYPE_CONTROL: u8 = 0x03;
 pub const FRAME_TYPE_REKEY: u8 = 0x04;
 pub const FRAME_TYPE_MESH_RELAY: u8 = 0x05;
+pub const FRAME_REKEY_DH: u8 = 0x06;
 
 pub struct WraithFrame {
     pub nonce: u64,

