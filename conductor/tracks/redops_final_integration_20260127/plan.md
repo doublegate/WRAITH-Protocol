@@ -17,10 +17,10 @@
 - [x] Task: Modernize SMB Header Serialization (P2-7) 251d2b0
     - [x] Remove `unsafe` transmutes in `smb.rs`
     - [x] Implement explicit byte-by-byte serialization/deserialization
-- [ ] Task: Enhance Entropy Engine (P2-6 / 8.5)
-    - [ ] Update `entropy.rs` to check RDRAND CF flag
-    - [ ] Integrate `/dev/urandom` for Linux entropy
-    - [ ] Implement hardware RNG support for ARM64
+- [x] Task: Enhance Entropy Engine (P2-6 / 8.5) fdbc3f3
+    - [x] Update `entropy.rs` to check RDRAND CF flag
+    - [x] Integrate `/dev/urandom` for Linux entropy
+    - [x] Implement hardware RNG support for ARM64
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: P1 & Foundational Fixes' (Protocol in workflow.md)
 
 ## Phase 2: P2 (Medium) Issues & Integration
