@@ -11,7 +11,7 @@ WRAITH (Wire-speed Resilient Authenticated Invisible Transfer Handler) is a dece
 ### Metrics
 | Metric | Value |
 |--------|-------|
-| Tests | 2,120 passing (16 ignored) - 100% pass rate |
+| Tests | 2,123 passing (16 ignored) - 100% pass rate |
 | Code | ~141,000 lines Rust (protocol + clients) + ~36,600 lines TypeScript |
 | Documentation | 114 files, ~62,800 lines |
 | Templates | 17 configuration/ROE templates |
@@ -126,12 +126,12 @@ Thread-per-core with no locks in hot path. Sessions pinned to cores, NUMA-aware 
 
 | Crate | Status | Tests | Features |
 |-------|--------|-------|----------|
-| wraith-core | ✅ Complete | 455 | Frame (SIMD), Session, Stream, BBR, Migration, Node API, Security Monitor |
-| wraith-crypto | ✅ Complete | 165 | Ed25519, X25519+Elligator2, AEAD, Noise_XX, Ratchet, Noise Integration |
-| wraith-transport | ✅ Complete | 181 | AF_XDP, io_uring, UDP, worker pools, NUMA-aware, buffer pools |
-| wraith-obfuscation | ✅ Complete | 167 | Padding (5), Timing (5), Mimicry (TLS/WebSocket/DoH), Cover Traffic |
-| wraith-discovery | ✅ Complete | 318 | Kademlia DHT, STUN, ICE (RFC 8445), relay |
-| wraith-files | ✅ Complete | 44 | io_uring I/O, chunking, tree hashing, reassembly |
+| wraith-core | ✅ Complete | 456 | Frame (SIMD), Session, Stream, BBR, Migration, Node API, Security Monitor |
+| wraith-crypto | ✅ Complete | 216 | Ed25519, X25519+Elligator2, AEAD, Noise_XX, Ratchet, Noise Integration |
+| wraith-transport | ✅ Complete | 183 | AF_XDP, io_uring, UDP, worker pools, NUMA-aware, buffer pools |
+| wraith-obfuscation | ✅ Complete | 140 | Padding (5), Timing (5), Mimicry (TLS/WebSocket/DoH), Cover Traffic |
+| wraith-discovery | ✅ Complete | 301 | Kademlia DHT, STUN, ICE (RFC 8445), relay |
+| wraith-files | ✅ Complete | 34 | io_uring I/O, chunking, tree hashing, reassembly |
 | wraith-cli | ✅ Complete | 87 | Full CLI with config, progress, commands |
 | wraith-ffi | ✅ Complete | 111 | C-compatible API, FFI-safe types, JNI, UniFFI |
 | wraith-xdp | Not started | 0 | Requires eBPF toolchain (future) |

@@ -163,7 +163,7 @@ impl ImplantService for ImplantServiceImpl {
 
         // Update PowerShell session if applicable
         if let Ok(plaintext) = self.db.decrypt_data(&req.encrypted_result) {
-             self.powershell_manager.append_output(cmd_id, &plaintext);
+            self.powershell_manager.append_output(cmd_id, &plaintext);
         }
 
         // Store the result. If the implant applied application-layer encryption,

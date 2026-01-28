@@ -116,9 +116,12 @@ pub async fn start_smb_listener(
                         }
 
                         let command = u16::from_le_bytes([header_buf[12], header_buf[13]]);
-                        let msg_id = u64::from_le_bytes(header_buf[24..32].try_into().unwrap_or_default());
-                        let proc_id = u32::from_le_bytes(header_buf[32..36].try_into().unwrap_or_default());
-                        let session_id = u64::from_le_bytes(header_buf[40..48].try_into().unwrap_or_default());
+                        let msg_id =
+                            u64::from_le_bytes(header_buf[24..32].try_into().unwrap_or_default());
+                        let proc_id =
+                            u32::from_le_bytes(header_buf[32..36].try_into().unwrap_or_default());
+                        let session_id =
+                            u64::from_le_bytes(header_buf[40..48].try_into().unwrap_or_default());
 
                         match command {
                             0x0000 => {
@@ -131,7 +134,7 @@ pub async fn start_smb_listener(
                                 h.message_id = msg_id;
                                 h.process_id = proc_id;
                                 h.credits = 1; // Credits granted
-                                // SAFETY: Smb2Header is #[repr(C, packed)] and 64 bytes, 
+                                // SAFETY: Smb2Header is #[repr(C, packed)] and 64 bytes,
                                 // which is compatible with the [u8; 64] target array.
                                 let h_bytes: [u8; 64] = unsafe { core::mem::transmute(h) };
                                 resp.extend_from_slice(&h_bytes);

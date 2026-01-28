@@ -1100,19 +1100,19 @@ mod tests {
     #[test]
     fn test_session_bbr_integration() {
         let mut session = Session::new();
-        
+
         // Initial state
         assert_eq!(session.bbr().bytes_in_flight(), 0);
-        
+
         // Sending updates BBR
         session.record_sent(1500);
         assert_eq!(session.bbr().bytes_in_flight(), 1500);
-        
+
         // Acking updates BBR
         session.record_acked(1500, Duration::from_millis(50));
         assert_eq!(session.bbr().bytes_in_flight(), 0);
         assert_eq!(session.bbr().min_rtt(), Duration::from_millis(50));
-        
+
         // Loss updates BBR
         session.record_sent(1500);
         session.record_lost(1500);

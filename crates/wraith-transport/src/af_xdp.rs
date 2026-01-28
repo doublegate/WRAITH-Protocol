@@ -134,8 +134,8 @@ use std::io::{self, Error};
 use std::os::raw::{c_int, c_void};
 use std::ptr;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 use std::sync::OnceLock;
+use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 use thiserror::Error;
 
 // XDP socket constants
@@ -530,10 +530,13 @@ impl MmapRing {
                 0,
             )
         };
-        
-        assert!(ptr != libc::MAP_FAILED, "Failed to allocate test ring memory");
+
+        assert!(
+            ptr != libc::MAP_FAILED,
+            "Failed to allocate test ring memory"
+        );
         let ring_ptr = ptr as *mut u8;
-        
+
         // Initialize indices (offsets based on xdp_config::ring_size logic)
         // Producer: 8, Consumer: 12
         unsafe {
@@ -766,9 +769,7 @@ impl XdpProgram {
             ifname,
             ifindex
         );
-        tracing::warn!(
-            "Assuming XDP program is pre-attached or using SKB mode."
-        );
+        tracing::warn!("Assuming XDP program is pre-attached or using SKB mode.");
 
         Ok(Self {
             prog_fd: -1, // No FD ownership; program managed externally
@@ -1171,8 +1172,12 @@ impl Umem {
     /// Bind rings to UMEM (Linux only)
     #[cfg(target_os = "linux")]
     pub fn bind_rings(&self, fill_ring: MmapRing, comp_ring: MmapRing) -> Result<(), AfXdpError> {
-        self.fill_ring.set(fill_ring).map_err(|_| AfXdpError::InvalidConfig("Fill ring already bound".into()))?;
-        self.comp_ring.set(comp_ring).map_err(|_| AfXdpError::InvalidConfig("Comp ring already bound".into()))?;
+        self.fill_ring
+            .set(fill_ring)
+            .map_err(|_| AfXdpError::InvalidConfig("Fill ring already bound".into()))?;
+        self.comp_ring
+            .set(comp_ring)
+            .map_err(|_| AfXdpError::InvalidConfig("Comp ring already bound".into()))?;
         Ok(())
     }
 
@@ -1571,8 +1576,9 @@ impl AfXdpSocket {
                 .inspect_err(|_| close_fd_on_error())?;
             let comp_ring = MmapRing::new(fd, offsets.cr.desc, umem.comp_ring_size(), false)
                 .inspect_err(|_| close_fd_on_error())?;
-            
-            umem.bind_rings(fill_ring, comp_ring).inspect_err(|_| close_fd_on_error())?;
+
+            umem.bind_rings(fill_ring, comp_ring)
+                .inspect_err(|_| close_fd_on_error())?;
 
             Ok(Self {
                 fd,
@@ -1599,10 +1605,7 @@ impl AfXdpSocket {
 
     /// Create a test socket with fake rings
     #[cfg(test)]
-    pub fn new_test(
-        umem: Arc<Umem>,
-        config: SocketConfig,
-    ) -> Result<Self, AfXdpError> {
+    pub fn new_test(umem: Arc<Umem>, config: SocketConfig) -> Result<Self, AfXdpError> {
         #[cfg(target_os = "linux")]
         let rx_ring = MmapRing::new_test(config.rx_ring_size, true);
         #[cfg(not(target_os = "linux"))]
@@ -1612,7 +1615,7 @@ impl AfXdpSocket {
         let tx_ring = MmapRing::new_test(config.tx_ring_size, true);
         #[cfg(not(target_os = "linux"))]
         let tx_ring = RingBuffer::new(config.tx_ring_size);
-        
+
         #[cfg(target_os = "linux")]
         {
             // Bind fake rings to UMEM if needed
@@ -1653,14 +1656,14 @@ impl AfXdpSocket {
             for i in 0..count {
                 // SAFETY: Ring buffer logic ensures indices are valid
                 let desc = unsafe { self.rx_ring.read_desc(idx + i) };
-                
+
                 // Convert XdpDesc (kernel) to PacketDesc (user API)
                 let packet = PacketDesc {
                     addr: desc.addr,
                     len: desc.len,
                     options: desc.options,
                 };
-                
+
                 total_bytes += packet.len as u64;
                 packets.push(packet);
             }
@@ -1720,24 +1723,28 @@ impl AfXdpSocket {
 
             let idx = self.tx_ring.load_producer();
             let mut total_bytes: u64 = 0;
-            
+
             for (i, packet) in packets.iter().enumerate() {
                 // Validation
                 if packet.addr >= self.umem.size() as u64 {
                     self.stats.record_invalid_packet();
                     return Err(AfXdpError::RingBufferError(format!(
-                        "Invalid packet address: {} (UMEM size: {})", packet.addr, self.umem.size()
+                        "Invalid packet address: {} (UMEM size: {})",
+                        packet.addr,
+                        self.umem.size()
                     )));
                 }
                 if packet.len as usize > self.umem.frame_size() {
                     self.stats.record_invalid_packet();
                     return Err(AfXdpError::RingBufferError(format!(
-                        "Packet length {} exceeds frame size {}", packet.len, self.umem.frame_size()
+                        "Packet length {} exceeds frame size {}",
+                        packet.len,
+                        self.umem.frame_size()
                     )));
                 }
-                
+
                 total_bytes += packet.len as u64;
-                
+
                 // Write to mmap ring
                 unsafe {
                     let desc = XdpDesc {
@@ -1748,7 +1755,7 @@ impl AfXdpSocket {
                     self.tx_ring.write_desc(idx + i as u32, &desc);
                 }
             }
-            
+
             self.tx_ring.submit(count);
             self.stats.record_tx(count as u64, total_bytes);
             self.kick_tx()?;
@@ -1768,14 +1775,16 @@ impl AfXdpSocket {
                 let mut total_bytes: u64 = 0;
                 for (i, packet) in packets.iter().enumerate() {
                     let desc_idx = (idx + i as u32) % self.config.tx_ring_size;
-                    
+
                     if packet.addr >= self.umem.size() as u64 {
                         self.stats.record_invalid_packet();
                         return Err(AfXdpError::RingBufferError(format!(
-                            "Invalid packet address: {} (UMEM size: {})", packet.addr, self.umem.size()
+                            "Invalid packet address: {} (UMEM size: {})",
+                            packet.addr,
+                            self.umem.size()
                         )));
                     }
-                    
+
                     total_bytes += packet.len as u64;
                     let _ = desc_idx; // Suppress unused warning
                 }
@@ -1918,7 +1927,9 @@ impl AfXdpSocket {
                 for (i, &addr) in addresses.iter().enumerate() {
                     // SAFETY: Ring buffer logic ensures indices are valid within mmap'd region.
                     // Validation above ensures the address is within UMEM bounds.
-                    unsafe { fill_ring.write_addr(idx + i as u32, addr); }
+                    unsafe {
+                        fill_ring.write_addr(idx + i as u32, addr);
+                    }
                 }
                 fill_ring.submit(count);
             } else {
@@ -2578,7 +2589,8 @@ mod tests {
 
         // Use new_test to create socket with anonymous memory rings
         // This validates MmapRing logic on Linux or RingBuffer logic on non-Linux
-        let mut socket = AfXdpSocket::new_test(umem.clone(), socket_config).expect("Socket creation failed");
+        let mut socket =
+            AfXdpSocket::new_test(umem.clone(), socket_config).expect("Socket creation failed");
 
         // Fill RX ring
         let fill_addrs: Vec<u64> = vec![0, 2048, 4096];
@@ -2587,11 +2599,11 @@ mod tests {
         // Verify RX batch logic doesn't crash on empty rings
         let packets = socket.rx_batch(32).expect("RX batch failed");
         assert_eq!(packets.len(), 0);
-        
+
         // Verify Complete TX logic
         let completed = socket.complete_tx(32).expect("Complete TX failed");
         assert_eq!(completed.len(), 0);
-        
+
         // Verify stats
         let stats = socket.stats_snapshot();
         assert_eq!(stats.rx_packets, 0);

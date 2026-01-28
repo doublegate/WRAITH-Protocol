@@ -38,7 +38,7 @@ WRAITH Protocol is a privacy-focused, high-performance file transfer protocol de
 
 | Metric            | Value                                                                  |
 | ----------------- | ---------------------------------------------------------------------- |
-| **Tests**         | 2,153 passing (100% pass rate, 16 intentionally ignored)               |
+| **Tests**         | 2,123 passing (100% pass rate, 16 intentionally ignored)               |
 | **Code**          | ~131,000 lines Rust (protocol + clients) + ~35,000 lines TypeScript    |
 | **Documentation** | 114 files, ~62,800 lines                                               |
 | **Security**      | Grade A+ (zero vulnerabilities, 295 audited dependencies)              |
@@ -221,7 +221,7 @@ The RedOps platform has undergone exhaustive source-level auditing with line-by-
 | Spectre Implant    | 88%        | +4%                 | 15 modules (mesh added), COM-based persistence, full BOF loader  |
 | WRAITH Integration | 94%        | +3%                 | P2P mesh C2, entropy mixing, SecureBuffer with mlock             |
 
-For the full gap analysis, see [GAP-ANALYSIS-v2.2.5.md](docs/clients/wraith-redops/GAP-ANALYSIS-v2.2.5.md).
+For the full gap analysis, see [GAP-ANALYSIS-v2.3.0.md](docs/clients/wraith-redops/GAP-ANALYSIS-v2.3.0.md).
 
 For detailed client documentation, see the [Client Overview](docs/clients/overview.md).
 
@@ -321,14 +321,14 @@ WRAITH Protocol uses a six-layer design optimized for security and performance:
 
 | Crate                  | Description                                                  | Tests |
 | ---------------------- | ------------------------------------------------------------ | ----- |
-| **wraith-core**        | Frame parsing (SIMD), sessions, congestion control, Node API | 414   |
-| **wraith-crypto**      | Ed25519, X25519+Elligator2, AEAD, Noise_XX, Double Ratchet   | 127   |
-| **wraith-transport**   | AF_XDP, io_uring, UDP sockets, worker pools                  | 130   |
-| **wraith-obfuscation** | Padding, timing, cover traffic, protocol mimicry             | 111   |
-| **wraith-discovery**   | Kademlia DHT, STUN, ICE, relay infrastructure                | 231   |
+| **wraith-core**        | Frame parsing (SIMD), sessions, congestion control, Node API | 456   |
+| **wraith-crypto**      | Ed25519, X25519+Elligator2, AEAD, Noise_XX, Double Ratchet   | 216   |
+| **wraith-transport**   | AF_XDP, io_uring, UDP sockets, worker pools                  | 183   |
+| **wraith-obfuscation** | Padding, timing, cover traffic, protocol mimicry             | 140   |
+| **wraith-discovery**   | Kademlia DHT, STUN, ICE, relay infrastructure                | 301   |
 | **wraith-files**       | File chunking, BLAKE3 tree hashing, io_uring I/O             | 34    |
-| **wraith-cli**         | Command-line interface with Node API integration             | 8     |
-| **wraith-ffi**         | Foreign function interface (C/JNI bindings)                  | 6     |
+| **wraith-cli**         | Command-line interface with Node API integration             | 87    |
+| **wraith-ffi**         | Foreign function interface (C/JNI bindings)                  | 111   |
 
 For detailed architecture documentation, see [Protocol Overview](docs/architecture/protocol-overview.md).
 
@@ -403,7 +403,7 @@ For detailed architecture documentation, see [Protocol Overview](docs/architectu
 
 **Validation:**
 
-- Comprehensive test coverage (2,153+ tests)
+- Comprehensive test coverage (2,123+ tests)
 - DPI evasion validation (Wireshark, Zeek, Suricata, nDPI)
 - 5 libFuzzer targets
 - Property-based tests
@@ -562,8 +562,9 @@ WRAITH Protocol uses comprehensive GitHub Actions workflows:
 
 - **Continuous Integration** - Tests, linting, formatting on every push/PR
 - **Security Scanning** - Dependabot, CodeQL, cargo-audit, gitleaks, fuzzing
-- **Multi-Platform Releases** - 6 platform targets with SHA256 checksums
-- **Client Builds** - All Tauri desktop applications
+- **Multi-Platform Releases** - 6 platform targets with SHA256 checksums via `cross-rs`
+- **Cross-Compilation** - Docker-based builds with `Cross.toml` pre-build hooks (protobuf-compiler)
+- **Client Builds** - All Tauri desktop applications (RedOps clients excluded from CI due to frontend asset requirements)
 
 See [CI Workflow](.github/workflows/ci.yml) and [Release Workflow](.github/workflows/release.yml).
 
@@ -629,7 +630,7 @@ WRAITH Protocol v2.3.0 represents 2,740+ story points across 24 development phas
 - ~12,819 lines RedOps codebase across Team Server, Operator Client, and Spectre Implant (31 IPC commands, 100% proto RPC coverage)
 - Conductor project management system with code style guides for development workflow tracking
 - RedOps workspace integration: team-server and operator-client as workspace members (spectre-implant excluded for no_std compatibility)
-- Comprehensive documentation (114 files, ~62,800 lines) and testing (2,153 tests)
+- Comprehensive documentation (114 files, ~62,800 lines) and testing (2,123 tests)
 - CI/CD infrastructure with multi-platform releases
 
 ### Future Development
@@ -706,6 +707,6 @@ WRAITH Protocol builds on excellent projects and research:
 
 **WRAITH Protocol** - _Secure. Fast. Invisible._
 
-**Version:** 2.3.0 | **License:** MIT | **Language:** Rust 2024 (MSRV 1.88) | **Tests:** 2,153 passing (100%) | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server)
+**Version:** 2.3.0 | **License:** MIT | **Language:** Rust 2024 (MSRV 1.88) | **Tests:** 2,123 passing (100%) | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server)
 
 **Last Updated:** 2026-01-27

@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::services::powershell::{PowerShellManager, JobStatus};
+    use crate::services::powershell::{JobStatus, PowerShellManager};
     use uuid::Uuid;
 
     #[test]
@@ -13,7 +13,10 @@ mod tests {
         let profile_script = "function Test-Func { Write-Host 'Hello' }";
         manager.set_profile(implant_id, profile_script);
 
-        assert_eq!(manager.get_profile(implant_id), Some(profile_script.to_string()));
+        assert_eq!(
+            manager.get_profile(implant_id),
+            Some(profile_script.to_string())
+        );
     }
 
     #[test]
@@ -24,7 +27,7 @@ mod tests {
 
         // 1. Add Job via Manager
         manager.create_job(implant_id, job_id, "Get-Process");
-        
+
         // 2. Verify Job state
         {
             let session = manager.get_or_create_session(implant_id);
@@ -43,7 +46,10 @@ mod tests {
         // 4. Verify Status
         {
             let session = manager.get_or_create_session(implant_id);
-            assert_eq!(session.jobs.get(&job_id).unwrap().status, JobStatus::Running);
+            assert_eq!(
+                session.jobs.get(&job_id).unwrap().status,
+                JobStatus::Running
+            );
         }
 
         // 5. Append output via Manager
@@ -52,7 +58,10 @@ mod tests {
         // 6. Verify Output
         {
             let session = manager.get_or_create_session(implant_id);
-            assert_eq!(session.jobs.get(&job_id).unwrap().output_buffer, b"Process 1\n");
+            assert_eq!(
+                session.jobs.get(&job_id).unwrap().output_buffer,
+                b"Process 1\n"
+            );
         }
 
         // 7. Complete
@@ -60,7 +69,7 @@ mod tests {
             let session = manager.get_or_create_session(implant_id);
             session.set_exit_code(job_id, 0);
             session.update_job_status(job_id, JobStatus::Completed);
-            
+
             let completed_job = session.jobs.get(&job_id).unwrap();
             assert_eq!(completed_job.status, JobStatus::Completed);
             assert_eq!(completed_job.exit_code, Some(0));

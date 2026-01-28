@@ -20,7 +20,10 @@ impl TrackedSession {
     }
 
     pub fn should_rekey(&self) -> bool {
-        let elapsed = self.last_rekey.elapsed().unwrap_or(std::time::Duration::from_secs(0));
+        let elapsed = self
+            .last_rekey
+            .elapsed()
+            .unwrap_or(std::time::Duration::from_secs(0));
         self.packet_count >= 1_000_000 || elapsed >= std::time::Duration::from_secs(120)
     }
 

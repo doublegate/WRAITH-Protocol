@@ -5,7 +5,7 @@
 This document tracks the development journey of WRAITH Protocol client applications, from planning through implementation and release. Phases 15-24 delivered all 12 client applications: WRAITH-Transfer, WRAITH-Android, WRAITH-iOS, WRAITH-Chat, WRAITH-Sync, WRAITH-Share, WRAITH-Stream, WRAITH-Mesh, WRAITH-Publish, WRAITH-Vault, WRAITH-Recon, and WRAITH-RedOps.
 
 [![Version](https://img.shields.io/badge/clients-12%20complete-green.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
-[![Protocol](https://img.shields.io/badge/protocol-v2.2.5-blue.svg)](../../README.md)
+[![Protocol](https://img.shields.io/badge/protocol-v2.3.0-blue.svg)](../../README.md)
 [![Clients](https://img.shields.io/badge/clients-9%20desktop%20+%202%20mobile%20+%201%20server-brightgreen.svg)](../../to-dos/ROADMAP-clients.md)
 
 ---
@@ -33,7 +33,7 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 - **Tier 4:** Security Testing (RedOps - COMPLETE)
 
 **Current Status (2026-01-27):**
-- Protocol v2.2.5 complete (all 24 phases + infrastructure sprints delivered)
+- Protocol v2.3.0 complete (all 24 phases + infrastructure sprints delivered)
 - **All 12 Client Applications:** ✅ **COMPLETE** (1,292 SP total)
   - WRAITH-Transfer: Desktop P2P file transfer (6 tests)
   - WRAITH-Chat: E2EE messaging with voice/video/groups (107 tests)
@@ -146,7 +146,7 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 
 | # | Client | Description | Platform | Story Points | Status |
 |---|--------|-------------|----------|--------------|--------|
-| 12 | **WRAITH-RedOps** | Red team operations platform with C2 infrastructure | Team Server + Operator Client + Implant | 89 | ✅ **Complete (v2.2.5)** |
+| 12 | **WRAITH-RedOps** | Red team operations platform with C2 infrastructure | Team Server + Operator Client + Implant | 89 | ✅ **Complete (v2.3.0)** |
 
 **Completion Date:** 2026-01-24
 **Prerequisites:** Protocol Phase 7 (Hardening) - ✅ Complete
@@ -155,7 +155,7 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 
 ---
 
-### WRAITH-RedOps (v2.2.5) - Red Team Operations Platform
+### WRAITH-RedOps (v2.3.0) - Red Team Operations Platform
 
 **Completion Date:** 2026-01-24
 **Story Points:** 89 SP
@@ -790,7 +790,7 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 | Publish | ✅ | ✅ | ✅ | ✅ | ✅ 56 | ✅ | ✅ v1.9.5 |
 | Vault | ✅ | ✅ | ✅ | ✅ | ✅ 99 | ✅ | ✅ v2.0.0 |
 | Recon | ✅ | ✅ | ✅ | ✅ | ✅ 78 | ✅ | ✅ v2.2.0 |
-| RedOps | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ v2.2.5 |
+| RedOps | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ v2.3.0 |
 
 All 12 clients are complete and production-ready.
 
@@ -1161,7 +1161,7 @@ RedOps                                                          [=============]
 | Publish | 76 | 56 | ✅ Complete (v1.9.5) |
 | Vault | 94 | 99 | ✅ Complete (v2.0.0) |
 | Recon | 55 | 78 | ✅ Complete (v2.2.0) |
-| RedOps | 89 | - | ✅ Complete (v2.2.5) |
+| RedOps | 89 | - | ✅ Complete (v2.3.0) |
 
 **All 12 client applications are complete and production-ready.**
 
@@ -1171,11 +1171,14 @@ RedOps                                                          [=============]
 
 **Protocol Status (2026-01-27):**
 - ✅ All 24 protocol development phases complete (2,740+ SP delivered)
-- ✅ 2,153 tests passing (16 ignored) - 100% pass rate
+- ✅ 2,123 tests passing (16 ignored) - 100% pass rate
 - ✅ Zero vulnerabilities, zero clippy warnings
 - ✅ Grade A+ quality (98/100), TDR ~2.5%
-- ✅ Production-ready architecture with v2.2.5 release
+- ✅ Production-ready architecture with v2.3.0 release
+- ✅ WRAITH-RedOps workspace integration: team-server and operator-client as Cargo workspace members
 - ✅ WRAITH-RedOps gap analysis v5.0.0: ~94% completion, ~71% MITRE ATT&CK, 0 P0 critical, ~12,819 lines, ~69 SP remaining
+- ✅ sqlx restructured to PostgreSQL-only (avoids libsqlite3-sys link conflict with Tauri rusqlite)
+- ✅ Cross-compilation with Cross.toml pre-build hooks (protobuf-compiler for gRPC builds)
 - ✅ Conductor project management system with code style guides for development workflow tracking
 - ✅ Full WRAITH protocol integration in all clients
 - ✅ Secure key storage with platform-native keyring
@@ -1183,6 +1186,7 @@ RedOps                                                          [=============]
 - ✅ ICE signaling with RFC 8445 connectivity checks
 - ✅ DNS-based STUN resolution with caching
 - ✅ CI/CD optimized (reusable setup.yml, path filters, checkout@v4, cache@v4, upload-artifact@v4, download-artifact@v4)
+- ✅ CI/CD workspace exclusions for RedOps clients (Tauri `generate_context!()` requires frontend assets)
 
 **Client Development Status:**
 - ✅ Comprehensive planning complete (roadmap, specifications)
@@ -1259,7 +1263,7 @@ RedOps                                                          [=============]
 11. WRAITH-Recon: Network reconnaissance platform (55 SP) - v2.2.0
 
 **Tier 4 - Security Testing (89 SP):**
-12. WRAITH-RedOps: Red team operations (89 SP) - v2.2.5
+12. WRAITH-RedOps: Red team operations (89 SP) - v2.3.0
 
 ---
 
@@ -1302,8 +1306,8 @@ RedOps                                                          [=============]
 
 ---
 
-**WRAITH Protocol Client Applications Development History** - *From Planning to v2.2.5*
+**WRAITH Protocol Client Applications Development History** - *From Planning to v2.3.0*
 
-**Status:** Phases 15-24 Complete (All 12 Clients) | **Total Scope:** 12 clients, 1,292 SP | **Delivered:** 1,292 SP (100%) | **Protocol:** v2.2.5 Complete | **Tests:** 2,153 total (663+ client tests) | **Workspace:** 22 members (team-server + operator-client integrated) | **TDR:** ~2.5% (Grade A) | **CI/CD:** Optimized workflows with reusable setup and path filters | **RedOps:** Gap analysis v5.0.0 (~94% complete, ~71% MITRE ATT&CK coverage, 0 P0 critical issues, ~12,819 lines, ~69 SP remaining) | **Conductor:** Project management system with code style guides
+**Status:** Phases 15-24 Complete (All 12 Clients) | **Total Scope:** 12 clients, 1,292 SP | **Delivered:** 1,292 SP (100%) | **Protocol:** v2.3.0 Complete | **Tests:** 2,123 total (663+ client tests) | **Workspace:** 22 members (team-server + operator-client integrated) | **TDR:** ~2.5% (Grade A) | **CI/CD:** Optimized workflows with reusable setup, path filters, and cross-compilation via Cross.toml | **RedOps:** Gap analysis v5.0.0 (~94% complete, ~71% MITRE ATT&CK coverage, 0 P0 critical issues, ~12,819 lines, ~69 SP remaining) | **Conductor:** Project management system with code style guides
 
 *Last Updated: 2026-01-27*

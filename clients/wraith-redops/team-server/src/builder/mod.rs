@@ -133,12 +133,7 @@ mod tests {
 
     #[test]
     fn test_obfuscation_flags() {
-        let cmd = Builder::prepare_build_command(
-            Path::new("."),
-            "127.0.0.1",
-            &[],
-            true
-        );
+        let cmd = Builder::prepare_build_command(Path::new("."), "127.0.0.1", &[], true);
         let envs: Vec<_> = cmd.get_envs().collect();
         let flags = envs.iter().find(|(k, _)| *k == "RUSTFLAGS");
         assert!(flags.is_some());

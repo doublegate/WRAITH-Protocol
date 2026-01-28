@@ -1,7 +1,7 @@
-use dashmap::DashMap;
-use uuid::Uuid;
 use chrono::{DateTime, Utc};
-use serde::{Serialize, Deserialize};
+use dashmap::DashMap;
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum JobStatus {
@@ -86,8 +86,13 @@ impl PowerShellManager {
         }
     }
 
-    pub fn get_or_create_session(&self, implant_id: Uuid) -> dashmap::mapref::one::RefMut<'_, Uuid, PowerShellSession> {
-        self.sessions.entry(implant_id).or_insert_with(|| PowerShellSession::new(implant_id))
+    pub fn get_or_create_session(
+        &self,
+        implant_id: Uuid,
+    ) -> dashmap::mapref::one::RefMut<'_, Uuid, PowerShellSession> {
+        self.sessions
+            .entry(implant_id)
+            .or_insert_with(|| PowerShellSession::new(implant_id))
     }
 
     pub fn create_job(&self, implant_id: Uuid, job_id: Uuid, command: &str) {
@@ -110,7 +115,9 @@ impl PowerShellManager {
     }
 
     pub fn get_profile(&self, implant_id: Uuid) -> Option<String> {
-        self.sessions.get(&implant_id).and_then(|s| s.profile.clone())
+        self.sessions
+            .get(&implant_id)
+            .and_then(|s| s.profile.clone())
     }
 }
 

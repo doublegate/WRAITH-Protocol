@@ -3,8 +3,8 @@ mod tests {
     use super::super::session::TrackedSession;
     use std::time::{Duration, SystemTime};
     use wraith_crypto::noise::{NoiseHandshake, NoiseKeypair};
-    use wraith_crypto::x25519::PrivateKey;
     use wraith_crypto::random::SecureRng;
+    use wraith_crypto::x25519::PrivateKey;
 
     fn create_dummy_session() -> TrackedSession {
         // Create a real transport for testing
@@ -38,11 +38,14 @@ mod tests {
     fn test_rekey_trigger_packet_limit() {
         let mut session = create_dummy_session();
         session.packet_count = 999_999;
-        assert!(!session.should_rekey(), "Should not rekey at 999,999 packets");
-        
+        assert!(
+            !session.should_rekey(),
+            "Should not rekey at 999,999 packets"
+        );
+
         session.on_packet(); // 1,000,000
         assert!(session.should_rekey(), "Should rekey at 1,000,000 packets");
-        
+
         session.on_rekey();
         assert!(!session.should_rekey(), "Should reset after rekey");
         assert_eq!(session.packet_count, 0);
@@ -54,7 +57,7 @@ mod tests {
         // Simulate time passing: 121 seconds ago
         session.last_rekey = SystemTime::now() - Duration::from_secs(121);
         assert!(session.should_rekey(), "Should rekey after 121 seconds");
-        
+
         session.on_rekey();
         assert!(!session.should_rekey(), "Should reset after rekey");
         // Verify time updated (within tolerance)

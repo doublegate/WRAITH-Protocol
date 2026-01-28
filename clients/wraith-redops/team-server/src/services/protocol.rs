@@ -185,8 +185,13 @@ impl ProtocolHandler {
                     frame.extend_from_slice(&resp_json);
 
                     // Rekey Logic: Check if we need to ratchet the sending key
-                    let elapsed = session.last_rekey.elapsed().unwrap_or(std::time::Duration::from_secs(0));
-                    if session.packet_count >= 1_000_000 || elapsed >= std::time::Duration::from_secs(120) {
+                    let elapsed = session
+                        .last_rekey
+                        .elapsed()
+                        .unwrap_or(std::time::Duration::from_secs(0));
+                    if session.packet_count >= 1_000_000
+                        || elapsed >= std::time::Duration::from_secs(120)
+                    {
                         session.transport.rekey_dh();
                         session.packet_count = 0;
                         session.last_rekey = std::time::SystemTime::now();

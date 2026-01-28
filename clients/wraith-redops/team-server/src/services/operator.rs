@@ -1,8 +1,8 @@
 use crate::database::Database;
 use crate::governance::GovernanceEngine;
 use crate::services::listener::ListenerManager;
-use crate::services::session::SessionManager;
 use crate::services::powershell::PowerShellManager;
+use crate::services::session::SessionManager;
 use crate::wraith::redops::operator_service_server::OperatorService;
 use crate::wraith::redops::*;
 use std::sync::Arc;
@@ -404,7 +404,8 @@ impl OperatorService for OperatorServiceImpl {
         // Track job with DB command ID
         if req.command_type == "powershell" {
             if let Ok(cmd_str) = String::from_utf8(payload.clone()) {
-                self.powershell_manager.create_job(implant_id, cmd_id, &cmd_str);
+                self.powershell_manager
+                    .create_job(implant_id, cmd_id, &cmd_str);
             }
         }
 
@@ -1311,8 +1312,9 @@ impl OperatorService for OperatorServiceImpl {
         let req = req.into_inner();
         let implant_id = uuid::Uuid::parse_str(&req.implant_id)
             .map_err(|_| Status::invalid_argument("Invalid UUID"))?;
-        
-        self.powershell_manager.set_profile(implant_id, &req.profile_script);
+
+        self.powershell_manager
+            .set_profile(implant_id, &req.profile_script);
         Ok(Response::new(()))
     }
 
@@ -1323,9 +1325,12 @@ impl OperatorService for OperatorServiceImpl {
         let req = req.into_inner();
         let implant_id = uuid::Uuid::parse_str(&req.implant_id)
             .map_err(|_| Status::invalid_argument("Invalid UUID"))?;
-            
-        let profile = self.powershell_manager.get_profile(implant_id).unwrap_or_default();
-        
+
+        let profile = self
+            .powershell_manager
+            .get_profile(implant_id)
+            .unwrap_or_default();
+
         Ok(Response::new(ProfileResponse {
             profile_script: profile,
         }))

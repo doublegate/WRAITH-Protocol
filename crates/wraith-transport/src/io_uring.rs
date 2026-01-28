@@ -159,8 +159,8 @@ impl IoUringContext {
             )));
         }
 
-        let ring = IoUring::new(queue_depth)
-            .map_err(|e| IoUringError::RingCreation(e.to_string()))?;
+        let ring =
+            IoUring::new(queue_depth).map_err(|e| IoUringError::RingCreation(e.to_string()))?;
 
         Ok(Self {
             ring,
@@ -197,7 +197,8 @@ impl IoUringContext {
         // SAFETY: The submission queue is valid and the entry is properly constructed.
         // The buffer pointer is valid for the duration of the operation as we move it into PendingOp.
         unsafe {
-            self.ring.submission()
+            self.ring
+                .submission()
                 .push(&entry)
                 .map_err(|_| IoUringError::Submission("Submission queue full".into()))?;
         }
@@ -248,7 +249,8 @@ impl IoUringContext {
         // SAFETY: The submission queue is valid and the entry is properly constructed.
         // The data buffer is moved into PendingOp to ensure it remains valid until completion.
         unsafe {
-            self.ring.submission()
+            self.ring
+                .submission()
                 .push(&entry)
                 .map_err(|_| IoUringError::Submission("Submission queue full".into()))?;
         }
@@ -280,13 +282,12 @@ impl IoUringContext {
         let id = self.next_id;
         self.next_id += 1;
 
-        let entry = opcode::Fsync::new(types::Fd(fd))
-            .build()
-            .user_data(id);
+        let entry = opcode::Fsync::new(types::Fd(fd)).build().user_data(id);
 
         // SAFETY: The submission queue is valid and the entry is properly constructed.
         unsafe {
-            self.ring.submission()
+            self.ring
+                .submission()
                 .push(&entry)
                 .map_err(|_| IoUringError::Submission("Submission queue full".into()))?;
         }
@@ -321,15 +322,16 @@ impl IoUringContext {
         min_complete: usize,
     ) -> Result<Vec<Completion>, IoUringError> {
         if self.pending.is_empty() && min_complete > 0 {
-             return Ok(Vec::new());
+            return Ok(Vec::new());
         }
 
-        self.ring.submit_and_wait(min_complete)
+        self.ring
+            .submit_and_wait(min_complete)
             .map_err(|e| IoUringError::Completion(e.to_string()))?;
 
         let mut completions = Vec::new();
         let cq = self.ring.completion();
-        
+
         for cqe in cq {
             let id = cqe.user_data();
             if let Some(op) = self.pending.remove(&id) {
@@ -337,7 +339,11 @@ impl IoUringContext {
                     id,
                     result: cqe.result(),
                     op_type: op.op_type,
-                    data: if op.op_type == OpType::Read { op.buffer } else { None },
+                    data: if op.op_type == OpType::Read {
+                        op.buffer
+                    } else {
+                        None
+                    },
                 });
             }
         }
@@ -349,12 +355,13 @@ impl IoUringContext {
     ///
     /// Returns any available completions immediately.
     pub fn poll_completions(&mut self) -> Result<Vec<Completion>, IoUringError> {
-        self.ring.submit()
+        self.ring
+            .submit()
             .map_err(|e| IoUringError::Submission(e.to_string()))?;
 
         let mut completions = Vec::new();
         let cq = self.ring.completion();
-        
+
         for cqe in cq {
             let id = cqe.user_data();
             if let Some(op) = self.pending.remove(&id) {
@@ -362,7 +369,11 @@ impl IoUringContext {
                     id,
                     result: cqe.result(),
                     op_type: op.op_type,
-                    data: if op.op_type == OpType::Read { op.buffer } else { None },
+                    data: if op.op_type == OpType::Read {
+                        op.buffer
+                    } else {
+                        None
+                    },
                 });
             }
         }
@@ -385,15 +396,20 @@ impl IoUringContext {
         }
 
         // Convert Vec<Vec<u8>> to iovec slices for io_uring
-        let iovecs: Vec<libc::iovec> = buffers.iter().map(|b| libc::iovec {
-            iov_base: b.as_ptr() as *mut libc::c_void,
-            iov_len: b.len(),
-        }).collect();
+        let iovecs: Vec<libc::iovec> = buffers
+            .iter()
+            .map(|b| libc::iovec {
+                iov_base: b.as_ptr() as *mut libc::c_void,
+                iov_len: b.len(),
+            })
+            .collect();
 
         // SAFETY: We keep the underlying buffers alive in self.buffers.
         // io_uring requires that registered buffers remain valid until unregistered.
         unsafe {
-            self.ring.submitter().register_buffers(&iovecs)
+            self.ring
+                .submitter()
+                .register_buffers(&iovecs)
                 .map_err(|e| IoUringError::BufferRegistration(e.to_string()))?;
         }
 
@@ -523,7 +539,13 @@ mod tests {
     #[cfg(target_os = "linux")]
     fn setup_test_file() -> (std::fs::File, RawFd, String) {
         use std::os::fd::AsRawFd;
-        let name = format!("test_uring_{}.tmp", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos());
+        let name = format!(
+            "test_uring_{}.tmp",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        );
         let file = std::fs::OpenOptions::new()
             .read(true)
             .write(true)
@@ -570,7 +592,7 @@ mod tests {
         let op_id2 = ctx.submit_read(fd, 4096, 4096).unwrap();
         assert_eq!(op_id2, 1);
         assert_eq!(ctx.pending_count(), 2);
-        
+
         let _ = std::fs::remove_file(path);
     }
 
@@ -584,7 +606,7 @@ mod tests {
         let op_id = ctx.submit_write(fd, 0, &data).unwrap();
         assert_eq!(op_id, 0);
         assert_eq!(ctx.pending_count(), 1);
-        
+
         let _ = std::fs::remove_file(path);
     }
 
@@ -597,7 +619,7 @@ mod tests {
         let op_id = ctx.submit_fsync(fd).unwrap();
         assert_eq!(op_id, 0);
         assert_eq!(ctx.pending_count(), 1);
-        
+
         let _ = std::fs::remove_file(path);
     }
 
@@ -620,7 +642,7 @@ mod tests {
 
         // Should have removed from pending
         assert_eq!(ctx.pending_count(), 1);
-        
+
         let _ = std::fs::remove_file(path);
     }
 
@@ -642,12 +664,14 @@ mod tests {
         // Poll for some
         let mut count = 0;
         for _ in 0..10 {
-             let c = ctx.poll_completions().unwrap();
-             count += c.len();
-             if count >= 5 { break; }
-             std::thread::sleep(std::time::Duration::from_millis(10));
+            let c = ctx.poll_completions().unwrap();
+            count += c.len();
+            if count >= 5 {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(10));
         }
-        
+
         let _ = std::fs::remove_file(path);
     }
 
@@ -681,10 +705,10 @@ mod tests {
         {
             let mut ctx = IoUringContext::new(64).unwrap();
             let (_f, fd, path) = setup_test_file();
-            
+
             ctx.submit_write(fd, 0, &[0u8; 2048]).unwrap();
             ctx.wait_completions(1).unwrap();
-            
+
             ctx.submit_read(fd, 0, 1024).unwrap();
             ctx.submit_fsync(fd).unwrap();
 
@@ -697,7 +721,7 @@ mod tests {
                     OpType::Fsync => assert_eq!(completion.result, 0),
                 }
             }
-            
+
             let _ = std::fs::remove_file(path);
         }
 
@@ -722,10 +746,10 @@ mod tests {
 
         let mut completed = 0;
         while completed < 50 {
-             let c = ctx.wait_completions(1).unwrap();
-             completed += c.len();
+            let c = ctx.wait_completions(1).unwrap();
+            completed += c.len();
         }
-        
+
         assert_eq!(ctx.pending_count(), 0);
         let _ = std::fs::remove_file(path);
     }
@@ -743,7 +767,7 @@ mod tests {
         assert_eq!(id1, 0);
         assert_eq!(id2, 1);
         assert_eq!(id3, 2);
-        
+
         let _ = std::fs::remove_file(path);
     }
 
@@ -765,7 +789,7 @@ mod tests {
             let c = ctx.wait_completions(1).unwrap();
             completed += c.len();
         }
-        
+
         let _ = std::fs::remove_file(path);
     }
 
@@ -792,7 +816,7 @@ mod tests {
 
         // Poll should return up to 16 (batch limit)
         let _ = ctx.poll_completions().unwrap();
-        
+
         let _ = std::fs::remove_file(path);
     }
 
@@ -863,44 +887,48 @@ mod tests {
             .truncate(true)
             .open(path)
             .unwrap();
-            
+
         use std::os::fd::AsRawFd;
         let fd = file.as_raw_fd();
-        
+
         let mut ctx = IoUringContext::new(64).unwrap();
-        
+
         let data = b"Hello io_uring";
         let write_op = ctx.submit_write(fd, 0, data).unwrap();
-        
+
         // Polling loop
         let mut comps = Vec::new();
         for _ in 0..100 {
             comps = ctx.poll_completions().unwrap();
-            if !comps.is_empty() { break; }
+            if !comps.is_empty() {
+                break;
+            }
             std::thread::sleep(std::time::Duration::from_millis(1));
         }
-        
+
         assert_eq!(comps.len(), 1);
         assert_eq!(comps[0].id, write_op);
         assert_eq!(comps[0].result, data.len() as i32);
-        
+
         let read_len = data.len();
         let read_op = ctx.submit_read(fd, 0, read_len).unwrap();
-        
+
         for _ in 0..100 {
             comps = ctx.poll_completions().unwrap();
-            if !comps.is_empty() { break; }
+            if !comps.is_empty() {
+                break;
+            }
             std::thread::sleep(std::time::Duration::from_millis(1));
         }
-        
+
         assert_eq!(comps.len(), 1);
         assert_eq!(comps[0].id, read_op);
         assert_eq!(comps[0].result, read_len as i32);
-        
+
         // Verify data
         let read_data = comps[0].data.as_ref().unwrap();
         assert_eq!(read_data, data);
-        
+
         // Cleanup
         let _ = std::fs::remove_file(path);
     }

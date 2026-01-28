@@ -961,7 +961,8 @@ async fn stream_events(app: tauri::AppHandle, state: State<'_, ClientState>) -> 
 
             // Desktop Notification for important events
             if event.r#type == "implant_checkin" || event.r#type == "command_complete" {
-                let _ = app.notification()
+                let _ = app
+                    .notification()
                     .builder()
                     .title("WRAITH RedOps")
                     .body(format!("Event: {} from {}", event.r#type, event.implant_id))

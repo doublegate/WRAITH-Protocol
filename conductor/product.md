@@ -44,7 +44,7 @@ The protocol leverages kernel-bypass networking (AF_XDP) and modern cryptography
 | Handshake Latency | <50ms | Sub-millisecond with AF_XDP |
 | Security Rating | Grade A+ (zero critical vulns) | Zero vulnerabilities (295 deps) |
 | Client Deployment | All 12 clients stable | 12/12 complete |
-| Test Pass Rate | 100% | 2,140 passing (16 ignored) |
+| Test Pass Rate | 100% | 2,123 passing (16 ignored) |
 | Quality Score | >95/100 | 98/100 |
 | Technical Debt | <5% | 2.5% |
 | Clippy Warnings | Zero | Zero |
