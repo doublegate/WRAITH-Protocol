@@ -1,47 +1,89 @@
 # WRAITH-RedOps Gap Analysis v2.3.0
 
-**Version:** 2.3.0
+**Version:** 2.3.0 (Comprehensive Re-Verification v6.0.0)
 **Date:** 2026-01-27
 **Analyst:** Claude Opus 4.5 (Automated Source Code Audit)
-**Previous Version:** [GAP-ANALYSIS-v2.2.5.md](GAP-ANALYSIS-v2.2.5.md) (v5.0.0 internal)
+**Previous Versions:** [GAP-ANALYSIS-v2.2.5.md](GAP-ANALYSIS-v2.2.5.md) (v5.0.0 internal) -- now consolidated into this document
 **Scope:** Complete source code audit of all WRAITH-RedOps components
+**Method:** Exhaustive line-by-line reading of every source file, automated pattern scanning, cross-reference analysis
 
 ---
 
 ## Executive Summary
 
-This document presents a comprehensive gap and technical analysis of the WRAITH-RedOps adversary emulation platform at version 2.3.0. The analysis compares the current implementation against the intended design as documented in sprint plans, README files, and the previous v2.2.5 (v5.0.0) gap analysis.
+This document presents a comprehensive gap and technical analysis of the WRAITH-RedOps adversary emulation platform at version 2.3.0, consolidating all findings from the v2.2.5 (v5.0.0) gap analysis and incorporating the results of a fresh exhaustive audit of every source file.
+
+### Audit Methodology (v6.0.0)
+
+1. **Full File Read:** Every `.rs`, `.ts`, `.tsx`, `.proto`, and `.sql` file was read in its entirety
+2. **Stub/Placeholder Patterns:** `TODO|FIXME|HACK|XXX|WIP|unimplemented!|todo!|panic!`
+3. **Incomplete Implementation Patterns:** `In a real|In production|placeholder|stub|mock|dummy|fake|not implemented|not yet|coming soon|assume success`
+4. **Code Smell Patterns:** `Ok(())` in suspicious contexts, `Vec::new()` as return values
+5. **Error Handling Gaps:** `.unwrap()` and `.expect()` usage analysis
+6. **Hardcoded Value Detection:** IP addresses, ports, credentials, magic numbers, fallback keys
+7. **Cross-Reference:** All 5 specification documents (`architecture.md`, `features.md`, `implementation.md`, `integration.md`, `testing.md`) + sprint plan + proto file cross-referenced against actual implementation
+8. **Security Analysis:** Cryptographic key management, authentication, audit logging
+9. **IPC Bridge Verification:** Proto definitions (32 RPCs) cross-referenced against Tauri `invoke_handler` registrations (31 commands) and React `invoke()` calls
+10. **MITRE ATT&CK Coverage Mapping:** All implemented techniques mapped against planned coverage
+11. **Dead Code Analysis:** `#[allow(dead_code)]` annotations cataloged and assessed
+12. **Unsafe Code Audit:** All `unsafe` blocks cataloged and risk-assessed
+13. **Consolidation:** All v2.2.5 findings merged, re-verified, and updated
 
 ### Key Findings
 
 | Category | Assessment |
 |----------|------------|
-| **Overall Completion** | ~95% (up from ~94% in v2.2.5) |
+| **Overall Completion** | ~96% (up from ~94% in v2.2.5) |
 | **Production Readiness** | APPROACHING READY -- zero P0 issues remain |
 | **Core C2 Functionality** | ~97% complete |
-| **Implant Tradecraft** | ~89% complete |
-| **Operator Experience** | ~99% complete |
+| **Implant Tradecraft** | ~93% complete (up from ~89% in v2.2.5) |
+| **Operator Experience** | ~98% complete |
 | **Security Posture** | LOW risk -- all crypto keys from env vars, auth enforced |
-| **IPC Coverage** | 100% (31 commands, all 30 proto RPCs wired) |
-| **MITRE ATT&CK Coverage** | ~74% (28 of 38 planned techniques) |
-| **Primary Blockers** | Key ratcheting (P1 #12), PowerShell runner (P1 NEW-3) |
+| **IPC Coverage** | 97% (31 of 32 proto RPCs wired; 2 PowerShell RPCs missing) |
+| **MITRE ATT&CK Coverage** | ~82% (31 of 38 planned techniques) |
+| **Primary Blockers** | Key ratcheting (P1), PowerShell runner DLL (P1) |
 
 ### Changes Since v2.2.5
 
-| Metric | v2.3.0 | v2.2.5 | Delta |
-|--------|--------|--------|-------|
-| Total Source Lines | ~13,365 | ~12,819 | +546 (+4.3%) |
-| Team Server Lines | ~4,951 | ~4,488 | +463 (+10.3%) |
-| Spectre Implant Lines | ~5,729 | ~5,729 | 0 |
-| Operator Client (Rust) | ~1,143 | ~1,084 | +59 (+5.4%) |
-| Operator Client (TS) | ~1,518 | ~1,518 | 0 |
-| Proto Definition | ~510 | ~510 | 0 |
-| SQL Migrations | 6 files | 5 files | +1 |
-| `.unwrap()` in prod | ~10 | ~10 | 0 |
-| `.expect()` in prod | ~14 | ~14 | 0 |
+| Metric | v2.3.0 (Actual) | v2.2.5 | Delta |
+|--------|-----------------|--------|-------|
+| Total Rust Source Lines | 13,242 | ~12,819 | +423 (+3.3%) |
+| Team Server Lines (Rust) | 5,225 | ~4,488 | +737 (+16.4%) |
+| Spectre Implant Lines | 6,553 | ~5,729 | +824 (+14.4%) |
+| Operator Client (Rust) | 1,164 | ~1,084 | +80 (+7.4%) |
+| Operator Client (TS/TSX) | 1,526 | ~1,518 | +8 (+0.5%) |
+| Proto Definition | 531 | ~510 | +21 (+4.1%) |
+| SQL Migrations | 6 files (208 lines) | 5 files | +1 file |
+| Implant Modules | 18 | 15 | +3 (patch, screenshot, browser) |
+| Proto RPCs (OperatorService) | 32 | 30 | +2 (PowerShell mgmt) |
+| Tauri IPC Commands | 31 | 31 | 0 |
+| `#[allow(dead_code)]` | 10 annotations | 8 | +2 |
+| `.unwrap()` in prod code | 4 | ~4 | 0 |
+| `.unwrap()` in test code | 76 | ~76 | 0 |
+| `.expect()` in prod code | 14 | ~14 | 0 |
+| `unsafe` blocks (total) | 373 | ~340 | +33 |
 | P0 Issues | 0 | 0 | 0 |
 | P1 Issues Open | 2 | 2 | 0 |
-| Test Files | ~24 unit tests | ~24 unit tests | 0 |
+| P2 Issues Open | 8 | 10 | -2 (resolved) |
+| P3 Issues Open | 5 | 5 | 0 |
+
+### Overall Status
+
+| Component | Completion (v2.3.0) | Previous (v2.2.5) | Delta | Notes |
+|-----------|--------------------|--------------------|-------|-------|
+| Team Server | **97%** | 97% | 0% | New: powershell.rs, rekey_tests.rs, powershell_test.rs, listeners table migration |
+| Operator Client | **98%** | 99% | -1% | 2 new PowerShell RPCs not yet wired (31/32 coverage) |
+| Spectre Implant | **93%** | 89% | +4% | 3 new modules (patch, screenshot, browser), expanded syscalls/obfuscation/mesh/c2 |
+| WRAITH Integration | **93%** | 92% | +1% | New AMSI/ETW bypass, screenshot, browser harvest in dispatch |
+| **Overall** | **~96%** | ~94% | **+2%** | 3 new modules, expanded tradecraft, 2 new RPCs |
+
+### Remaining Critical Gaps
+
+1. **No Key Ratcheting** -- Noise session established once, `rekey_dh()` called on counter but NoiseTransport::rekey_dh() generates new DH key without exchanging it with peer -- effectively a no-op for forward secrecy (P1, 13 SP)
+2. **PowerShell Runner Placeholder** -- `RUNNER_DLL` is minimal MZ bytes, not a real .NET assembly for CLR hosting (P1, 5 SP)
+3. **2 PowerShell RPCs Not Wired** -- `SetPowerShellProfile` and `GetPowerShellProfile` proto RPCs exist but no Tauri IPC commands (P2, 3 SP)
+4. **Console Command Coverage** -- Console.tsx maps 11 commands; implant dispatches 19 task types (P2, 5 SP)
+5. **Windows UdpTransport stub** -- Returns `Err(())` unconditionally (P2, 3 SP)
 
 ---
 
@@ -52,8 +94,8 @@ This document presents a comprehensive gap and technical analysis of the WRAITH-
 3. [Operator Client Findings](#3-operator-client-findings)
 4. [Proto Definition Analysis](#4-proto-definition-analysis)
 5. [Integration Gap Analysis](#5-integration-gap-analysis)
-6. [Sprint Completion Verification](#6-sprint-completion-verification)
-7. [Comparison with Previous v2.2.5](#7-comparison-with-previous-v225)
+6. [MITRE ATT&CK Coverage](#6-mitre-attck-coverage)
+7. [Sprint Completion Verification](#7-sprint-completion-verification)
 8. [Enhancement Recommendations](#8-enhancement-recommendations)
 9. [Prioritized Remediation Plan](#9-prioritized-remediation-plan)
 10. [Appendices](#appendices)
@@ -62,7 +104,10 @@ This document presents a comprehensive gap and technical analysis of the WRAITH-
 
 ## 1. Team Server Findings
 
-### 1.1 File: `team-server/src/main.rs` (225 lines)
+**Total Lines:** 5,225 Rust (across 24 source files)
+**New Files Since v2.2.5:** `services/powershell.rs` (128 lines), `services/rekey_tests.rs` (74 lines), `powershell_test.rs` (79 lines)
+
+### 1.1 File: `team-server/src/main.rs` (230 lines)
 
 **STATUS: FULLY FUNCTIONAL**
 
@@ -75,1406 +120,1157 @@ All configuration is properly loaded from environment variables. The server init
 | Line | Issue Type | Severity | Code/Description | Status |
 |------|-----------|----------|------------------|--------|
 | 120 | Env Var | Info | `DATABASE_URL` required with `.expect()` | Correct design |
-| 146 | `.expect()` | Low | `NoiseKeypair::generate().expect("Noise keypair generation failed")` | Acceptable -- startup-only |
+| 146 | `.expect()` | Low | `NoiseKeypair::generate().expect(...)` | Acceptable -- startup-only |
 | 197 | Env Var | Info | `GRPC_LISTEN_ADDR` required with `.expect()` | Correct design |
 
-### 1.2 File: `team-server/src/database/mod.rs` (636 lines)
+### 1.2 File: `team-server/src/database/mod.rs` (645 lines)
 
 **STATUS: FULLY FUNCTIONAL -- Enhanced from v2.2.5 (619 lines)**
 
-+17 lines growth indicates minor additions (likely `listeners` table support from migration 20260127000000).
++26 lines growth from listeners table migration support.
 
 | Line | Issue Type | Severity | Code/Description | Status |
 |------|-----------|----------|------------------|--------|
-| 22 | `.expect()` | Info | `HMAC_SECRET` env var required -- correct, no fallback | **RESOLVED** (was P0) |
-| 26 | `.expect()` | Info | `MASTER_KEY` env var required (64 hex chars) -- correct | **RESOLVED** (was P0) |
+| 22 | `.expect()` | Info | `HMAC_SECRET` env var required -- correct, no fallback | Correct |
+| 26 | `.expect()` | Info | `MASTER_KEY` env var required (64 hex chars) | Correct |
+| 31 | `panic!()` | Info | `MASTER_KEY` validation (must be 32 bytes after hex decode) | Correct startup validation |
 | 83 | Dead Code | Low | `#[allow(dead_code)]` on database function | Minor tech debt |
-| 516 | Dead Code | Low | `#[allow(dead_code)]` on database function | Minor tech debt |
+| 354 | Dead Code | Low | `#[allow(dead_code)]` on database function | Minor tech debt |
+| 525 | Dead Code | Low | `#[allow(dead_code)]` on database function | Minor tech debt |
 
-### 1.3 File: `team-server/src/services/operator.rs` (1,312 lines)
+### 1.3 File: `team-server/src/services/operator.rs` (1,365 lines)
 
 **STATUS: FULLY FUNCTIONAL -- Enhanced from v2.2.5 (1,185 lines)**
 
-+127 lines of growth, indicating additional RPC implementations or enhancements. All 30 proto RPCs from `OperatorService` are implemented here.
++180 lines of growth. Implements all 32 OperatorService proto RPCs including the new `SetPowerShellProfile` and `GetPowerShellProfile`. Uses `PowerShellManager` at line 23.
 
 | Line | Issue Type | Severity | Code/Description | Status |
 |------|-----------|----------|------------------|--------|
-| 15, 17, 19 | Dead Code | Low | Three `#[allow(dead_code)]` annotations on struct fields | Minor tech debt |
-| 354 | `.expect()` | Info | `KILLSWITCH_PORT` env var required | Correct security design |
-| 357 | `.expect()` | Info | `KILLSWITCH_PORT` must be valid u16 | Correct validation |
-| 358 | `.expect()` | Info | `KILLSWITCH_SECRET` env var required | Correct security design |
-| 738, 1001, 1129, 1263 | `.unwrap()` | Low | Used in test helper functions (lines 700+) | Acceptable in test code |
-| 1300, 1303, 1306, 1309 | `.unwrap()` | Low | Test code -- JWT creation, verification, metadata parsing | Acceptable in test code |
+| 16 | Dead Code | Low | `#[allow(dead_code)]` on `governance` field | Minor tech debt |
+| 18 | Dead Code | Low | `#[allow(dead_code)]` on `static_key` field | Minor tech debt |
+| 20 | Dead Code | Low | `#[allow(dead_code)]` on `sessions` field | Minor tech debt |
 
-### 1.4 File: `team-server/src/services/implant.rs` (287 lines)
+### 1.4 File: `team-server/src/services/implant.rs` (306 lines)
 
 **STATUS: FUNCTIONAL -- Enhanced from v2.2.5 (277 lines)**
 
-+10 lines growth. Implements all 6 `ImplantService` RPCs: `Register`, `CheckIn`, `GetPendingCommands`, `SubmitResult`, `UploadArtifact`, `DownloadPayload`.
++29 lines growth. Implements all 6 `ImplantService` RPCs.
 
 | Line | Issue Type | Severity | Code/Description | Status |
 |------|-----------|----------|------------------|--------|
-| 25 | Placeholder Comment | Medium | `// In a production implementation, we extract registration data` | Registration does not decrypt `encrypted_registration` or validate `ephemeral_public` key from the proto `RegisterRequest`. The server creates a generic implant record with hardcoded defaults (os_type: "linux", hostname: "grpc-agent-*"). |
-| 34 | `.unwrap()` | Low | `Uuid::new_v4().to_string().split('-').next().unwrap()` | Unwrap on guaranteed-present split segment -- safe but could use `.unwrap_or("unknown")` |
-| 159 | Placeholder Comment | Medium | `// In production, decrypt encrypted_result using the established session key` -- **STALE**: This comment no longer appears; the code at line ~162 stores `encrypted_result` directly in the database. However, the comment from v2.2.5 reporting `services/implant.rs:159` as a placeholder is now addressed -- the result is stored as-is and described as remaining encrypted at rest. |
+| ~25 | Placeholder | Medium | Registration does not decrypt `encrypted_registration` or validate `ephemeral_public` from `RegisterRequest`. Creates generic implant record with hardcoded defaults (os_type: "linux", hostname: "grpc-agent-*"). | Open P2 |
+| ~34 | `.unwrap()` | Low | `Uuid::new_v4().to_string().split('-').next().unwrap()` -- safe but could use fallback | Acceptable |
 
-### 1.5 File: `team-server/src/services/session.rs` (76 lines)
+### 1.5 File: `team-server/src/services/session.rs` (111 lines)
 
-**STATUS: FUNCTIONAL**
+**STATUS: FUNCTIONAL -- Enhanced from v2.2.5 (76 lines)**
 
-Noise Protocol session management. Provides handshake creation and transport mode transition.
++35 lines growth. Contains Noise Protocol session management.
 
 | Line | Issue Type | Severity | Code/Description | Status |
 |------|-----------|----------|------------------|--------|
-| 25 | Dead Code | Low | `#[allow(dead_code)]` on session field | Minor tech debt |
-| 65, 67 | `.expect()` | Info | Test-only code -- keypair generation and handshake | Acceptable |
+| 60 | Dead Code | Low | `#[allow(dead_code)]` on session field | Minor tech debt |
 
 ### 1.6 File: `team-server/src/services/killswitch.rs` (61 lines)
 
 **STATUS: FULLY FUNCTIONAL**
 
-Kill switch implementation using Ed25519 signatures over UDP broadcast. All keys loaded from environment variables.
+Ed25519 signed UDP broadcast with `WRAITH_K` magic bytes. All keys from environment variables.
 
-| Line | Issue Type | Severity | Code/Description | Status |
-|------|-----------|----------|------------------|--------|
-| 6 | Network | Info | `UdpSocket::bind("0.0.0.0:0")` for ephemeral port | Correct design |
-| 25-27 | `.expect()` | Info | `KILLSWITCH_KEY` env var required, hex decoded, 32 bytes enforced | Correct security design |
-| 48-54 | Test Code | Info | Test uses `dummy_key` (all zeros) via `set_var` | Acceptable in test |
-
-### 1.7 File: `team-server/src/services/protocol.rs` (267 lines)
+### 1.7 File: `team-server/src/services/protocol.rs` (284 lines)
 
 **STATUS: FUNCTIONAL -- Enhanced from v2.2.5 (259 lines)**
 
-+8 lines growth. Implements protocol-level C2 message processing including Noise handshake integration. Handles beacon parsing, CID extraction, and routing.
++25 lines growth. Protocol-level C2 message processing with Noise handshake integration.
 
 ### 1.8 File: `team-server/src/services/listener.rs` (94 lines)
 
-**STATUS: FUNCTIONAL -- Enhanced from v2.2.5 (89 lines)**
+**STATUS: FUNCTIONAL**
 
-+5 lines growth. Listener management service with database-backed CRUD operations.
+Listener management with `DashMap<String, AbortHandle>` for lifecycle management.
 
 ### 1.9 File: `team-server/src/services/playbook_loader.rs` (78 lines)
 
-**STATUS: FUNCTIONAL -- Enhanced from v2.2.5 (69 lines)**
+**STATUS: FUNCTIONAL**
 
-+9 lines growth. Loads YAML/JSON playbook files from the `playbooks/` directory.
+YAML/JSON playbook loading from `playbooks/` directory.
 
-### 1.10 File: `team-server/src/listeners/http.rs` (78 lines)
+### 1.10 File: `team-server/src/services/powershell.rs` (128 lines) -- NEW
 
 **STATUS: FUNCTIONAL**
 
-HTTP listener with Noise Protocol handshake support and scope enforcement via `GovernanceEngine`. No changes from v2.2.5.
-
-### 1.11 File: `team-server/src/listeners/udp.rs` (57 lines)
-
-**STATUS: FUNCTIONAL**
-
-UDP listener with Noise Protocol integration and scope enforcement. No changes from v2.2.5.
-
-### 1.12 File: `team-server/src/listeners/dns.rs` (326 lines)
-
-**STATUS: FUNCTIONAL -- Enhanced from v2.2.5 (318 lines)**
-
-+8 lines growth. Full DNS C2 listener with:
-- TXT record data extraction with length-prefix parsing
-- Scope enforcement for DNS queries
-- Domain validation against allowed/blocked lists
-- Response construction with proper DNS wire format
+New PowerShell profile management service. Manages per-implant PowerShell scripts/profiles.
 
 | Line | Issue Type | Severity | Code/Description | Status |
 |------|-----------|----------|------------------|--------|
-| - | Edge Case | Low | Multi-label DNS encoding is substantially resolved but edge cases may remain for very long domain names or unusual character encoding | Substantially resolved |
+| 26 | Dead Code | Low | `#[allow(dead_code)]` annotation | Minor tech debt |
 
-### 1.13 File: `team-server/src/listeners/smb.rs` (293 lines)
+### 1.11 File: `team-server/src/services/rekey_tests.rs` (74 lines) -- NEW
+
+**STATUS: TEST CODE**
+
+New test module verifying Noise handshake and transport mode transitions. Tests `NoiseKeypair::generate()`, 3-message handshake, and bidirectional encrypted communication.
+
+### 1.12 File: `team-server/src/listeners/http.rs` (78 lines)
+
+**STATUS: FUNCTIONAL**
+
+HTTP listener at `/api/v1/beacon` with Axum, governance enforcement. No changes from v2.2.5.
+
+### 1.13 File: `team-server/src/listeners/udp.rs` (57 lines)
+
+**STATUS: FUNCTIONAL**
+
+UDP listener with per-packet task spawning and governance enforcement. No changes from v2.2.5.
+
+### 1.14 File: `team-server/src/listeners/dns.rs` (326 lines)
+
+**STATUS: FUNCTIONAL**
+
+Full DNS C2 listener with TXT record data extraction, domain validation, and wire format response construction.
+
+### 1.15 File: `team-server/src/listeners/smb.rs` (302 lines)
 
 **STATUS: FUNCTIONAL -- Enhanced from v2.2.5 (269 lines)**
 
-+24 lines growth. Full SMB2 listener implementation with:
-- SMB2 header parsing with proper field layout
-- Named pipe session management
-- Noise handshake over SMB2 transport
-- Scope enforcement
++33 lines growth. Full SMB2 listener with `pending_data` buffer for Write-then-Read response flow (resolves v2.2.5 TODO).
 
 | Line | Issue Type | Severity | Code/Description | Status |
 |------|-----------|----------|------------------|--------|
-| 119-121 | `.unwrap()` | Medium | Three `.unwrap()` calls on `try_into()` for header byte slicing: `msg_id`, `proc_id`, `session_id` | Should use error handling; malformed SMB2 packets could cause panic |
-| ~216 | TODO | Low | `// TODO: How to send response_data?` -- comment about response routing | Design decision needed for bidirectional SMB2 pipe communication |
+| 119-121 | `.unwrap()` | Medium | Three `.unwrap_or_default()` on `try_into()` for header parsing: `msg_id`, `proc_id`, `session_id` | Uses `unwrap_or_default` -- acceptable |
+| 139, 172, 190, 232, 266 | `unsafe` | Medium | 5 `unsafe { core::mem::transmute(h) }` blocks for SMB2 header serialization | Documented SAFETY comments; `#[repr(C, packed)]` struct -- correct but fragile |
 
-### 1.14 File: `team-server/src/builder/mod.rs` (160 lines)
-
-**STATUS: FUNCTIONAL -- Enhanced from v2.2.5 (145 lines)**
-
-+15 lines growth. Binary builder that patches Spectre implant binaries with server address and sleep interval configuration.
-
-| Line | Issue Type | Severity | Code/Description | Status |
-|------|-----------|----------|------------------|--------|
-| 80 | Placeholder Comment | Medium | `// In a real implementation, we might use RUSTFLAGS for LLVM-level obfuscation` | LLVM obfuscation not implemented |
-| 123-156 | `.unwrap()` | Low | Multiple `.unwrap()` calls in test code | Acceptable in test |
-
-### 1.15 File: `team-server/src/builder/phishing.rs` (79 lines)
-
-**STATUS: FUNCTIONAL -- Enhanced from v2.2.5 (71 lines)**
-
-+8 lines growth. Generates phishing payloads: HTML smuggling (functional) and VBA macros (incomplete).
-
-| Line | Issue Type | Severity | Code/Description | Status |
-|------|-----------|----------|------------------|--------|
-| ~56-57 | Incomplete | Medium | `generate_macro_vba`: VBA declares a byte array but contains no shellcode runner (`CreateThread(VirtualAlloc(code))` pattern missing) | Open -- P2 NEW-10 |
-
-### 1.16 File: `team-server/src/governance.rs` (125 lines)
-
-**STATUS: FULLY FUNCTIONAL**
-
-`GovernanceEngine` for Rules of Engagement enforcement:
-- IP scope validation (whitelist/blacklist CIDR matching)
-- Time window enforcement (campaign start/end dates)
-- Domain validation for DNS listener
-- Default RoE for development (allows localhost and private ranges)
-
-### 1.17 File: `team-server/src/utils.rs` (40 lines)
+### 1.16 File: `team-server/src/builder/mod.rs` (184 lines)
 
 **STATUS: FUNCTIONAL**
 
-JWT utility functions for operator authentication. Uses `JWT_SECRET` from environment variable.
+Binary patching via `WRAITH_CONFIG_BLOCK` magic signature. `compile_implant()` with obfuscation flags (strip=symbols, lto=fat, opt-level=z, panic=abort, crt-static).
+
+### 1.17 File: `team-server/src/builder/phishing.rs` (104 lines)
+
+**STATUS: PARTIALLY FUNCTIONAL**
 
 | Line | Issue Type | Severity | Code/Description | Status |
 |------|-----------|----------|------------------|--------|
-| 15 | `.expect()` | Info | `JWT_SECRET` env var required | Correct security design |
+| - | Incomplete | P3 | VBA macro generation is incomplete; HTML smuggling works | Open P3 |
 
-### 1.18 File: `team-server/src/models/mod.rs` (176 lines)
+### 1.18 File: `team-server/src/governance.rs` (125 lines)
 
 **STATUS: FUNCTIONAL**
 
-Data models for Operator, Campaign, Implant, Command, Artifact, Credential, Playbook, AttackChain, ChainStep.
+IP/domain whitelist/blacklist, time window enforcement, rate limiting.
+
+### 1.19 File: `team-server/src/models/mod.rs` (176 lines)
+
+**STATUS: FUNCTIONAL**
 
 | Line | Issue Type | Severity | Code/Description | Status |
 |------|-----------|----------|------------------|--------|
-| 76 | Dead Code | Low | `#[allow(dead_code)]` on model struct | Minor tech debt |
+| 76 | Dead Code | Low | `#[allow(dead_code)]` on model field | Minor tech debt |
 
-### 1.19 File: `team-server/src/models/listener.rs` (14 lines)
+### 1.20 Test Files
 
-**STATUS: FUNCTIONAL**
-
-Listener data model. No issues.
-
-### 1.20 Database Migrations
-
-| Migration | Tables | Status |
-|-----------|--------|--------|
-| `20251129000000_initial_schema.sql` (162 lines) | operators, campaigns, roe_documents, implants, implant_interfaces, commands, command_results, artifacts, credentials, activity_log | **Functional** |
-| `20260125000000_audit_signature.sql` (1 line) | Audit signature additions | **Functional** |
-| `20260125000001_persistence_table.sql` (7 lines) | persistence | **Functional** |
-| `20260126000000_attack_chains.sql` (18 lines) | attack_chains, chain_steps | **Functional** |
-| `20260126000001_playbooks.sql` (10 lines) | playbooks + attack_chains.playbook_id FK | **Functional** |
-| `20260127000000_listeners_table.sql` (10 lines) | listeners | **NEW in v2.3.0** |
-
-### 1.21 Test Files
-
-| File | Lines | Description | Status |
-|------|-------|-------------|--------|
-| `auth_tests.rs` | 80 | JWT authentication tests (3 tests) | **Enhanced** (+14 lines) |
-| `killswitch_config_test.rs` | 119 | Kill switch configuration tests (3 tests) | **Enhanced** (+16 lines) |
-| `operator_service_test.rs` | 314 | Comprehensive integration test | **Enhanced** (+145 lines) |
-
-The `operator_service_test.rs` has grown significantly from 169 to 314 lines, indicating substantial expansion of the integration test suite covering campaigns, implants, commands, listeners, artifacts, credentials, attack chains, and playbooks.
+| File | Lines | Description |
+|------|-------|-------------|
+| `auth_tests.rs` | 80 | JWT authentication tests |
+| `killswitch_config_test.rs` | 121 | Kill switch Ed25519 and config tests |
+| `operator_service_test.rs` | 315 | Integration tests covering 7+ service areas |
+| `powershell_test.rs` | 79 | PowerShell session and job tests |
+| `services/rekey_tests.rs` | 74 | Noise handshake and transport tests |
 
 ---
 
 ## 2. Spectre Implant Findings
 
-### 2.1 File: `spectre-implant/src/lib.rs` (46 lines)
+**Total Lines:** 6,553 Rust (across 29 source files)
+**New Files Since v2.2.5:** `modules/patch.rs` (84 lines), `modules/screenshot.rs` (138 lines), `modules/browser.rs` (93 lines)
+**Architecture:** `#![no_std]` with custom `MiniHeap` bump allocator at `0x10000000` (1 MB)
+
+### 2.1 File: `spectre-implant/src/lib.rs` (48 lines)
 
 **STATUS: FUNCTIONAL**
 
-Entry point for the no_std implant. Initializes the global heap allocator and C2 client with default configuration.
+Entry point with custom heap allocator, `no_std` configuration, panic handler.
+
+### 2.2 File: `spectre-implant/src/c2/mod.rs` (731 lines)
+
+**STATUS: FUNCTIONAL -- Significantly Enhanced from v2.2.5 (541 lines)**
+
++190 lines growth. Core C2 module with:
+- `PatchableConfig` with `WRAITH_CONFIG_BLOCK` magic (server_addr, sleep_interval, kill_date, working_hours)
+- HTTP transport (Linux: raw syscalls, Windows: WinINet hash-resolved API)
+- UDP transport (Linux: raw syscalls, Windows: stub returning `Err(())`)
+- Noise_XX 3-message handshake with ratchet public key exchange
+- Kill date and working hours enforcement
+- Beacon loop with jitter and transport failover (HTTP <-> UDP)
+- Mesh server integration (TCP + Named Pipes)
+- DH rekeying counter check (2 min / 1M packets)
+- **19 task types** in `dispatch_tasks()`:
+  `kill`, `shell`, `powershell`, `inject`, `bof`, `socks`, `persist`, `uac_bypass`, `timestomp`, `sandbox_check`, `dump_lsass`, `sys_info`, `screenshot`, `browser`, `net_scan`, `psexec`, `service_stop`, `keylogger`, `mesh_relay`
 
 | Line | Issue Type | Severity | Code/Description | Status |
 |------|-----------|----------|------------------|--------|
-| 12 | Hardcoded | Medium | `MiniHeap::new(0x10000000, 1024 * 1024)` -- fixed heap base address at 256MB mark with 1MB size. May conflict with ASLR on some systems. | Open -- P2 #19 |
-| 40 | Hardcoded | Low | `server_addr: "127.0.0.1"` default config | Expected for development; patcher overrides at build time |
-
-### 2.2 File: `spectre-implant/src/c2/mod.rs` (541 lines)
-
-**STATUS: FUNCTIONAL with 17 task types + SensitiveData integration**
-
-Core C2 client implementing beacon loop, Noise Protocol handshake, transport abstraction (HTTP, DNS, SMB, mesh), and task dispatch.
-
-| Line | Issue Type | Severity | Code/Description | Status |
-|------|-----------|----------|------------------|--------|
-| 59 | Fallback | Low | `"127.0.0.1"` used when config `server_addr` is empty | Expected behavior for unpatched binary; patcher overrides |
-| 99 | Comment | Info | `// 127.0.0.1 -> 0x0100007F` -- IP address conversion note | Informational |
-| 243-257 | `.unwrap()`/`.expect()` | Medium | Noise handshake sequence: `build_initiator().unwrap()`, `write_message().unwrap()`, `read_message().expect()`, `into_transport_mode().unwrap()` -- 4+ unwrap calls | Open -- P2 #22. A malformed server response or network error will cause the implant to panic rather than gracefully recover. |
-| 267 | Hardcoded | Low | HTTP transport hardcoded port `8080` -- overridden by builder patcher | Expected |
-| 269-270 | Hardcoded | Low | Mesh TCP port `4444`, pipe name `"wraith_mesh"` | Should be configurable |
-| 342 | Dead Code | Low | `#[allow(dead_code)]` on implant config field | Minor tech debt |
-| 449 | `.unwrap()` | Medium | `SOCKS_PROXY.as_mut().unwrap()` -- unsafe static mutable access | Acceptable in single-threaded implant context; document assumption |
-
-**Task Dispatch (lines 327-529) -- 17 task types:**
-`kill`, `shell`, `powershell`, `inject`, `bof`, `socks`, `persist`, `uac_bypass`, `timestomp`, `sandbox_check`, `dump_lsass`, `sys_info`, `net_scan`, `psexec`, `service_stop`, `keylogger`, `mesh_relay`
-
-Task results use `SensitiveData::new()` for encrypted in-memory storage before transmission.
+| 65 | `.unwrap_or()` | Low | `addr_len` parsing with fallback to 64 | Acceptable |
+| 118 | `.unwrap_or()` | Low | IP octet parsing with fallback to "0" | Acceptable |
+| 325 | Transport Stub | P2 | Windows `UdpTransport::request()` returns `Err(())` unconditionally | Open |
+| 456 | Rekey Logic | P1 | `session.rekey_dh()` called but does not perform DH exchange with peer | Open |
+| 516 | Dead Code | Low | `#[allow(dead_code)]` on `Task.id` field | Minor tech debt |
 
 ### 2.3 File: `spectre-implant/src/c2/packet.rs` (74 lines)
 
 **STATUS: FUNCTIONAL**
 
-WRAITH frame serialization/deserialization with proper header layout:
-- 8B nonce + 1B frame_type + 1B flags + 2B stream_id + 4B sequence + 8B offset + 2B payload_len + 2B reserved + payload
+`WraithFrame` with 28-byte header. Frame types: DATA(1), REKEY(5), MESH_RELAY(10). Serialize/deserialize with length prefix.
 
-Frame types defined: `FRAME_TYPE_DATA` (0x01), `FRAME_TYPE_CONTROL` (0x03), `FRAME_TYPE_REKEY` (0x04), `FRAME_TYPE_MESH_RELAY` (0x05).
-
-| Line | Issue Type | Severity | Code/Description | Status |
-|------|-----------|----------|------------------|--------|
-| 21 | Comment | Low | `nonce: 0, // Should be set by session` | Nonce initialization deferred to session layer; correct design |
-
-### 2.4 File: `spectre-implant/src/modules/shell.rs` (212 lines)
-
-**STATUS: FULLY IMPLEMENTED** -- No remaining issues.
-
-Full shell execution on both platforms:
-- **Linux:** `sys_fork()` + `sys_execve()` with pipe-based stdout/stderr capture
-- **Windows:** `CreateProcessA` with piped stdout via `CreatePipe`/`ReadFile`
-
-### 2.5 File: `spectre-implant/src/modules/injection.rs` (420 lines)
-
-**STATUS: FULLY IMPLEMENTED on Windows AND Linux**
-
-Three injection methods fully implemented on both platforms:
-
-| Method | Windows Lines | Linux Lines | Status |
-|--------|--------------|-------------|--------|
-| Reflective Injection | 60-93 | 286-317 | **Functional** |
-| Process Hollowing | 96-188 | 320-362 | **Functional** |
-| Thread Hijack | 191-283 | 365-391 | **Functional** |
-
-| Line | Issue Type | Severity | Code/Description | Status |
-|------|-----------|----------|------------------|--------|
-| 148 | Assumption | Medium | `NtUnmapViewOfSection(pi.hProcess, 0x400000 as PVOID)` -- assumes standard image base for process hollowing | Should query PEB for actual ImageBase via `NtQueryInformationProcess` |
-| 172 | Dead Code | Low | `ctx.ContextFlags = 0x10007` then overwritten to `0x100003` | Remove first assignment |
-| 307-309 | Assumption | Medium | Linux reflective: `let target_addr = 0x400000 as *mut c_void` -- assumes standard base | Should parse `/proc/pid/maps` for RX pages |
-| 308 | Placeholder Comment | Low | `// In a full implementation, we'd parse /proc/pid/maps to find RX pages` | Open -- P3 NEW-13 |
-| 346 | Comment | Info | `// Child: TRACEME and exec a dummy process` -- Linux process hollowing uses fork+exec pattern | Informational |
-| 360 | Assumption | Medium | Linux hollowing: `let target_addr = 0x400000` | Same as line 309 |
-| 393 | Assumption | Medium | Linux thread hijack: `let target_addr = 0x400000` | Same as line 309 |
-
-### 2.6 File: `spectre-implant/src/modules/bof_loader.rs` (332 lines)
-
-**STATUS: FULLY IMPLEMENTED on Windows**
-
-Complete COFF (Beacon Object File) loader with 6 Beacon Internal Functions:
-
-| BIF Function | Lines | Implementation |
-|-------------|-------|----------------|
-| `BeaconPrintf` | 82-95 | Captures C string to `BOF_OUTPUT` buffer |
-| `BeaconDataParse` | 96-104 | Initializes `datap` parser with buffer pointer/length/offset |
-| `BeaconDataInt` | 105-113 | Big-endian i32 read |
-| `BeaconDataShort` | 114-122 | Big-endian i16 read |
-| `BeaconDataLength` | 123-128 | Remaining bytes (`len - offset`) |
-| `BeaconDataExtract` | 129-145 | Length-prefixed data blob extraction |
-
-| Line | Issue Type | Severity | Code/Description | Status |
-|------|-----------|----------|------------------|--------|
-| 70 | Thread Safety | Low | `static mut BOF_OUTPUT: Vec<u8>` -- not thread-safe | Acceptable in single-threaded implant context; document assumption |
-| 232, 296 | `.unwrap()` | Low | `try_into().unwrap()` on COFF symbol name byte slices | Safe if COFF data is well-formed; malformed BOFs could panic |
-| 320+ | Non-Windows | Info | Returns `Err(())` on non-Windows | Intentional -- COFF is Windows-only format |
-
-### 2.7 File: `spectre-implant/src/modules/socks.rs` (298 lines)
-
-**STATUS: FULLY IMPLEMENTED**
-
-Complete SOCKS4/5 proxy implementation with:
-- State machine: Greeting -> Auth -> Request -> Forwarding
-- Real TCP connections on both platforms (Linux via `sys_socket`/`sys_connect`, Windows via Winsock API)
-- SOCKS5 IPv4 CONNECT command support
-- SOCKS4 CONNECT support
-- Proper cleanup via `Drop` trait
-
-| Line | Issue Type | Severity | Code/Description | Status |
-|------|-----------|----------|------------------|--------|
-| 121-124 | Intentional | Low | `handle_auth` returns `Vec::new()` -- only supports "No Authentication Required" mode | Implement SOCKS5 Username/Password auth (RFC 1929) if needed |
-
-### 2.8 File: `spectre-implant/src/modules/smb.rs` (425 lines)
-
-**STATUS: SUBSTANTIALLY IMPLEMENTED (Linux functional, Windows TODO)**
-
-Full SMB2 client implementation for named pipe C2 communication:
-- SMB2 header/struct definitions (24 bytes)
-- `SmbClient::new()` with Linux socket connection
-- `negotiate()`, `session_setup()`, `tree_connect()`, `write_data()`, `read_data()`
-
-| Line | Issue Type | Severity | Code/Description | Status |
-|------|-----------|----------|------------------|--------|
-| ~102-130 | **TODO** | Medium | Windows `SmbClient::new()` returns `Err(())` -- `// TODO: Windows socket impl (similar to socks.rs)` | Open -- needs Winsock implementation |
-| 254 | Hardcoded | Medium | `let path = b"\\\\127.0.0.1\\IPC$\0"` -- hardcoded localhost IPC$ tree connect | Should use configurable target for lateral movement |
-| 387 | Hardcoded | Medium | Same hardcoded path in second tree_connect call | Same issue |
-| - | Missing | Low | No NetBIOS session header (4-byte prefix) -- raw TCP sends | Add for compatibility with standard SMB servers |
-
-### 2.9 File: `spectre-implant/src/modules/mesh.rs` (254 lines)
-
-**STATUS: SUBSTANTIALLY IMPLEMENTED**
-
-P2P mesh networking with TCP (Linux) and named pipe (Windows) support:
-- `MeshServer::new()` -- TCP bind on Linux, `CreateNamedPipeA` on Windows
-- `poll_and_accept()` -- TCP accept / `ConnectNamedPipe`
-- `send_to_client()` / `recv_from_client()` -- read/write on both platforms
-
-| Line | Issue Type | Severity | Code/Description | Status |
-|------|-----------|----------|------------------|--------|
-| - | Missing | Medium | No mesh routing/orchestration or auto-topology building | Open -- P3 #24a |
-| - | Missing | Low | No heartbeat/keepalive mechanism between mesh peers | Enhancement |
-
-### 2.10 File: `spectre-implant/src/modules/shell.rs` (212 lines)
-
-**STATUS: FULLY IMPLEMENTED** -- Covered in 2.4 above.
-
-### 2.11 File: `spectre-implant/src/modules/clr.rs` (213 lines)
-
-**STATUS: SUBSTANTIALLY IMPLEMENTED on Windows**
-
-.NET CLR hosting via COM interfaces for in-memory .NET assembly execution.
-
-| Line | Issue Type | Severity | Code/Description | Status |
-|------|-----------|----------|------------------|--------|
-| 163 | Incorrect GUID | Medium | `GetInterface` uses `CLSID_CLRMetaHost` instead of `CLSID_CLRRuntimeHost` for the runtime host interface query | Open -- P2 NEW-9. Will fail at runtime when attempting to get CLR Runtime Host. |
-| 211-218 | Non-Windows | Info | Returns `Err(())` on non-Windows | Intentional |
-
-### 2.12 File: `spectre-implant/src/modules/powershell.rs` (150 lines)
-
-**STATUS: PARTIALLY IMPLEMENTED**
-
-| Line | Issue Type | Severity | Code/Description | Status |
-|------|-----------|----------|------------------|--------|
-| 13 | Comment | Info | `// Minimal dummy PE header to simulate a .NET assembly structure (starts with MZ)` | Documents the placeholder |
-| 14 | Placeholder Comment | Low | `// In a real scenario, this would be the byte array of the compiled C# runner.` | Open |
-| 16-22 | **Placeholder** | **High** | `RUNNER_DLL` is 64 bytes of minimal MZ header -- not a real .NET assembly. The `drop_runner` function writes these bytes to `C:\Windows\Temp\wraith_ps.dll`, then `exec` attempts CLR hosting with this invalid DLL. | Open -- P1 NEW-3. Requires embedding a compiled .NET PowerShell runner assembly. |
-| 49-52 | Functional | Info | Linux fallback: Executes via `pwsh -c` through shell module | Working alternative path |
-| 56-119 | Functional | Info | `drop_runner` fully implements `CreateFileA` + `WriteFile` via API hash resolution | Functional |
-| 122-136 | Functional | Info | `delete_runner` fully implements `DeleteFileA` via API hash resolution | Functional |
-
-### 2.13 File: `spectre-implant/src/modules/persistence.rs` (209 lines)
-
-**STATUS: FULLY IMPLEMENTED (COM-based Scheduled Tasks)**
-
-| Method | Windows Status | Non-Windows |
-|--------|---------------|-------------|
-| `install_registry_run` (lines 13-55) | **Functional** -- RegOpenKeyExA + RegSetValueExA for HKCU\..\Run | Returns `Err(())` |
-| `install_scheduled_task` (lines 65-141) | **COMPLETE** -- Full COM-based ITaskService pipeline (10 COM calls, 6 interface releases) | Returns `Err(())` |
-| `create_user` (lines 144-208) | **Functional** -- Native NetUserAdd + NetLocalGroupAddMembers | Shell fallback (`net user`) |
-
-**Note:** The v4.3.0 gap analysis incorrectly stated `install_scheduled_task` "falls back to shell (`schtasks /create`)". Re-reading confirms a full COM implementation. The stale comment at line 89 (`// In a real implementation, we'd define full ITaskService vtable here`) should be removed since the COM vtable IS fully defined in `windows_definitions.rs`.
-
-### 2.14 File: `spectre-implant/src/modules/privesc.rs` (61 lines)
-
-**STATUS: FULLY IMPLEMENTED on Windows**
-
-Fodhelper UAC bypass via registry key manipulation. No remaining issues.
-
-### 2.15 File: `spectre-implant/src/modules/evasion.rs` (143 lines)
-
-**STATUS: SUBSTANTIALLY IMPLEMENTED on Windows**
-
-- `timestomp`: Sets file creation/modification times via `SetFileTime` (Windows only)
-- `is_sandbox`: RAM check (<2GB) and time acceleration detection
-
-Non-Windows `timestomp` returns `Err(())`; `is_sandbox` returns `false` (reasonable default).
-
-### 2.16 File: `spectre-implant/src/modules/credentials.rs` (241 lines)
-
-**STATUS: FULLY IMPLEMENTED on Windows**
-
-Full LSASS dump implementation chain:
-1. Find LSASS PID via `CreateToolhelp32Snapshot` + `Process32First/Next`
-2. Open LSASS via `OpenProcess(PROCESS_ALL_ACCESS)`
-3. Create dump file via `CreateFileA`
-4. `MiniDumpWriteDump` via `LoadLibraryA("dbghelp.dll")`
-5. Proper handle cleanup
-
-Returns `SensitiveData` for encrypted credential storage in memory.
-
-| Line | Issue Type | Severity | Code/Description | Status |
-|------|-----------|----------|------------------|--------|
-| - | Non-Windows | Low | Returns `Err(())` on non-Windows | Implement `/proc/pid/maps` parsing for Linux credential dumping |
-
-### 2.17 File: `spectre-implant/src/modules/discovery.rs` (294 lines)
-
-**STATUS: FULLY IMPLEMENTED on Both Platforms**
-
-| Method | Windows Status | Linux Status |
-|--------|---------------|--------------|
-| `sys_info` | GetSystemInfo (processors, arch, page size) | `sys_uname` + `sys_sysinfo` |
-| `net_scan` | Winsock TCP connect scan (lines 144-207) | Raw socket TCP connect scan (lines 90-141) |
-| `get_hostname` | GetComputerNameA | `sys_uname` nodename |
-| `get_username` | GetUserNameA | `sys_getuid` |
-
-Returns `SensitiveData` objects for encrypted in-memory results.
-
-### 2.18 File: `spectre-implant/src/modules/lateral.rs` (117 lines)
-
-**STATUS: FULLY IMPLEMENTED on Windows**
-
-- `psexec`: PsExec-style service creation via `OpenSCManagerA` + `CreateServiceA` + `StartServiceA` + `CloseServiceHandle`
-- `service_stop`: `ControlService(SERVICE_CONTROL_STOP)` + `DeleteService`
-
-Proper handle cleanup with `CloseServiceHandle` for all opened handles.
-
-### 2.19 File: `spectre-implant/src/modules/collection.rs` (122 lines)
-
-**STATUS: FULLY IMPLEMENTED on Windows**
-
-Keylogger using `GetAsyncKeyState` with full key mapping (A-Z, 0-9, special keys).
-
-| Line | Issue Type | Severity | Code/Description | Status |
-|------|-----------|----------|------------------|--------|
-| 25-31 | Design | Medium | Single-poll design (captures keys pressed since last poll); relies on caller frequency for continuous monitoring | Open -- P3 NEW-12. Implement persistent keylogger with configurable poll interval. |
-
-### 2.20 File: `spectre-implant/src/utils/api_resolver.rs` (136 lines)
-
-**STATUS: FULLY FUNCTIONAL**
-
-PEB-walking API resolver for dynamic Windows API resolution:
-- DJB2 hash for ASCII strings (`hash_str`)
-- Unicode hash for module names (`hash_unicode`)
-- PEB access via `gs:[0x60]`
-- Module base resolution via `InLoadOrderModuleList` traversal
-- PE export directory parsing for function address resolution
-- Proper `c_strlen` for null-terminated string measurement
-
-### 2.21 File: `spectre-implant/src/utils/entropy.rs` (54 lines)
-
-**STATUS: FUNCTIONAL with ARM Placeholder**
-
-| Line | Feature | Status |
-|------|---------|--------|
-| 3-7 | `get_random_bytes(buf)` -- fills buffer with random bytes | **Functional** |
-| 9-43 | x86/x86_64 `get_random_u8()` -- RDRAND + RDTSC + stack address mixing + PCG-like step | **Functional** |
-| 45-54 | Non-x86 `get_random_u8()` -- ASLR-based weak entropy fallback | **Placeholder** |
-
-| Line | Issue Type | Severity | Code/Description | Status |
-|------|-----------|----------|------------------|--------|
-| 52 | Placeholder Comment | Low | `// In a real implementation we'd read CNTVCT_EL0 on ARM64` | Open -- P2 NEW-21 |
-| 45-54 | Weak Entropy | Medium | Non-x86 fallback relies solely on ASLR address entropy -- `(addr & 0xFF) as u8`. Only 8 bits of entropy from stack address. | Open -- should implement ARM64 hardware counter (`CNTVCT_EL0`) |
-
-### 2.22 File: `spectre-implant/src/utils/sensitive.rs` (130 lines)
-
-**STATUS: FULLY IMPLEMENTED**
-
-XChaCha20-Poly1305 encrypted in-memory sensitive data storage with `Zeroize`/`ZeroizeOnDrop` traits:
-- `SensitiveData::new()` -- generates random key (32B) + nonce (24B), encrypts plaintext
-- `SensitiveData::unlock()` -- decrypts to `SensitiveGuard` with `Zeroizing<Vec<u8>>`
-- `SensitiveGuard` -- RAII guard with `Deref` to `[u8]`, auto-zeroize on drop
-- `SecureBuffer` -- `Zeroize`-on-drop buffer with `mlock` (Linux syscall 149) / `VirtualLock` (Windows)
-
-| Line | Issue Type | Severity | Code/Description | Status |
-|------|-----------|----------|------------------|--------|
-| 27 | `.expect()` | Low | `cipher.encrypt(xnonce, plaintext).expect("Encryption failed")` | Unlikely to fail with valid key/nonce; acceptable |
-
-### 2.23 File: `spectre-implant/src/utils/obfuscation.rs` (265 lines)
-
-**STATUS: FULLY IMPLEMENTED**
-
-Sleep mask implementation with heap and .text section encryption:
-
-| Feature | Lines | Description |
-|---------|-------|-------------|
-| `sleep` | 12-63 | Generate random key, encrypt heap, encrypt .text, sleep, decrypt .text, decrypt heap |
-| `encrypt_heap` / `decrypt_heap` | 65-93 | XOR heap contents with RDRAND-generated key |
-| `encrypt_text` / `decrypt_text` | 94-156 | Change .text to READWRITE, XOR, set to READONLY/EXECUTE_READ |
-| `get_text_range` | 157-182 | Windows: PE header parsing; Linux: hardcoded fallback |
-| `get_heap_range` | 200-228 | Windows: GetProcessHeap; Linux: hardcoded fallback |
-
-| Line | Issue Type | Severity | Code/Description | Status |
-|------|-----------|----------|------------------|--------|
-| 110 | Comment | Low | `// Simplified: we encrypt the whole section but in a real ROP chain we'd be outside` | Informational design note |
-| 179-181 | Hardcoded | Medium | Linux `get_text_range`: hardcoded `(0x400000, 0x10000)` -- `// On Linux, use standard base 0x400000 and a reasonable size for now` | Open -- P2 #19. Should parse ELF headers or `/proc/self/maps` for actual .text range. |
-| 212-228 | Hardcoded | Medium | `get_heap_range`: Windows uses `GetProcessHeap()` + 1MB approximation; Linux uses hardcoded `0x400000`/`0x10000` fallback | Same as above |
-
-### 2.24 File: `spectre-implant/src/utils/heap.rs` (48 lines)
+### 2.4 File: `spectre-implant/src/modules/mod.rs` (18 lines)
 
 **STATUS: FUNCTIONAL**
 
-`MiniHeap` -- a simple bump allocator for no_std environments:
-- Supports alignment padding
-- Returns `null_mut` on OOM (no panic)
-- `dealloc` is a no-op (bump allocator cannot free individual items)
+Declares **18 modules**: `bof_loader`, `injection`, `socks`, `shell`, `clr`, `powershell`, `persistence`, `privesc`, `evasion`, `credentials`, `discovery`, `lateral`, `collection`, `smb`, `mesh`, `patch`, `screenshot`, `browser`.
 
-### 2.25 File: `spectre-implant/src/utils/syscalls.rs` (473 lines)
+### 2.5 File: `spectre-implant/src/modules/shell.rs` (212 lines)
 
-**STATUS: FULLY FUNCTIONAL with Halo's Gate and Linux Syscalls**
+**STATUS: FUNCTIONAL**
 
-Comprehensive syscall infrastructure:
+Linux: `fork()` + `execve("/bin/sh")` with pipe-based stdout capture.
+Windows: `CreateProcessA` with piped stdout via `STARTUPINFOA`.
 
-**Windows (Halo's Gate):**
-- Hell's Gate syscall stub (`hells_gate_stub`)
-- Halo's Gate neighbor scanning (32 neighbors each direction)
-- `parse_syscall_stub` for SSN extraction from ntdll
-- `find_ssn_by_hash` with Halo's Gate fallback
+### 2.6 File: `spectre-implant/src/modules/injection.rs` (420 lines)
 
-**Linux Direct Syscalls:**
-`sys_fork`, `sys_execve`, `sys_wait4`, `sys_ptrace`, `sys_process_vm_writev`, `sys_socket`, `sys_connect`, `sys_bind`, `sys_listen`, `sys_accept`, `sys_read`, `sys_write`, `sys_uname`, `sys_sysinfo`, `sys_getuid`, `sys_close`, `sys_exit`, `sys_nanosleep`, `sys_mprotect`
+**STATUS: FUNCTIONAL**
 
-**Struct Definitions:**
-`Utsname`, `Sysinfo`, `SockAddrIn`, `Iovec`, `user_regs_struct`, `Timespec`
+3 injection methods on both platforms:
+- **Reflective:** `VirtualAllocEx` + `WriteProcessMemory` + `CreateRemoteThread`
+- **Process Hollowing:** `CreateProcessA(SUSPENDED)` + `NtUnmapViewOfSection` + `WriteProcessMemory` + `ResumeThread`
+- **Thread Hijack:** `SuspendThread` + `GetThreadContext` + `SetThreadContext(RIP)` + `ResumeThread`
 
-### 2.26 File: `spectre-implant/src/utils/windows_definitions.rs` (418 lines)
+Linux equivalents use `process_vm_writev` + `ptrace`.
 
-**STATUS: FULLY FUNCTIONAL**
+### 2.7 File: `spectre-implant/src/modules/bof_loader.rs` (332 lines)
 
-Comprehensive Windows type definitions for no_std environment:
-- PE/COFF structures: `IMAGE_DOS_HEADER`, `IMAGE_NT_HEADERS64`, `IMAGE_EXPORT_DIRECTORY`, `IMAGE_FILE_HEADER`, `IMAGE_OPTIONAL_HEADER64`
-- PEB structures: `PEB`, `PEB_LDR_DATA`, `LDR_DATA_TABLE_ENTRY`, `LIST_ENTRY`, `UNICODE_STRING`
-- Process/Thread: `CONTEXT` (1232 bytes, verified), `STARTUPINFOA`, `PROCESS_INFORMATION`
-- COM interfaces: `ITaskService`, `ITaskFolder`, `ITaskDefinition`, `IActionCollection`, `IExecAction` vtable structs
-- COFF types: `CoffHeader`, `SectionHeader`, `CoffSymbol`, `CoffRelocation`
+**STATUS: FUNCTIONAL**
+
+COFF (BOF) loader with:
+- COFF header parsing and section loading
+- Symbol resolution with 6 Beacon Internal Functions (BIFs): `BeaconOutput`, `BeaconPrintf`, `BeaconDataParse`, `BeaconDataInt`, `BeaconDataShort`, `BeaconDataLength`
+- Relocation processing
+- Windows: `VirtualAlloc`-based execution with `VirtualProtect(PAGE_EXECUTE_READ)`
+- Linux: `mmap(PROT_READ|PROT_WRITE|PROT_EXEC)` execution
+
+### 2.8 File: `spectre-implant/src/modules/socks.rs` (298 lines)
+
+**STATUS: FUNCTIONAL**
+
+SOCKS4 and SOCKS5 proxy with real TCP connections. Supports `CONNECT` command. Linux uses raw syscalls; Windows uses hash-resolved `ws2_32.dll` APIs.
+
+### 2.9 File: `spectre-implant/src/modules/clr.rs` (216 lines)
+
+**STATUS: PARTIALLY FUNCTIONAL**
+
+.NET CLR hosting via COM interfaces (`ICLRMetaHost`, `ICLRRuntimeInfo`, `ICLRRuntimeHost`).
 
 | Line | Issue Type | Severity | Code/Description | Status |
 |------|-----------|----------|------------------|--------|
-| 253 | Test | Info | `assert_eq!(size_of::<CONTEXT>(), 1232)` confirms correct layout | Verified |
+| ~163 | CLSID Bug | P2 | CLR CLSID may reference incorrect GUID for `CLRMetaHost`; needs verification against official COM CLSID `9280188d-0e8e-4867-b30c-7fa83884e8de` | Open |
+| - | Linux Stub | Info | Returns "CLR not supported on Linux" | Expected |
 
-### 2.27 File: `spectre-implant/src/utils/mod.rs` (9 lines)
+### 2.10 File: `spectre-implant/src/modules/powershell.rs` (237 lines)
 
-**STATUS: Declares 8 utility modules** (was 6 in v4.3.0)
+**STATUS: PARTIALLY FUNCTIONAL -- Enhanced from v2.2.5 (150 lines)**
 
-```
-pub mod api_resolver;
-pub mod heap;
-pub mod obfuscation;
-pub mod syscalls;
-pub mod windows_definitions;
-pub mod test_heap;
-pub mod entropy;        // Added v5.0.0
-pub mod sensitive;      // Added v5.0.0
-pub mod test_sensitive; // Added v5.0.0
-```
++87 lines growth. CLR-hosted PowerShell execution via Runner.dll assembly loading.
 
-### 2.28 File: `spectre-implant/src/modules/mod.rs` (15 lines)
+| Line | Issue Type | Severity | Code/Description | Status |
+|------|-----------|----------|------------------|--------|
+| ~80 | Placeholder | P1 | `RUNNER_DLL` contains minimal MZ header bytes (4D 5A ...) -- not a real .NET assembly. CLR `ExecuteInDefaultAppDomain` will fail with this stub. | Open |
+| - | Linux Stub | Info | Returns error string | Expected |
 
-**STATUS: Declares 15 modules**
+### 2.11 File: `spectre-implant/src/modules/persistence.rs` (209 lines)
 
-```
-pub mod bof_loader;
-pub mod injection;
-pub mod socks;
-pub mod shell;
-pub mod clr;
-pub mod powershell;
-pub mod persistence;
-pub mod privesc;
-pub mod evasion;
-pub mod credentials;
-pub mod discovery;
-pub mod lateral;
-pub mod collection;
-pub mod smb;
-pub mod mesh;
-```
+**STATUS: FUNCTIONAL**
 
-### 2.29 Test Files
+3 persistence methods:
+- **Registry Run:** `RegOpenKeyExA` / `RegSetValueExA` on `SOFTWARE\Microsoft\Windows\CurrentVersion\Run`
+- **Scheduled Task:** Full COM-based `ITaskService` → `ITaskFolder` → `ITaskDefinition` → `IExecAction` pipeline (resolved from v2.2.5 shell delegation)
+- **User Creation:** `NetUserAdd` via `netapi32.dll`
 
-| File | Lines | Description |
-|------|-------|-------------|
-| `utils/test_heap.rs` | 16 | MiniHeap allocator test |
-| `utils/test_sensitive.rs` | 13 | SensitiveData round-trip encryption test |
-| `tests/test_smb.rs` | 17 | SMB2 encapsulation test |
-| `modules/socks.rs` (inline) | - | 2 tests: SOCKS5 greeting, connect |
-| `c2/mod.rs` (inline) | - | (No inline tests) |
+### 2.12 File: `spectre-implant/src/modules/privesc.rs` (61 lines)
+
+**STATUS: FUNCTIONAL**
+
+Fodhelper UAC bypass: writes command to `HKCU\Software\Classes\ms-settings\Shell\Open\command`, sets `DelegateExecute` to empty, launches `fodhelper.exe`, cleans registry.
+
+### 2.13 File: `spectre-implant/src/modules/evasion.rs` (143 lines)
+
+**STATUS: FUNCTIONAL**
+
+- **Timestomp:** Copies `FILETIME` (creation, access, write) from source to target file
+- **Sandbox Detection:** Checks for `SbieDll.dll` (Sandboxie), `dbghelp.dll` loaded in suspicious context, `GetTickCount() < 30 min`, and `GetSystemInfo().dwNumberOfProcessors < 2`
+
+### 2.14 File: `spectre-implant/src/modules/credentials.rs` (241 lines)
+
+**STATUS: FUNCTIONAL**
+
+Full LSASS memory dump chain:
+1. `OpenProcess(PROCESS_ALL_ACCESS, lsass_pid)`
+2. `MiniDumpWriteDump` via `dbghelp.dll` to output path
+3. Returns sensitive data wrapped in `SensitiveData` (encrypted in-memory)
+
+Linux: reads `/proc/self/maps` as placeholder.
+
+### 2.15 File: `spectre-implant/src/modules/discovery.rs` (294 lines)
+
+**STATUS: FUNCTIONAL**
+
+- `sys_info()`: hostname, username, OS info, process list
+- `net_scan()`: TCP connect-scan for port checking with configurable timeout
+- `get_hostname()` / `get_username()`: Platform-specific with `SensitiveData` returns
+
+### 2.16 File: `spectre-implant/src/modules/lateral.rs` (117 lines)
+
+**STATUS: FUNCTIONAL**
+
+- **PsExec:** `OpenSCManagerA` -> `CreateServiceA` -> `StartServiceA` with zeroized sensitive strings
+- **Service Stop:** `OpenServiceA` -> `ControlService(SERVICE_CONTROL_STOP)`
+- Linux stubs return `Err(())`
+
+### 2.17 File: `spectre-implant/src/modules/collection.rs` (122 lines)
+
+**STATUS: FUNCTIONAL**
+
+Keylogger via `GetAsyncKeyState` polling in a `CreateThread`-spawned thread. Uses static mutable `KEY_BUFFER` (512 bytes). `keylogger_poll()` returns and clears buffered keys.
+
+| Line | Issue Type | Severity | Code/Description | Status |
+|------|-----------|----------|------------------|--------|
+| - | Thread Safety | P3 | Static mutable `KEY_BUFFER` without synchronization; low risk in single-implant context but technically UB | Open |
+
+### 2.18 File: `spectre-implant/src/modules/smb.rs` (425 lines)
+
+**STATUS: FUNCTIONAL (Linux) / STUB (Windows)**
+
+Full SMB2 client implementation (Linux) with:
+- NetBIOS session framing
+- SMB2 Negotiate, Session Setup, Tree Connect, Write, Read commands
+- SMB2 header construction with proper field layout
+- Named pipe data exchange for C2 channel encapsulation
+
+| Line | Issue Type | Severity | Code/Description | Status |
+|------|-----------|----------|------------------|--------|
+| ~315 | Placeholder | P3 | "Just skip it and assume success for now" in SMB tree connect response parsing | Open |
+| - | Windows Stub | P3 | Windows implementation returns `Err(())` | Open |
+
+### 2.19 File: `spectre-implant/src/modules/mesh.rs` (335 lines)
+
+**STATUS: FUNCTIONAL -- Significantly Enhanced from v2.2.5 (254 lines)**
+
++81 lines growth. Additions include:
+- **MeshRouter:** Cost-based routing with `add_route`, `get_next_hop`, `get_route_cost`, `remove_route`
+- **MeshServer:** TCP listener + Windows Named Pipe server with `poll_and_accept`, `send_to_client`
+- **Peer Discovery:** `discover_peers()` via UDP broadcast "WRAITH_MESH_HELLO" on port 4444
+- Unit tests for `MeshRouter`
+
+| Line | Issue Type | Severity | Code/Description | Status |
+|------|-----------|----------|------------------|--------|
+| - | Hardcoded | P3 | UDP broadcast discovery on fixed port 4444 with plaintext "WRAITH_MESH_HELLO" | Detectable signature |
+
+### 2.20 File: `spectre-implant/src/modules/patch.rs` (84 lines) -- NEW
+
+**STATUS: FUNCTIONAL**
+
+AMSI and ETW bypass via memory patching:
+- **AMSI Bypass:** Resolves `AmsiScanBuffer` in `amsi.dll`, overwrites with `[0xB8, 0x57, 0x00, 0x07, 0x80, 0xC3]` (mov eax, E_INVALIDARG; ret). Uses `NtProtectVirtualMemory` via indirect syscall (`get_ssn` + `do_syscall`) for memory protection changes. Saves and restores original protection.
+- **ETW Bypass:** Resolves `EtwEventWrite` in `ntdll.dll`, overwrites with `[0xC3]` (ret). Same indirect syscall approach for memory protection.
+- Linux: Both functions return `Ok(())` as no-ops.
+
+### 2.21 File: `spectre-implant/src/modules/screenshot.rs` (138 lines) -- NEW
+
+**STATUS: FUNCTIONAL**
+
+Full GDI screenshot capture pipeline:
+1. `GetDesktopWindow()` -> `GetWindowDC()`
+2. `GetSystemMetrics(SM_CXSCREEN/SM_CYSCREEN)`
+3. `CreateCompatibleDC()` + `CreateCompatibleBitmap()`
+4. `BitBlt(SRCCOPY)` -> `GetDIBits()` (32-bit BGRA)
+5. Proper GDI cleanup (`DeleteObject`, `DeleteDC`, `ReleaseDC`)
+
+All APIs resolved via DJB2 hash-based PEB walking.
+Linux: Returns error string "Screenshot not supported on Linux".
+
+### 2.22 File: `spectre-implant/src/modules/browser.rs` (93 lines) -- NEW
+
+**STATUS: FUNCTIONAL (Enumeration Only)**
+
+Browser credential path enumeration for:
+- Google Chrome (`Google\Chrome\User Data`)
+- Microsoft Edge (`Microsoft\Edge\User Data`)
+- Brave Browser (`BraveSoftware\Brave-Browser\User Data`)
+
+Checks `Local State` (master key) and `Login Data` in Default, Profile 1, Profile 2. Uses hash-resolved `GetEnvironmentVariableA` and `GetFileAttributesA`.
+
+| Line | Issue Type | Severity | Code/Description | Status |
+|------|-----------|----------|------------------|--------|
+| - | Incomplete | P3 | Only enumerates paths; does not perform DPAPI decryption to extract actual credentials | Open |
+| - | Linux Stub | Info | Returns "Browser harvesting not supported on Linux" | Expected |
+
+### 2.23 Utility Files
+
+#### `utils/syscalls.rs` (545 lines) -- Enhanced from v2.2.5 (473 lines)
+
++72 lines growth. Major additions:
+- **Halo's Gate SSN Recovery:** `get_ssn()` scans +/-32 neighbors at 32-byte stride from hooked ntdll stubs
+- **NT Stub Pattern Matching:** `parse_syscall_stub()` recognizes two patterns (MOV R10,RCX / MOV EAX,SSN)
+- **Indirect Syscall Gadget:** `get_syscall_gadget()` scans `NtOpenFile` in ntdll for `0F 05 C3` (`syscall; ret`) sequence
+- **`do_syscall()`:** Executes syscall through gadget with 5 arguments, falls back to direct syscall if no gadget found
+- Linux: 26 syscall constants, `syscall0` through `syscall6` wrappers, 20+ typed functions (`sys_socket`, `sys_connect`, etc.)
+
+#### `utils/obfuscation.rs` (427 lines) -- Significantly Enhanced from v2.2.5 (265 lines)
+
++162 lines growth. Major additions:
+- **Ekko Sleep (Timer Queue ROP chain):**
+  1. `CreateTimerQueue()` + `CreateTimerQueueTimer()`
+  2. ROP chain: `NtContinue` + `SystemFunction032` (RC4 encryption of `.text` section)
+  3. Context manipulation with `VirtualProtect` cycling (RX -> RW -> RX)
+  4. Timer-based sleep with encrypted code section
+- **XOR Sleep Mask:**
+  1. `VirtualProtect(.text, PAGE_READWRITE)`
+  2. XOR-encrypt `.text` section + heap region
+  3. Sleep
+  4. XOR-decrypt and restore `PAGE_EXECUTE_READ`
+- **Linux:** `get_text_range()` uses hardcoded `0x400000` base address
+
+| Line | Issue Type | Severity | Code/Description | Status |
+|------|-----------|----------|------------------|--------|
+| ~259 | Hardcoded | P3 | Linux `.text` range assumes `0x400000` base -- PIE binaries will have different base | Open |
+| - | Entropy | P3 | `entropy.rs` line ~52: RDRAND does not check CF flag for failure; aarch64 uses CNTVCT_EL0 counter (weak) | Open |
+
+#### `utils/api_resolver.rs` (136 lines)
+
+**STATUS: FUNCTIONAL**
+
+DJB2 hash function and PEB walking for dynamic API resolution. Traverses `InMemoryOrderModuleList` via `gs:[0x60]` (Windows x64 PEB).
+
+#### `utils/windows_definitions.rs` (418 lines)
+
+**STATUS: FUNCTIONAL**
+
+Comprehensive Windows type definitions including COM vtable structures for CLR hosting.
+
+#### `utils/heap.rs` (48 lines)
+
+**STATUS: FUNCTIONAL**
+
+`MiniHeap` bump allocator at `0x10000000` with 1 MB capacity. `dealloc()` is a no-op (expected for bump allocator).
+
+#### `utils/sensitive.rs` (130 lines)
+
+**STATUS: FUNCTIONAL**
+
+`SensitiveData` wrapper with XChaCha20-Poly1305 encryption, `Zeroize`/`ZeroizeOnDrop` traits. `SecureBuffer` with platform-specific memory locking (`mlock`/`VirtualLock`).
+
+#### `utils/entropy.rs` (74 lines)
+
+**STATUS: FUNCTIONAL WITH CAVEATS**
+
+RDRAND + RDTSC mixing with PCG-like scramble. See Appendix E for entropy quality concerns.
 
 ---
 
 ## 3. Operator Client Findings
 
-### 3.1 File: `operator-client/src-tauri/src/lib.rs` (1,067 lines)
+### 3.1 Rust Backend: `operator-client/src-tauri/src/lib.rs` (1,080 lines)
 
-**STATUS: FULLY FUNCTIONAL with 31 IPC Commands -- Enhanced from v2.2.5 (1,008 lines)**
+**STATUS: FUNCTIONAL -- 31 IPC Commands Registered**
 
-+59 lines growth. All 30 proto RPCs from `OperatorService` are wired to Tauri IPC commands, plus `connect_to_server` (client-side only).
+All 30 original proto RPCs are wired, plus `connect_to_server` (client-only). **Missing** the 2 new PowerShell management RPCs added in v2.3.0.
 
-**Complete IPC Command Registry (lines 1000-1032):**
+**Registered IPC Commands (31):**
 
-| # | Command | gRPC Method | Status |
-|---|---------|-------------|--------|
-| 1 | `connect_to_server` | `OperatorServiceClient::connect()` | Existing |
-| 2 | `create_campaign` | `client.create_campaign()` | Existing |
-| 3 | `list_implants` | `client.list_implants()` | Existing |
-| 4 | `send_command` | `client.send_command()` | Existing |
-| 5 | `list_campaigns` | `client.list_campaigns()` | Existing |
-| 6 | `list_listeners` | `client.list_listeners()` | Existing |
-| 7 | `create_listener` | `client.create_listener()` | Existing |
-| 8 | `list_commands` | `client.list_commands()` | Existing |
-| 9 | `get_command_result` | `client.get_command_result()` | Existing |
-| 10 | `list_artifacts` | `client.list_artifacts()` | Existing |
-| 11 | `download_artifact` | `client.download_artifact()` | Existing |
-| 12 | `update_campaign` | `client.update_campaign()` | Existing |
-| 13 | `kill_implant` | `client.kill_implant()` | Existing |
-| 14 | `start_listener` | `client.start_listener()` | Existing |
-| 15 | `stop_listener` | `client.stop_listener()` | Existing |
-| 16 | `create_phishing` | `client.generate_phishing()` | Existing |
-| 17 | `list_persistence` | `client.list_persistence()` | Existing |
-| 18 | `remove_persistence` | `client.remove_persistence()` | Existing |
-| 19 | `list_credentials` | `client.list_credentials()` | Existing |
-| 20 | `create_attack_chain` | `client.create_attack_chain()` | v4.3.0 |
-| 21 | `list_attack_chains` | `client.list_attack_chains()` | v4.3.0 |
-| 22 | `execute_attack_chain` | `client.execute_attack_chain()` | v4.3.0 |
-| 23 | `get_attack_chain` | `client.get_attack_chain()` | v4.3.0 |
-| 24 | `refresh_token` | `client.refresh_token()` | v5.0.0 |
-| 25 | `get_campaign` | `client.get_campaign()` | v5.0.0 |
-| 26 | `get_implant` | `client.get_implant()` | v5.0.0 |
-| 27 | `cancel_command` | `client.cancel_command()` | v5.0.0 |
-| 28 | `generate_implant` | `client.generate_implant()` | v5.0.0 |
-| 29 | `list_playbooks` | `client.list_playbooks()` | v5.0.0 |
-| 30 | `instantiate_playbook` | `client.instantiate_playbook()` | v5.0.0 |
-| 31 | `stream_events` | Spawns async task + `app.emit("server-event", ...)` | v5.0.0 |
+| # | Command | Proto RPC | Status |
+|---|---------|-----------|--------|
+| 1 | `connect_to_server` | N/A (client-only) | OK |
+| 2 | `create_campaign` | `CreateCampaign` | OK |
+| 3 | `list_implants` | `ListImplants` | OK |
+| 4 | `send_command` | `SendCommand` | OK |
+| 5 | `list_campaigns` | `ListCampaigns` | OK |
+| 6 | `list_listeners` | `ListListeners` | OK |
+| 7 | `create_listener` | `CreateListener` | OK |
+| 8 | `list_commands` | `ListCommands` | OK |
+| 9 | `get_command_result` | `GetCommandResult` | OK |
+| 10 | `list_artifacts` | `ListArtifacts` | OK |
+| 11 | `download_artifact` | `DownloadArtifact` | OK |
+| 12 | `update_campaign` | `UpdateCampaign` | OK |
+| 13 | `kill_implant` | `KillImplant` | OK |
+| 14 | `start_listener` | `StartListener` | OK |
+| 15 | `stop_listener` | `StopListener` | OK |
+| 16 | `create_phishing` | `GeneratePhishing` | OK |
+| 17 | `list_persistence` | `ListPersistence` | OK |
+| 18 | `remove_persistence` | `RemovePersistence` | OK |
+| 19 | `list_credentials` | `ListCredentials` | OK |
+| 20 | `create_attack_chain` | `CreateAttackChain` | OK |
+| 21 | `list_attack_chains` | `ListAttackChains` | OK |
+| 22 | `execute_attack_chain` | `ExecuteAttackChain` | OK |
+| 23 | `get_attack_chain` | `GetAttackChain` | OK |
+| 24 | `refresh_token` | `RefreshToken` | OK |
+| 25 | `get_campaign` | `GetCampaign` | OK |
+| 26 | `get_implant` | `GetImplant` | OK |
+| 27 | `cancel_command` | `CancelCommand` | OK |
+| 28 | `generate_implant` | `GenerateImplant` | OK |
+| 29 | `list_playbooks` | `ListPlaybooks` | OK |
+| 30 | `instantiate_playbook` | `InstantiatePlaybook` | OK |
+| 31 | `stream_events` | `StreamEvents` | OK |
+| - | **MISSING** | `SetPowerShellProfile` | **NOT WIRED** |
+| - | **MISSING** | `GetPowerShellProfile` | **NOT WIRED** |
 
-**`stream_events` Implementation (lines 934-963):**
-Spawns an async task via `tauri::async_runtime::spawn` that receives from the gRPC `stream_events` response stream and forwards each event to the React frontend via `app.emit("server-event", payload)`. Enables live dashboard updates.
-
-| Line | Issue Type | Severity | Code/Description | Status |
-|------|-----------|----------|------------------|--------|
-| 1034 | `.expect()` | Info | `expect("error while running tauri application")` -- startup crash on Tauri init failure | Acceptable |
-| 1060 | Test | Info | Hardcoded `bind_address: "0.0.0.0"` in test | Acceptable |
-
-### 3.2 File: `operator-client/src/App.tsx` (405 lines)
+### 3.2 Rust Backend: `operator-client/src-tauri/src/main.rs` (76 lines)
 
 **STATUS: FUNCTIONAL**
 
-Main application component with campaign management, implant dashboard, and tab navigation.
+Wayland/KDE workarounds (`WEBKIT_DISABLE_COMPOSITING_MODE`, `QT_QPA_PLATFORM`).
 
-| Line | Issue Type | Severity | Code/Description | Status |
-|------|-----------|----------|------------------|--------|
-| 44 | Hardcoded Default | Low | `useState('127.0.0.1:50051')` default server address | Open -- P3 #28. Add settings/preferences UI with persistent storage. |
-| 257 | UI | Info | `placeholder="OP_GHOST"` -- campaign name placeholder | Appropriate UX |
-| 266 | UI | Info | `placeholder="Describe the operational goals..."` -- description placeholder | Appropriate UX |
+### 3.3 TypeScript Frontend
 
-### 3.3 File: `operator-client/src/components/AttackChainEditor.tsx` (202 lines)
+| File | Lines | Description | Status |
+|------|-------|-------------|--------|
+| `App.tsx` | 405 | Dashboard with campaigns, beacons, listeners, tabs | Functional |
+| `Console.tsx` | 187 | xterm.js interactive console with 11 commands | Functional (see gap below) |
+| `AttackChainEditor.tsx` | 202 | Attack chain step editor with MITRE technique IDs | Functional |
+| `BeaconInteraction.tsx` | 51 | Beacon detail view with Console embedding | Functional |
+| `DiscoveryDashboard.tsx` | 80 | Network discovery visualization | Functional |
+| `LootGallery.tsx` | 121 | Artifact and credential browser | Functional |
+| `NetworkGraph.tsx` | 252 | Force-directed network visualization (D3-style) | Functional |
+| `PersistenceManager.tsx` | 81 | Persistence mechanism management | Functional |
+| `PhishingBuilder.tsx` | 85 | Phishing payload generator | Functional |
+| `ui/Button.tsx` | 37 | Reusable button component | Functional |
 
-**STATUS: FULLY FUNCTIONAL** -- All `invoke()` calls connected to backend gRPC. No remaining issues.
+#### Console Command Coverage Gap
 
-### 3.4 File: `operator-client/src/components/Console.tsx` (187 lines)
+`Console.tsx` maps **11 command types** (shell, powershell, persist, lsass, uac, timestomp, sandbox, recon, lateral, keylog, kill).
 
-**STATUS: FUNCTIONAL** -- xterm.js terminal with 12 command types, proper `invoke()` calls.
+The implant's `dispatch_tasks()` handles **19 task types**. The following **8 implant tasks are NOT accessible from the Console UI**:
 
-### 3.5 File: `operator-client/src/components/BeaconInteraction.tsx` (51 lines)
+| Task Type | MITRE Technique | Console Gap |
+|-----------|-----------------|-------------|
+| `inject` | T1055 | No UI -- requires PID + method + hex shellcode |
+| `bof` | T1106 | No UI -- requires hex-encoded COFF data |
+| `socks` | T1090 | No UI -- requires SOCKS protocol data |
+| `screenshot` | T1113 | No UI -- simple trigger, easy to add |
+| `browser` | T1555 | No UI -- simple trigger, easy to add |
+| `net_scan` | T1046 | No UI -- `recon` maps to `sys_info` only |
+| `service_stop` | T1489 | No UI -- service name parameter |
+| `mesh_relay` | - | No UI -- internal mesh routing |
 
-**STATUS: FUNCTIONAL** -- Sub-tab navigation for Console, Discovery, Persistence per implant.
-
-### 3.6 File: `operator-client/src/components/PhishingBuilder.tsx` (85 lines)
-
-| Line | Issue Type | Severity | Code/Description | Status |
-|------|-----------|----------|------------------|--------|
-| 7 | Hardcoded | Low | `useState('http://localhost:8080')` default C2 URL | Open -- should default to team server address |
-| 66 | UI | Info | `placeholder="http://192.168.1.100:8080"` -- appropriate placeholder | Informational |
-
-### 3.7 File: `operator-client/src/components/LootGallery.tsx` (121 lines)
-
-**STATUS: FUNCTIONAL** -- Artifact and credential browsing with filtering.
-
-| Line | Issue Type | Severity | Code/Description | Status |
-|------|-----------|----------|------------------|--------|
-| 42 | Comment | Info | `// alert("Download complete"); // Avoid native alerts in production UI if possible, status bar preferred` | Design decision documented |
-
-### 3.8 File: `operator-client/src/components/DiscoveryDashboard.tsx` (80 lines)
-
-**STATUS: FUNCTIONAL** -- Host discovery interface.
-
-### 3.9 File: `operator-client/src/components/PersistenceManager.tsx` (81 lines)
-
-**STATUS: FUNCTIONAL** -- Persistence mechanism management per implant.
-
-### 3.10 File: `operator-client/src/components/NetworkGraph.tsx` (252 lines)
-
-**STATUS: FUNCTIONAL** -- SVG radial topology visualization with hover/select/glow effects.
-
-### 3.11 File: `operator-client/src/components/ui/Button.tsx` (37 lines)
-
-**STATUS: FUNCTIONAL** -- Reusable button component with variants (primary/secondary/danger/ghost) and sizes (sm/md/lg).
+**Recommendation:** Add `screenshot`, `browser`, `netscan`, and `inject` commands to Console.tsx as priority additions (5 SP).
 
 ---
 
 ## 4. Proto Definition Analysis
 
-### 4.1 File: `proto/redops.proto` (510 lines)
+**File:** `proto/redops.proto` (531 lines)
+**Services:** 2 (`OperatorService`, `ImplantService`)
 
-**STATUS: COMPLETE**
+### OperatorService (32 RPCs)
 
-Two gRPC services defined:
+| Category | RPCs | Count |
+|----------|------|-------|
+| Authentication | Authenticate, RefreshToken | 2 |
+| Campaign Mgmt | CreateCampaign, GetCampaign, ListCampaigns, UpdateCampaign | 4 |
+| Implant Mgmt | ListImplants, GetImplant, KillImplant | 3 |
+| Command Exec | SendCommand, GetCommandResult, ListCommands, CancelCommand | 4 |
+| Events | StreamEvents | 1 |
+| Artifacts | ListArtifacts, DownloadArtifact | 2 |
+| Credentials | ListCredentials | 1 |
+| Listeners | CreateListener, ListListeners, StartListener, StopListener | 4 |
+| Builder | GenerateImplant, GeneratePhishing | 2 |
+| Persistence | ListPersistence, RemovePersistence | 2 |
+| Attack Chains | CreateAttackChain, ListAttackChains, ExecuteAttackChain, GetAttackChain | 4 |
+| Playbooks | ListPlaybooks, InstantiatePlaybook | 2 |
+| **PowerShell** | **SetPowerShellProfile, GetPowerShellProfile** | **2 (NEW)** |
+| **Total** | | **32** |
 
-**OperatorService (30 RPCs):**
+### ImplantService (6 RPCs)
 
-| Category | RPCs | All Implemented Server | All Wired Client |
-|----------|------|----------------------|-------------------|
-| Authentication | `Authenticate`, `RefreshToken` | Yes | Yes |
-| Campaign Management | `CreateCampaign`, `GetCampaign`, `ListCampaigns`, `UpdateCampaign` | Yes | Yes |
-| Implant Management | `ListImplants`, `GetImplant`, `KillImplant` | Yes | Yes |
-| Command Execution | `SendCommand`, `GetCommandResult`, `ListCommands`, `CancelCommand` | Yes | Yes |
-| Real-time Events | `StreamEvents` (server streaming) | Yes | Yes |
-| Artifacts | `ListArtifacts`, `DownloadArtifact` (server streaming) | Yes | Yes |
-| Credentials | `ListCredentials` | Yes | Yes |
-| Listeners | `CreateListener`, `ListListeners`, `StartListener`, `StopListener` | Yes | Yes |
-| Builder | `GenerateImplant` (server streaming), `GeneratePhishing` (server streaming) | Yes | Yes |
-| Persistence | `ListPersistence`, `RemovePersistence` | Yes | Yes |
-| Attack Chains | `CreateAttackChain`, `ListAttackChains`, `ExecuteAttackChain`, `GetAttackChain` | Yes | Yes |
-| Playbooks | `ListPlaybooks`, `InstantiatePlaybook` | Yes | Yes |
-
-**ImplantService (6 RPCs):**
-
-| RPC | Implementation | Status |
-|-----|---------------|--------|
-| `Register` | `services/implant.rs:21-73` | Functional (see placeholder note in 1.4) |
-| `CheckIn` | `services/implant.rs:76-112` | Functional |
-| `GetPendingCommands` (server streaming) | `services/implant.rs:114-151` | Functional |
-| `SubmitResult` | `services/implant.rs:154-170` | Functional |
-| `UploadArtifact` (client streaming) | `services/implant.rs:172-218` | Functional |
-| `DownloadPayload` (server streaming) | `services/implant.rs:220-273` | Functional |
-
-**RPC Coverage: 36/36 (100%)**
-
-### 4.2 Message Types Analysis
-
-All 50+ message types defined in the proto file are properly used by both server and client implementations. Key types:
-- `Campaign`, `Implant`, `Command`, `CommandResult`, `Event`, `Artifact`, `ArtifactChunk`, `Listener`, `Credential`, `AttackChain`, `ChainStep`, `Playbook`, `PayloadChunk`
-- Streaming types properly handled: `stream Event`, `stream ArtifactChunk`, `stream PayloadChunk`, `stream Command`
+| RPC | Implementation Status |
+|-----|----------------------|
+| Register | Implemented (with placeholder registration data handling) |
+| CheckIn | Implemented |
+| GetPendingCommands | Implemented |
+| SubmitResult | Implemented |
+| UploadArtifact | Implemented |
+| DownloadPayload | Implemented |
 
 ---
 
 ## 5. Integration Gap Analysis
 
-### 5.1 Comparison with Other Tauri Clients
+### 5.1 IPC Bridge Coverage: Proto -> Tauri -> Frontend
 
-| Feature | wraith-chat | wraith-transfer | wraith-redops (operator) |
-|---------|------------|----------------|-------------------------|
-| **Tauri Version** | `2` (latest) | `2.9.4` (pinned) | `2.2` |
-| **Tauri Build** | `2` | `2.5.3` | `2.2` |
-| **WRAITH Crate Integration** | wraith-core, wraith-crypto, wraith-transport, wraith-discovery, wraith-files | wraith-core | wraith-core, wraith-crypto |
-| **tauri-plugin-dialog** | Yes | Yes | Yes |
-| **tauri-plugin-fs** | Yes | Yes | Yes |
-| **tauri-plugin-shell** | Yes | Yes | Yes |
-| **tauri-plugin-log** | Yes | Yes | No |
-| **tauri-plugin-notification** | Yes | No | No |
-| **Frontend Framework** | React 18 + TypeScript | React + TypeScript | React 19 + TypeScript |
-| **State Management** | Zustand | N/A | React useState |
-| **Database** | SQLCipher (rusqlite) | N/A | PostgreSQL (sqlx, via team server) |
-| **Rust Edition** | 2024 | 2024 | 2024 |
-| **MSRV** | 1.88 | 1.88 | 1.88 |
+| Proto RPC (32) | Tauri IPC | Frontend Usage | Status |
+|----------------|-----------|----------------|--------|
+| Authenticate | `connect_to_server` | App.tsx | OK (merged with connect) |
+| RefreshToken | `refresh_token` | App.tsx | OK |
+| CreateCampaign | `create_campaign` | App.tsx | OK |
+| GetCampaign | `get_campaign` | App.tsx | OK |
+| ListCampaigns | `list_campaigns` | App.tsx | OK |
+| UpdateCampaign | `update_campaign` | App.tsx | OK |
+| ListImplants | `list_implants` | App.tsx | OK |
+| GetImplant | `get_implant` | BeaconInteraction | OK |
+| KillImplant | `kill_implant` | Console.tsx | OK |
+| SendCommand | `send_command` | Console.tsx | OK |
+| GetCommandResult | `get_command_result` | BeaconInteraction | OK |
+| ListCommands | `list_commands` | BeaconInteraction | OK |
+| CancelCommand | `cancel_command` | - | Wired, not yet in UI |
+| StreamEvents | `stream_events` | App.tsx (event listener) | OK |
+| ListArtifacts | `list_artifacts` | LootGallery | OK |
+| DownloadArtifact | `download_artifact` | LootGallery | OK |
+| ListCredentials | `list_credentials` | LootGallery | OK |
+| CreateListener | `create_listener` | App.tsx | OK |
+| ListListeners | `list_listeners` | App.tsx | OK |
+| StartListener | `start_listener` | App.tsx | OK |
+| StopListener | `stop_listener` | App.tsx | OK |
+| GenerateImplant | `generate_implant` | App.tsx | OK |
+| GeneratePhishing | `create_phishing` | PhishingBuilder | OK |
+| ListPersistence | `list_persistence` | PersistenceManager | OK |
+| RemovePersistence | `remove_persistence` | PersistenceManager | OK |
+| CreateAttackChain | `create_attack_chain` | AttackChainEditor | OK |
+| ListAttackChains | `list_attack_chains` | App.tsx | OK |
+| ExecuteAttackChain | `execute_attack_chain` | AttackChainEditor | OK |
+| GetAttackChain | `get_attack_chain` | AttackChainEditor | OK |
+| ListPlaybooks | `list_playbooks` | App.tsx | OK |
+| InstantiatePlaybook | `instantiate_playbook` | App.tsx | OK |
+| **SetPowerShellProfile** | **NOT WIRED** | - | **MISSING** |
+| **GetPowerShellProfile** | **NOT WIRED** | - | **MISSING** |
 
-**Key Integration Gaps:**
+**Coverage:** 31 of 32 RPCs wired to IPC (96.9%). 2 PowerShell management RPCs require new Tauri commands.
 
-1. **Tauri Version Lag:** The operator client uses Tauri `2.2` while other clients use `2` (latest) or `2.9.4`. The Tauri 2.x API is stable so this is cosmetic rather than functional.
+### 5.2 Console-to-Implant Command Mapping
 
-2. **Missing `tauri-plugin-log`:** The operator client does not use `tauri-plugin-log`. Instead it uses `tracing-subscriber` directly. This works but means log output goes to stdout/stderr rather than being captured by the Tauri logging infrastructure.
+| Console Command | Maps To | Implant Task Type | Status |
+|-----------------|---------|-------------------|--------|
+| `shell <cmd>` | `shell` | `shell` | OK |
+| `powershell <cmd>` | `powershell` | `powershell` | OK |
+| `persist <method> <name> <path>` | `persist` | `persist` | OK |
+| `lsass` | `dump_lsass` | `dump_lsass` | OK |
+| `uac <cmd>` | `uac_bypass` | `uac_bypass` | OK |
+| `timestomp <tgt> <src>` | `timestomp` | `timestomp` | OK |
+| `sandbox` | `sandbox_check` | `sandbox_check` | OK |
+| `recon` | `sys_info` | `sys_info` | OK |
+| `lateral <tgt> <svc> <bin>` | `psexec` | `psexec` | OK |
+| `keylog` | `keylogger` | `keylogger` | OK |
+| `kill` | `kill` | `kill` | OK |
+| - | - | `inject` | **NOT IN CONSOLE** |
+| - | - | `bof` | **NOT IN CONSOLE** |
+| - | - | `socks` | **NOT IN CONSOLE** |
+| - | - | `screenshot` | **NOT IN CONSOLE** |
+| - | - | `browser` | **NOT IN CONSOLE** |
+| - | - | `net_scan` | **NOT IN CONSOLE** |
+| - | - | `service_stop` | **NOT IN CONSOLE** |
+| - | - | `mesh_relay` | Internal only |
 
-3. **Missing `tauri-plugin-notification`:** No desktop notifications for high-priority events (new implant check-in, command completion, kill switch activation). The `stream_events` system emits events to the frontend but the frontend does not surface desktop notifications.
+**Coverage:** 11 of 18 user-facing task types (61%). 7 task types are not accessible from the Console (1 is internal-only).
 
-4. **No `tauri.conf.json` `beforeDevCommand`/`beforeBuildCommand`:** The wraith-chat and wraith-transfer clients define `beforeDevCommand` and `beforeBuildCommand` in `tauri.conf.json` to automatically build the frontend. The operator client's `tauri.conf.json` likely does as well (configured via Vite).
+### 5.3 Noise Protocol Integration
 
-### 5.2 Spectre Implant Version Mismatch
-
-| Property | Value | Expected | Gap |
-|----------|-------|----------|-----|
-| Cargo.toml `version` | `0.1.0` | Should match project version `2.3.0` or `1.0.0` | Version not synchronized |
-| Cargo.toml `edition` | `2021` | Should be `2024` like rest of workspace | Edition mismatch |
-| Cargo.toml `[workspace]` | Empty `[workspace]` declaration | Should not be a workspace root; isolated by design | Intentional isolation |
-
-**Note:** The spectre-implant intentionally uses `edition = "2021"` and an independent `[workspace]` because it is a `no_std` crate excluded from the main workspace to avoid dependency conflicts.
-
-### 5.3 Start Script Analysis (`start_redops.sh`, 224 lines)
-
-| Line | Issue Type | Severity | Code/Description | Status |
-|------|-----------|----------|------------------|--------|
-| 29-30 | Hardcoded | Low | `POSTGRES_USER="${POSTGRES_USER:-postgres}"` / `POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-postgres}"` -- defaults to postgres/postgres | Acceptable for dev; env var override available |
-| 168 | Hardcoded | **Medium** | `export HMAC_SECRET="${HMAC_SECRET:-dev_hmac_placeholder_val_1234567890}"` -- fallback HMAC secret used if env var not set | Should warn or fail if not explicitly set in production |
-| 163 | Info | Low | `export GRPC_LISTEN_ADDR="0.0.0.0:50051"` -- binds to all interfaces | Expected for local dev |
-
-### 5.4 Workspace Exclusion
-
-The wraith-redops components (`team-server`, `operator-client`, `spectre-implant`) are excluded from the main Cargo workspace. This is by design to prevent dependency conflicts (especially between sqlx-postgres and rusqlite). However, it means:
-
-1. `cargo test --workspace` does **not** test wraith-redops
-2. `cargo clippy --workspace` does **not** lint wraith-redops
-3. CI/CD workflows must explicitly handle these components
-
----
-
-## 6. Sprint Completion Verification
-
-### Sprint Plan vs Implementation (from `wraith-redops-sprints.md`)
-
-| Story | Description | Status | Verification |
-|-------|-------------|--------|-------------|
-| REDOPS-001 | C2 Channel Framework | **95% Complete** | Noise_XX (Yes), HTTP/DNS/UDP/SMB transports (Yes), Beacon jitter (Yes), Key ratcheting (MISSING -- P1 #12), Session resumption (Partial -- reconnect logic exists) |
-| REDOPS-002 | Multi-Stage Delivery | **80% Complete** | Staged delivery via builder (Yes), Protocol triggering (Partial), Transport failover (MISSING) |
-| REDOPS-003 | Phishing Delivery | **60% Complete** | HTML smuggling (Yes), VBA macro (Incomplete -- P2 NEW-10), Spearphishing attachment sim (Partial) |
-| REDOPS-006 | Command Execution | **100% Complete** | Shell exec (Yes), BOF loading (Yes), CLR hosting (Substantial), PowerShell (Partial -- RUNNER_DLL placeholder) |
-| REDOPS-007 | Process Injection | **100% Complete** | Reflective (Yes), Hollowing (Yes), Thread Hijack (Yes) -- all on both platforms |
-| REDOPS-008 | Persistence | **100% Complete** | Registry Run (Yes), Scheduled Task COM (Yes), User Creation (Yes) |
-| REDOPS-009 | Privilege Escalation | **33% Complete** | Fodhelper UAC bypass (Yes), Exploit framework (No), Token manipulation (No) |
-| REDOPS-011 | Defense Evasion | **100% Complete** | API hashing (Yes), Sleep mask (Yes), Timestomp (Yes), Sandbox detection (Yes) |
-| REDOPS-013 | Credential Access | **67% Complete** | LSASS dump (Yes), Keylogging (Yes), Browser/Keychain (No) |
-| REDOPS-015 | Discovery | **100% Complete** | System info (Yes), Network scan (Yes), Hostname/Username (Yes) |
-| REDOPS-017 | Lateral Movement | **67% Complete** | PsExec service execution (Yes), Service stop (Yes), SSH/RDP/WinRM (No) |
-| REDOPS-019 | Collection | **33% Complete** | Keylogging (Yes), File collection (No), Screen capture (No) |
-| REDOPS-021 | Exfiltration | **33% Complete** | Artifact upload over C2 (Yes), DNS exfil (Partial), ICMP exfil (No) |
-| REDOPS-023 | Impact | **0% Complete** | Data destruction (No), Service disruption (Partial -- service_stop exists), Resource hijacking (No) |
-
-### Overall Sprint Story Point Accounting
-
-| Sprint | Planned SP | Estimated Complete SP | Completion |
-|--------|------------|----------------------|------------|
-| Sprint 1 (C2 Framework) | 60 | ~57 | ~95% |
-| Sprint 2 (Implant Core) | 60 | ~56 | ~93% |
-| Sprint 3 (Operator Console) | 60 | ~58 | ~97% |
-| Sprint 4 (Advanced) | 60 | ~54 | ~90% |
-| **Total** | **240** | **~225** | **~94%** |
+| Component | Implementation | Status |
+|-----------|---------------|--------|
+| Team Server Keypair | Generated at startup, shared across listeners | OK |
+| Listener Handshake | `ProtocolHandler` performs 3-message Noise_XX | OK |
+| Implant Handshake | `perform_handshake()` in c2/mod.rs (initiator) | OK |
+| Ratchet Key Exchange | Responder sends 32-byte ratchet pubkey in Msg 2 | OK |
+| DH Rekeying | Counter-based check calls `session.rekey_dh()` | **INCOMPLETE** (see P1) |
 
 ---
 
-## 7. Comparison with Previous v2.2.5
+## 6. MITRE ATT&CK Coverage
 
-### Resolved Issues Since v2.2.5
+### Implemented Techniques (31 of 38 planned)
 
-| Issue | v2.2.5 Status | v2.3.0 Status | Resolution |
-|-------|--------------|---------------|------------|
-| P0 #1-5 | All Resolved | All Resolved | No change |
-| P1 #6-11 | All Resolved | All Resolved | No change |
-| P1 #12 (Key Ratcheting) | Open (13 SP) | **Open** | No change |
-| P1 NEW-3 (PowerShell Runner) | Open (5 SP) | **Open** | No change |
-| P2 #17 (DNS Multi-Label) | Substantially Resolved | Substantially Resolved | No change |
-| P2 #19 (Heap Address) | Open (3 SP) | **Open** | No change |
-| P2 #20 (LLVM Obfuscation) | Open (5 SP) | **Open** | No change |
-| P2 #22 (Noise .unwrap()) | Open (3 SP) | **Open** | No change |
-| P2 NEW-9 (CLR GUID) | Open (1 SP) | **Open** | No change |
-| P2 NEW-10 (VBA Stub) | Open (3 SP) | **Open** | No change |
-| P2 NEW-21 (ARM Entropy) | Open (2 SP) | **Open** | No change |
-| P3 #24a (Mesh Routing) | Open (10 SP) | **Open** | No change |
-| P3 #28 (Settings UI) | Open (2 SP) | **Open** | No change |
-| P3 NEW-12 (Keylogger) | Open (3 SP) | **Open** | No change |
-| P3 NEW-13 (ImageBase PEB) | Open (3 SP) | **Open** | No change |
-| P3 NEW-20 (Test Coverage) | Open (15 SP) | **Open** | No change |
+| ID | Technique | Module | Status |
+|----|-----------|--------|--------|
+| **Initial Access (TA0001)** | | | |
+| T1566.001 | Spearphishing Attachment | `builder/phishing.rs` | Implemented (HTML smuggling) |
+| **Execution (TA0002)** | | | |
+| T1059.001 | PowerShell | `modules/powershell.rs` | Partial (Runner.dll placeholder) |
+| T1059.004 | Unix Shell | `modules/shell.rs` | Implemented |
+| T1106 | Native API | `modules/bof_loader.rs` | Implemented |
+| T1129 | Shared Modules | `modules/clr.rs` | Partial (CLSID concern) |
+| **Persistence (TA0003)** | | | |
+| T1547.001 | Registry Run Keys | `modules/persistence.rs` | Implemented |
+| T1053.005 | Scheduled Task | `modules/persistence.rs` | Implemented (COM-based) |
+| T1136.001 | Local Account | `modules/persistence.rs` | Implemented |
+| **Privilege Escalation (TA0004)** | | | |
+| T1548.002 | UAC Bypass | `modules/privesc.rs` | Implemented (Fodhelper) |
+| **Defense Evasion (TA0005)** | | | |
+| T1055.001 | DLL Injection | `modules/injection.rs` | Implemented (3 methods) |
+| T1055.012 | Process Hollowing | `modules/injection.rs` | Implemented |
+| T1070.006 | Timestomp | `modules/evasion.rs` | Implemented |
+| T1497.001 | Sandbox Evasion | `modules/evasion.rs` | Implemented |
+| T1562.001 | Disable Security Tools | `modules/patch.rs` | **NEW: Implemented** (AMSI+ETW bypass) |
+| T1027.007 | Dynamic API Resolution | `utils/api_resolver.rs` | Implemented (DJB2 hashing) |
+| T1497.003 | Time-Based Evasion | `utils/obfuscation.rs` | Implemented (Ekko + XOR sleep) |
+| T1620 | Reflective Code Loading | `modules/bof_loader.rs` | Implemented |
+| **Credential Access (TA0006)** | | | |
+| T1003.001 | LSASS Memory | `modules/credentials.rs` | Implemented |
+| T1555.003 | Credentials from Web Browsers | `modules/browser.rs` | **NEW: Partial** (enumeration only) |
+| **Discovery (TA0007)** | | | |
+| T1082 | System Information | `modules/discovery.rs` | Implemented |
+| T1046 | Network Service Scanning | `modules/discovery.rs` | Implemented |
+| T1016 | System Network Config | `modules/discovery.rs` | Implemented |
+| **Lateral Movement (TA0008)** | | | |
+| T1021.002 | SMB/Windows Admin Shares | `modules/lateral.rs` | Implemented (PsExec) |
+| T1570 | Lateral Tool Transfer | `modules/smb.rs` | Implemented (SMB2 C2) |
+| **Collection (TA0009)** | | | |
+| T1056.001 | Keylogging | `modules/collection.rs` | Implemented |
+| T1113 | Screen Capture | `modules/screenshot.rs` | **NEW: Implemented** |
+| **Command and Control (TA0011)** | | | |
+| T1071.001 | Web Protocols | `c2/mod.rs` (HTTP) | Implemented |
+| T1071.004 | DNS | `listeners/dns.rs` | Implemented |
+| T1090.001 | Internal Proxy | `modules/socks.rs` | Implemented (SOCKS4/5) |
+| T1572 | Protocol Tunneling | `modules/smb.rs` | Implemented (SMB2 Named Pipes) |
+| T1573.002 | Asymmetric Crypto | `c2/mod.rs` (Noise_XX) | Implemented |
 
-### New Findings in v2.3.0
+### Not Yet Implemented (7 of 38)
 
-| ID | Component | Issue | Severity | Description | Effort |
-|----|-----------|-------|----------|-------------|--------|
-| NEW-22 | Team Server | `operator_service_test.rs` Growth | Info | Test file grew from 169 to 314 lines (+145), indicating improved test coverage | 0 SP |
-| NEW-23 | Team Server | Line Count Growth | Info | `operator.rs` grew from 1,185 to 1,312 lines (+127); `database/mod.rs` from 619 to 636 (+17) | 0 SP |
-| NEW-24 | Team Server | `listeners_table.sql` Migration | Info | New migration `20260127000000_listeners_table.sql` (10 lines) for persistent listener storage | 0 SP |
-| NEW-25 | Team Server | SMB Listener `.unwrap()` | Medium | `smb.rs:119-121` -- Three `.unwrap()` on `try_into()` for SMB2 header fields could panic on malformed packets | 1 SP |
-| NEW-26 | Start Script | HMAC Fallback | Medium | `start_redops.sh:168` -- `HMAC_SECRET` has a dev placeholder fallback value. In production, this weakens audit log integrity. | 1 SP |
-| NEW-27 | Spectre | SMB Hardcoded IPC$ | Medium | `smb.rs:254,387` -- Hardcoded `\\127.0.0.1\IPC$` tree connect path. Should be configurable for remote targets. | 2 SP |
+| ID | Technique | Planned Location | Est. SP |
+|----|-----------|-----------------|---------|
+| T1059.003 | Windows Command Shell (managed) | `modules/powershell.rs` | 5 (Runner.dll) |
+| T1055.003 | Thread Execution Hijack (full) | `modules/injection.rs` | Partial -- implemented but not in Console |
+| T1134 | Access Token Manipulation | Not started | 8 |
+| T1140 | Deobfuscate/Decode | Not started | 5 |
+| T1574.002 | DLL Side-Loading | Not started | 8 |
+| T1095 | Non-Application Layer Protocol | P2P Mesh (partial) | 5 |
+| T1105 | Ingress Tool Transfer | Not started | 5 |
 
-### Line Count Comparison
+**Coverage:** 31/38 = **81.6%** (up from 74% in v2.2.5 due to patch.rs, screenshot.rs, browser.rs additions)
 
-| Component/File | v2.3.0 | v2.2.5 | Delta |
-|---------------|--------|--------|-------|
-| **Team Server** | | | |
-| `main.rs` | 225 | 211 | +14 |
-| `database/mod.rs` | 636 | 619 | +17 |
-| `models/mod.rs` | 176 | 176 | 0 |
-| `models/listener.rs` | 14 | 14 | 0 |
-| `services/mod.rs` | 7 | 7 | 0 |
-| `services/operator.rs` | 1,312 | 1,185 | +127 |
-| `services/playbook_loader.rs` | 78 | 69 | +9 |
-| `services/implant.rs` | 287 | 277 | +10 |
-| `services/session.rs` | 76 | 76 | 0 |
-| `services/protocol.rs` | 267 | 259 | +8 |
-| `services/killswitch.rs` | 61 | 61 | 0 |
-| `services/listener.rs` | 94 | 89 | +5 |
-| `listeners/mod.rs` | 4 | 4 | 0 |
-| `listeners/http.rs` | 78 | 78 | 0 |
-| `listeners/udp.rs` | 57 | 57 | 0 |
-| `listeners/dns.rs` | 326 | 318 | +8 |
-| `listeners/smb.rs` | 293 | 269 | +24 |
-| `builder/mod.rs` | 160 | 145 | +15 |
-| `builder/phishing.rs` | 79 | 71 | +8 |
-| `governance.rs` | 125 | 125 | 0 |
-| `utils.rs` | 40 | 40 | 0 |
-| `auth_tests.rs` | 80 | 66 | +14 |
-| `killswitch_config_test.rs` | 119 | 103 | +16 |
-| `operator_service_test.rs` | 314 | 169 | +145 |
-| **Team Server Total** | **~4,951** | **~4,488** | **+463** |
-| | | | |
-| **Spectre Implant** | | | |
-| All files | ~5,729 | ~5,729 | 0 |
-| | | | |
-| **Operator Client (Rust)** | | | |
-| `lib.rs` | 1,067 | 1,008 | +59 |
-| `main.rs` | 76 | 76 | 0 |
-| **Operator Rust Total** | **~1,143** | **~1,084** | **+59** |
-| | | | |
-| **Operator Client (TS)** | | | |
-| All files | ~1,518 | ~1,518 | 0 |
-| | | | |
-| **Proto** | 510 | 510 | 0 |
-| **SQL Migrations** | 208 | 198 | +10 |
-| | | | |
-| **Grand Total** | **~14,059** | **~13,527** | **+532** |
+---
+
+## 7. Sprint Completion Verification
+
+### Sprint 1: Core C2 Infrastructure
+
+| Task | Status | Evidence |
+|------|--------|----------|
+| Team Server with gRPC | COMPLETE | `main.rs`, `operator.rs` (32 RPCs) |
+| PostgreSQL backend | COMPLETE | `database/mod.rs` (645 lines), 6 migrations |
+| HTTP/UDP listeners | COMPLETE | `listeners/http.rs`, `listeners/udp.rs` |
+| Noise_XX handshake | COMPLETE | `services/protocol.rs`, `services/session.rs` |
+| Implant C2 loop | COMPLETE | `c2/mod.rs` (731 lines) |
+
+### Sprint 2: Implant Capabilities
+
+| Task | Status | Evidence |
+|------|--------|----------|
+| Shell execution | COMPLETE | `modules/shell.rs` (212 lines) |
+| Process injection | COMPLETE | `modules/injection.rs` (420 lines, 3 methods) |
+| BOF loading | COMPLETE | `modules/bof_loader.rs` (332 lines) |
+| SOCKS proxy | COMPLETE | `modules/socks.rs` (298 lines) |
+| Persistence | COMPLETE | `modules/persistence.rs` (209 lines, 3 methods) |
+| Privilege escalation | COMPLETE | `modules/privesc.rs` (61 lines) |
+| Evasion | COMPLETE | `modules/evasion.rs` (143 lines) |
+| Credential access | COMPLETE | `modules/credentials.rs` (241 lines) |
+| Discovery | COMPLETE | `modules/discovery.rs` (294 lines) |
+| Lateral movement | COMPLETE | `modules/lateral.rs` (117 lines) |
+
+### Sprint 3: Advanced Tradecraft
+
+| Task | Status | Evidence |
+|------|--------|----------|
+| DNS C2 channel | COMPLETE | `listeners/dns.rs` (326 lines) |
+| SMB Named Pipe C2 | COMPLETE | `listeners/smb.rs` (302 lines), `modules/smb.rs` (425 lines) |
+| P2P mesh networking | COMPLETE | `modules/mesh.rs` (335 lines) |
+| Ekko sleep obfuscation | COMPLETE | `utils/obfuscation.rs` (427 lines) |
+| Indirect syscalls | COMPLETE | `utils/syscalls.rs` (545 lines) |
+| AMSI/ETW bypass | COMPLETE | `modules/patch.rs` (84 lines) |
+| Screenshot capture | COMPLETE | `modules/screenshot.rs` (138 lines) |
+| Browser harvesting | COMPLETE | `modules/browser.rs` (93 lines) |
+| CLR hosting | PARTIAL | `modules/clr.rs` (216 lines) + `modules/powershell.rs` (237 lines) -- Runner.dll placeholder |
+| Kill date / Working hours | COMPLETE | `c2/mod.rs` lines 383-397 |
+
+### Sprint 4: Operator Experience
+
+| Task | Status | Evidence |
+|------|--------|----------|
+| Tauri 2.0 desktop app | COMPLETE | `operator-client/` |
+| React 19 frontend | COMPLETE | 10 TSX components (1,526 lines) |
+| xterm.js console | COMPLETE | `Console.tsx` (187 lines) |
+| Attack chain editor | COMPLETE | `AttackChainEditor.tsx` (202 lines) |
+| Network visualization | COMPLETE | `NetworkGraph.tsx` (252 lines) |
+| Real-time events | COMPLETE | `stream_events` + Tauri emit |
+| Playbook system | COMPLETE | `playbook_loader.rs` + IPC commands |
+| Phishing builder | COMPLETE | `builder/phishing.rs` + `PhishingBuilder.tsx` |
+| PowerShell management | PARTIAL | Server-side complete, IPC bridge missing |
 
 ---
 
 ## 8. Enhancement Recommendations
 
-### 8.1 Industry Best Practices (Based on C2 Framework Research, 2025-2026)
+### 8.1 Sleep Obfuscation Enhancements (P3, 8 SP)
 
-Based on analysis of current commercial (Nighthawk, Brute Ratel, Outflank C2) and open-source (Mythic, Havoc, Sliver, AdaptixC2) C2 frameworks, the following enhancements would bring WRAITH-RedOps closer to production-grade tradecraft:
+Current Ekko sleep is functional. Potential improvements:
+- Module stomping for code location obfuscation
+- Stack spoofing to hide call origins during sleep
+- CFG-aware sleep with Control Flow Guard bypass
 
-#### 8.1.1 Sleep Obfuscation Enhancements (Priority: High)
+### 8.2 Indirect Syscalls Enhancement (P3, 5 SP)
 
-**Current State:** XOR-based heap and .text encryption with RDRAND key generation.
+Current implementation scans `NtOpenFile` for gadget. Could be improved with:
+- Multiple gadget sources for redundancy
+- Egg hunting in ntdll for alternative `syscall; ret` gadgets
+- Syscall number caching to avoid repeated scanning
 
-**Industry Standard (2025-2026):**
-- **ROP-chain sleep:** Use `CreateTimerQueueTimer` or `NtApcQueueThread` to queue ROP chains that encrypt memory, sleep, and decrypt -- avoiding suspicious API call patterns during sleep.
-- **Ekko/Foliage-style:** Timer-based sleep obfuscation that uses `RtlCreateTimer` to queue the encryption/decryption ROP chain.
-- **Stack spoofing:** Spoof the call stack during sleep to avoid stack-based detection by EDRs.
+### 8.3 Redirector/Malleable Profile Support (P3, 15 SP)
 
-**Recommendation:** The current XOR sleep mask is functional but uses direct API calls for `VirtualProtect`/`mprotect` which are easily hooked by EDRs. Consider implementing ROP-chain-based sleep obfuscation that does not make direct suspicious API calls.
+No malleable C2 profiles or redirector configuration exists. Consider:
+- Configurable HTTP headers, URIs, and user agents
+- Traffic jitter profiles
+- Domain fronting support
 
-#### 8.1.2 AMSI/ETW Patching (Priority: Medium)
+### 8.4 Post-Quantum Hybrid Key Exchange (P3, 13 SP)
 
-**Current State:** Not implemented. The implant uses native Rust (no CLR loaded by default), so AMSI is not a direct concern for the main implant binary. However, the PowerShell and CLR modules load managed runtimes.
+Current X25519 is not quantum-resistant. Future work:
+- ML-KEM (Kyber) hybrid with X25519
+- Larger handshake messages for PQ keys
 
-**Industry Standard:**
-- Patch `AmsiScanBuffer` with `ret` instruction before loading any .NET assemblies
-- Patch `EtwEventWrite` to disable ETW logging
-- Re-patch during sleep to avoid detection of unhooking
+### 8.5 Improved Entropy (P2, 2 SP)
 
-**Recommendation:** Implement AMSI/ETW patching in `clr.rs` and `powershell.rs` before invoking CLR or loading .NET assemblies.
-
-#### 8.1.3 Indirect Syscalls (Priority: Medium)
-
-**Current State:** Direct syscalls on Linux (inline `syscall` instruction); Halo's Gate SSN resolution on Windows with Hell's Gate fallback.
-
-**Industry Standard:**
-- Indirect syscalls: Jump to the `syscall`/`sysenter` instruction inside `ntdll.dll` rather than executing the instruction directly in the implant's code section. This avoids detection by EDRs that check if the `syscall` instruction originates from ntdll.
-- Combine with call stack spoofing for maximum evasion.
-
-**Recommendation:** The current Halo's Gate implementation resolves SSNs correctly. Enhance to indirect syscalls by jumping to the `syscall` instruction within ntdll rather than using inline `syscall`.
-
-#### 8.1.4 Redirector Infrastructure (Priority: Low -- Operational)
-
-**Current State:** The team server binds directly to a network address.
-
-**Industry Standard:**
-- Never expose backend C2 infrastructure directly
-- Use layered redirectors (Apache/Nginx reverse proxies with profile-based filtering)
-- Support domain fronting and CDN-based communication
-
-**Recommendation:** This is an operational deployment concern rather than a code gap. Document recommended deployment architecture with redirector placement.
-
-#### 8.1.5 KillDate and WorkingTime (Priority: Low)
-
-**Current State:** Campaign time windows enforced by `GovernanceEngine` on the server side. Implant has no autonomous kill date or working hours.
-
-**Industry Standard (AdaptixC2, Cobalt Strike):**
-- `KillDate`: Implant self-destructs after a configured date
-- `WorkingTime`: Implant only beacons during specified hours
-
-**Recommendation:** Implement client-side kill date and working hours in the Spectre implant to reduce risk of post-engagement persistence.
-
-### 8.2 Missing MITRE ATT&CK Techniques
-
-| Tactic | Missing Techniques | Effort | Priority |
-|--------|-------------------|--------|----------|
-| Initial Access (TA0001) | Supply Chain Compromise (T1195), Valid Accounts (T1078) | 8 SP each | P3 |
-| Privilege Escalation (TA0004) | Exploitation (T1068), Kerberos (T1078.002) | 13 SP, 8 SP | P3 |
-| Credential Access (TA0006) | Browser/Keychain (T1555) | 5 SP | P2 |
-| Collection (TA0009) | File Collection (T1005), Screen Capture (T1113) | 3 SP, 5 SP | P2 |
-| Exfiltration (TA0010) | DNS/ICMP Exfil (T1048), Scheduled Transfer (T1029) | 5 SP, 3 SP | P3 |
-| Impact (TA0040) | Data Destruction (T1485), Resource Hijacking (T1496) | 3 SP, 5 SP | P3 |
+- Check RDRAND CF flag for failure detection
+- Use `/dev/urandom` on Linux instead of RDTSC mixing
+- Better ARM64 entropy source (hardware RNG if available)
 
 ---
 
 ## 9. Prioritized Remediation Plan
 
-### P0 -- Critical (Safety/Security)
+### P0: Critical (0 issues)
 
-**All P0 issues are RESOLVED. No new P0 issues found.**
+No P0 issues remain. All critical security findings have been resolved.
 
-### P1 -- High Priority (Core Functionality)
+### P1: High Priority (2 issues, 18 SP total)
 
-| # | Component | Feature | Issue Type | Impact | Effort (SP) | Status |
-|---|-----------|---------|-----------|--------|-------------|--------|
-| 12 | Team Server | Key Ratcheting | Missing | Noise session never DH-ratcheted per spec (2min/1M packets). Rekeying logic exists (counter check at c2/mod.rs:264-273) but no actual DH ratchet is performed. | 13 | **Open** |
-| NEW-3 | Spectre Implant | PowerShell Runner | Placeholder | `RUNNER_DLL` is 64 bytes of minimal MZ header at `powershell.rs:16-22`. Not a real .NET assembly. Windows PowerShell execution fails at CLR hosting stage. | 5 | **Open** |
+| ID | Finding | Component | Est. SP | Description |
+|----|---------|-----------|---------|-------------|
+| P1-1 | Key Ratcheting Incomplete | Spectre Implant | 13 | `session.rekey_dh()` in c2/mod.rs calls NoiseTransport method that generates new DH key but does not exchange it with the peer. Forward secrecy per spec (2 min / 1M packets) is not achieved. Requires DH ratchet protocol message exchange. |
+| P1-2 | PowerShell Runner DLL | Spectre Implant | 5 | `RUNNER_DLL` in powershell.rs contains minimal MZ stub bytes. `ExecuteInDefaultAppDomain` will fail. Requires real .NET assembly or in-memory CLR script execution alternative. |
 
-**P1 Total: 18 SP remaining**
+### P2: Medium Priority (8 issues, 22 SP total)
 
-### P2 -- Medium Priority (Platform Completeness)
+| ID | Finding | Component | Est. SP | Description |
+|----|---------|-----------|---------|-------------|
+| P2-1 | PowerShell IPC Gap | Operator Client | 3 | `SetPowerShellProfile` and `GetPowerShellProfile` proto RPCs (lines 66-67 of redops.proto) have no corresponding Tauri IPC commands. Server-side `PowerShellManager` is ready. |
+| P2-2 | Console Command Coverage | Operator Client | 5 | Console.tsx maps 11 of 18 user-facing task types. Missing: inject, bof, socks, screenshot, browser, net_scan, service_stop. |
+| P2-3 | Windows UDP Transport | Spectre Implant | 3 | `UdpTransport::request()` for Windows returns `Err(())` unconditionally (c2/mod.rs ~line 325). Needs WinSock2 implementation via hash-resolved APIs. |
+| P2-4 | ImplantService Registration | Team Server | 3 | `Register` RPC does not decrypt `encrypted_registration` or validate `ephemeral_public`. Creates generic record with hardcoded defaults. |
+| P2-5 | CLR CLSID Verification | Spectre Implant | 1 | `clr.rs` line ~163: CLR MetaHost CLSID needs verification against official COM GUID. |
+| P2-6 | Entropy Quality | Spectre Implant | 2 | RDRAND does not check CF flag; aarch64 uses weak CNTVCT_EL0 counter. |
+| P2-7 | SMB Header Transmute | Team Server | 3 | 5 `unsafe { core::mem::transmute(h) }` blocks in smb.rs for header serialization. Fragile if struct layout changes. Should use explicit byte serialization. |
+| P2-8 | VBA Macro Generator | Team Server | 2 | `phishing.rs` VBA macro generation incomplete. HTML smuggling works. |
 
-| # | Component | Feature | Issue Type | Impact | Effort (SP) | Status |
-|---|-----------|---------|-----------|--------|-------------|--------|
-| 17 | Team Server | DNS Multi-Label | Edge Case | Substantially resolved but unusual domain encodings may fail | 1 | Substantially Resolved |
-| 19 | Spectre Implant | Heap/Text Address | Hardcoded | `0x10000000` heap base in `lib.rs:12`; `0x400000`/`0x10000` text range in `obfuscation.rs:181` | 3 | **Open** |
-| 20 | Builder | LLVM Obfuscation | Placeholder | Comment at `builder/mod.rs:80` mentions RUSTFLAGS but not implemented | 5 | **Open** |
-| 22 | Spectre Implant | Noise Handshake | `.unwrap()` | 4+ unwraps in `c2/mod.rs:243-257` handshake sequence; network errors cause panic | 3 | **Open** |
-| NEW-9 | Spectre Implant | CLR GUID | Incorrect | `clr.rs:163` passes `CLSID_CLRMetaHost` instead of `CLSID_CLRRuntimeHost` for runtime host | 1 | **Open** |
-| NEW-10 | Builder | Phishing VBA | Incomplete | `phishing.rs:~56-57` VBA declares byte array but no shellcode runner | 3 | **Open** |
-| NEW-21 | Spectre Implant | ARM Entropy | Weak | `entropy.rs:45-54` non-x86 fallback relies on ASLR only (8 bits entropy) | 2 | **Open** |
-| NEW-25 | Team Server | SMB `.unwrap()` | Panic Risk | `smb.rs:119-121` three `.unwrap()` on header byte parsing | 1 | **NEW** |
-| NEW-26 | Start Script | HMAC Fallback | Security | `start_redops.sh:168` provides dev HMAC secret fallback | 1 | **NEW** |
-| NEW-27 | Spectre Implant | SMB IPC$ Path | Hardcoded | `smb.rs:254,387` hardcoded `\\127.0.0.1\IPC$` | 2 | **NEW** |
+### P3: Low Priority (5 issues, 33 SP total)
 
-**P2 Total: 22 SP (was 18 SP in v2.2.5; +4 SP from 3 new findings)**
+| ID | Finding | Component | Est. SP | Description |
+|----|---------|-----------|---------|-------------|
+| P3-1 | Browser DPAPI Decryption | Spectre Implant | 8 | browser.rs only enumerates credential paths. Does not decrypt DPAPI-protected Login Data. |
+| P3-2 | Linux .text Base Address | Spectre Implant | 3 | obfuscation.rs uses hardcoded `0x400000` for Linux `.text` range. PIE binaries use different base. Should parse `/proc/self/maps`. |
+| P3-3 | Mesh Discovery Signature | Spectre Implant | 5 | UDP broadcast "WRAITH_MESH_HELLO" on port 4444 is a detectable network signature. Should use encrypted discovery. |
+| P3-4 | SMB Client Windows Stub | Spectre Implant | 8 | modules/smb.rs Windows implementation returns `Err(())`. Needs WinSock + named pipe implementation. |
+| P3-5 | Keylogger Thread Safety | Spectre Implant | 2 | Static mutable `KEY_BUFFER` in collection.rs without synchronization. Technically UB but low practical risk. |
+| P3-6 | SMB Parse Assumption | Spectre Implant | 2 | smb.rs line ~315: "Just skip it and assume success for now" in tree connect response. |
+| P3-7 | Dead Code Annotations | All Components | 5 | 10 `#[allow(dead_code)]` annotations across 6 files. See Appendix C. |
 
-### P3 -- Low Priority (Enhancement / Future)
+### Total Remaining Work
 
-| # | Component | Feature | Issue Type | Impact | Effort (SP) | Status |
-|---|-----------|---------|-----------|--------|-------------|--------|
-| 24a | Spectre Implant | Mesh Routing | Partial | MeshServer exists but no auto-routing or topology | 10 | **Open** |
-| 28 | Operator Client | Settings UI | Enhancement | Server address hardcoded default | 2 | **Open** |
-| NEW-12 | Spectre Implant | Keylogger | Design | Single-poll, no continuous monitoring | 3 | **Open** |
-| NEW-13 | Spectre Implant | ImageBase PEB Query | Assumption | `injection.rs:148,309,360,393` assume `0x400000` base | 3 | **Open** |
-| NEW-20 | Team Server | Test Coverage | Low | ~24 unit tests + 1 comprehensive integration test | 15 | **Open** |
+| Priority | Count | Story Points |
+|----------|-------|-------------|
+| P0 | 0 | 0 |
+| P1 | 2 | 18 |
+| P2 | 8 | 22 |
+| P3 | 7 | 33 |
+| **Total** | **17** | **73** |
 
-**P3 Total: 33 SP (unchanged)**
+### Estimated Timeline
 
-### Development Sprint Plan (2-Developer Team)
-
-| Sprint | Weeks | Focus | Story Points | Deliverables |
-|--------|-------|-------|-------------|-------------|
-| Sprint 1 | 1-2 | P1 Key Ratcheting | 13 | DH ratchet per spec (2min/1M packets) |
-| Sprint 2 | 3 | P1 PowerShell + P2 Quick Fixes | 14 | Real .NET runner (5 SP), CLR GUID (1 SP), SMB unwrap (1 SP), HMAC fallback (1 SP), VBA runner (3 SP), unwrap cleanup (3 SP) |
-| Sprint 3 | 4-5 | P2 Completeness | 13 | Heap discovery (3 SP), LLVM obfuscation (5 SP), ARM entropy (2 SP), SMB IPC$ config (2 SP), DNS edge cases (1 SP) |
-| Sprint 4 | 6-8 | P3 Advanced Features | 33 | Mesh routing (10 SP), settings UI (2 SP), keylogger persistence (3 SP), PEB query (3 SP), test coverage (15 SP) |
-| **Total** | **8** | | **73** | |
+| Phase | Focus | SP | Duration |
+|-------|-------|-----|----------|
+| Phase 1 | P1 fixes (key ratchet, Runner.dll) | 18 | 1-2 sprints |
+| Phase 2 | P2 fixes (IPC, Console, Windows UDP) | 22 | 2 sprints |
+| Phase 3 | P3 enhancements (DPAPI, mesh crypto, etc.) | 33 | 3-4 sprints |
+| **Total** | | **73** | **6-8 sprints** |
 
 ---
 
 ## Appendices
 
-### Appendix A: File Inventory (v2.3.0)
+### Appendix A: Complete File Inventory
 
-#### Team Server (`clients/wraith-redops/team-server/src/`)
+#### Team Server (24 files, 5,225 lines Rust)
 
-| File | Lines (v2.3.0) | Lines (v2.2.5) | Status | Delta |
-|------|----------------|----------------|--------|-------|
-| `main.rs` | 225 | 211 | Enhanced | +14 |
-| `database/mod.rs` | 636 | 619 | Enhanced | +17 |
-| `models/mod.rs` | 176 | 176 | Stable | 0 |
-| `models/listener.rs` | 14 | 14 | Stable | 0 |
-| `services/mod.rs` | 7 | 7 | Stable | 0 |
-| `services/operator.rs` | 1,312 | 1,185 | Enhanced | +127 |
-| `services/playbook_loader.rs` | 78 | 69 | Enhanced | +9 |
-| `services/implant.rs` | 287 | 277 | Enhanced | +10 |
-| `services/session.rs` | 76 | 76 | Stable | 0 |
-| `services/protocol.rs` | 267 | 259 | Enhanced | +8 |
-| `services/killswitch.rs` | 61 | 61 | Stable | 0 |
-| `services/listener.rs` | 94 | 89 | Enhanced | +5 |
-| `listeners/mod.rs` | 4 | 4 | Stable | 0 |
-| `listeners/http.rs` | 78 | 78 | Stable | 0 |
-| `listeners/udp.rs` | 57 | 57 | Stable | 0 |
-| `listeners/dns.rs` | 326 | 318 | Enhanced | +8 |
-| `listeners/smb.rs` | 293 | 269 | Enhanced | +24 |
-| `builder/mod.rs` | 160 | 145 | Enhanced | +15 |
-| `builder/phishing.rs` | 79 | 71 | Enhanced | +8 |
-| `governance.rs` | 125 | 125 | Stable | 0 |
-| `utils.rs` | 40 | 40 | Stable | 0 |
-| `auth_tests.rs` | 80 | 66 | Enhanced | +14 |
-| `killswitch_config_test.rs` | 119 | 103 | Enhanced | +16 |
-| `operator_service_test.rs` | 314 | 169 | **Significantly Enhanced** | +145 |
-| `build.rs` | 7 | 7 | Stable | 0 |
-| **Total** | **~4,964** | **~4,495** | | **+469** |
+| File | Lines | Category |
+|------|-------|----------|
+| `src/main.rs` | 230 | Entry point |
+| `src/database/mod.rs` | 645 | Database + encryption |
+| `src/services/operator.rs` | 1,365 | gRPC OperatorService (32 RPCs) |
+| `src/services/implant.rs` | 306 | gRPC ImplantService (6 RPCs) |
+| `src/services/session.rs` | 111 | Noise session management |
+| `src/services/protocol.rs` | 284 | C2 protocol handler |
+| `src/services/listener.rs` | 94 | Listener lifecycle |
+| `src/services/killswitch.rs` | 61 | Ed25519 kill switch |
+| `src/services/playbook_loader.rs` | 78 | Playbook YAML/JSON loader |
+| `src/services/powershell.rs` | 128 | PowerShell profile management (NEW) |
+| `src/services/rekey_tests.rs` | 74 | Noise rekey tests (NEW) |
+| `src/services/mod.rs` | 9 | Module declarations |
+| `src/listeners/http.rs` | 78 | HTTP/Axum listener |
+| `src/listeners/udp.rs` | 57 | UDP listener |
+| `src/listeners/dns.rs` | 326 | DNS C2 listener |
+| `src/listeners/smb.rs` | 302 | SMB2 listener |
+| `src/listeners/mod.rs` | 4 | Module declarations |
+| `src/builder/mod.rs` | 184 | Implant builder |
+| `src/builder/phishing.rs` | 104 | Phishing payload generator |
+| `src/governance.rs` | 125 | Governance engine |
+| `src/models/mod.rs` | 176 | Data models |
+| `src/models/listener.rs` | 14 | Listener model |
+| `src/utils.rs` | 40 | JWT utilities |
+| `src/auth_tests.rs` | 80 | Auth tests |
+| `src/killswitch_config_test.rs` | 121 | Kill switch tests |
+| `src/operator_service_test.rs` | 315 | Service integration tests |
+| `src/powershell_test.rs` | 79 | PowerShell tests (NEW) |
+| `build.rs` | 7 | Proto build script |
 
-#### SQL Migrations
+#### Spectre Implant (29 files, 6,553 lines Rust)
 
-| File | Lines | Status |
-|------|-------|--------|
-| `20251129000000_initial_schema.sql` | 162 | Stable |
-| `20260125000000_audit_signature.sql` | 1 | Stable |
-| `20260125000001_persistence_table.sql` | 7 | Stable |
-| `20260126000000_attack_chains.sql` | 18 | Stable |
-| `20260126000001_playbooks.sql` | 10 | Stable |
-| `20260127000000_listeners_table.sql` | 10 | **NEW** |
-| **Total** | **208** | |
+| File | Lines | Category |
+|------|-------|----------|
+| `src/lib.rs` | 48 | Entry point (no_std) |
+| `src/c2/mod.rs` | 731 | Core C2 (19 task types) |
+| `src/c2/packet.rs` | 74 | WraithFrame protocol |
+| `src/modules/mod.rs` | 18 | Module declarations (18 modules) |
+| `src/modules/shell.rs` | 212 | Shell execution |
+| `src/modules/injection.rs` | 420 | Process injection (3 methods) |
+| `src/modules/bof_loader.rs` | 332 | COFF/BOF loader |
+| `src/modules/socks.rs` | 298 | SOCKS4/5 proxy |
+| `src/modules/clr.rs` | 216 | .NET CLR hosting |
+| `src/modules/powershell.rs` | 237 | PowerShell via CLR |
+| `src/modules/persistence.rs` | 209 | Persistence (3 methods) |
+| `src/modules/privesc.rs` | 61 | UAC bypass |
+| `src/modules/evasion.rs` | 143 | Timestomp + sandbox detection |
+| `src/modules/credentials.rs` | 241 | LSASS dump |
+| `src/modules/discovery.rs` | 294 | System + network discovery |
+| `src/modules/lateral.rs` | 117 | PsExec lateral movement |
+| `src/modules/collection.rs` | 122 | Keylogging |
+| `src/modules/smb.rs` | 425 | SMB2 client |
+| `src/modules/mesh.rs` | 335 | P2P mesh networking |
+| `src/modules/patch.rs` | 84 | AMSI/ETW bypass (NEW) |
+| `src/modules/screenshot.rs` | 138 | Screen capture (NEW) |
+| `src/modules/browser.rs` | 93 | Browser credential enum (NEW) |
+| `src/utils/mod.rs` | 9 | Module declarations |
+| `src/utils/syscalls.rs` | 545 | Syscalls + indirect syscalls |
+| `src/utils/obfuscation.rs` | 427 | Ekko + XOR sleep |
+| `src/utils/api_resolver.rs` | 136 | DJB2 hash + PEB walking |
+| `src/utils/windows_definitions.rs` | 418 | Windows type definitions |
+| `src/utils/heap.rs` | 48 | MiniHeap bump allocator |
+| `src/utils/sensitive.rs` | 130 | Encrypted memory wrapper |
+| `src/utils/entropy.rs` | 74 | RDRAND + RDTSC entropy |
+| `src/utils/test_heap.rs` | 16 | Heap unit test |
+| `src/utils/test_sensitive.rs` | 13 | SensitiveData unit test |
+| `tests/test_smb.rs` | 17 | SMB integration test |
 
-#### Spectre Implant (`clients/wraith-redops/spectre-implant/src/`)
+#### Operator Client (13 files: 1,164 lines Rust + 1,526 lines TS/TSX)
 
-| File | Lines (v2.3.0) | Lines (v2.2.5) | Status | Delta |
-|------|----------------|----------------|--------|-------|
-| `lib.rs` | 46 | 46 | Stable | 0 |
-| `c2/mod.rs` | 541 | 541 | Stable | 0 |
-| `c2/packet.rs` | 74 | 74 | Stable | 0 |
-| `utils/mod.rs` | 9 | 9 | Stable | 0 |
-| `utils/heap.rs` | 48 | 48 | Stable | 0 |
-| `utils/syscalls.rs` | 473 | 473 | Stable | 0 |
-| `utils/api_resolver.rs` | 136 | 136 | Stable | 0 |
-| `utils/obfuscation.rs` | 265 | 265 | Stable | 0 |
-| `utils/windows_definitions.rs` | 418 | 418 | Stable | 0 |
-| `utils/test_heap.rs` | 16 | 16 | Stable | 0 |
-| `utils/entropy.rs` | 54 | 54 | Stable | 0 |
-| `utils/sensitive.rs` | 130 | 130 | Stable | 0 |
-| `utils/test_sensitive.rs` | 13 | 13 | Stable | 0 |
-| `modules/mod.rs` | 15 | 15 | Stable | 0 |
-| `modules/bof_loader.rs` | 332 | 332 | Stable | 0 |
-| `modules/injection.rs` | 420 | 420 | Stable | 0 |
-| `modules/socks.rs` | 298 | 298 | Stable | 0 |
-| `modules/shell.rs` | 212 | 212 | Stable | 0 |
-| `modules/clr.rs` | 213 | 213 | Stable | 0 |
-| `modules/powershell.rs` | 150 | 150 | Stable | 0 |
-| `modules/persistence.rs` | 209 | 209 | Stable | 0 |
-| `modules/privesc.rs` | 61 | 61 | Stable | 0 |
-| `modules/evasion.rs` | 143 | 143 | Stable | 0 |
-| `modules/credentials.rs` | 241 | 241 | Stable | 0 |
-| `modules/discovery.rs` | 294 | 294 | Stable | 0 |
-| `modules/lateral.rs` | 117 | 117 | Stable | 0 |
-| `modules/collection.rs` | 122 | 122 | Stable | 0 |
-| `modules/smb.rs` | 425 | 425 | Stable | 0 |
-| `modules/mesh.rs` | 254 | 254 | Stable | 0 |
-| `tests/test_smb.rs` | 17 | 17 | Stable | 0 |
-| **Total** | **~5,746** | **~5,746** | | **0** |
+| File | Lines | Language | Description |
+|------|-------|----------|-------------|
+| `src-tauri/src/lib.rs` | 1,080 | Rust | 31 IPC commands + types |
+| `src-tauri/src/main.rs` | 76 | Rust | Wayland/KDE workarounds |
+| `src-tauri/build.rs` | 8 | Rust | Proto build script |
+| `src/App.tsx` | 405 | TSX | Main dashboard |
+| `src/components/Console.tsx` | 187 | TSX | Interactive console |
+| `src/components/AttackChainEditor.tsx` | 202 | TSX | Attack chain editor |
+| `src/components/BeaconInteraction.tsx` | 51 | TSX | Beacon detail view |
+| `src/components/DiscoveryDashboard.tsx` | 80 | TSX | Discovery visualization |
+| `src/components/LootGallery.tsx` | 121 | TSX | Artifact/credential browser |
+| `src/components/NetworkGraph.tsx` | 252 | TSX | Network graph |
+| `src/components/PersistenceManager.tsx` | 81 | TSX | Persistence management |
+| `src/components/PhishingBuilder.tsx` | 85 | TSX | Phishing builder |
+| `src/components/ui/Button.tsx` | 37 | TSX | UI component |
+| `src/main.tsx` | 10 | TSX | React entry |
+| `vite.config.ts` | 13 | TS | Build config |
+| `vite.config.d.ts` | 2 | TS | Type declarations |
 
-#### Operator Client Rust Backend
+#### Proto + SQL
 
-| File | Lines (v2.3.0) | Lines (v2.2.5) | Status | Delta |
-|------|----------------|----------------|--------|-------|
-| `lib.rs` | 1,067 | 1,008 | Enhanced | +59 |
-| `main.rs` | 76 | 76 | Stable | 0 |
-| `build.rs` | 8 | 8 | Stable | 0 |
-| **Total** | **~1,151** | **~1,092** | | **+59** |
+| File | Lines | Description |
+|------|-------|-------------|
+| `proto/redops.proto` | 531 | Service definitions (32+6 RPCs) |
+| `migrations/20251129000000_initial_schema.sql` | 162 | Core tables |
+| `migrations/20260125000000_audit_signature.sql` | 1 | Audit signature column |
+| `migrations/20260125000001_persistence_table.sql` | 7 | Persistence tracking |
+| `migrations/20260126000000_attack_chains.sql` | 18 | Attack chain tables |
+| `migrations/20260126000001_playbooks.sql` | 10 | Playbook table |
+| `migrations/20260127000000_listeners_table.sql` | 10 | Listener state table |
 
-#### Operator Client TypeScript Frontend
+### Grand Total
 
-| File | Lines (v2.3.0) | Lines (v2.2.5) | Status | Delta |
-|------|----------------|----------------|--------|-------|
-| `App.tsx` | 405 | 405 | Stable | 0 |
-| `main.tsx` | 10 | 10 | Stable | 0 |
-| `index.css` | 7 | 7 | Stable | 0 |
-| `components/Console.tsx` | 187 | 187 | Stable | 0 |
-| `components/NetworkGraph.tsx` | 252 | 252 | Stable | 0 |
-| `components/BeaconInteraction.tsx` | 51 | 51 | Stable | 0 |
-| `components/PhishingBuilder.tsx` | 85 | 85 | Stable | 0 |
-| `components/LootGallery.tsx` | 121 | 121 | Stable | 0 |
-| `components/DiscoveryDashboard.tsx` | 80 | 80 | Stable | 0 |
-| `components/PersistenceManager.tsx` | 81 | 81 | Stable | 0 |
-| `components/AttackChainEditor.tsx` | 202 | 202 | Stable | 0 |
-| `components/ui/Button.tsx` | 37 | 37 | Stable | 0 |
-| `vite.config.ts` | 13 | 13 | Stable | 0 |
-| **Total** | **~1,531** | **~1,531** | | **0** |
+| Category | Files | Lines |
+|----------|-------|-------|
+| Team Server (Rust) | 28 | 5,225 |
+| Spectre Implant (Rust) | 32 | 6,553 |
+| Operator Client (Rust) | 3 | 1,164 |
+| Operator Client (TS/TSX) | 13 | 1,526 |
+| Proto | 1 | 531 |
+| SQL Migrations | 6 | 208 |
+| **Grand Total** | **83** | **15,207** |
 
-#### Proto Definition
+### Appendix B: Hardcoded Values
 
-| File | Lines |
-|------|-------|
-| `redops.proto` | 510 |
+| File | Line | Value | Risk | Notes |
+|------|------|-------|------|-------|
+| `c2/mod.rs` | 38 | `sleep_interval: 5000` | Low | Default before patching |
+| `c2/mod.rs` | 69 | `"127.0.0.1"` | Low | Fallback if config empty |
+| `c2/mod.rs` | 402 | `port: 8080` | Low | Default HTTP port |
+| `c2/mod.rs` | 403 | `port: 9999` | Low | Default UDP port |
+| `c2/mod.rs` | 408 | `port: 4444` | Medium | Mesh TCP hardcoded; well-known Metasploit port |
+| `mesh.rs` | - | `"WRAITH_MESH_HELLO"` | Medium | Detectable plaintext broadcast |
+| `mesh.rs` | - | `port: 4444` | Medium | Fixed broadcast discovery port |
+| `obfuscation.rs` | ~259 | `0x400000` | Low | Linux .text base assumption |
+| `heap.rs` | - | `0x10000000` | Low | Bump allocator base address |
+| `lib.rs` | - | `0x100000` (1 MB) | Low | Heap size |
+| `injection.rs` | ~220 | `0x400000` | Low | Process hollowing preferred base |
+| `bof_loader.rs` | - | 6 BIF hashes | Info | Fixed DJB2 hashes for BOF API |
 
-### Appendix B: Hardcoded Values Inventory
+### Appendix C: `#[allow(dead_code)]` Annotations
 
-| # | File | Line | Value | Severity | Purpose | Status |
-|---|------|------|-------|----------|---------|--------|
-| 1 | `spectre-implant/src/lib.rs` | 12 | `0x10000000` (heap base) | Medium | MiniHeap allocator base address | Open |
-| 2 | `spectre-implant/src/lib.rs` | 40 | `"127.0.0.1"` | Low | Default server address (patcher overrides) | Expected |
-| 3 | `spectre-implant/src/c2/mod.rs` | 59 | `"127.0.0.1"` | Low | Fallback server address | Expected |
-| 4 | `spectre-implant/src/c2/mod.rs` | 267 | Port `8080` | Low | HTTP transport port (patcher overrides) | Expected |
-| 5 | `spectre-implant/src/c2/mod.rs` | 269 | Port `4444` | Low | Mesh TCP port | Should be configurable |
-| 6 | `spectre-implant/src/c2/mod.rs` | 270 | `"wraith_mesh"` | Low | Named pipe name | Should be configurable |
-| 7 | `spectre-implant/src/modules/injection.rs` | 309, 360, 393 | `0x400000` | Medium | Linux injection target address | Should parse /proc/pid/maps |
-| 8 | `spectre-implant/src/modules/smb.rs` | 254, 387 | `\\\\127.0.0.1\\IPC$` | Medium | SMB tree connect path | Should be configurable |
-| 9 | `spectre-implant/src/modules/powershell.rs` | 16-22 | 64-byte MZ header | High | Placeholder .NET runner DLL | Needs real assembly |
-| 10 | `spectre-implant/src/utils/obfuscation.rs` | 181 | `(0x400000, 0x10000)` | Medium | Linux text section range | Should parse ELF/proc |
-| 11 | `operator-client/src/App.tsx` | 44 | `'127.0.0.1:50051'` | Low | Default server address | Add settings UI |
-| 12 | `operator-client/src/components/PhishingBuilder.tsx` | 7 | `'http://localhost:8080'` | Low | Default C2 URL | Should default to team server |
-| 13 | `start_redops.sh` | 168 | `dev_hmac_placeholder_val_1234567890` | Medium | HMAC secret fallback | Should warn in production |
+| File | Line | Target | Justification |
+|------|------|--------|---------------|
+| `team-server/src/database/mod.rs` | 83 | Database function | May be used in future queries |
+| `team-server/src/database/mod.rs` | 354 | Database function | May be used in future queries |
+| `team-server/src/database/mod.rs` | 525 | Database function | May be used in future queries |
+| `team-server/src/services/operator.rs` | 16 | `governance` field | Injected but accessed through other means |
+| `team-server/src/services/operator.rs` | 18 | `static_key` field | Injected for future direct use |
+| `team-server/src/services/operator.rs` | 20 | `sessions` field | Injected for future direct use |
+| `team-server/src/services/session.rs` | 60 | Session field | May be used in rekey implementation |
+| `team-server/src/services/powershell.rs` | 26 | PowerShell manager field | New module, gradual integration |
+| `team-server/src/models/mod.rs` | 76 | Model field | Serialization completeness |
+| `spectre-implant/src/c2/mod.rs` | 516 | `Task.id` field | Deserialized but not used in dispatch |
+| **Total** | | **10 annotations** | |
 
-### Appendix C: Placeholder Comments
+### Appendix D: `unsafe` Usage Summary
 
-| # | File | Line | Comment |
-|---|------|------|---------|
-| 1 | `services/implant.rs` | 25 | `// In a production implementation, we extract registration data` |
-| 2 | `builder/mod.rs` | 80 | `// In a real implementation, we might use RUSTFLAGS for LLVM-level obfuscation` |
-| 3 | `utils/obfuscation.rs` | 110 | `// Simplified: we encrypt the whole section but in a real ROP chain we'd be outside` |
-| 4 | `modules/injection.rs` | 308 | `// In a full implementation, we'd parse /proc/pid/maps to find RX pages` |
-| 5 | `modules/powershell.rs` | 14 | `// In a real scenario, this would be the byte array of the compiled C# runner.` |
-| 6 | `modules/persistence.rs` | 89 | `// In a real implementation, we'd define full ITaskService vtable here.` (STALE -- COM IS fully defined) |
-| 7 | `LootGallery.tsx` | 42 | `// alert("Download complete"); // Avoid native alerts in production UI if possible` |
-| 8 | `utils/entropy.rs` | 52 | `// In a real implementation we'd read CNTVCT_EL0 on ARM64` |
+| Component | File | Count | Primary Purpose |
+|-----------|------|-------|-----------------|
+| Spectre Implant | `syscalls.rs` | 38 | Raw syscall invocation |
+| Spectre Implant | `obfuscation.rs` | 33 | Memory protection, ROP chain |
+| Spectre Implant | `clr.rs` | 36 | COM vtable calls |
+| Spectre Implant | `injection.rs` | 30 | Process memory manipulation |
+| Spectre Implant | `mesh.rs` | 20 | Socket/pipe operations |
+| Spectre Implant | `c2/mod.rs` | 18 | WinINet API, static config |
+| Spectre Implant | `powershell.rs` | 17 | CLR hosting |
+| Spectre Implant | `credentials.rs` | 15 | LSASS memory access |
+| Spectre Implant | `discovery.rs` | 15 | System info APIs |
+| Spectre Implant | `socks.rs` | 13 | Socket operations |
+| Spectre Implant | `smb.rs` | 18 | SMB2 protocol I/O |
+| Spectre Implant | `screenshot.rs` | 12 | GDI API calls |
+| Spectre Implant | `windows_definitions.rs` | 11 | Type transmute/cast |
+| Spectre Implant | `bof_loader.rs` | 11 | COFF loading + execution |
+| Spectre Implant | `persistence.rs` | 10 | Registry + COM APIs |
+| Spectre Implant | `lateral.rs` | 10 | SCM API calls |
+| Spectre Implant | `evasion.rs` | 9 | File time manipulation |
+| Spectre Implant | `collection.rs` | 8 | KeyState polling, CreateThread |
+| Spectre Implant | `shell.rs` | 7 | Process creation |
+| Spectre Implant | `api_resolver.rs` | 6 | PEB walking |
+| Spectre Implant | `sensitive.rs` | 4 | Memory locking |
+| Spectre Implant | `heap.rs` | 4 | Custom allocator |
+| Spectre Implant | `browser.rs` | 4 | API calls |
+| Spectre Implant | `privesc.rs` | 4 | Registry manipulation |
+| Spectre Implant | `patch.rs` | 3 | Memory patching (AMSI/ETW) |
+| Spectre Implant | `entropy.rs` | 2 | RDRAND intrinsics |
+| Team Server | `listeners/smb.rs` | 5 | SMB2 header transmute |
+| Operator Client | `main.rs` | 3 | Env var setting |
+| Team Server | `killswitch_config_test.rs` | 2 | Test env setup |
+| Team Server | Various tests | 3 | Test helper code |
+| **Total** | **33 files** | **~373** | Expected for no_std implant |
 
-### Appendix D: `.unwrap()` and `.expect()` in Production Code
+**Risk Assessment:** The high `unsafe` count is expected and justified for a `#![no_std]` implant that performs direct syscalls, WinAPI calls via PEB walking, COM vtable invocations, and raw memory manipulation. No unnecessary `unsafe` blocks were identified.
 
-#### Production `.unwrap()` Calls (non-test)
+### Appendix E: `.unwrap()` and `.expect()` in Production Code
 
-| # | File | Line | Context | Risk |
-|---|------|------|---------|------|
-| 1 | `services/killswitch.rs` | 53-54 | Test code (`#[cfg(test)]`) | None |
-| 2 | `services/implant.rs` | 34 | `split('-').next().unwrap()` on UUID | Safe -- UUID always has dashes |
-| 3 | `listeners/smb.rs` | 119-121 | `try_into().unwrap()` on header bytes | **Medium** -- malformed packets panic |
-| 4 | `spectre-implant/src/c2/mod.rs` | ~243-257 | Noise handshake `.unwrap()` chain | **Medium** -- network errors panic |
-| 5 | `spectre-implant/src/c2/mod.rs` | 449 | `SOCKS_PROXY.as_mut().unwrap()` | Low -- single-threaded |
-| 6 | `spectre-implant/src/modules/bof_loader.rs` | 232, 296 | COFF symbol name `try_into().unwrap()` | Low -- assumes valid COFF |
+#### `.unwrap()` in Production (Non-Test) Code
 
-#### Production `.expect()` Calls
+| File | Count | Context | Risk |
+|------|-------|---------|------|
+| `spectre-implant/src/c2/mod.rs` | 1 | IP parsing fallback | Low (has `.unwrap_or("0")`) |
+| `spectre-implant/src/modules/bof_loader.rs` | 2 | COFF section parsing | Medium -- malformed COFF could panic |
+| `team-server/src/services/implant.rs` | 1 | UUID split (guaranteed) | Low |
+| **Total** | **4** | | |
 
-| # | File | Line | Message | Purpose |
-|---|------|------|---------|---------|
-| 1 | `database/mod.rs` | 22 | `HMAC_SECRET environment variable must be set` | Required env var |
-| 2 | `database/mod.rs` | 26 | `MASTER_KEY environment variable must be set (64 hex chars)` | Required env var |
-| 3 | `database/mod.rs` | 29 | `Failed to decode MASTER_KEY hex` | Startup validation |
-| 4 | `database/mod.rs` | 464 | `HMAC can take key of any size` | Infallible assertion |
-| 5 | `services/killswitch.rs` | 25-27 | `KILLSWITCH_KEY env var must be set` (3 expects) | Required env var |
-| 6 | `services/operator.rs` | 354, 357, 358 | Kill switch env vars | Required env vars |
-| 7 | `main.rs` | 120, 146, 197 | Startup configuration | Required env vars + keypair gen |
-| 8 | `utils.rs` | 15 | `JWT_SECRET` required | Required env var |
-| 9 | `operator-client/lib.rs` | 1034 | Tauri application startup | Startup |
-| 10 | `spectre-implant/sensitive.rs` | 27 | `Encryption failed` | XChaCha20 encryption (extremely unlikely to fail) |
+#### `.expect()` in Production Code
 
-### Appendix E: MITRE ATT&CK Coverage Matrix (v2.3.0)
+| File | Count | Context | Risk |
+|------|-------|---------|------|
+| `team-server/src/main.rs` | 3 | Startup env vars | Low (fail-fast at startup) |
+| `team-server/src/database/mod.rs` | 4 | Crypto key validation | Low (fail-fast at startup) |
+| `team-server/src/services/killswitch.rs` | 3 | Kill switch key loading | Low (fail-fast) |
+| `team-server/src/services/operator.rs` | 3 | Env vars in RPC handlers | Medium -- runtime panic possible |
+| `team-server/src/services/session.rs` | 2 | Noise handshake | Medium -- handshake failure panic |
+| `team-server/src/utils.rs` | 1 | JWT secret | Low (fail-fast at startup) |
+| `spectre-implant/src/utils/sensitive.rs` | 1 | Crypto nonce | Low |
+| `operator-client/src-tauri/src/lib.rs` | 1 | Tauri app startup | Low |
+| **Total** | **18** | | |
 
-| Tactic | Techniques Planned | Techniques Implemented | Coverage |
-|--------|-------------------|----------------------|----------|
-| Initial Access (TA0001) | 3 | 1 (Phishing: HTML Smuggling) | **33%** |
-| Execution (TA0002) | 3 | 3 (Shell, BOF, CLR) | **100%** |
-| Persistence (TA0003) | 3 | 3 (Registry, Scheduled Task, User) | **100%** |
-| Privilege Escalation (TA0004) | 3 | 1 (UAC Bypass: fodhelper) | **33%** |
-| Defense Evasion (TA0005) | 4 | 4 (API hash, sleep mask, timestomp, sandbox) | **100%** |
-| Credential Access (TA0006) | 3 | 2 (LSASS dump, Keylogging) | **67%** |
-| Discovery (TA0007) | 3 | 3 (SysInfo, NetScan, Hostname/User) | **100%** |
-| Lateral Movement (TA0008) | 3 | 3 (PsExec, Service Stop, SMB) | **100%** |
-| Collection (TA0009) | 3 | 1 (Keylogging) | **33%** |
-| Command and Control (TA0011) | 4 | 6 (HTTP, DNS, UDP, Encrypted, SMB, Mesh) | **100%+** |
-| Exfiltration (TA0010) | 3 | 1 (Artifact upload) | **33%** |
-| Impact (TA0040) | 3 | 0 | **0%** |
-| **Total** | **38** | **28** | **~74%** |
+### Appendix F: Pattern Scan Results
 
-### Appendix F: Testing Status
+| Pattern | Matches | Files |
+|---------|---------|-------|
+| `TODO\|FIXME\|HACK\|XXX\|WORKAROUND` | 0 | None |
+| `todo!()\|unimplemented!()\|unreachable!()` | 0 | None |
+| `In a real\|placeholder\|stub\|assume success` | 6 | dns.rs, LootGallery.tsx, PhishingBuilder.tsx, App.tsx, obfuscation.rs, smb.rs |
+| `#[allow(dead_code)]` | 10 | See Appendix C |
+| `.unwrap()` (all) | 80 | 13 files (76 in test code) |
+| `.expect()` (all) | 18 | 10 files |
+| `unsafe` | 373 | 33 files |
 
-| Component | Unit Tests | Integration Tests | Estimated Coverage |
-|-----------|-----------|------------------|-------------------|
-| Team Server - Protocol | 2 | 0 | ~5% |
-| Team Server - DNS | 2 | 0 | ~15% |
-| Team Server - SMB | 1 | 0 | ~10% |
-| Team Server - Builder | 1 | 0 | ~20% |
-| Team Server - Killswitch | 1 | 0 | ~15% |
-| Team Server - Operator | 1 | 0 | ~3% |
-| Team Server - Auth | ~3 | 0 | ~10% |
-| Team Server - KillConfig | ~3 | 0 | ~15% |
-| **Team Server - OperatorService** | 0 | **1 (314 lines)** | **~45%** |
-| Spectre - Shell | 1 | 0 | ~2% |
-| Spectre - Injection | 1 | 0 | ~2% |
-| Spectre - BOF | 1 | 0 | ~2% |
-| Spectre - SOCKS | 2 | 0 | ~15% |
-| Spectre - WinDefs | 1 | 0 | ~10% |
-| Spectre - Heap | 1 | 0 | ~5% |
-| Spectre - Sensitive | 1 | 0 | ~10% |
-| Spectre - SMB | 1 | 0 | ~5% |
-| Operator Client (Rust) | 1 | 0 | ~3% |
-| **Total** | **~25** | **1** | **~10-15%** |
+### Appendix G: Consolidated Changes from v2.2.5
 
-### Appendix G: Security Implementation Status
+This section documents all findings from the v2.2.5 gap analysis (v5.0.0 internal) that have been resolved, remain open, or are newly discovered in v2.3.0.
 
-| Security Feature | Specification | Current State (v2.3.0) | Risk Level |
-|-----------------|--------------|----------------------|------------|
-| Noise_XX Handshake | 3-phase mutual auth | **Implemented** (HTTP, UDP, DNS, SMB) | **LOW** |
-| AEAD Encryption (Transport) | XChaCha20-Poly1305 | **Via Noise transport on all listeners** | **LOW** |
-| AEAD Encryption (At Rest) | E2E command encryption | **XChaCha20-Poly1305 encrypt/decrypt** | **LOW** |
-| AEAD Encryption (In Memory) | Sensitive data protection | **SensitiveData (XChaCha20-Poly1305 + Zeroize)** | **LOW** |
-| Scope Enforcement | IP whitelist/blacklist | **Implemented** (all listeners) | **LOW** |
-| Time Windows | Campaign/implant expiry | **Implemented** (GovernanceEngine) | **LOW** |
-| Domain Validation | Block disallowed domains | **Implemented** (DNS listener) | **LOW** |
-| Kill Switch | <1ms response | **Implemented** (env var port/secret, broadcast) | **LOW** |
-| Audit Logging | Immutable, signed | **HMAC-SHA256 signed entries** | **LOW** |
-| Key Management | Env vars, no fallbacks | **ALL keys require env vars** | **LOW** |
-| Key Ratcheting | DH every 2min/1M packets | Counter-based check exists but no DH ratchet | **HIGH** |
-| Elligator2 Encoding | DPI-resistant keys | Not implemented | **MEDIUM** |
-| RBAC | Admin/Operator/Viewer roles | JWT with role claim, interceptor enforced | **LOW** |
-| gRPC Channel Security | mTLS | Interceptor fully enforced | **LOW** |
-| Operator Authentication | Ed25519 signatures | Fully implemented | **LOW** |
-| Sleep Mask | Memory obfuscation | **Implemented** (heap + .text XOR with RDRAND key) | **LOW** |
-| Memory Locking | Prevent swap of sensitive data | **mlock/VirtualLock in SecureBuffer** | **LOW** |
-| Entropy Generation | Hardware RNG | **RDRAND+RDTSC mixing in entropy.rs** | **LOW** |
+#### Resolved Since v2.2.5
 
-### Appendix H: Non-Windows Platform Stubs (9 total)
+| v2.2.5 Finding | Resolution |
+|----------------|------------|
+| SMB2 Header Struct Bug (P1) | Fixed -- struct field mismatch corrected |
+| Playbook IPC Bridge Missing (P2) | `list_playbooks` and `instantiate_playbook` wired |
+| Missing 7 Proto RPCs (P2) | All 30 original RPCs now wired |
+| Persistence schtasks Shell Delegation (P2) | Full COM-based ITaskService pipeline |
+| P2P Mesh Not Implemented (P3) | mesh.rs (335 lines) with MeshRouter + discovery |
+| SMB2 Pending Data TODO (P2) | `pending_data` buffer implemented in listener |
 
-| # | File | Function | Returns |
-|---|------|----------|---------|
-| 1 | `modules/bof_loader.rs` | `load_and_run` | `Err(())` -- Intentional (COFF is Windows-only) |
-| 2 | `modules/credentials.rs` | `dump_lsass` | `Err(())` |
-| 3 | `modules/lateral.rs` | `psexec` | `Err(())` |
-| 4 | `modules/lateral.rs` | `service_stop` | `Err(())` |
-| 5 | `modules/persistence.rs` | `install_registry_run` | `Err(())` |
-| 6 | `modules/privesc.rs` | `fodhelper` | `Err(())` |
-| 7 | `modules/evasion.rs` | `timestomp` | `Err(())` |
-| 8 | `modules/clr.rs` | `load_clr` / `execute_assembly` | `Err(())` |
-| 9 | `modules/smb.rs` | `SmbClient::new` (Windows) | `Err(())` -- TODO (Windows socket impl) |
+#### New in v2.3.0
 
-**Note:** `evasion.rs` `is_sandbox` returns `false` on non-Windows (not `Err(())`), which is a reasonable default.
-
-### Appendix I: `#[allow(dead_code)]` Annotations
-
-| # | File | Line | Context |
-|---|------|------|---------|
-| 1 | `database/mod.rs` | 83 | Database function |
-| 2 | `database/mod.rs` | 516 | Database function |
-| 3 | `services/operator.rs` | 15 | Struct field |
-| 4 | `services/operator.rs` | 17 | Struct field |
-| 5 | `services/operator.rs` | 19 | Struct field |
-| 6 | `services/session.rs` | 25 | Session field |
-| 7 | `models/mod.rs` | 76 | Model struct |
-| 8 | `spectre-implant/c2/mod.rs` | 342 | Implant config field |
+| Finding | Priority | Details |
+|---------|----------|---------|
+| 3 new implant modules | N/A | patch.rs, screenshot.rs, browser.rs |
+| 2 new proto RPCs not wired | P2 | SetPowerShellProfile, GetPowerShellProfile |
+| 3 new team server files | N/A | powershell.rs, rekey_tests.rs, powershell_test.rs |
+| Indirect syscall gadget | N/A | get_syscall_gadget() + do_syscall() in syscalls.rs |
+| Ekko sleep ROP chain | N/A | Timer Queue + SystemFunction032 in obfuscation.rs |
+| MeshRouter with cost routing | N/A | Cost-based routing + discover_peers in mesh.rs |
+| AMSI/ETW now implemented | N/A | Was "Not Implemented" in v2.2.5 |
+| Screenshot now implemented | N/A | Was not planned in v2.2.5 |
+| Browser harvest implemented | N/A | Was not planned in v2.2.5 |
 
 ---
 
 ## Conclusion
 
-### Summary of v2.3.0 Audit
+WRAITH-RedOps v2.3.0 represents significant progress from v2.2.5, with 3 new implant modules (patch, screenshot, browser), expanded tradecraft capabilities (Ekko sleep, indirect syscalls, AMSI/ETW bypass), and improved server-side infrastructure (PowerShell management, rekey tests). The platform is at approximately 96% completion with zero P0 issues and only 2 P1 items remaining (key ratcheting and PowerShell runner DLL). The estimated remaining work is 73 story points across 17 findings.
 
-WRAITH-RedOps at v2.3.0 represents a mature adversary emulation platform with the following characteristics:
-
-1. **Growth concentrated in Team Server:** +463 lines of growth in the team server (10.3% increase), primarily in `operator.rs` (+127 lines), `operator_service_test.rs` (+145 lines), `smb.rs` (+24 lines), and `builder/mod.rs` (+15 lines). This growth reflects improved test coverage and enhanced listener/builder functionality.
-
-2. **Spectre Implant stable:** Zero lines changed in the spectre implant since v2.2.5, indicating the implant codebase has reached a stable state. All 15 modules and 8 utility modules are unchanged.
-
-3. **Operator Client incrementally enhanced:** +59 lines in `lib.rs`, suggesting minor IPC or type definition refinements.
-
-4. **Test coverage improved:** The `operator_service_test.rs` nearly doubled (169 -> 314 lines), providing significantly better integration test coverage of the team server's core service layer.
-
-5. **New listeners table migration:** The addition of `20260127000000_listeners_table.sql` indicates persistent listener storage was formalized.
-
-### Remaining Work
-
-**P1 Core Functionality (18 SP):**
-- Implement Noise DH key ratcheting per spec (13 SP)
-- Embed real .NET PowerShell runner assembly (5 SP)
-
-**P2 Platform Completeness (22 SP):**
-- LLVM obfuscation flags (5 SP)
-- Heap/text address discovery (3 SP)
-- Noise handshake `.unwrap()` cleanup (3 SP)
-- VBA shellcode runner (3 SP)
-- SMB IPC$ configurability (2 SP)
-- ARM64 entropy (2 SP)
-- CLR GUID correction (1 SP)
-- SMB listener `.unwrap()` (1 SP)
-- Start script HMAC fallback (1 SP)
-- DNS multi-label edge cases (1 SP)
-
-**P3 Enhancements (33 SP):**
-- Mesh routing/orchestration (10 SP)
-- Test coverage expansion (15 SP)
-- Settings UI (2 SP)
-- Keylogger persistence (3 SP)
-- PEB ImageBase query (3 SP)
-
-### Final Assessment
-
-| Category | Assessment |
-|----------|------------|
-| Overall Completion | **~95%** (up from ~94% due to test coverage growth) |
-| Production Readiness | APPROACHING READY (zero P0 issues; P1 items are feature gaps, not security blockers) |
-| Core C2 Functionality | **97%** complete |
-| Implant Tradecraft | **89%** complete |
-| Operator Experience | **99%** complete (31 IPC commands, 11 UI components) |
-| Security Posture | **LOW** risk (all P0 resolved, all crypto keys from env vars) |
-| Primary Blockers | Key ratcheting (P1 #12), PowerShell runner (P1 NEW-3) |
-| Estimated Remaining | ~73 SP (8 weeks, 2-developer team) |
-| MITRE ATT&CK Coverage | **~74%** (28/38 techniques) |
-| IPC Coverage | **100%** (31 commands, all 30 proto RPCs wired) |
+The most impactful next steps are:
+1. Implement proper DH ratchet key exchange (P1-1, 13 SP) for forward secrecy
+2. Complete the PowerShell Runner.dll (P1-2, 5 SP) for managed code execution
+3. Wire the 2 new PowerShell IPC commands (P2-1, 3 SP)
+4. Expand Console.tsx with missing commands (P2-2, 5 SP), particularly the new `screenshot` and `browser` capabilities
+5. Implement Windows UDP transport (P2-3, 3 SP) for full transport failover support
 
 ---
 
-*This gap analysis was generated through exhaustive source code audit of all files under `clients/wraith-redops/`. Every source file was read and analyzed. Findings include exact file paths, line numbers, and code descriptions for reproducibility.*
+*This document consolidates and supersedes GAP-ANALYSIS-v2.2.5.md (v5.0.0 internal). All v2.2.5 findings have been re-verified and integrated.*
 
-*Research sources for enhancement recommendations:*
-- [Red Team Infrastructure: Complete Guide (2025)](https://parrot-ctfs.com/blog/red-team-infrastructure-complete-guide-to-setup-and-best-practices-in-2025/)
-- [Top Red Team Tools & C2 Frameworks (2025) - Bishop Fox](https://bishopfox.com/blog/2025-red-team-tools-c2-frameworks-active-directory-network-exploitation)
-- [Best Red Teaming Tools of 2026 - IT Security Guru](https://www.itsecurityguru.org/2025/12/11/the-best-red-teaming-tools-of-2026-what-you-need-to-know/)
-- [Key Principles for C2 Infrastructure - SCIP](https://www.scip.ch/en/?labs.20250612)
-- [Hiding in Plain Sight: EDR Evasion Survey](https://hackback.zip/2024/05/05/Hiding-in-plain-sight-survey-of-edr-evasion-techniques.html)
-- [Bypass AMSI in 2025 - r-tec](https://www.r-tec.net/r-tec-blog-bypass-amsi-in-2025.html)
-- [CrowdStrike: Patchless AMSI Bypass](https://www.crowdstrike.com/en-us/blog/crowdstrike-investigates-threat-of-patchless-amsi-bypass-attacks/)
-- [AdaptixC2 Framework Analysis - Unit 42](https://unit42.paloaltonetworks.com/adaptixc2-post-exploitation-framework/)
+*Generated by Claude Opus 4.5 -- Automated Source Code Audit v6.0.0*
+*Audit completed: 2026-01-27*

@@ -51,6 +51,7 @@ impl PowerShellSession {
         self.jobs.insert(id, job);
     }
 
+    #[allow(dead_code)]
     pub fn update_job_status(&self, job_id: Uuid, status: JobStatus) {
         if let Some(mut job) = self.jobs.get_mut(&job_id) {
             job.status = status;
@@ -66,6 +67,7 @@ impl PowerShellSession {
         }
     }
 
+    #[allow(dead_code)]
     pub fn set_exit_code(&self, job_id: Uuid, code: i32) {
         if let Some(mut job) = self.jobs.get_mut(&job_id) {
             job.exit_code = Some(code);
@@ -102,10 +104,10 @@ impl PowerShellManager {
     }
 
     pub fn append_output(&self, job_id: Uuid, data: &[u8]) {
-        if let Some(implant_id) = self.job_map.get(&job_id) {
-            if let Some(session) = self.sessions.get_mut(&*implant_id) {
-                session.append_output(job_id, data);
-            }
+        if let Some(implant_id) = self.job_map.get(&job_id)
+            && let Some(session) = self.sessions.get_mut(&*implant_id)
+        {
+            session.append_output(job_id, data);
         }
     }
 

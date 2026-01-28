@@ -172,7 +172,7 @@
 | `integration.md` | Protocol stack, external tool compatibility |
 | `testing.md` | Cryptographic verification, evasion testing |
 | `usage.md` | Operator workflows, protocol configuration |
-| `GAP-ANALYSIS-v2.2.5.md` | Comprehensive gap analysis and audit (v5.0.0) |
+| `GAP-ANALYSIS-v2.3.0.md` | Comprehensive gap analysis and audit (v6.0.0, consolidates v2.2.5) |
 
 **Note:** Security testing clients (WRAITH-Recon, WRAITH-RedOps) are subject to strict authorization requirements. See [Security Testing Parameters](../ref-docs/WRAITH-Security-Testing-Parameters-v1.0.md) for governance framework.
 

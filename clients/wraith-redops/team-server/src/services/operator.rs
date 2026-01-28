@@ -386,13 +386,12 @@ impl OperatorService for OperatorServiceImpl {
         let mut payload = req.payload;
 
         // Apply PowerShell profile if exists
-        if req.command_type == "powershell" {
-            if let Some(profile) = self.powershell_manager.get_profile(implant_id) {
-                if let Ok(cmd_str) = String::from_utf8(payload.clone()) {
-                    let new_cmd = format!("{}\n{}", profile, cmd_str);
-                    payload = new_cmd.into_bytes();
-                }
-            }
+        if req.command_type == "powershell"
+            && let Some(profile) = self.powershell_manager.get_profile(implant_id)
+            && let Ok(cmd_str) = String::from_utf8(payload.clone())
+        {
+            let new_cmd = format!("{}\n{}", profile, cmd_str);
+            payload = new_cmd.into_bytes();
         }
 
         let cmd_id = self
@@ -402,11 +401,11 @@ impl OperatorService for OperatorServiceImpl {
             .map_err(|e| Status::internal(e.to_string()))?;
 
         // Track job with DB command ID
-        if req.command_type == "powershell" {
-            if let Ok(cmd_str) = String::from_utf8(payload.clone()) {
-                self.powershell_manager
-                    .create_job(implant_id, cmd_id, &cmd_str);
-            }
+        if req.command_type == "powershell"
+            && let Ok(cmd_str) = String::from_utf8(payload.clone())
+        {
+            self.powershell_manager
+                .create_job(implant_id, cmd_id, &cmd_str);
         }
 
         // Audit Log
