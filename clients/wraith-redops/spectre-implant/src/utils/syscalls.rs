@@ -56,6 +56,21 @@ pub const SYS_OPENAT: usize = 257;
 #[cfg(not(target_os = "windows"))]
 pub const SYS_CLOCK_GETTIME: usize = 228;
 
+#[cfg(all(not(target_os = "windows"), target_arch = "x86_64"))]
+pub const SYS_GETRANDOM: usize = 318;
+
+#[cfg(all(not(target_os = "windows"), target_arch = "aarch64"))]
+pub const SYS_GETRANDOM: usize = 278;
+
+#[cfg(all(not(target_os = "windows"), not(any(target_arch = "x86_64", target_arch = "aarch64"))))]
+pub const SYS_GETRANDOM: usize = 0; // Fallback/Unsupported
+
+#[cfg(not(target_os = "windows"))]
+pub unsafe fn sys_getrandom(buf: *mut u8, len: usize, flags: u32) -> isize {
+    if SYS_GETRANDOM == 0 { return -1; }
+    syscall3(SYS_GETRANDOM, buf as usize, len, flags as usize) as isize
+}
+
 // Ptrace Constants
 pub const PTRACE_TRACEME: usize = 0;
 pub const PTRACE_PEEKTEXT: usize = 1;
