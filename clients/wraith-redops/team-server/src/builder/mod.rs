@@ -5,6 +5,7 @@ use std::process::Command;
 use tracing::{error, info};
 
 pub mod phishing;
+pub mod vba_pe_loader;
 
 const CONFIG_MAGIC: &[u8] = b"WRAITH_CONFIG_BLOCK";
 

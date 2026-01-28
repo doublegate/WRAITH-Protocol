@@ -433,6 +433,7 @@ message GeneratePhishingRequest {
     string type = 1; // "html", "macro"
     string c2_url = 2;
     string template_name = 3;
+    string method = 4; // "drop", "memory"
 }
 
 message ListPersistenceRequest {

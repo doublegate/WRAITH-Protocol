@@ -521,6 +521,7 @@ async fn create_phishing(
     type_: String,
     c2_url: String,
     save_path: String,
+    method: Option<String>,
     state: State<'_, ClientState>,
 ) -> Result<String, String> {
     let mut lock = state.client.lock().await;
@@ -530,6 +531,7 @@ async fn create_phishing(
         r#type: type_,
         c2_url,
         template_name: "".to_string(),
+        method: method.unwrap_or_default(),
     });
 
     let mut stream = client
