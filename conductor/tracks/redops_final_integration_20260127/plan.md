@@ -21,7 +21,7 @@
     - [x] Update `entropy.rs` to check RDRAND CF flag
     - [x] Integrate `/dev/urandom` for Linux entropy
     - [x] Implement hardware RNG support for ARM64
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: P1 & Foundational Fixes' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: P1 & Foundational Fixes' (Protocol in workflow.md)
 
 ## Phase 2: P2 (Medium) Issues & Integration
 - [ ] Task: Wire PowerShell Management IPC (P2-1)
