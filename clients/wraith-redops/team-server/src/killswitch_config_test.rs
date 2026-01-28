@@ -49,9 +49,6 @@ async fn test_kill_implant_panics_without_port() {
     let operator_service = OperatorServiceImpl {
         db,
         event_tx: tx,
-        governance,
-        static_key,
-        sessions,
         listener_manager,
         powershell_manager: Arc::new(crate::services::powershell::PowerShellManager::new()),
     };
@@ -104,9 +101,6 @@ async fn test_kill_implant_panics_without_secret() {
     let operator_service = OperatorServiceImpl {
         db,
         event_tx: tx,
-        governance,
-        static_key,
-        sessions,
         listener_manager,
         powershell_manager: Arc::new(crate::services::powershell::PowerShellManager::new()),
     };

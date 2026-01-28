@@ -6,6 +6,7 @@ use std::sync::Arc;
 use tokio::sync::broadcast;
 use tracing::{debug, error};
 use wraith_crypto::noise::{NoiseHandshake, NoiseKeypair};
+use wraith_crypto::pq;
 use wraith_crypto::random::SecureRng;
 use wraith_crypto::x25519::{PrivateKey, PublicKey};
 
@@ -164,6 +165,48 @@ impl ProtocolHandler {
                     response.extend_from_slice(&cid);
                     response.extend_from_slice(&ciphertext);
                     return Some(response);
+                }
+
+                if frame_type == 0x07 { // FRAME_PQ_KEX
+                    debug!("Received PQ KEX frame from {}", src_addr);
+                    
+                    if let Ok(pk) = pq::public_key_from_bytes(inner_payload) {
+                        let mut rng = SecureRng::new();
+                        let (ct, ss) = pq::encapsulate(&mut rng, &pk);
+                        
+                        // Mix PQ secret into session ratchet
+                        session.transport.mix_key(&ss);
+                        
+                        let ct_bytes = pq::ciphertext_to_vec(&ct);
+                        
+                        // Respond with Ciphertext frame
+                        let mut frame = Vec::with_capacity(28 + ct_bytes.len());
+                        frame.extend_from_slice(b"WRTH");
+                        frame.push(0x07); // FRAME_PQ_KEX
+                        frame.push(0); // flags
+                        frame.extend_from_slice(&0u16.to_be_bytes()); // stream_id
+                        frame.extend_from_slice(&0u32.to_be_bytes()); // sequence
+                        frame.extend_from_slice(&0u64.to_be_bytes()); // offset
+                        frame.extend_from_slice(&(ct_bytes.len() as u16).to_be_bytes()); // len
+                        frame.extend_from_slice(&[0u8; 2]); // reserved
+                        frame.extend_from_slice(&ct_bytes);
+
+                        let ciphertext = match session.transport.write_message(&frame) {
+                            Ok(ct) => ct,
+                            Err(e) => {
+                                error!("Encryption failed for PQ response: {}", e);
+                                return None;
+                            }
+                        };
+
+                        let mut response = Vec::new();
+                        response.extend_from_slice(&cid);
+                        response.extend_from_slice(&ciphertext);
+                        return Some(response);
+                    } else {
+                        error!("Failed to parse PQ public key from {}", src_addr);
+                        return None;
+                    }
                 }
 
                 // Default to DATA frame logic if type is DATA (0x01) or fallback

@@ -64,9 +64,6 @@ mod tests {
         OperatorServiceImpl {
             db: db.clone(),
             event_tx: event_tx.clone(),
-            governance: governance.clone(),
-            static_key: static_key.clone(),
-            sessions: sessions.clone(),
             listener_manager: Arc::new(crate::services::listener::ListenerManager::new(
                 db.clone(),
                 governance,

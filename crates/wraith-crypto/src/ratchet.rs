@@ -370,6 +370,15 @@ impl DoubleRatchet {
         self.send_count = 0;
     }
 
+    /// Mix external entropy (e.g., Post-Quantum Shared Secret) into the root key.
+    /// This upgrades the security of future ratchet steps.
+    pub fn mix_into_root(&mut self, data: &[u8]) {
+        let prk = hkdf_extract(&self.root_key, data);
+        let mut new_root = [0u8; 32];
+        hkdf_expand(&prk, b"wraith_root_mixed", &mut new_root);
+        self.root_key = new_root;
+    }
+
     /// Try to retrieve a skipped message key using constant-time lookup.
     ///
     /// This prevents timing side-channel attacks by iterating through all

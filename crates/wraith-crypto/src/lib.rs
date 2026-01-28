@@ -38,6 +38,7 @@ pub mod encrypted_keys;
 pub mod error;
 pub mod hash;
 pub mod noise;
+pub mod pq;
 pub mod random;
 pub mod ratchet;
 pub mod signatures;

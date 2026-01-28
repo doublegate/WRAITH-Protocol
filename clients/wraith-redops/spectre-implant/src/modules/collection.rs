@@ -1,6 +1,10 @@
 use crate::utils::sensitive::SensitiveData;
+
+#[cfg(target_os = "windows")]
 use core::sync::atomic::{AtomicBool, Ordering};
+#[cfg(target_os = "windows")]
 use zeroize::Zeroize;
+#[cfg(target_os = "windows")]
 use alloc::string::String;
 
 #[cfg(target_os = "windows")]

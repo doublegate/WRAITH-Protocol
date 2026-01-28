@@ -60,10 +60,10 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 3: P3 (Low) Issues' (Protocol in workflow.md)
 
 ## Phase 4: Enhancements & Advanced Tradecraft
-- [ ] Task: Implement Sleep Obfuscation Enhancements (8.1)
-    - [ ] Implement Module Stomping
-    - [ ] Implement Stack Spoofing
-    - [ ] Implement CFG-aware sleep logic
+- [~] Task: Implement Sleep Obfuscation Enhancements (8.1)
+    - [~] Implement Module Stomping
+    - [~] Implement Stack Spoofing
+    - [~] Implement CFG-aware sleep logic
 - [ ] Task: Expand Indirect Syscalls (8.2)
     - [ ] Implement multiple gadget source redundancy
     - [ ] Implement egg hunting for `syscall; ret` in `ntdll`

@@ -11,6 +11,9 @@ This file tracks all major work tracks for the WRAITH Protocol project. Each tra
 - [x] **Track: Comprehensive WRAITH-RedOps & Core Protocol Finalization**
 *Link: [./tracks/redops_core_finalization_20260127/](./tracks/redops_core_finalization_20260127/)*
 
+- [~] **Track: Comprehensive WRAITH-RedOps Final Integration**
+*Link: [./tracks/redops_final_integration_20260127/](./tracks/redops_final_integration_20260127/)*
+
 ---
 
 - [x] [WRAITH-RedOps Full Remediation (2026-01-27)](./tracks/redops_full_remediation_20260127/index.md)

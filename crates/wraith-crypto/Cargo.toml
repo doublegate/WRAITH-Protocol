@@ -22,6 +22,8 @@ argon2 = { version = "0.5", default-features = false, features = ["alloc"] }
 serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
 subtle = { version = "2.5", default-features = false }
 curve25519-elligator2 = { version = "0.1.0-alpha.2", features = ["elligator2"], default-features = false }
+ml-kem = { version = "0.2.2", default-features = false }
+kem = "0.3.0-pre.0"
 
 [dev-dependencies]
 proptest = { workspace = true }

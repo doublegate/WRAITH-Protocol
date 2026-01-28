@@ -507,6 +507,11 @@ impl NoiseTransport {
         let mut rng = SecureRng::new();
         self.ratchet.force_dh_step(&mut rng);
     }
+
+    /// Mix external key material (e.g. PQ KEM) into the ratchet.
+    pub fn mix_key(&mut self, data: &[u8]) {
+        self.ratchet.mix_into_root(data);
+    }
 }
 
 #[cfg(test)]

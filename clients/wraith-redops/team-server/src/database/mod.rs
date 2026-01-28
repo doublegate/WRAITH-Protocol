@@ -39,6 +39,11 @@ impl Database {
         }
     }
 
+    #[allow(dead_code)]
+    pub fn pool(&self) -> &PgPool {
+        &self.pool
+    }
+
     /// Encrypts data using XChaCha20Poly1305 and the Master Key.
     /// Returns: [Nonce (24 bytes)] + [Ciphertext]
     fn encrypt_data(&self, plaintext: &[u8]) -> Result<Vec<u8>> {
@@ -293,7 +298,7 @@ impl Database {
         Ok(recs)
     }
 
-    pub async fn update_command_result(&self, command_id: Uuid, output: &[u8]) -> Result<()> {
+    pub async fn update_command_result(&self, command_id: Uuid, output: &[u8], exit_code: i32) -> Result<()> {
         // ENCRYPT RESULT AT REST
         let encrypted_output = self.encrypt_data(output)?;
 
@@ -304,9 +309,10 @@ impl Database {
             .execute(&mut *tx)
             .await?;
 
-        sqlx::query("INSERT INTO command_results (command_id, output) VALUES ($1, $2)")
+        sqlx::query("INSERT INTO command_results (command_id, output, exit_code) VALUES ($1, $2, $3)")
             .bind(command_id)
             .bind(encrypted_output)
+            .bind(exit_code)
             .execute(&mut *tx)
             .await?;
 
@@ -510,6 +516,22 @@ impl Database {
     pub async fn remove_persistence(&self, id: Uuid) -> Result<()> {
         sqlx::query("DELETE FROM persistence WHERE id = $1")
             .bind(id)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
+    }
+
+    #[allow(dead_code)]
+    pub async fn add_persistence(
+        &self,
+        implant_id: Uuid,
+        method: &str,
+        details: &str,
+    ) -> Result<()> {
+        sqlx::query("INSERT INTO persistence (implant_id, method, details) VALUES ($1, $2, $3)")
+            .bind(implant_id)
+            .bind(method)
+            .bind(details)
             .execute(&self.pool)
             .await?;
         Ok(())
