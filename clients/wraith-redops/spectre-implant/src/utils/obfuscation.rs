@@ -337,10 +337,8 @@ fn get_text_range() -> (*mut u8, usize) {
     }
     
     #[cfg(not(target_os = "windows"))]
-    {
-        // On Linux, use standard base 0x400000 and a reasonable size for now
-        // In full impl, we'd parse ELF headers or use linker symbols
-        (0x400000 as *mut u8, 0x10000)
+    unsafe {
+        get_maps_range("r-xp")
     }
 }
 
@@ -390,31 +388,43 @@ pub fn get_heap_range() -> (*mut u8, usize) {
                 return (heap as *mut u8, mbi.RegionSize);
             }
         }
+        (core::ptr::null_mut(), 0)
     }
     
     #[cfg(not(target_os = "windows"))]
     unsafe {
-        let path = "/proc/self/maps\0";
-        let fd = crate::utils::syscalls::sys_open(path.as_ptr(), 0, 0);
-        if (fd as isize) > 0 {
-            let mut buf = [0u8; 4096];
-            let n = crate::utils::syscalls::sys_read(fd as usize, buf.as_mut_ptr(), 4096);
-            crate::utils::syscalls::sys_close(fd as usize);
-            
-            if n > 0 {
-                if let Ok(s) = core::str::from_utf8(&buf[..n]) {
-                    for line in s.lines() {
-                        if line.contains("[heap]") {
-                            let mut parts = line.split_whitespace();
-                            if let Some(range) = parts.next() {
-                                let mut range_parts = range.split('-');
-                                if let (Some(start_str), Some(end_str)) = (range_parts.next(), range_parts.next()) {
-                                    let start = usize::from_str_radix(start_str, 16).unwrap_or(0);
-                                    let end = usize::from_str_radix(end_str, 16).unwrap_or(0);
-                                    if start > 0 && end > start {
-                                        return (start as *mut u8, end - start);
-                                    }
-                                }
+        let (ptr, size) = get_maps_range("[heap]");
+        if size > 0 {
+            (ptr, size)
+        } else {
+            // Fallback for custom allocator if [heap] not found (static heap)
+            (0x10000000 as *mut u8, 1024 * 1024)
+        }
+    }
+}
+
+#[cfg(not(target_os = "windows"))]
+unsafe fn get_maps_range(pattern: &str) -> (*mut u8, usize) {
+    let path = "/proc/self/maps\0";
+    let fd = crate::utils::syscalls::sys_open(path.as_ptr(), 0, 0);
+    if (fd as isize) <= 0 { return (core::ptr::null_mut(), 0); }
+
+    let mut buf = [0u8; 4096];
+    let n = crate::utils::syscalls::sys_read(fd as usize, buf.as_mut_ptr(), 4096);
+    crate::utils::syscalls::sys_close(fd as usize);
+
+    if n > 0 {
+        if let Ok(s) = core::str::from_utf8(&buf[..n]) {
+            for line in s.lines() {
+                if line.contains(pattern) {
+                    let mut parts = line.split_whitespace();
+                    if let Some(range) = parts.next() {
+                        let mut range_parts = range.split('-');
+                        if let (Some(start_str), Some(end_str)) = (range_parts.next(), range_parts.next()) {
+                            let start = usize::from_str_radix(start_str, 16).unwrap_or(0);
+                            let end = usize::from_str_radix(end_str, 16).unwrap_or(0);
+                            if start > 0 && end > start {
+                                return (start as *mut u8, end - start);
                             }
                         }
                     }
@@ -422,7 +432,5 @@ pub fn get_heap_range() -> (*mut u8, usize) {
             }
         }
     }
-
-    // Fallback
-    (0x10000000 as *mut u8, 1024 * 1024)
+    (core::ptr::null_mut(), 0)
 }
