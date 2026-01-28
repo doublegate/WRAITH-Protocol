@@ -57,7 +57,7 @@
     - [x] Fix the "assume success" logic in `smb.rs` response parsing
 - [x] Task: Final Dead Code Audit (P3-7) c2ad0d4
     - [x] Audit and remove all 10 identified `#[allow(dead_code)]` annotations
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: P3 (Low) Issues' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3: P3 (Low) Issues' (Protocol in workflow.md)
 
 ## Phase 4: Enhancements & Advanced Tradecraft
 - [ ] Task: Implement Sleep Obfuscation Enhancements (8.1)
