@@ -49,14 +49,14 @@
     - [x] Parse `/proc/self/maps` to find actual `.text` base in `obfuscation.rs`
 - [x] Task: Encrypt Mesh Discovery (P3-3) d041a8b
     - [x] Replace "WRAITH_MESH_HELLO" with encrypted discovery handshake
-- [ ] Task: Implement Windows SMB Client (P3-4)
-    - [ ] Build SMB2 client module for Windows using WinSock and Named Pipes
+- [x] Task: Implement Windows SMB Client (P3-4) 337bd0d
+    - [x] Build SMB2 client module for Windows using WinSock and Named Pipes
 - [x] Task: Secure Keylogger Implementation (P3-5) d19e905
     - [x] Implement synchronization for the static key buffer in `collection.rs`
-- [ ] Task: Refine SMB Tree Connect Logic (P3-6)
-    - [ ] Fix the "assume success" logic in `smb.rs` response parsing
-- [ ] Task: Final Dead Code Audit (P3-7)
-    - [ ] Audit and remove all 10 identified `#[allow(dead_code)]` annotations
+- [x] Task: Refine SMB Tree Connect Logic (P3-6) 337bd0d
+    - [x] Fix the "assume success" logic in `smb.rs` response parsing
+- [x] Task: Final Dead Code Audit (P3-7) c2ad0d4
+    - [x] Audit and remove all 10 identified `#[allow(dead_code)]` annotations
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: P3 (Low) Issues' (Protocol in workflow.md)
 
 ## Phase 4: Enhancements & Advanced Tradecraft
