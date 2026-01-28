@@ -1,6 +1,7 @@
 //! Performance benchmarks for file transfer operations
 
-use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
+use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
+use std::hint::black_box;
 use std::io::Write;
 use tempfile::NamedTempFile;
 use wraith_files::DEFAULT_CHUNK_SIZE;

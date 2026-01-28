@@ -4,7 +4,8 @@
 //!
 //! Run with: `cargo bench --bench transport_benchmarks`
 
-use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
+use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
+use std::hint::black_box;
 use std::net::{SocketAddr, UdpSocket};
 use std::time::Duration;
 use wraith_transport::mtu::MtuDiscovery;

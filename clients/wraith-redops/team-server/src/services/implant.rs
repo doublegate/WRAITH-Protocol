@@ -173,6 +173,18 @@ impl ImplantService for ImplantServiceImpl {
             .await
             .map_err(|e| Status::internal(e.to_string()))?;
 
+        // Broadcast event
+        if let Ok(Some(cmd)) = self.db.get_command(cmd_id).await {
+            let _ = self.event_tx.send(Event {
+                id: Uuid::new_v4().to_string(),
+                r#type: "command_complete".to_string(),
+                timestamp: Some(prost_types::Timestamp::from(std::time::SystemTime::now())),
+                campaign_id: "".to_string(),
+                implant_id: cmd.implant_id.unwrap_or_default().to_string(),
+                data: std::collections::HashMap::new(),
+            });
+        }
+
         Ok(Response::new(()))
     }
 

@@ -1,6 +1,7 @@
 //! Benchmarks for WRAITH obfuscation layer.
 
-use criterion::{Criterion, Throughput, black_box, criterion_group, criterion_main};
+use criterion::{Criterion, Throughput, criterion_group, criterion_main};
+use std::hint::black_box;
 use wraith_obfuscation::*;
 
 fn bench_padding(c: &mut Criterion) {

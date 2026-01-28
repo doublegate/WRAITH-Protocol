@@ -1,9 +1,9 @@
 ---
 name: Feature Request
 about: Suggest a new feature for WRAITH Protocol
-title: '[FEATURE] '
+title: "[FEATURE] "
 labels: enhancement
-assignees: ''
+assignees: ""
 ---
 
 ## Feature Summary
@@ -32,6 +32,7 @@ What other solutions have you considered?
 ## Implementation Notes
 
 If you have technical insights on implementation:
+
 - Affected crates/modules
 - API changes required
 - Performance considerations

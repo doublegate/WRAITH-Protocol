@@ -26,6 +26,8 @@ tauri = { version = "2.2", features = [] }
 tauri-plugin-dialog = "2.2"
 tauri-plugin-fs = "2.2"
 tauri-plugin-shell = "2.2"
+tauri-plugin-log = "2.2"
+tauri-plugin-notification = "2.2"
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }

@@ -1,0 +1,11 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Default permissions for the operator client",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "log:default",
+    "notification:default"
+  ]
+}

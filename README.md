@@ -4,6 +4,7 @@
 
 A decentralized secure file transfer protocol optimized for high-throughput, low-latency operation with strong security guarantees and traffic analysis resistance.
 
+<!-- markdownlint-disable no-inline-html -->
 <p align="center">
   <img src="images/wraith-protocol_round-patch.jpg" alt="WRAITH Protocol" width="450">
 </p>
@@ -19,6 +20,7 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
   <a href="https://doc.rust-lang.org/edition-guide/rust-2024/index.html"><img src="https://img.shields.io/badge/edition-2024-orange.svg" alt="Edition"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License"></a>
 </p>
+<!-- markdownlint-enable no-inline-html -->
 
 ---
 
@@ -34,16 +36,16 @@ WRAITH Protocol is a privacy-focused, high-performance file transfer protocol de
 
 ### Project Metrics
 
-| Metric | Value |
-|--------|-------|
-| **Tests** | 2,153 passing (100% pass rate, 16 intentionally ignored) |
-| **Code** | ~131,000 lines Rust (protocol + clients) + ~35,000 lines TypeScript |
-| **Documentation** | 114 files, ~62,800 lines |
-| **Security** | Grade A+ (zero vulnerabilities, 295 audited dependencies) |
-| **Quality** | 98/100, zero clippy warnings |
-| **TDR** | ~2.5% (Grade A - Excellent) |
-| **Applications** | 12 production-ready clients (9 desktop + 2 mobile + 1 server platform) |
-| **Templates** | 17 configuration/ROE templates |
+| Metric            | Value                                                                  |
+| ----------------- | ---------------------------------------------------------------------- |
+| **Tests**         | 2,153 passing (100% pass rate, 16 intentionally ignored)               |
+| **Code**          | ~131,000 lines Rust (protocol + clients) + ~35,000 lines TypeScript    |
+| **Documentation** | 114 files, ~62,800 lines                                               |
+| **Security**      | Grade A+ (zero vulnerabilities, 295 audited dependencies)              |
+| **Quality**       | 98/100, zero clippy warnings                                           |
+| **TDR**           | ~2.5% (Grade A - Excellent)                                            |
+| **Applications**  | 12 production-ready clients (9 desktop + 2 mobile + 1 server platform) |
+| **Templates**     | 17 configuration/ROE templates                                         |
 
 ![WRAITH Protocol Banner](images/wraith-protocol_banner-graphic.jpg)
 
@@ -104,7 +106,7 @@ WRAITH Protocol draws inspiration from the rich history of network reconnaissanc
 
 ### The Wardialing Era (1980s-1990s)
 
-In the formative decades of the digital age, the Public Switched Telephone Network (PSTN) was the primary gateway to computer systems. **Wardialing**—the systematic automated dialing of telephone numbers to identify responding modems—became the foundational reconnaissance technique. The 1980 release of Zoom Telephonics' **Demon Dialer** introduced automated dialing to consumers, while the 1983 film *WarGames* popularized the technique and directly influenced national security policy, leading to NSDD-145 and the modern information security state.
+In the formative decades of the digital age, the Public Switched Telephone Network (PSTN) was the primary gateway to computer systems. **Wardialing**—the systematic automated dialing of telephone numbers to identify responding modems—became the foundational reconnaissance technique. The 1980 release of Zoom Telephonics' **Demon Dialer** introduced automated dialing to consumers, while the 1983 film _WarGames_ popularized the technique and directly influenced national security policy, leading to NSDD-145 and the modern information security state.
 
 Tools like **ToneLoc** (1990s) pioneered randomized dialing to evade detection, while **THC-Scan** added European PBX support. The commercial **PhoneSweep** (1998) legitimized wardialing as a professional security audit practice, with banner fingerprinting databases identifying over 470 system types.
 
@@ -114,7 +116,7 @@ As dial-up faded, the wardialing philosophy migrated to new mediums. **Wardrivin
 
 WRAITH Protocol embodies this evolution: the same philosophy of systematic discovery and secure communication, implemented with modern cryptography and kernel-bypass networking for the contemporary threat landscape.
 
-*For the complete history of automated reconnaissance from the Demon Dialer to Shodan, see [The Dial-Up Frontier](ref-docs/Wardialing_Then-Now_History.md).*
+_For the complete history of automated reconnaissance from the Demon Dialer to Shodan, see [The Dial-Up Frontier](ref-docs/Wardialing_Then-Now_History.md)._
 
 ![Wardialing History](images/wardialing_then-now_history-graphic.jpg)
 
@@ -126,39 +128,40 @@ WRAITH Protocol powers a comprehensive ecosystem of 12 production-ready applicat
 
 ### Tier 1: Core Applications
 
-| Application | Platform | Description |
-|-------------|----------|-------------|
-| **[WRAITH-Transfer](clients/wraith-transfer/)** | Desktop | Secure P2P file transfer with drag-and-drop GUI |
-| **[WRAITH-Chat](clients/wraith-chat/)** | Desktop | E2EE messaging with voice/video calls and group messaging |
+| Application                                     | Platform | Description                                               |
+| ----------------------------------------------- | -------- | --------------------------------------------------------- |
+| **[WRAITH-Transfer](clients/wraith-transfer/)** | Desktop  | Secure P2P file transfer with drag-and-drop GUI           |
+| **[WRAITH-Chat](clients/wraith-chat/)**         | Desktop  | E2EE messaging with voice/video calls and group messaging |
 
 ### Tier 2: Specialized Applications
 
-| Application | Platform | Description |
-|-------------|----------|-------------|
-| **[WRAITH-Sync](clients/wraith-sync/)** | Desktop | Serverless file synchronization with delta transfers and version history |
-| **[WRAITH-Share](clients/wraith-share/)** | Desktop | Anonymous distributed file sharing with swarm transfers |
-| **[WRAITH-Stream](clients/wraith-stream/)** | Desktop | Secure media streaming with AV1/VP9/H.264 and adaptive bitrate |
+| Application                                 | Platform | Description                                                              |
+| ------------------------------------------- | -------- | ------------------------------------------------------------------------ |
+| **[WRAITH-Sync](clients/wraith-sync/)**     | Desktop  | Serverless file synchronization with delta transfers and version history |
+| **[WRAITH-Share](clients/wraith-share/)**   | Desktop  | Anonymous distributed file sharing with swarm transfers                  |
+| **[WRAITH-Stream](clients/wraith-stream/)** | Desktop  | Secure media streaming with AV1/VP9/H.264 and adaptive bitrate           |
 
 ### Tier 3: Advanced & Security Applications
 
-| Application | Platform | Description |
-|-------------|----------|-------------|
-| **[WRAITH-Mesh](clients/wraith-mesh/)** | Desktop | IoT mesh networking with topology visualization and diagnostics |
-| **[WRAITH-Publish](clients/wraith-publish/)** | Desktop | Censorship-resistant content publishing with Ed25519 signatures and RSS |
-| **[WRAITH-Vault](clients/wraith-vault/)** | Desktop | Distributed secret storage with Shamir's Secret Sharing |
-| **[WRAITH-Recon](clients/wraith-recon/)** | Desktop | Network reconnaissance platform for authorized security testing (RoE enforced) |
-| **[WRAITH-RedOps](clients/wraith-redops/)** | Server + Desktop | Red team operations platform with C2 infrastructure and implant framework |
+| Application                                   | Platform         | Description                                                                    |
+| --------------------------------------------- | ---------------- | ------------------------------------------------------------------------------ |
+| **[WRAITH-Mesh](clients/wraith-mesh/)**       | Desktop          | IoT mesh networking with topology visualization and diagnostics                |
+| **[WRAITH-Publish](clients/wraith-publish/)** | Desktop          | Censorship-resistant content publishing with Ed25519 signatures and RSS        |
+| **[WRAITH-Vault](clients/wraith-vault/)**     | Desktop          | Distributed secret storage with Shamir's Secret Sharing                        |
+| **[WRAITH-Recon](clients/wraith-recon/)**     | Desktop          | Network reconnaissance platform for authorized security testing (RoE enforced) |
+| **[WRAITH-RedOps](clients/wraith-redops/)**   | Server + Desktop | Red team operations platform with C2 infrastructure and implant framework      |
 
 ### Mobile Clients
 
-| Application | Platform | Description |
-|-------------|----------|-------------|
+| Application                                   | Platform     | Description                                                     |
+| --------------------------------------------- | ------------ | --------------------------------------------------------------- |
 | **[WRAITH-Android](clients/wraith-android/)** | Android 8.0+ | Native Kotlin + Jetpack Compose with JNI bindings to wraith-ffi |
-| **[WRAITH-iOS](clients/wraith-ios/)** | iOS 16.0+ | Native Swift + SwiftUI with UniFFI bindings |
+| **[WRAITH-iOS](clients/wraith-ios/)**         | iOS 16.0+    | Native Swift + SwiftUI with UniFFI bindings                     |
 
 ### Application Highlights
 
 **WRAITH-Chat** features:
+
 - Signal Protocol Double Ratchet (forward secrecy + post-compromise security)
 - Voice calling with Opus codec and RNNoise noise suppression
 - Video calling with VP8/VP9 and adaptive bitrate (360p-1080p)
@@ -166,6 +169,7 @@ WRAITH Protocol powers a comprehensive ecosystem of 12 production-ready applicat
 - SQLCipher encrypted local database
 
 **WRAITH-Vault** features:
+
 - Shamir's Secret Sharing with configurable k-of-n threshold
 - Guardian-based key fragment distribution
 - Erasure coding (Reed-Solomon) for redundancy
@@ -173,6 +177,7 @@ WRAITH Protocol powers a comprehensive ecosystem of 12 production-ready applicat
 - Scheduled automatic backups
 
 **WRAITH-Recon** features (authorized security testing only):
+
 - Rules of Engagement (RoE) enforcement with Ed25519 signatures
 - Passive reconnaissance with AF_XDP kernel-bypass capture (10-40 Gbps)
 - Covert channel testing (DNS tunneling, ICMP steganography, TLS mimicry)
@@ -180,6 +185,7 @@ WRAITH Protocol powers a comprehensive ecosystem of 12 production-ready applicat
 - Kill switch with <1ms activation latency
 
 **WRAITH-RedOps** features (authorized red team operations only):
+
 - Team Server with PostgreSQL persistence, campaign management, gRPC API
 - Operator Client (Tauri 2.0) with real-time dashboard and interactive terminal
 - Spectre Implant framework (no_std Rust) with C2 loop, sleep obfuscation, API hashing
@@ -197,23 +203,23 @@ WRAITH Protocol powers a comprehensive ecosystem of 12 production-ready applicat
 
 The RedOps platform has undergone exhaustive source-level auditing with line-by-line verification of every source file across all three components (~12,819 lines total, +6% from v4.3.0). The v5.0.0 comprehensive re-verification independently re-read every `.rs`, `.ts`, `.tsx`, `.proto`, and `.sql` file, correcting 4 prior assessments and adding a full Design vs. Implementation Matrix and Sprint Compliance Report.
 
-| Metric | Value |
-|--------|-------|
-| **Overall Completion** | ~94% (up from ~91% in v4.3.0) |
-| **MITRE ATT&CK Coverage** | ~71% (27 of 38 techniques implemented) |
-| **P0 Critical Issues** | 0 (all resolved) |
-| **P1 High Issues** | 2 remaining (key ratcheting 13 SP, PowerShell runner 5 SP) |
-| **IPC Command Coverage** | 31 commands (100% proto RPC coverage, up from 23 in v4.3.0) |
-| **v5.0.0 Resolved** | 4 findings from v4.3.0 (SMB2 struct bug, Playbook IPC, 7 missing RPCs, persistence COM) |
-| **Hardcoded Cryptographic Keys** | 0 (all resolved) |
-| **Story Points Remaining** | ~69 SP (18 SP P1 + 18 SP P2 + 33 SP P3) |
+| Metric                           | Value                                                                                   |
+| -------------------------------- | --------------------------------------------------------------------------------------- |
+| **Overall Completion**           | ~94% (up from ~91% in v4.3.0)                                                           |
+| **MITRE ATT&CK Coverage**        | ~71% (27 of 38 techniques implemented)                                                  |
+| **P0 Critical Issues**           | 0 (all resolved)                                                                        |
+| **P1 High Issues**               | 2 remaining (key ratcheting 13 SP, PowerShell runner 5 SP)                              |
+| **IPC Command Coverage**         | 31 commands (100% proto RPC coverage, up from 23 in v4.3.0)                             |
+| **v5.0.0 Resolved**              | 4 findings from v4.3.0 (SMB2 struct bug, Playbook IPC, 7 missing RPCs, persistence COM) |
+| **Hardcoded Cryptographic Keys** | 0 (all resolved)                                                                        |
+| **Story Points Remaining**       | ~69 SP (18 SP P1 + 18 SP P2 + 33 SP P3)                                                 |
 
-| Component | Completion | Delta (from v4.3.0) | Notes |
-|-----------|------------|----------------------|-------|
-| Team Server | 97% | +1% | All 30 RPCs wired, playbook system complete, DNS + SMB listeners |
-| Operator Client | 97% | +4% | 31 IPC commands registered (100% coverage), all RPCs bridged |
-| Spectre Implant | 88% | +4% | 15 modules (mesh added), COM-based persistence, full BOF loader |
-| WRAITH Integration | 94% | +3% | P2P mesh C2, entropy mixing, SecureBuffer with mlock |
+| Component          | Completion | Delta (from v4.3.0) | Notes                                                            |
+| ------------------ | ---------- | ------------------- | ---------------------------------------------------------------- |
+| Team Server        | 97%        | +1%                 | All 30 RPCs wired, playbook system complete, DNS + SMB listeners |
+| Operator Client    | 97%        | +4%                 | 31 IPC commands registered (100% coverage), all RPCs bridged     |
+| Spectre Implant    | 88%        | +4%                 | 15 modules (mesh added), COM-based persistence, full BOF loader  |
+| WRAITH Integration | 94%        | +3%                 | P2P mesh C2, entropy mixing, SecureBuffer with mlock             |
 
 For the full gap analysis, see [GAP-ANALYSIS-v2.2.5.md](docs/clients/wraith-redops/GAP-ANALYSIS-v2.2.5.md).
 
@@ -229,11 +235,11 @@ For detailed client documentation, see the [Client Overview](docs/clients/overvi
 
 Download from the [releases page](https://github.com/doublegate/WRAITH-Protocol/releases):
 
-| Platform | Architecture | Notes |
-|----------|--------------|-------|
-| Linux | x86_64, aarch64 | glibc and musl variants |
-| macOS | x86_64, aarch64 | Intel and Apple Silicon |
-| Windows | x86_64 | - |
+| Platform | Architecture    | Notes                   |
+| -------- | --------------- | ----------------------- |
+| Linux    | x86_64, aarch64 | glibc and musl variants |
+| macOS    | x86_64, aarch64 | Intel and Apple Silicon |
+| Windows  | x86_64          | -                       |
 
 ```bash
 # Linux/macOS
@@ -259,6 +265,7 @@ cargo test --workspace
 ```
 
 **Requirements:**
+
 - Rust 1.88+ (Rust 2024 edition)
 - Linux 6.2+ recommended (for AF_XDP and io_uring)
 - x86_64 or aarch64 architecture
@@ -296,7 +303,7 @@ For detailed usage, see the [User Guide](docs/USER_GUIDE.md) and [Tutorial](docs
 
 WRAITH Protocol uses a six-layer design optimized for security and performance:
 
-```
+```text
    Application Layer          File transfer, chunking, integrity
          |
    Session Layer              Stream mux, flow control, BBR congestion
@@ -312,16 +319,16 @@ WRAITH Protocol uses a six-layer design optimized for security and performance:
 
 ### Protocol Crates
 
-| Crate | Description | Tests |
-|-------|-------------|-------|
-| **wraith-core** | Frame parsing (SIMD), sessions, congestion control, Node API | 414 |
-| **wraith-crypto** | Ed25519, X25519+Elligator2, AEAD, Noise_XX, Double Ratchet | 127 |
-| **wraith-transport** | AF_XDP, io_uring, UDP sockets, worker pools | 130 |
-| **wraith-obfuscation** | Padding, timing, cover traffic, protocol mimicry | 111 |
-| **wraith-discovery** | Kademlia DHT, STUN, ICE, relay infrastructure | 231 |
-| **wraith-files** | File chunking, BLAKE3 tree hashing, io_uring I/O | 34 |
-| **wraith-cli** | Command-line interface with Node API integration | 8 |
-| **wraith-ffi** | Foreign function interface (C/JNI bindings) | 6 |
+| Crate                  | Description                                                  | Tests |
+| ---------------------- | ------------------------------------------------------------ | ----- |
+| **wraith-core**        | Frame parsing (SIMD), sessions, congestion control, Node API | 414   |
+| **wraith-crypto**      | Ed25519, X25519+Elligator2, AEAD, Noise_XX, Double Ratchet   | 127   |
+| **wraith-transport**   | AF_XDP, io_uring, UDP sockets, worker pools                  | 130   |
+| **wraith-obfuscation** | Padding, timing, cover traffic, protocol mimicry             | 111   |
+| **wraith-discovery**   | Kademlia DHT, STUN, ICE, relay infrastructure                | 231   |
+| **wraith-files**       | File chunking, BLAKE3 tree hashing, io_uring I/O             | 34    |
+| **wraith-cli**         | Command-line interface with Node API integration             | 8     |
+| **wraith-ffi**         | Foreign function interface (C/JNI bindings)                  | 6     |
 
 For detailed architecture documentation, see [Protocol Overview](docs/architecture/protocol-overview.md).
 
@@ -331,27 +338,27 @@ For detailed architecture documentation, see [Protocol Overview](docs/architectu
 
 ### Targets
 
-| Metric | Target | Notes |
-|--------|--------|-------|
-| Throughput (10 GbE) | >9 Gbps | AF_XDP with zero-copy |
-| Throughput (1 GbE) | >950 Mbps | With encryption |
-| Handshake Latency | <50 ms | LAN conditions |
-| Packet Latency | <1 ms | NIC to application |
-| Memory per Session | <10 MB | Including buffers |
-| CPU @ 10 Gbps | <50% | 8-core system |
+| Metric              | Target    | Notes                 |
+| ------------------- | --------- | --------------------- |
+| Throughput (10 GbE) | >9 Gbps   | AF_XDP with zero-copy |
+| Throughput (1 GbE)  | >950 Mbps | With encryption       |
+| Handshake Latency   | <50 ms    | LAN conditions        |
+| Packet Latency      | <1 ms     | NIC to application    |
+| Memory per Session  | <10 MB    | Including buffers     |
+| CPU @ 10 Gbps       | <50%      | 8-core system         |
 
 ### Benchmarks
 
-| Component | Measured Performance |
-|-----------|---------------------|
-| Ring Buffers | ~100M ops/sec (SPSC), ~20M ops/sec (MPSC) |
-| Frame Parsing | 172M frames/sec (SIMD: AVX2/SSE4.2/NEON) |
-| AEAD Encryption | 3.2 GB/s (XChaCha20-Poly1305) |
-| BLAKE3 Hashing | 8.5 GB/s (parallelized) |
-| File Chunking | 14.85 GiB/s |
-| Tree Hashing | 4.71 GiB/s in-memory |
-| Chunk Verification | 4.78 GiB/s |
-| File Reassembly | 5.42 GiB/s |
+| Component          | Measured Performance                      |
+| ------------------ | ----------------------------------------- |
+| Ring Buffers       | ~100M ops/sec (SPSC), ~20M ops/sec (MPSC) |
+| Frame Parsing      | 172M frames/sec (SIMD: AVX2/SSE4.2/NEON)  |
+| AEAD Encryption    | 3.2 GB/s (XChaCha20-Poly1305)             |
+| BLAKE3 Hashing     | 8.5 GB/s (parallelized)                   |
+| File Chunking      | 14.85 GiB/s                               |
+| Tree Hashing       | 4.71 GiB/s in-memory                      |
+| Chunk Verification | 4.78 GiB/s                                |
+| File Reassembly    | 5.42 GiB/s                                |
 
 ---
 
@@ -359,20 +366,21 @@ For detailed architecture documentation, see [Protocol Overview](docs/architectu
 
 ### Cryptographic Suite
 
-| Function | Algorithm | Security Level |
-|----------|-----------|----------------|
-| Signatures | Ed25519 | 128-bit |
-| Key Exchange | X25519 | 128-bit |
-| Key Encoding | Elligator2 | Traffic analysis resistant |
-| AEAD | XChaCha20-Poly1305 | 256-bit key, 192-bit nonce |
-| Hash | BLAKE3 | 128-bit collision resistance |
-| KDF | HKDF-BLAKE3 | 128-bit |
-| Handshake | Noise_XX | Mutual auth, identity hiding |
-| Ratcheting | Double Ratchet | Forward + post-compromise security |
+| Function     | Algorithm          | Security Level                     |
+| ------------ | ------------------ | ---------------------------------- |
+| Signatures   | Ed25519            | 128-bit                            |
+| Key Exchange | X25519             | 128-bit                            |
+| Key Encoding | Elligator2         | Traffic analysis resistant         |
+| AEAD         | XChaCha20-Poly1305 | 256-bit key, 192-bit nonce         |
+| Hash         | BLAKE3             | 128-bit collision resistance       |
+| KDF          | HKDF-BLAKE3        | 128-bit                            |
+| Handshake    | Noise_XX           | Mutual auth, identity hiding       |
+| Ratcheting   | Double Ratchet     | Forward + post-compromise security |
 
 ### Security Features
 
 **Cryptographic Guarantees:**
+
 - Forward secrecy via Double Ratchet
 - Post-compromise security via DH ratchet
 - Replay protection with 64-bit sliding window
@@ -380,18 +388,21 @@ For detailed architecture documentation, see [Protocol Overview](docs/architectu
 - Automatic rekey (time, packet-count, byte-count triggers)
 
 **Traffic Analysis Resistance:**
+
 - Elligator2 makes keys indistinguishable from random
 - Cover traffic generation (multiple distribution modes)
 - Configurable padding modes
 - Protocol mimicry (TLS, WebSocket, DoH)
 
 **Implementation Security:**
+
 - Memory-safe Rust with ZeroizeOnDrop for secrets
 - Constant-time cryptographic operations
 - SIMD acceleration with security validation
 - 100% unsafe code documentation
 
 **Validation:**
+
 - Comprehensive test coverage (2,153+ tests)
 - DPI evasion validation (Wireshark, Zeek, Suricata, nDPI)
 - 5 libFuzzer targets
@@ -408,7 +419,7 @@ WRAITH Protocol uses a compact binary wire format designed for minimal overhead 
 
 ### Outer Packet Structure
 
-```
+```text
 +----------+-------------------+----------+
 | CID (8B) | Encrypted Payload | Tag (16B)|
 +----------+-------------------+----------+
@@ -420,7 +431,7 @@ WRAITH Protocol uses a compact binary wire format designed for minimal overhead 
 
 ### Inner Frame Structure
 
-```
+```text
 +----------------+---------+----------------+
 | Header (28B)   | Payload | Random Padding |
 +----------------+---------+----------------+
@@ -432,22 +443,22 @@ WRAITH Protocol uses a compact binary wire format designed for minimal overhead 
 
 ### Frame Types
 
-| Type | Value | Description |
-|------|-------|-------------|
-| DATA | 0x00 | Application data transfer |
-| ACK | 0x01 | Acknowledgment with selective ACK |
-| CONTROL | 0x02 | Session control signals |
-| REKEY | 0x03 | Key rotation trigger |
-| PING | 0x04 | Keepalive probe |
-| PONG | 0x05 | Keepalive response |
-| CLOSE | 0x06 | Graceful session termination |
-| PAD | 0x07 | Cover traffic padding frame |
-| STREAM_OPEN | 0x10 | Open new multiplexed stream |
-| STREAM_CLOSE | 0x11 | Close multiplexed stream |
-| STREAM_REQUEST | 0x12 | Request data chunks |
-| STREAM_DATA | 0x13 | Deliver data chunks |
-| PATH_CHALLENGE | 0x20 | Connection migration probe |
-| PATH_RESPONSE | 0x21 | Connection migration confirmation |
+| Type           | Value | Description                       |
+| -------------- | ----- | --------------------------------- |
+| DATA           | 0x00  | Application data transfer         |
+| ACK            | 0x01  | Acknowledgment with selective ACK |
+| CONTROL        | 0x02  | Session control signals           |
+| REKEY          | 0x03  | Key rotation trigger              |
+| PING           | 0x04  | Keepalive probe                   |
+| PONG           | 0x05  | Keepalive response                |
+| CLOSE          | 0x06  | Graceful session termination      |
+| PAD            | 0x07  | Cover traffic padding frame       |
+| STREAM_OPEN    | 0x10  | Open new multiplexed stream       |
+| STREAM_CLOSE   | 0x11  | Close multiplexed stream          |
+| STREAM_REQUEST | 0x12  | Request data chunks               |
+| STREAM_DATA    | 0x13  | Deliver data chunks               |
+| PATH_CHALLENGE | 0x20  | Connection migration probe        |
+| PATH_RESPONSE  | 0x21  | Connection migration confirmation |
 
 ---
 
@@ -481,24 +492,24 @@ cargo bench --workspace           # Benchmarks
 
 ### Key Dependencies
 
-| Dependency | Purpose |
-|------------|---------|
-| `chacha20poly1305` | XChaCha20-Poly1305 AEAD encryption (256-bit key, 192-bit nonce) |
-| `x25519-dalek` | X25519 Diffie-Hellman key exchange |
-| `ed25519-dalek` | Ed25519 digital signatures with batch verification |
-| `curve25519-elligator2` | Elligator2 key encoding for traffic analysis resistance |
-| `blake3` | BLAKE3 cryptographic hashing with SIMD acceleration |
-| `snow` | Noise Protocol Framework (Noise_XX handshake pattern) |
-| `io-uring` | Linux io_uring async I/O for zero-copy file operations |
-| `tokio` | Async runtime for concurrent I/O operations |
-| `clap` | Command-line argument parsing |
-| `tauri` | Cross-platform desktop application framework (v2.0) |
-| `pnet` | Low-level network packet capture and construction |
-| `rusqlite` | SQLite/SQLCipher encrypted database |
+| Dependency              | Purpose                                                         |
+| ----------------------- | --------------------------------------------------------------- |
+| `chacha20poly1305`      | XChaCha20-Poly1305 AEAD encryption (256-bit key, 192-bit nonce) |
+| `x25519-dalek`          | X25519 Diffie-Hellman key exchange                              |
+| `ed25519-dalek`         | Ed25519 digital signatures with batch verification              |
+| `curve25519-elligator2` | Elligator2 key encoding for traffic analysis resistance         |
+| `blake3`                | BLAKE3 cryptographic hashing with SIMD acceleration             |
+| `snow`                  | Noise Protocol Framework (Noise_XX handshake pattern)           |
+| `io-uring`              | Linux io_uring async I/O for zero-copy file operations          |
+| `tokio`                 | Async runtime for concurrent I/O operations                     |
+| `clap`                  | Command-line argument parsing                                   |
+| `tauri`                 | Cross-platform desktop application framework (v2.0)             |
+| `pnet`                  | Low-level network packet capture and construction               |
+| `rusqlite`              | SQLite/SQLCipher encrypted database                             |
 
 ### Project Structure
 
-```
+```text
 WRAITH-Protocol/
 |-- crates/                # Protocol crates (8 active + 1 excluded)
 |   |-- wraith-core/       # Frame, session, congestion, Node API
@@ -561,39 +572,46 @@ See [CI Workflow](.github/workflows/ci.yml) and [Release Workflow](.github/workf
 ## Documentation
 
 ### Getting Started
+
 - [User Guide](docs/USER_GUIDE.md)
 - [Tutorial](docs/TUTORIAL.md)
 - [Configuration Reference](docs/CONFIG_REFERENCE.md)
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
 
-### Architecture
+### Architecture Reference
+
 - [Protocol Overview](docs/architecture/protocol-overview.md)
 - [Layer Design](docs/architecture/layer-design.md)
 - [Security Model](docs/architecture/security-model.md)
 - [Performance Architecture](docs/architecture/performance-architecture.md)
 
-### Development
+### Developer Guide
+
 - [Development Guide](docs/engineering/development-guide.md)
 - [Coding Standards](docs/engineering/coding-standards.md)
 - [API Reference](docs/engineering/api-reference.md)
 - [Integration Guide](docs/INTEGRATION_GUIDE.md)
 
-### Security
+### Security Resources
+
 - [Security Audit](docs/SECURITY_AUDIT.md)
 - [DPI Evasion Report](docs/security/DPI_EVASION_REPORT.md)
 
-### Client Applications
+### Client Documentation
+
 - [Client Overview](docs/clients/overview.md)
 - [UI/UX Design Reference](docs/clients/UI-UX-DESIGN-REFERENCE.md)
 - [Client Roadmap](to-dos/ROADMAP-clients.md)
 
 ### Templates
+
 - [Templates Overview](templates/README.md)
 - [ROE Templates for WRAITH-Recon](templates/recon/README.md)
 - [Configuration Templates](templates/config/README.md)
 - [Integration Templates](templates/integration/README.md)
 
 ### Development History
+
 - [Protocol Development History](docs/archive/README_Protocol-DEV.md)
 - [Client Development History](docs/archive/README_Clients-DEV.md)
 
@@ -629,7 +647,7 @@ See [ROADMAP.md](to-dos/ROADMAP.md) for detailed planning.
 
 We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-### Quick Start
+### Quick Start to Contribute
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -686,8 +704,8 @@ WRAITH Protocol builds on excellent projects and research:
 
 ---
 
-**WRAITH Protocol** - *Secure. Fast. Invisible.*
+**WRAITH Protocol** - _Secure. Fast. Invisible._
 
 **Version:** 2.3.0 | **License:** MIT | **Language:** Rust 2024 (MSRV 1.88) | **Tests:** 2,153 passing (100%) | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server)
 
-*Last Updated: 2026-01-27*
+**Last Updated:** 2026-01-27

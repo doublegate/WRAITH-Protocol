@@ -949,14 +949,24 @@ async fn stream_events(app: tauri::AppHandle, state: State<'_, ClientState>) -> 
 
     tauri::async_runtime::spawn(async move {
         use tauri::Emitter;
+        use tauri_plugin_notification::NotificationExt;
         while let Ok(Some(event)) = stream.message().await {
             let payload = StreamEventPayload {
-                id: event.id,
-                type_: event.r#type,
-                implant_id: event.implant_id,
-                data: event.data,
+                id: event.id.clone(),
+                type_: event.r#type.clone(),
+                implant_id: event.implant_id.clone(),
+                data: event.data.clone(),
             };
             let _ = app.emit("server-event", payload);
+
+            // Desktop Notification for important events
+            if event.r#type == "implant_checkin" || event.r#type == "command_complete" {
+                let _ = app.notification()
+                    .builder()
+                    .title("WRAITH RedOps")
+                    .body(format!("Event: {} from {}", event.r#type, event.implant_id))
+                    .show();
+            }
         }
     });
 
@@ -994,6 +1004,8 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_log::Builder::new().build())
+        .plugin(tauri_plugin_notification::init())
         .manage(ClientState {
             client: Mutex::new(None),
         })

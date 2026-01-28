@@ -7,9 +7,10 @@
 //! - Noise handshake: <50ms (full XX)
 //! - Key ratcheting: >10M ops/sec
 
-use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
+use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 use rand::RngCore;
 use rand_core::OsRng;
+use std::hint::black_box;
 use wraith_crypto::aead::{AeadKey, Nonce};
 use wraith_crypto::hash::{Kdf, hash, hkdf_expand, hkdf_extract};
 use wraith_crypto::noise::{NoiseHandshake, NoiseKeypair};
