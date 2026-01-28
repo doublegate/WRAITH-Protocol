@@ -11,9 +11,9 @@
     - [x] Verify existing `Runner.dll` integrity and functionality
     - [x] Integrate C# source and build script for local compilation
     - [x] Implement runtime MSIL generation for fallback
-- [ ] Task: Fix CLR MetaHost CLSID (P2-5)
-    - [ ] Verify CLSID in `clr.rs` against official COM GUID
-    - [ ] Correct if necessary
+- [x] Task: Fix CLR MetaHost CLSID (P2-5) 551937d
+    - [x] Verify CLSID in `clr.rs` against official COM GUID
+    - [x] Correct if necessary
 - [ ] Task: Modernize SMB Header Serialization (P2-7)
     - [ ] Remove `unsafe` transmutes in `smb.rs`
     - [ ] Implement explicit byte-by-byte serialization/deserialization
