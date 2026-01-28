@@ -988,6 +988,41 @@ async fn get_attack_chain(id: String, state: State<'_, ClientState>) -> Result<S
     serde_json::to_string(&chain).map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+async fn set_powershell_profile(
+    implant_id: String,
+    profile_script: String,
+    state: State<'_, ClientState>,
+) -> Result<(), String> {
+    let mut lock = state.client.lock().await;
+    let client = lock.as_mut().ok_or("Not connected")?;
+
+    client
+        .set_power_shell_profile(tonic::Request::new(SetProfileRequest {
+            implant_id,
+            profile_script,
+        }))
+        .await
+        .map_err(|e| format!("gRPC error: {}", e))?;
+    Ok(())
+}
+
+#[tauri::command]
+async fn get_powershell_profile(
+    implant_id: String,
+    state: State<'_, ClientState>,
+) -> Result<String, String> {
+    let mut lock = state.client.lock().await;
+    let client = lock.as_mut().ok_or("Not connected")?;
+
+    let response = client
+        .get_power_shell_profile(tonic::Request::new(GetProfileRequest { implant_id }))
+        .await
+        .map_err(|e| format!("gRPC error: {}", e))?;
+
+    Ok(response.into_inner().profile_script)
+}
+
 /// Initialize and run the Tauri application
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -1041,7 +1076,9 @@ pub fn run() {
             generate_implant,
             list_playbooks,
             instantiate_playbook,
-            stream_events
+            stream_events,
+            set_powershell_profile,
+            get_powershell_profile
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

