@@ -172,6 +172,12 @@ impl SmbClient {
         }
     }
 
+    fn check_status(&self, buf: &[u8]) -> bool {
+        if buf.len() < 16 { return false; }
+        let status = u32::from_le_bytes([buf[12], buf[13], buf[14], buf[15]]);
+        status == 0
+    }
+
     #[cfg(target_os = "windows")]
     unsafe fn negotiate_win(&mut self, sock: crate::utils::windows_definitions::HANDLE) -> Result<(), ()> {
         use crate::utils::api_resolver::{hash_str, resolve_function};
@@ -199,7 +205,7 @@ impl SmbClient {
 
         let mut buf = [0u8; 1024];
         let n = core::mem::transmute::<_, FnRecv>(recv_fn)(sock, buf.as_mut_ptr(), 1024, 0);
-        if n > 0 { self.message_id += 1; Ok(()) } else { Err(()) }
+        if n > 0 && self.check_status(&buf[..n as usize]) { self.message_id += 1; Ok(()) } else { Err(()) }
     }
 
     #[cfg(target_os = "windows")]
@@ -229,7 +235,7 @@ impl SmbClient {
 
         let mut buf = [0u8; 1024];
         let n = core::mem::transmute::<_, FnRecv>(recv_fn)(sock, buf.as_mut_ptr(), 1024, 0);
-        if n > 64 {
+        if n > 64 && self.check_status(&buf[..n as usize]) {
              if buf[0] == 0 {
                 let session_id_ptr = buf.as_ptr().add(4 + 40) as *const u64;
                 self.session_id = *session_id_ptr;
@@ -267,7 +273,7 @@ impl SmbClient {
 
         let mut buf = [0u8; 1024];
         let n = core::mem::transmute::<_, FnRecv>(recv_fn)(sock, buf.as_mut_ptr(), 1024, 0);
-        if n > 64 {
+        if n > 64 && self.check_status(&buf[..n as usize]) {
              if buf[0] == 0 {
                 let tree_id_ptr = buf.as_ptr().add(4 + 36) as *const u32;
                 self.tree_id = *tree_id_ptr;
@@ -312,10 +318,10 @@ impl SmbClient {
 
         sys_write(fd, req.as_ptr(), req.len());
 
-        // Read response (Simplified: Just skip it and assume success for now)
+        // Read response
         let mut buf = [0u8; 1024];
         let n = sys_read(fd, buf.as_mut_ptr(), 1024);
-        if n > 0 {
+        if n > 0 && self.check_status(&buf[..n as usize]) {
             self.message_id += 1;
             Ok(())
         } else {
@@ -357,12 +363,7 @@ impl SmbClient {
 
         let mut buf = [0u8; 1024];
         let n = sys_read(fd, buf.as_mut_ptr(), 1024);
-        if n > 64 {
-            // Parse Session ID from response header (offset 40)
-            // NetBIOS (4) + Header (64). SessionId is at offset 4+40 = 44.
-            // But we read into buf starting at 0.
-            // Wait, NetBIOS header is 4 bytes.
-            // If we assume response has NetBIOS header.
+        if n > 64 && self.check_status(&buf[..n as usize]) {
             if buf[0] == 0 { // Session Message
                 let session_id_ptr = buf.as_ptr().add(4 + 40) as *const u64;
                 self.session_id = *session_id_ptr;
@@ -411,7 +412,7 @@ impl SmbClient {
 
         let mut buf = [0u8; 1024];
         let n = sys_read(fd, buf.as_mut_ptr(), 1024);
-        if n > 64 {
+        if n > 64 && self.check_status(&buf[..n as usize]) {
             if buf[0] == 0 {
                 let tree_id_ptr = buf.as_ptr().add(4 + 36) as *const u32;
                 self.tree_id = *tree_id_ptr;
