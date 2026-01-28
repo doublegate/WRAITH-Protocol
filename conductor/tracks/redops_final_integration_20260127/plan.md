@@ -51,8 +51,8 @@
     - [x] Replace "WRAITH_MESH_HELLO" with encrypted discovery handshake
 - [ ] Task: Implement Windows SMB Client (P3-4)
     - [ ] Build SMB2 client module for Windows using WinSock and Named Pipes
-- [ ] Task: Secure Keylogger Implementation (P3-5)
-    - [ ] Implement synchronization for the static key buffer in `collection.rs`
+- [x] Task: Secure Keylogger Implementation (P3-5) d19e905
+    - [x] Implement synchronization for the static key buffer in `collection.rs`
 - [ ] Task: Refine SMB Tree Connect Logic (P3-6)
     - [ ] Fix the "assume success" logic in `smb.rs` response parsing
 - [ ] Task: Final Dead Code Audit (P3-7)
