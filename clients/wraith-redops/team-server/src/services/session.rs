@@ -19,7 +19,6 @@ impl TrackedSession {
         }
     }
 
-    #[allow(dead_code)]
     pub fn should_rekey(&self) -> bool {
         let elapsed = self
             .last_rekey
@@ -28,12 +27,10 @@ impl TrackedSession {
         self.packet_count >= 1_000_000 || elapsed >= std::time::Duration::from_secs(120)
     }
 
-    #[allow(dead_code)]
     pub fn on_packet(&mut self) {
         self.packet_count += 1;
     }
 
-    #[allow(dead_code)]
     pub fn on_rekey(&mut self) {
         self.transport.rekey_dh();
         self.packet_count = 0;

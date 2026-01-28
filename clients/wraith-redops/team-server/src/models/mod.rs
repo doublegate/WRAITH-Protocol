@@ -73,7 +73,6 @@ pub struct CommandResult {
 }
 
 /// Operator model for team server authentication and authorization.
-#[allow(dead_code)]
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct Operator {
     pub id: Uuid,

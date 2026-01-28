@@ -202,9 +202,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let operator_service = OperatorServiceImpl {
         db: db.clone(),
         event_tx: event_tx.clone(),
-        governance: governance.clone(),
-        static_key: Arc::new(static_key.clone()),
-        sessions: sessions.clone(),
         listener_manager: listener_manager.clone(),
         powershell_manager: powershell_manager.clone(),
     };

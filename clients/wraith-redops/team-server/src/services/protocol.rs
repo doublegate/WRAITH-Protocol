@@ -227,16 +227,8 @@ impl ProtocolHandler {
                         frame.extend_from_slice(&resp_json);
 
                         // Rekey Logic: Check if we need to ratchet the sending key
-                        let elapsed = session
-                            .last_rekey
-                            .elapsed()
-                            .unwrap_or(std::time::Duration::from_secs(0));
-                        if session.packet_count >= 1_000_000
-                            || elapsed >= std::time::Duration::from_secs(120)
-                        {
-                            session.transport.rekey_dh();
-                            session.packet_count = 0;
-                            session.last_rekey = std::time::SystemTime::now();
+                        if session.should_rekey() {
+                            session.on_rekey();
                             debug!("Session {} rekeyed (DH ratchet)", hex::encode(cid));
                         }
 
@@ -249,7 +241,7 @@ impl ProtocolHandler {
                         };
 
                         // Increment packet counter
-                        session.packet_count += 1;
+                        session.on_packet();
 
                         let mut response = Vec::new();
                         response.extend_from_slice(&cid);

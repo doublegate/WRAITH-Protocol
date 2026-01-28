@@ -79,12 +79,6 @@ impl Database {
         Ok(plaintext)
     }
 
-    /// Get a reference to the underlying database connection pool.
-    #[allow(dead_code)]
-    pub fn pool(&self) -> &PgPool {
-        &self.pool
-    }
-
     // --- Campaign Operations ---
     pub async fn create_campaign(&self, name: &str, description: &str) -> Result<Campaign> {
         let rec = sqlx::query_as::<_, Campaign>(
@@ -351,7 +345,6 @@ impl Database {
         Ok(())
     }
 
-    #[allow(dead_code)]
     pub async fn get_command(&self, id: Uuid) -> Result<Option<Command>> {
         let rec = sqlx::query_as::<_, Command>("SELECT * FROM commands WHERE id = $1")
             .bind(id)
@@ -517,22 +510,6 @@ impl Database {
     pub async fn remove_persistence(&self, id: Uuid) -> Result<()> {
         sqlx::query("DELETE FROM persistence WHERE id = $1")
             .bind(id)
-            .execute(&self.pool)
-            .await?;
-        Ok(())
-    }
-
-    #[allow(dead_code)]
-    pub async fn add_persistence(
-        &self,
-        implant_id: Uuid,
-        method: &str,
-        details: &str,
-    ) -> Result<()> {
-        sqlx::query("INSERT INTO persistence (implant_id, method, details) VALUES ($1, $2, $3)")
-            .bind(implant_id)
-            .bind(method)
-            .bind(details)
             .execute(&self.pool)
             .await?;
         Ok(())

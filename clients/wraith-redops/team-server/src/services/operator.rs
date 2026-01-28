@@ -1,24 +1,15 @@
 use crate::database::Database;
-use crate::governance::GovernanceEngine;
 use crate::services::listener::ListenerManager;
 use crate::services::powershell::PowerShellManager;
-use crate::services::session::SessionManager;
 use crate::wraith::redops::operator_service_server::OperatorService;
 use crate::wraith::redops::*;
 use std::sync::Arc;
 use tokio::sync::broadcast;
 use tonic::{Request, Response, Status};
-use wraith_crypto::noise::NoiseKeypair;
 
 pub struct OperatorServiceImpl {
     pub db: Arc<Database>,
     pub event_tx: broadcast::Sender<Event>,
-    #[allow(dead_code)]
-    pub governance: Arc<GovernanceEngine>,
-    #[allow(dead_code)]
-    pub static_key: Arc<NoiseKeypair>,
-    #[allow(dead_code)]
-    pub sessions: Arc<SessionManager>,
     pub listener_manager: Arc<ListenerManager>,
     pub powershell_manager: Arc<PowerShellManager>,
 }
