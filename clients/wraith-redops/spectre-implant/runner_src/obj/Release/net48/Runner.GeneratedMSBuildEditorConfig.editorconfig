@@ -1,0 +1,5 @@
+is_global = true
+build_property.RootNamespace = Runner
+build_property.ProjectDir = /home/parobek/Code/WRAITH-Protocol/clients/wraith-redops/spectre-implant/runner_src/
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 

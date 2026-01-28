@@ -1,0 +1,12 @@
+/home/parobek/Code/WRAITH-Protocol/clients/wraith-redops/spectre-implant/runner_src/bin/Release/net48/Runner.dll
+/home/parobek/Code/WRAITH-Protocol/clients/wraith-redops/spectre-implant/runner_src/bin/Release/net48/Runner.pdb
+/home/parobek/Code/WRAITH-Protocol/clients/wraith-redops/spectre-implant/runner_src/bin/Release/net48/System.Management.Automation.dll
+/home/parobek/Code/WRAITH-Protocol/clients/wraith-redops/spectre-implant/runner_src/obj/Release/net48/Runner.csproj.AssemblyReference.cache
+/home/parobek/Code/WRAITH-Protocol/clients/wraith-redops/spectre-implant/runner_src/obj/Release/net48/Runner.GeneratedMSBuildEditorConfig.editorconfig
+/home/parobek/Code/WRAITH-Protocol/clients/wraith-redops/spectre-implant/runner_src/obj/Release/net48/Runner.AssemblyInfoInputs.cache
+/home/parobek/Code/WRAITH-Protocol/clients/wraith-redops/spectre-implant/runner_src/obj/Release/net48/Runner.AssemblyInfo.cs
+/home/parobek/Code/WRAITH-Protocol/clients/wraith-redops/spectre-implant/runner_src/obj/Release/net48/Runner.csproj.CoreCompileInputs.cache
+/home/parobek/Code/WRAITH-Protocol/clients/wraith-redops/spectre-implant/runner_src/obj/Release/net48/Runner.sourcelink.json
+/home/parobek/Code/WRAITH-Protocol/clients/wraith-redops/spectre-implant/runner_src/obj/Release/net48/Runner.csproj.Up2Date
+/home/parobek/Code/WRAITH-Protocol/clients/wraith-redops/spectre-implant/runner_src/obj/Release/net48/Runner.dll
+/home/parobek/Code/WRAITH-Protocol/clients/wraith-redops/spectre-implant/runner_src/obj/Release/net48/Runner.pdb

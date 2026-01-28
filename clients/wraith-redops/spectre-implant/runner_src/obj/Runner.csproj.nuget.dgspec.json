@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/home/parobek/Code/WRAITH-Protocol/clients/wraith-redops/spectre-implant/runner_src/Wraith.Runner/Wraith.Runner.csproj": {}
+    "/home/parobek/Code/WRAITH-Protocol/clients/wraith-redops/spectre-implant/runner_src/Runner.csproj": {}
   },
   "projects": {
-    "/home/parobek/Code/WRAITH-Protocol/clients/wraith-redops/spectre-implant/runner_src/Wraith.Runner/Wraith.Runner.csproj": {
+    "/home/parobek/Code/WRAITH-Protocol/clients/wraith-redops/spectre-implant/runner_src/Runner.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/parobek/Code/WRAITH-Protocol/clients/wraith-redops/spectre-implant/runner_src/Wraith.Runner/Wraith.Runner.csproj",
-        "projectName": "Wraith.Runner",
-        "projectPath": "/home/parobek/Code/WRAITH-Protocol/clients/wraith-redops/spectre-implant/runner_src/Wraith.Runner/Wraith.Runner.csproj",
+        "projectUniqueName": "/home/parobek/Code/WRAITH-Protocol/clients/wraith-redops/spectre-implant/runner_src/Runner.csproj",
+        "projectName": "Runner",
+        "projectPath": "/home/parobek/Code/WRAITH-Protocol/clients/wraith-redops/spectre-implant/runner_src/Runner.csproj",
         "packagesPath": "/home/parobek/.nuget/packages/",
-        "outputPath": "/home/parobek/Code/WRAITH-Protocol/clients/wraith-redops/spectre-implant/runner_src/Wraith.Runner/obj/",
+        "outputPath": "/home/parobek/Code/WRAITH-Protocol/clients/wraith-redops/spectre-implant/runner_src/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/home/parobek/.nuget/NuGet/NuGet.Config"
