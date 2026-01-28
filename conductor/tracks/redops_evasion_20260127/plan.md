@@ -16,9 +16,9 @@
     - [x] Call patching before CLR load in `powershell.rs` / `clr.rs`.
 
 ## Phase 3: Capabilities & Operations
-- [ ] Task: Implement KillDate & WorkingTime
-    - [ ] Update `C2Config` in `c2/mod.rs`.
-    - [ ] Add checks in `run_beacon_loop`.
+- [x] Task: Implement KillDate & WorkingTime [505f2b51]
+    - [x] Update `C2Config` in `c2/mod.rs`.
+    - [x] Add checks in `run_beacon_loop`.
 - [ ] Task: Implement Screen Capture (T1113)
     - [ ] Create `modules/screenshot.rs`.
     - [ ] Implement GDI capture logic.
