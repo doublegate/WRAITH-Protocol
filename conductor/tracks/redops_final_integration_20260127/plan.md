@@ -27,9 +27,9 @@
 - [x] Task: Wire PowerShell Management IPC (P2-1) 223876a
     - [x] Implement Tauri commands for `SetPowerShellProfile` and `GetPowerShellProfile`
     - [x] Update `operator-client` frontend to use new commands
-- [ ] Task: Expand Console Command Parity (P2-2)
-    - [ ] Add `inject`, `bof`, `socks`, `screenshot`, `browser`, `net_scan`, and `service_stop` to `Console.tsx`
-    - [ ] Implement UI handlers for command arguments
+- [x] Task: Expand Console Command Parity (P2-2) d5abe3a
+    - [x] Add `inject`, `bof`, `socks`, `screenshot`, `browser`, `net_scan`, and `service_stop` to `Console.tsx`
+    - [x] Implement UI handlers for command arguments
 - [ ] Task: Implement Windows UDP Transport (P2-3)
     - [ ] Implement WinSock2 logic in `spectre-implant` using hash-resolved APIs
     - [ ] Ensure parity with HTTP transport for encryption and frame handling
