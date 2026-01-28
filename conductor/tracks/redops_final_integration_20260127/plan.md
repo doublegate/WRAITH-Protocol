@@ -47,8 +47,8 @@
     - [x] Integrate DPAPI decryption in `browser.rs`
 - [x] Task: Dynamic Linux .text Base Detection (P3-2) 5176ecd
     - [x] Parse `/proc/self/maps` to find actual `.text` base in `obfuscation.rs`
-- [ ] Task: Encrypt Mesh Discovery (P3-3)
-    - [ ] Replace "WRAITH_MESH_HELLO" with encrypted discovery handshake
+- [x] Task: Encrypt Mesh Discovery (P3-3) d041a8b
+    - [x] Replace "WRAITH_MESH_HELLO" with encrypted discovery handshake
 - [ ] Task: Implement Windows SMB Client (P3-4)
     - [ ] Build SMB2 client module for Windows using WinSock and Named Pipes
 - [ ] Task: Secure Keylogger Implementation (P3-5)
