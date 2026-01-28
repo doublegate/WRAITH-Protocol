@@ -43,8 +43,8 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2: P2 (Medium) Issues & Integration' (Protocol in workflow.md)
 
 ## Phase 3: P3 (Low) Issues
-- [ ] Task: Implement Browser Credential Decryption (P3-1)
-    - [ ] Integrate DPAPI decryption in `browser.rs`
+- [x] Task: Implement Browser Credential Decryption (P3-1) 1269496
+    - [x] Integrate DPAPI decryption in `browser.rs`
 - [ ] Task: Dynamic Linux .text Base Detection (P3-2)
     - [ ] Parse `/proc/self/maps` to find actual `.text` base in `obfuscation.rs`
 - [ ] Task: Encrypt Mesh Discovery (P3-3)
