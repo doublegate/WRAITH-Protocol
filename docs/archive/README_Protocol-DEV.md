@@ -23,7 +23,7 @@ For the current production README, see [../../README.md](../../README.md).
 **Total Development Effort:** 2,685 story points delivered across 24 phases
 
 **Project Metrics (2026-01-28):**
-- **Code Volume:** ~131,000 lines of Rust code across protocol and client crates + ~35,000 lines TypeScript
+- **Code Volume:** ~141,000 lines of Rust code across protocol and client crates + ~36,600 lines TypeScript
 - **Test Coverage:** 2,134 tests passing (2,123 workspace + 11 spectre-implant, 16 ignored) - 100% pass rate
 - **Documentation:** 114 markdown files, ~62,800 lines of comprehensive documentation
 - **Dependencies:** 295 audited packages (zero vulnerabilities via cargo-audit)
@@ -1220,7 +1220,7 @@ Red team operations platform for authorized adversary emulation:
 | **wraith-recon** | ✅ v2.2.0 | ~4,500 | - | - | 78 | Network reconnaissance platform (Tauri 2.0 + React 18), packet capture with pcap/BPF, protocol analysis and dissection, network mapping and visualization, device fingerprinting, traffic anomaly detection, 17 Tauri IPC commands, real-time dashboard with dark theme |
 | **wraith-xdp** | 📋 Planned | 0 | 0 | 0 | 0 | eBPF/XDP programs for in-kernel packet filtering (excluded from default build) |
 
-**Total Protocol:** ~131,000 lines Rust across protocol and client crates + ~35,000 lines TypeScript/Kotlin/Swift
+**Total Protocol:** ~141,000 lines Rust across protocol and client crates + ~36,600 lines TypeScript/Kotlin/Swift
 
 **Workspace:** 22 members (8 protocol crates + 9 Tauri clients + team-server + operator-client + xtask + tests), 2 excluded (wraith-xdp, spectre-implant)
 
@@ -1395,7 +1395,7 @@ Red team operations platform for authorized adversary emulation:
 - ✅ WRAITH-Sync file synchronization with delta transfers
 - ✅ WRAITH-Recon network reconnaissance platform (packet capture, protocol analysis, network mapping)
 - ✅ WRAITH-RedOps workspace integration: team-server and operator-client as Cargo workspace members
-- ✅ WRAITH-RedOps gap analysis v6.0.0: ~96% completion, 82% MITRE ATT&CK (31/38), 0 P0 critical, ~15,207 lines across 83 source files
+- ✅ WRAITH-RedOps gap analysis v7.0.0: ~97% completion, 87% MITRE ATT&CK (35/40), 0 P0 critical, 21 modules, 32 RPCs 100% IPC, 59 SP remaining across 13 findings
 - ✅ sqlx restructured to PostgreSQL-only (avoids libsqlite3-sys link conflict with Tauri rusqlite)
 - ✅ Cross-compilation with Cross.toml pre-build hooks (protobuf-compiler for gRPC builds)
 - ✅ Conductor project management system with code style guides
@@ -1453,6 +1453,6 @@ See [../../to-dos/ROADMAP.md](../../to-dos/ROADMAP.md) for detailed future plann
 
 **WRAITH Protocol Development History** - *From Foundation to v2.3.0 (Phases 1-24 + Infrastructure Sprints)*
 
-**Development Period:** 2024 - 2026-01-28 | **Total Effort:** 2,740+ story points delivered across 24 phases + infrastructure sprints | **Quality:** Production-ready (98/100), 2,134 tests (2,123 workspace + 11 spectre-implant, 100% pass rate), 0 vulnerabilities, Grade A+ security | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server) | **Workspace:** 22 members + 2 excluded (team-server and operator-client integrated) | **TDR:** ~2.5% (Grade A - Excellent) | **CI/CD:** Optimized workflows with reusable setup, path filters, and cross-compilation via Cross.toml | **v2.3.0:** MSRV 1.88, WRAITH-RedOps ~96% complete (gap analysis v6.0.0), 82% MITRE ATT&CK coverage (31/38), 0 P0 critical issues, ~15,207 lines RedOps codebase (83 source files, 18 implant modules, 32 RPCs) | **Conductor:** Project management system with code style guides
+**Development Period:** 2024 - 2026-01-28 | **Total Effort:** 2,740+ story points delivered across 24 phases + infrastructure sprints | **Quality:** Production-ready (98/100), 2,134 tests (2,123 workspace + 11 spectre-implant, 100% pass rate), 0 vulnerabilities, Grade A+ security | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server) | **Workspace:** 22 members + 2 excluded (team-server and operator-client integrated) | **TDR:** ~2.5% (Grade A - Excellent) | **CI/CD:** Optimized workflows with reusable setup, path filters, and cross-compilation via Cross.toml | **v2.3.0:** MSRV 1.88, WRAITH-RedOps ~97% complete (gap analysis v7.0.0), 87% MITRE ATT&CK coverage (35/40), 0 P0 critical issues, 21 modules, 32 RPCs 100% IPC, 59 SP remaining across 13 findings | **Conductor:** Project management system with code style guides
 
 *Last Updated: 2026-01-28*
