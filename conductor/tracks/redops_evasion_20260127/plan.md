@@ -19,9 +19,9 @@
 - [x] Task: Implement KillDate & WorkingTime [505f2b51]
     - [x] Update `C2Config` in `c2/mod.rs`.
     - [x] Add checks in `run_beacon_loop`.
-- [ ] Task: Implement Screen Capture (T1113)
-    - [ ] Create `modules/screenshot.rs`.
-    - [ ] Implement GDI capture logic.
+- [x] Task: Implement Screen Capture (T1113) [d79f65d4]
+    - [x] Create `modules/screenshot.rs`.
+    - [x] Implement GDI capture logic.
 - [ ] Task: Implement Browser Credential Harvesting (T1555)
     -   [ ] Create `modules/browser.rs`.
     -   [ ] Implement file search for Chrome/Edge profiles.
