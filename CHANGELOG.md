@@ -48,6 +48,18 @@ Complete frontend rewrite of `clients/wraith-redops/operator-client/src/` with 1
   - Dashboard split layout: network graph (60%) + live events feed (40%)
   - Enhanced settings: auto-refresh interval selector, auth token display/refresh, about section with version info and shortcut reference
 
+#### Benchmark Analysis Document (2026-01-28)
+
+- **`docs/testing/BENCHMARK-ANALYSIS-v2.3.1.md`** - Comprehensive benchmark analysis covering all protocol crates
+  - Frame parsing: 2.4 ns/frame (~563 GiB/s equivalent throughput)
+  - XChaCha20-Poly1305 AEAD: ~1.4 GiB/s encryption throughput
+  - Noise XX handshake: 345 us per full mutual authentication
+  - Elligator2 encoding: 29.5 us per key encoding operation
+  - BLAKE3 tree hashing: 4.71 GiB/s in-memory
+  - File chunking: 14.85 GiB/s, reassembly: 5.42 GiB/s, verification: 4.78 GiB/s
+  - Ring buffers: ~100M ops/sec (SPSC), ~20M ops/sec (MPSC)
+  - Updated README.md performance section with detailed benchmark table
+
 ### Fixed
 
 - **Console Clear/History buttons** (`Console.tsx:212-213`) - Added `onClick` handlers using existing `xtermRef`/`commandHistoryRef`; buttons were previously non-functional

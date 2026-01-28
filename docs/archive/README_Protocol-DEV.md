@@ -4,7 +4,7 @@
 
 This document captures the complete development journey of WRAITH Protocol from inception through version 2.0.0, including detailed phase accomplishments, sprint summaries, and implementation milestones.
 
-[![Version](https://img.shields.io/badge/version-2.3.0-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
+[![Version](https://img.shields.io/badge/version-2.3.1-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
 [![Security](https://img.shields.io/badge/security-audited-green.svg)](../security/DPI_EVASION_REPORT.md)
 [![Rust](https://img.shields.io/badge/rust-1.88%2B-orange.svg)](https://www.rust-lang.org/)
 
@@ -1242,18 +1242,20 @@ Red team operations platform for authorized adversary emulation:
 
 ## Performance Evolution
 
-**Phase 13 Benchmarks (Final Measurements):**
+**Benchmark Results (v2.3.1 - see [BENCHMARK-ANALYSIS-v2.3.1.md](../testing/BENCHMARK-ANALYSIS-v2.3.1.md)):**
+- **Frame Parsing:** 2.4 ns/frame (~563 GiB/s equivalent), 172M frames/sec with SIMD (AVX2/SSE4.2/NEON)
+- **AEAD Encryption:** ~1.4 GiB/s (XChaCha20-Poly1305, 256-bit key, 192-bit nonce)
+- **Noise XX Handshake:** 345 us per full mutual authentication handshake
+- **Elligator2 Encoding:** 29.5 us per key encoding operation
+- **BLAKE3 Hashing:** 4.71 GiB/s tree hashing, 8.5 GB/s with rayon parallelization and SIMD
+- **File Chunking:** 14.85 GiB/s with io_uring async I/O
+- **Tree Hashing:** 4.71 GiB/s in-memory, 3.78 GiB/s from disk
+- **Chunk Verification:** 4.78 GiB/s (51.1 us per 256 KiB chunk)
+- **File Reassembly:** 5.42 GiB/s with O(m) algorithm
 - **Ring Buffers:** ~100M ops/sec (SPSC), ~20M ops/sec (MPSC with 4 producers)
   - Sub-microsecond latency for small batches
   - Zero allocations after initialization
   - Cache-line padding eliminates false sharing
-- **Frame Parsing:** 172M frames/sec with SIMD (AVX2/SSE4.2/NEON)
-- **AEAD Encryption:** 3.2 GB/s (XChaCha20-Poly1305)
-- **BLAKE3 Hashing:** 8.5 GB/s with rayon parallelization and SIMD
-- **File Chunking:** 14.85 GiB/s
-- **Tree Hashing:** 4.71 GiB/s in-memory, 3.78 GiB/s from disk
-- **Chunk Verification:** 4.78 GiB/s (51.1 µs per 256 KiB chunk)
-- **File Reassembly:** 5.42 GiB/s
 - **Connection Health:** Lock-free (AtomicU32), O(1) staleness detection
 
 **Performance Targets vs Achieved:**
@@ -1371,7 +1373,7 @@ Red team operations platform for authorized adversary emulation:
 
 ## Current Status & Next Steps
 
-**Version 2.3.0 Status (2026-01-28):**
+**Version 2.3.1 Status (2026-01-28):**
 - ✅ All 24 development phases complete (2,740+ SP delivered)
 - ✅ 2,134 tests (2,123 workspace + 11 spectre-implant, 16 ignored) - 100% pass rate
 - ✅ Zero vulnerabilities, zero warnings
@@ -1452,7 +1454,7 @@ See [../../to-dos/ROADMAP.md](../../to-dos/ROADMAP.md) for detailed future plann
 
 ---
 
-**WRAITH Protocol Development History** - *From Foundation to v2.3.0 (Phases 1-24 + Infrastructure Sprints)*
+**WRAITH Protocol Development History** - *From Foundation to v2.3.1 (Phases 1-24 + Infrastructure Sprints)*
 
 **Development Period:** 2024 - 2026-01-28 | **Total Effort:** 2,740+ story points delivered across 24 phases + infrastructure sprints | **Quality:** Production-ready (98/100), 2,148 tests (2,123 workspace + 11 spectre-implant + 14 doc, 100% pass rate), 0 vulnerabilities, Grade A+ security | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server) | **Workspace:** 22 members + 2 excluded (team-server and operator-client integrated) | **TDR:** ~2.5% (Grade A - Excellent) | **CI/CD:** Optimized workflows with reusable setup, path filters, and cross-compilation via Cross.toml | **v2.3.1:** MSRV 1.88, WRAITH-RedOps ~98% complete (gap analysis v7.0.0 + UI/UX overhaul), 87% MITRE ATT&CK coverage (35/40), 0 P0 critical issues, 21 modules, 34/34 IPC wired, operator client UI/UX overhauled (~5,800 lines, zustand/toast/modal/context menus, 6 new feature sections) | **Conductor:** Project management system with code style guides
 

@@ -348,18 +348,23 @@ For detailed architecture documentation, see [Protocol Overview](docs/architectu
 | Memory per Session  | <10 MB    | Including buffers     |
 | CPU @ 10 Gbps       | <50%      | 8-core system         |
 
-### Benchmarks
+### Benchmarks (v2.3.1)
 
-| Component          | Measured Performance                      |
-| ------------------ | ----------------------------------------- |
-| Ring Buffers       | ~100M ops/sec (SPSC), ~20M ops/sec (MPSC) |
-| Frame Parsing      | 172M frames/sec (SIMD: AVX2/SSE4.2/NEON)  |
-| AEAD Encryption    | 3.2 GB/s (XChaCha20-Poly1305)             |
-| BLAKE3 Hashing     | 8.5 GB/s (parallelized)                   |
-| File Chunking      | 14.85 GiB/s                               |
-| Tree Hashing       | 4.71 GiB/s in-memory                      |
-| Chunk Verification | 4.78 GiB/s                                |
-| File Reassembly    | 5.42 GiB/s                                |
+Measured on production hardware with `cargo bench --workspace`. See [Benchmark Analysis](docs/testing/BENCHMARK-ANALYSIS-v2.3.1.md) for full methodology and results.
+
+| Component            | Measured Performance                        | Details                                    |
+| -------------------- | ------------------------------------------- | ------------------------------------------ |
+| Frame Parsing        | 2.4 ns/frame (~563 GiB/s equivalent)       | SIMD: AVX2/SSE4.2/NEON, 172M frames/sec   |
+| AEAD Encryption      | ~1.4 GiB/s (XChaCha20-Poly1305)            | 256-bit key, 192-bit nonce                 |
+| Noise XX Handshake   | 345 us per handshake                        | Full mutual authentication                 |
+| Elligator2 Encoding  | 29.5 us per encoding                        | Key indistinguishability from random       |
+| BLAKE3 Hashing       | 4.71 GiB/s (tree), 8.5 GB/s (parallel)     | rayon + SIMD acceleration                  |
+| File Chunking        | 14.85 GiB/s                                 | io_uring async I/O                         |
+| Tree Hashing         | 4.71 GiB/s in-memory, 3.78 GiB/s from disk | Merkle tree with BLAKE3                    |
+| Chunk Verification   | 4.78 GiB/s                                  | <1 us per 256 KiB chunk                    |
+| File Reassembly      | 5.42 GiB/s                                  | O(m) algorithm, zero-copy                  |
+| Ring Buffers (SPSC)  | ~100M ops/sec                               | Cache-line padded, lock-free               |
+| Ring Buffers (MPSC)  | ~20M ops/sec                                | CAS-based, 4 producers                     |
 
 ---
 
@@ -623,7 +628,7 @@ See [CI Workflow](.github/workflows/ci.yml) and [Release Workflow](.github/workf
 
 ### Completed
 
-WRAITH Protocol v2.3.0 represents 2,740+ story points across 24 development phases:
+WRAITH Protocol v2.3.1 represents 2,740+ story points across 24 development phases:
 
 - Core protocol implementation (cryptography, transport, obfuscation, discovery)
 - 12 production-ready client applications (9 desktop + 2 mobile + 1 server platform)
@@ -708,6 +713,6 @@ WRAITH Protocol builds on excellent projects and research:
 
 **WRAITH Protocol** - _Secure. Fast. Invisible._
 
-**Version:** 2.3.0 | **License:** MIT | **Language:** Rust 2024 (MSRV 1.88) | **Tests:** 2,148 passing (2,123 workspace + 11 spectre-implant + 14 doc) | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server)
+**Version:** 2.3.1 | **License:** MIT | **Language:** Rust 2024 (MSRV 1.88) | **Tests:** 2,148 passing (2,123 workspace + 11 spectre-implant + 14 doc) | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server)
 
 **Last Updated:** 2026-01-28
