@@ -447,15 +447,15 @@ mod tests {
 
     #[test]
     fn test_chunking_roundtrip() {
-        // Create test file
+        // Create test file (4 MiB to produce 4 chunks with default 1 MiB chunk size)
         let mut temp_file = NamedTempFile::new().unwrap();
-        let data = vec![0xAA; 1024 * 1024]; // 1 MB
+        let data = vec![0xAA; 4 * 1024 * 1024]; // 4 MiB
         temp_file.write_all(&data).unwrap();
         temp_file.flush().unwrap();
 
         // Chunk file
         let mut chunker = FileChunker::new(temp_file.path(), DEFAULT_CHUNK_SIZE).unwrap();
-        assert_eq!(chunker.num_chunks(), 4); // 1MB / 256KB = 4 chunks
+        assert_eq!(chunker.num_chunks(), 4); // 4 MiB / 1 MiB = 4 chunks
 
         // Read all chunks
         let mut chunks = Vec::new();
@@ -487,7 +487,7 @@ mod tests {
     #[test]
     fn test_seek_to_chunk() {
         let mut temp_file = NamedTempFile::new().unwrap();
-        temp_file.write_all(&vec![0u8; 1024 * 1024]).unwrap();
+        temp_file.write_all(&vec![0u8; 4 * 1024 * 1024]).unwrap(); // 4 MiB
         temp_file.flush().unwrap();
 
         let mut chunker = FileChunker::new(temp_file.path(), DEFAULT_CHUNK_SIZE).unwrap();
@@ -502,7 +502,7 @@ mod tests {
     #[test]
     fn test_out_of_order_reassembly() {
         let mut temp_file = NamedTempFile::new().unwrap();
-        let data = vec![0xBB; 512 * 1024]; // 512 KB
+        let data = vec![0xBB; 2 * 1024 * 1024]; // 2 MiB (2 chunks)
         temp_file.write_all(&data).unwrap();
         temp_file.flush().unwrap();
 

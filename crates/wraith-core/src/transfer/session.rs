@@ -141,6 +141,9 @@ pub struct TransferSession {
     /// Peer states (for multi-peer downloads)
     /// SECURITY: Peer IDs are zeroized on drop
     peers: HashMap<PeerId, PeerTransferState>,
+
+    /// Scan hint for next_chunk_to_request (avoids O(n) scans from 0)
+    next_request_hint: u64,
 }
 
 impl Drop for TransferSession {
@@ -207,6 +210,7 @@ impl TransferSession {
             started_at: None,
             completed_at: None,
             peers: HashMap::new(),
+            next_request_hint: 0,
         }
     }
 
@@ -257,6 +261,7 @@ impl TransferSession {
             started_at: None,
             completed_at: None,
             peers: HashMap::new(),
+            next_request_hint: 0,
         }
     }
 
@@ -444,8 +449,11 @@ impl TransferSession {
     /// Returns the first chunk that is:
     /// - Not yet transferred
     /// - Not currently assigned to any peer
+    ///
+    /// Uses an internal scan hint to avoid O(n) scans from index 0 on
+    /// every call. The hint tracks the lowest potentially-unassigned index.
     #[must_use]
-    pub fn next_chunk_to_request(&self) -> Option<u64> {
+    pub fn next_chunk_to_request(&mut self) -> Option<u64> {
         // Collect all assigned chunks
         let assigned: HashSet<u64> = self
             .peers
@@ -454,8 +462,17 @@ impl TransferSession {
             .copied()
             .collect();
 
-        // Find first chunk not transferred and not assigned
-        (0..self.total_chunks)
+        // Scan forward from hint
+        while self.next_request_hint < self.total_chunks {
+            let i = self.next_request_hint;
+            if !self.transferred_chunks.contains(&i) && !assigned.contains(&i) {
+                return Some(i);
+            }
+            self.next_request_hint += 1;
+        }
+
+        // Wrap around for sparse completion patterns (chunks freed by timeout)
+        (0..self.next_request_hint)
             .find(|i| !self.transferred_chunks.contains(i) && !assigned.contains(i))
     }
 

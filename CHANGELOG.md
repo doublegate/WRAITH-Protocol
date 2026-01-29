@@ -9,6 +9,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.3.2] - 2026-01-28 - Benchmark-Driven Performance & Security Optimizations
+
+### Overview
+
+Release focused on benchmark-driven performance and security optimizations, implementing 13 of 15 proposals from the v2.3.1 benchmark analysis. Key improvements: userspace PRNG for frame padding (eliminating getrandom syscall), zero-allocation frame building API, fast-path frame parsing, O(1) transfer scheduling, tuned BBR congestion control, tighter forward secrecy limits, intermediate key zeroization, expanded replay window, and improved padding size classes.
+
+### Changed
+
+#### Performance Optimizations
+- **Frame building**: Replaced `getrandom` syscall with userspace PRNG (`rand::thread_rng`) for non-security-critical padding bytes
+- **Zero-allocation frame building**: Added `build_into()` API for hot-path packet sending, eliminating allocations
+- **Fast frame parsing**: Added `parse_fast()` with minimal validation for trusted internal paths
+- **Transfer scheduling**: O(1) scan hint replacing O(n) linear scan in `next_chunk_to_request`
+- **BBR congestion control**: Window sizes increased 10->20, initial pacing rate 10Mbps->100Mbps
+- **Chunk size increase**: `DEFAULT_CHUNK_SIZE` 256KiB->1MiB for reduced per-transfer overhead
+- **Transport buffers**: 256KiB->4MiB for better bandwidth-delay product coverage
+
+#### Security Hardening
+- **Forward secrecy**: Rekey byte limit tightened from 1GiB to 256MiB
+- **Intermediate key zeroization**: Added `temp.zeroize()` in KDF ratchet functions
+- **Replay window expansion**: 256->1024 packets for better out-of-order tolerance
+- **Configurable ratchet limits**: New `RatchetConfig` struct with `DEFAULT_MAX_SKIP`/`DEFAULT_MAX_SKIP_GAP` public constants
+
+#### Traffic Obfuscation
+- **Padding size classes**: Added 256 and 2048 byte classes (6->8 classes), reducing worst-case overhead from 297% to 99%
+
+### Tests
+- All tests updated for new defaults (chunk size, replay window, padding classes)
+- 2,148 tests passing (2,123 workspace + 11 spectre-implant + 14 doc), 0 failures, 16 ignored
+
+### Breaking Changes
+- `DEFAULT_CHUNK_SIZE` changed from 256KiB to 1MiB - applications using hardcoded 256KiB assumptions need updating
+- Replay window size changed from 256 to 1024 packets
+- BBR initial window changed from 10 to 20
+- Padding size classes expanded from 6 to 8
+
+### Skipped Proposals
+- Proposal 2.1 (XChaCha20Poly1305 Zeroize): `XChaCha20Poly1305` lacks the `Zeroize` trait in the current `chacha20poly1305` crate
+- Proposal 2.6 (Compile-time cipher suite init): `no_std` incompatible with `LazyLock`
+
+---
+
 ## [2.3.1] - 2026-01-28 - RedOps Operator Client UI/UX Enhancement
 
 ### Overview

@@ -13,6 +13,7 @@
 
 use crate::FRAME_HEADER_SIZE;
 use crate::error::FrameError;
+use rand::Rng;
 
 /// Maximum payload size (9000 - header - auth tag = 8944)
 const MAX_PAYLOAD_SIZE: usize = 8944;
@@ -399,6 +400,47 @@ impl<'a> Frame<'a> {
         })
     }
 
+    /// Parse a frame with minimal validation (hot-path optimized).
+    ///
+    /// Only validates frame type and payload bounds (memory safety).
+    /// Skips stream ID reserved range, offset bounds, and payload size checks.
+    /// Use this on trusted internal paths (e.g., after AEAD decryption)
+    /// where frames are known to be well-formed.
+    ///
+    /// # Errors
+    ///
+    /// Returns `FrameError::TooShort` if data is smaller than the minimum header size.
+    /// Returns `FrameError::ReservedFrameType` if the frame type is reserved.
+    /// Returns `FrameError::PayloadOverflow` if the declared payload length exceeds available data.
+    pub fn parse_fast(data: &'a [u8]) -> Result<Self, FrameError> {
+        if data.len() < FRAME_HEADER_SIZE {
+            return Err(FrameError::TooShort {
+                expected: FRAME_HEADER_SIZE,
+                actual: data.len(),
+            });
+        }
+
+        let header = parse_header_scalar(data);
+
+        if matches!(header.frame_type, FrameType::Reserved) {
+            return Err(FrameType::try_from(data[8]).unwrap_err());
+        }
+
+        if FRAME_HEADER_SIZE + header.payload_len as usize > data.len() {
+            return Err(FrameError::PayloadOverflow);
+        }
+
+        Ok(Self {
+            raw: data,
+            kind: header.frame_type,
+            flags: header.flags,
+            stream_id: header.stream_id,
+            sequence: header.sequence,
+            offset: header.offset,
+            payload_len: header.payload_len,
+        })
+    }
+
     /// Parse a frame using scalar (non-SIMD) implementation
     ///
     /// This method is exposed for testing and benchmarking purposes.
@@ -590,15 +632,53 @@ impl FrameBuilder {
         self
     }
 
+    /// Build the frame into a pre-allocated buffer (zero-allocation).
+    ///
+    /// Writes the frame directly into `buf`, which must be exactly `total_size` bytes.
+    /// This avoids heap allocation and is suitable for hot-path packet sending loops.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`FrameError::PayloadOverflow`] if `buf.len()` is too small for header + payload.
+    pub fn build_into(&self, buf: &mut [u8]) -> Result<usize, FrameError> {
+        let frame_type = self.frame_type.unwrap_or(FrameType::Data);
+        let payload_len = self.payload.len();
+        let total_size = buf.len();
+
+        if total_size < FRAME_HEADER_SIZE + payload_len {
+            return Err(FrameError::PayloadOverflow);
+        }
+
+        let padding_len = total_size - FRAME_HEADER_SIZE - payload_len;
+
+        // Write header
+        buf[..8].copy_from_slice(&self.nonce);
+        buf[8] = frame_type as u8;
+        buf[9] = self.flags.as_u8();
+        buf[10..12].copy_from_slice(&self.stream_id.to_be_bytes());
+        buf[12..16].copy_from_slice(&self.sequence.to_be_bytes());
+        buf[16..24].copy_from_slice(&self.offset.to_be_bytes());
+        #[allow(clippy::cast_possible_truncation)]
+        let payload_len_u16 = payload_len as u16;
+        buf[24..26].copy_from_slice(&payload_len_u16.to_be_bytes());
+        buf[26..28].copy_from_slice(&[0u8; 2]); // Reserved
+
+        // Write payload
+        buf[FRAME_HEADER_SIZE..FRAME_HEADER_SIZE + payload_len].copy_from_slice(&self.payload);
+
+        // Write random padding
+        if padding_len > 0 {
+            rand::thread_rng().fill(&mut buf[FRAME_HEADER_SIZE + payload_len..]);
+        }
+
+        Ok(total_size)
+    }
+
     /// Build the frame into a byte buffer
     ///
     /// # Errors
     ///
     /// Returns [`FrameError::PayloadOverflow`] if `total_size` is too small for header + payload.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the CSPRNG fails to generate random padding bytes (extremely unlikely).
     pub fn build(self, total_size: usize) -> Result<Vec<u8>, FrameError> {
         let frame_type = self.frame_type.unwrap_or(FrameType::Data);
         let payload_len = self.payload.len();
@@ -625,10 +705,14 @@ impl FrameBuilder {
         // Write payload
         buf.extend_from_slice(&self.payload);
 
-        // Write random padding
-        let mut padding = vec![0u8; padding_len];
-        getrandom::getrandom(&mut padding).expect("CSPRNG failure");
-        buf.extend_from_slice(&padding);
+        // Write random padding using thread-local PRNG (fast, non-syscall).
+        // Padding bytes are encrypted by AEAD before transmission, so
+        // cryptographic-quality randomness is not required here.
+        if padding_len > 0 {
+            let start = buf.len();
+            buf.resize(start + padding_len, 0);
+            rand::thread_rng().fill(&mut buf[start..]);
+        }
 
         Ok(buf)
     }

@@ -22,8 +22,11 @@ pub mod async_file;
 #[cfg(target_os = "linux")]
 pub mod io_uring;
 
-/// Default chunk size (256 KiB)
-pub const DEFAULT_CHUNK_SIZE: usize = 256 * 1024;
+/// Default chunk size (1 MiB).
+/// Larger chunks reduce per-transfer overhead (Merkle tree nodes, session
+/// scheduling, chunk requests) by 4x compared to the previous 256 KiB default.
+/// BLAKE3 throughput is equally high at 1 MiB (~4.86 GiB/s).
+pub const DEFAULT_CHUNK_SIZE: usize = 1024 * 1024;
 
 /// File metadata for transfers
 #[derive(Debug, Clone)]

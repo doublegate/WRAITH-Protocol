@@ -5,7 +5,7 @@
 This document tracks the development journey of WRAITH Protocol client applications, from planning through implementation and release. Phases 15-24 delivered all 12 client applications: WRAITH-Transfer, WRAITH-Android, WRAITH-iOS, WRAITH-Chat, WRAITH-Sync, WRAITH-Share, WRAITH-Stream, WRAITH-Mesh, WRAITH-Publish, WRAITH-Vault, WRAITH-Recon, and WRAITH-RedOps.
 
 [![Version](https://img.shields.io/badge/clients-12%20complete-green.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
-[![Protocol](https://img.shields.io/badge/protocol-v2.3.1-blue.svg)](../../README.md)
+[![Protocol](https://img.shields.io/badge/protocol-v2.3.2-blue.svg)](../../README.md)
 [![Clients](https://img.shields.io/badge/clients-9%20desktop%20+%202%20mobile%20+%201%20server-brightgreen.svg)](../../to-dos/ROADMAP-clients.md)
 
 ---

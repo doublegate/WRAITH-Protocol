@@ -42,13 +42,34 @@ use core::fmt;
 use rand_core::{CryptoRng, RngCore};
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
-/// Maximum number of skipped message keys to store.
+/// Default maximum number of skipped message keys to store.
 /// Prevents memory exhaustion from malicious message counters.
-const MAX_SKIP: u64 = 1000;
+pub const DEFAULT_MAX_SKIP: u64 = 1000;
 
-/// Maximum gap allowed when skipping messages.
+/// Default maximum gap allowed when skipping messages.
 /// Prevents `DoS` by limiting how far ahead we'll pre-compute keys.
-const MAX_SKIP_GAP: u64 = 100;
+pub const DEFAULT_MAX_SKIP_GAP: u64 = 100;
+
+/// Configuration for ratchet skip limits.
+///
+/// Allows tuning DoS resistance vs. tolerance for out-of-order messages.
+/// High-latency networks (satellite, Tor) may need larger gaps.
+#[derive(Debug, Clone, Copy)]
+pub struct RatchetConfig {
+    /// Maximum total skipped message keys to store
+    pub max_skip: u64,
+    /// Maximum gap allowed when skipping messages
+    pub max_skip_gap: u64,
+}
+
+impl Default for RatchetConfig {
+    fn default() -> Self {
+        Self {
+            max_skip: DEFAULT_MAX_SKIP,
+            max_skip_gap: DEFAULT_MAX_SKIP_GAP,
+        }
+    }
+}
 
 /// Symmetric key ratchet for deriving per-message keys.
 ///
@@ -123,7 +144,7 @@ impl SymmetricRatchet {
         }
 
         let gap = target - self.counter;
-        if gap > MAX_SKIP_GAP {
+        if gap > DEFAULT_MAX_SKIP_GAP {
             return Err(RatchetError::TooManySkipped);
         }
 
@@ -527,11 +548,11 @@ impl DoubleRatchet {
         }
 
         let skip_count = until.saturating_sub(self.recv_count);
-        if u64::from(skip_count) > MAX_SKIP_GAP {
+        if u64::from(skip_count) > DEFAULT_MAX_SKIP_GAP {
             return Err(RatchetError::TooManySkipped);
         }
 
-        if self.skipped_keys.len() as u64 + u64::from(skip_count) > MAX_SKIP {
+        if self.skipped_keys.len() as u64 + u64::from(skip_count) > DEFAULT_MAX_SKIP {
             return Err(RatchetError::TooManySkipped);
         }
 
@@ -564,8 +585,10 @@ impl DoubleRatchet {
 }
 
 /// Root key KDF: Derive new root key and chain key from DH output.
+///
+/// Zeroizes intermediate PRK to minimize key material exposure window.
 fn kdf_rk(root_key: &[u8; 32], dh_out: &[u8; 32]) -> ([u8; 32], [u8; 32]) {
-    let temp = hkdf_extract(root_key, dh_out);
+    let mut temp = hkdf_extract(root_key, dh_out);
 
     let mut new_root = [0u8; 32];
     let mut chain_key = [0u8; 32];
@@ -573,10 +596,14 @@ fn kdf_rk(root_key: &[u8; 32], dh_out: &[u8; 32]) -> ([u8; 32], [u8; 32]) {
     hkdf_expand(&temp, b"wraith_root", &mut new_root);
     hkdf_expand(&temp, b"wraith_chain", &mut chain_key);
 
+    temp.zeroize();
+
     (new_root, chain_key)
 }
 
 /// Chain key KDF: Derive message key and next chain key.
+///
+/// Input chain_key is consumed; caller should zeroize their copy if needed.
 fn kdf_ck(chain_key: &[u8; 32]) -> ([u8; 32], [u8; 32]) {
     let mut message_key = [0u8; 32];
     let mut next_chain = [0u8; 32];
@@ -782,7 +809,7 @@ mod tests {
         let mut ratchet = SymmetricRatchet::new(&root);
 
         // Trying to skip too far should fail
-        let result = ratchet.skip_to(MAX_SKIP_GAP + 10);
+        let result = ratchet.skip_to(DEFAULT_MAX_SKIP_GAP + 10);
         assert!(matches!(result, Err(RatchetError::TooManySkipped)));
     }
 

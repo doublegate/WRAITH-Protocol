@@ -265,7 +265,7 @@ mod padding_properties {
         /// SizeClasses produces one of the defined classes
         #[test]
         fn size_classes_mode(plaintext_len in 0usize..20000) {
-            let valid_classes = [128, 512, 1024, 4096, 8192, 16384];
+            let valid_classes = [128, 256, 512, 1024, 2048, 4096, 8192, 16384];
 
             let mut engine = PaddingEngine::new(PaddingMode::SizeClasses);
             let padded = engine.padded_size(plaintext_len);
@@ -502,14 +502,14 @@ mod replay_protection_properties {
 
         /// Packets too old (beyond window) are rejected
         #[test]
-        fn old_packets_rejected(high_seq in 300u64..10000) {
+        fn old_packets_rejected(high_seq in 1100u64..10000) {
             let mut rp = ReplayProtection::new();
 
             // Accept a high sequence number
             rp.check_and_update(high_seq);
 
             // Old packet beyond window should be rejected
-            let old_seq = high_seq.saturating_sub(257); // Beyond 256-packet window
+            let old_seq = high_seq.saturating_sub(1025); // Beyond 1024-packet window
 
             prop_assert!(
                 !rp.check_and_update(old_seq),

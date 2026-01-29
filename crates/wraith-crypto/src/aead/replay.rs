@@ -1,39 +1,43 @@
 //! Replay protection using sliding window.
 //!
 //! Provides protection against replay attacks by tracking seen packet sequence numbers.
-//! Uses a 256-bit window for efficient out-of-order packet handling.
+//! Uses a 1024-bit window for efficient out-of-order packet handling.
 
 use subtle::ConstantTimeEq;
 
 /// Replay protection using sliding window.
 ///
 /// Tracks seen packet sequence numbers to prevent replay attacks.
-/// Uses a 256-bit window for efficient out-of-order packet handling.
+/// Uses a 1024-bit window for efficient out-of-order packet handling.
 ///
 /// # Security
 ///
-/// A larger window (256 vs 64 packets) provides better tolerance for:
+/// A 1024-packet window provides tolerance for:
 /// - High packet loss scenarios (>10% loss)
-/// - Severe packet reordering (network path changes)
+/// - Severe packet reordering (network path changes, ECMP)
 /// - Bursty traffic patterns (VPN reconnects, mobile handoffs)
+/// - High-throughput scenarios (~300 us coverage at 40 Gbps)
 #[derive(Clone)]
 pub struct ReplayProtection {
     /// Maximum sequence number seen
     max_seq: u64,
-    /// Sliding window bitmap (256 bits = 256 packets, stored as 4 × 64-bit words)
-    window: [u64; 4],
+    /// Sliding window bitmap (1024 bits = 1024 packets, stored as 16 × 64-bit words)
+    window: [u64; 16],
 }
 
 impl ReplayProtection {
-    /// Size of the replay protection window (256 packets)
-    pub const WINDOW_SIZE: u64 = 256;
+    /// Size of the replay protection window (1024 packets)
+    pub const WINDOW_SIZE: u64 = 1024;
+
+    /// Number of 64-bit words in the window bitmap
+    const WINDOW_WORDS: usize = (Self::WINDOW_SIZE / 64) as usize;
 
     /// Create a new replay protection window
     #[must_use]
     pub fn new() -> Self {
         Self {
             max_seq: 0,
-            window: [0; 4],
+            window: [0; Self::WINDOW_WORDS],
         }
     }
 
@@ -66,7 +70,7 @@ impl ReplayProtection {
 
             if shift >= Self::WINDOW_SIZE {
                 // Shift is >= window size, reset window completely
-                self.window = [0; 4];
+                self.window = [0; Self::WINDOW_WORDS];
                 self.window[0] = 1; // Mark bit 0 as seen
             } else {
                 // Shift window left by shift bits
@@ -110,12 +114,12 @@ impl ReplayProtection {
     /// Reset the replay protection window
     pub fn reset(&mut self) {
         self.max_seq = 0;
-        self.window = [0; 4];
+        self.window = [0; Self::WINDOW_WORDS];
     }
 
     /// Shift the window left by `shift` bits (internal helper).
     ///
-    /// Implements multi-word left shift for the 256-bit window.
+    /// Implements multi-word left shift for the window bitmap.
     fn shift_window_left(&mut self, shift: u64) {
         if shift == 0 {
             return;
@@ -123,7 +127,7 @@ impl ReplayProtection {
 
         if shift >= Self::WINDOW_SIZE {
             // Complete shift-out
-            self.window = [0; 4];
+            self.window = [0; Self::WINDOW_WORDS];
             return;
         }
 
@@ -132,7 +136,7 @@ impl ReplayProtection {
 
         if bit_shift == 0 {
             // Word-aligned shift
-            for i in (word_shift..4).rev() {
+            for i in (word_shift..Self::WINDOW_WORDS).rev() {
                 self.window[i] = self.window[i - word_shift];
             }
             for i in 0..word_shift {
@@ -140,7 +144,7 @@ impl ReplayProtection {
             }
         } else {
             // Bit-level shift across word boundaries
-            for i in (word_shift + 1..4).rev() {
+            for i in (word_shift + 1..Self::WINDOW_WORDS).rev() {
                 self.window[i] = (self.window[i - word_shift] << bit_shift)
                     | (self.window[i - word_shift - 1] >> (64 - bit_shift));
             }

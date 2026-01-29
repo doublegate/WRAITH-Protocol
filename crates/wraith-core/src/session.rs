@@ -110,8 +110,8 @@ impl Default for SessionConfig {
             idle_timeout: Duration::from_secs(30),
             rekey_interval: Duration::from_secs(120),
             rekey_packet_limit: 1_000_000,
-            rekey_byte_limit: 1024 * 1024 * 1024, // 1 GiB
-            rekey_emergency_threshold: 0.9,       // 90% of any limit triggers rekey
+            rekey_byte_limit: 256 * 1024 * 1024, // 256 MiB - tighter limit for better forward secrecy
+            rekey_emergency_threshold: 0.9,      // 90% of any limit triggers rekey
         }
     }
 }

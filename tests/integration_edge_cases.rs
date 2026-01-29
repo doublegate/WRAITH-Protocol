@@ -98,8 +98,8 @@ async fn test_maximum_chunk_boundary() {
 async fn test_just_over_chunk_boundary() {
     let temp_dir = TempDir::new().unwrap();
 
-    // Create file that's 256 KB + 1 byte (should produce 2 chunks)
-    let chunk_size = 256 * 1024;
+    // Create file that's DEFAULT_CHUNK_SIZE + 1 byte (should produce 2 chunks)
+    let chunk_size = wraith_files::DEFAULT_CHUNK_SIZE;
     let over_chunk_file = temp_dir.path().join("over_chunk.dat");
     let data = vec![0xCD; chunk_size + 1];
     fs::write(&over_chunk_file, &data).await.unwrap();
@@ -119,10 +119,10 @@ async fn test_just_over_chunk_boundary() {
 async fn test_large_file_handling() {
     let temp_dir = TempDir::new().unwrap();
 
-    // Create a large file (10 MB)
+    // Create a large file (10 MiB)
     let large_file = temp_dir.path().join("large.dat");
-    let size = 10 * 1024 * 1024; // 10 MB
-    let chunk_size = 256 * 1024;
+    let size = 10 * 1024 * 1024; // 10 MiB
+    let chunk_size = wraith_files::DEFAULT_CHUNK_SIZE;
 
     // Write in chunks to avoid memory pressure
     let mut file = fs::OpenOptions::new()

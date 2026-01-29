@@ -6,11 +6,15 @@
 use std::collections::VecDeque;
 use std::time::{Duration, Instant};
 
-/// Maximum number of bandwidth samples to keep
-const BW_WINDOW_SIZE: usize = 10;
+/// Maximum number of bandwidth samples to keep.
+/// 20 samples captures 2.5 full ProbeBw 8-cycle gains, providing
+/// more stable bandwidth estimates than the previous 10-sample window.
+const BW_WINDOW_SIZE: usize = 20;
 
-/// Maximum number of RTT samples to keep
-const RTT_WINDOW_SIZE: usize = 10;
+/// Maximum number of RTT samples to keep.
+/// 20 samples provides more stable min-RTT estimates across
+/// ProbeBw cycles and transient network conditions.
+const RTT_WINDOW_SIZE: usize = 20;
 
 /// Time to stay in `ProbeRtt` phase (10ms)
 const PROBE_RTT_DURATION: Duration = Duration::from_millis(10);
@@ -138,7 +142,7 @@ impl BbrState {
             rounds_without_growth: 0,
             prior_btl_bw: 0,
             next_send_time: now,
-            pacing_rate_bps: 10_000_000 / 8, // Initial 10 Mbps
+            pacing_rate_bps: 100_000_000 / 8, // Initial 100 Mbps
         }
     }
 
@@ -190,8 +194,8 @@ impl BbrState {
     #[must_use]
     pub fn pacing_rate(&self) -> u64 {
         if self.btl_bw == 0 {
-            // Initial rate: 10 Mbps
-            return 10_000_000 / 8;
+            // Initial rate: 100 Mbps
+            return 100_000_000 / 8;
         }
         // Use fixed-point gain for fast calculation
         apply_gain_fp(self.btl_bw, self.pacing_gain_fp)
@@ -758,7 +762,7 @@ mod tests {
         // Should have a default pacing rate even with no bandwidth estimate
         let rate = bbr.pacing_rate();
         assert!(rate > 0);
-        assert_eq!(rate, 10_000_000 / 8); // 10 Mbps initial
+        assert_eq!(rate, 100_000_000 / 8); // 100 Mbps initial
     }
 
     #[test]

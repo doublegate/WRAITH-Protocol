@@ -56,8 +56,8 @@ impl Default for TransportConfig {
         Self {
             use_xdp: true,
             workers: 0,
-            recv_buffer_size: 256 * 1024,
-            send_buffer_size: 256 * 1024,
+            recv_buffer_size: 4 * 1024 * 1024, // 4 MiB - covers more BDP at high throughput
+            send_buffer_size: 4 * 1024 * 1024, // 4 MiB - reduces drops under burst conditions
         }
     }
 }

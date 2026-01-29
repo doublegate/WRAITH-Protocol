@@ -617,13 +617,13 @@ fn test_file_chunking_integration() {
     // Create test file
     let temp_dir = TempDir::new().unwrap();
     let test_file = temp_dir.path().join("test.dat");
-    let test_data = vec![0xAA; 1024 * 1024]; // 1 MB
+    let test_data = vec![0xAA; 4 * 1024 * 1024]; // 4 MB
     std::fs::write(&test_file, &test_data).unwrap();
 
     // Chunk file
     let mut chunker = FileChunker::new(&test_file, DEFAULT_CHUNK_SIZE).unwrap();
     let total_chunks = chunker.num_chunks();
-    assert_eq!(total_chunks, 4); // 1MB / 256KB = 4 chunks
+    assert_eq!(total_chunks, 4); // 4MB / 1MB = 4 chunks
 
     // Reassemble
     let output_file = temp_dir.path().join("output.dat");
@@ -649,12 +649,12 @@ fn test_file_chunking_integration() {
 fn test_tree_hash_verification_integration() {
     let temp_dir = TempDir::new().unwrap();
     let test_file = temp_dir.path().join("test.dat");
-    let test_data = vec![0xBB; 512 * 1024]; // 512 KB
+    let test_data = vec![0xBB; 2 * 1024 * 1024]; // 2 MB
     std::fs::write(&test_file, &test_data).unwrap();
 
     // Compute tree hash
     let tree = compute_tree_hash(&test_file, DEFAULT_CHUNK_SIZE).unwrap();
-    assert_eq!(tree.chunks.len(), 2); // 512KB / 256KB = 2 chunks
+    assert_eq!(tree.chunks.len(), 2); // 2MB / 1MB = 2 chunks
 
     // Verify first chunk
     let mut chunker = FileChunker::new(&test_file, DEFAULT_CHUNK_SIZE).unwrap();
@@ -672,7 +672,7 @@ fn test_transfer_session_progress() {
     let session = TransferSession::new_receive(
         [1u8; 32],
         PathBuf::from("/tmp/test.dat"),
-        1024 * 1024, // 1 MB
+        4 * 1024 * 1024, // 4 MB
         DEFAULT_CHUNK_SIZE,
     );
 
@@ -800,13 +800,13 @@ fn test_file_transfer_with_resume() {
     let source_file = temp_dir.path().join("source.dat");
     let dest_file = temp_dir.path().join("dest.dat");
 
-    // 2 MB test file
-    let test_data = vec![0xEF; 2 * 1024 * 1024];
+    // 8 MB test file
+    let test_data = vec![0xEF; 8 * 1024 * 1024];
     fs::write(&source_file, &test_data).unwrap();
 
     let mut chunker = FileChunker::new(&source_file, DEFAULT_CHUNK_SIZE).unwrap();
     let total_chunks = chunker.num_chunks();
-    assert_eq!(total_chunks, 8); // 2MB / 256KB
+    assert_eq!(total_chunks, 8); // 8MB / 1MB
 
     // 1. Initial transfer: download first 50% (4 chunks)
     let mut reassembler =
@@ -2044,12 +2044,12 @@ async fn test_file_chunk_transfer() {
     let source = temp_dir.path().join("source.dat");
     let dest = temp_dir.path().join("dest.dat");
 
-    let test_data = vec![0xCD; 1024 * 1024]; // 1 MB
+    let test_data = vec![0xCD; 4 * 1024 * 1024]; // 4 MB
     fs::write(&source, &test_data).unwrap();
 
     // 2. Compute tree hash for integrity verification
     let tree_hash = compute_tree_hash(&source, DEFAULT_CHUNK_SIZE).unwrap();
-    assert_eq!(tree_hash.chunk_count(), 4); // 1MB / 256KB
+    assert_eq!(tree_hash.chunk_count(), 4); // 4MB / 1MB
 
     // 3. Create chunker and reassembler
     let mut chunker = FileChunker::new(&source, DEFAULT_CHUNK_SIZE).unwrap();
@@ -2069,7 +2069,7 @@ async fn test_file_chunk_transfer() {
     }
 
     // 5. Verify transfer complete
-    assert_eq!(chunk_index, 4);
+    assert_eq!(chunk_index, 4); // 4MB / 1MB = 4 chunks
     assert!(reassembler.is_complete());
 
     // 6. Finalize and verify file integrity

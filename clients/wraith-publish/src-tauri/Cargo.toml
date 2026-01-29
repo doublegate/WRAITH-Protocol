@@ -1,6 +1,6 @@
 [package]
 name = "wraith-publish"
-version = "2.3.1"
+version = "2.3.2"
 description = "WRAITH-Publish - Decentralized Content Publishing Platform"
 authors = ["WRAITH Protocol Contributors"]
 license = "MIT OR Apache-2.0"

@@ -13,7 +13,7 @@ pub enum PaddingMode {
     None,
     /// Round to power of 2 (minimum 128 bytes)
     PowerOfTwo,
-    /// Fixed size classes (128, 512, 1024, 4096, 8192, 16384)
+    /// Fixed size classes (128, 256, 512, 1024, 2048, 4096, 8192, 16384)
     SizeClasses,
     /// Constant rate padding (always max size)
     ConstantRate,
@@ -21,8 +21,10 @@ pub enum PaddingMode {
     Statistical,
 }
 
-/// Padding size classes (bytes)
-const SIZE_CLASSES: &[usize] = &[128, 512, 1024, 4096, 8192, 16384];
+/// Padding size classes (bytes).
+/// Adding 256 and 2048 reduces maximum overhead from 297% to 99%
+/// for messages in the 129-256 byte range (common for chat messages).
+const SIZE_CLASSES: &[usize] = &[128, 256, 512, 1024, 2048, 4096, 8192, 16384];
 
 /// Packet padding engine
 ///
@@ -246,10 +248,11 @@ mod tests {
         let mut engine = PaddingEngine::new(PaddingMode::SizeClasses);
         assert_eq!(engine.padded_size(100), 128);
         assert_eq!(engine.padded_size(128), 128);
-        assert_eq!(engine.padded_size(129), 512);
+        assert_eq!(engine.padded_size(129), 256);
         assert_eq!(engine.padded_size(500), 512);
         assert_eq!(engine.padded_size(513), 1024);
         assert_eq!(engine.padded_size(1000), 1024);
+        assert_eq!(engine.padded_size(1025), 2048);
         assert_eq!(engine.padded_size(5000), 8192);
         assert_eq!(engine.padded_size(20000), 16384);
     }
@@ -367,8 +370,11 @@ mod tests {
 
     #[test]
     fn test_size_classes_constant() {
-        assert_eq!(SIZE_CLASSES.len(), 6);
-        assert_eq!(SIZE_CLASSES, &[128, 512, 1024, 4096, 8192, 16384]);
+        assert_eq!(SIZE_CLASSES.len(), 8);
+        assert_eq!(
+            SIZE_CLASSES,
+            &[128, 256, 512, 1024, 2048, 4096, 8192, 16384]
+        );
     }
 
     #[test]
@@ -448,16 +454,20 @@ mod tests {
 
         // Test exact boundaries
         assert_eq!(engine.padded_size(128), 128);
+        assert_eq!(engine.padded_size(256), 256);
         assert_eq!(engine.padded_size(512), 512);
         assert_eq!(engine.padded_size(1024), 1024);
+        assert_eq!(engine.padded_size(2048), 2048);
         assert_eq!(engine.padded_size(4096), 4096);
         assert_eq!(engine.padded_size(8192), 8192);
         assert_eq!(engine.padded_size(16384), 16384);
 
         // Test just over boundaries
-        assert_eq!(engine.padded_size(129), 512);
+        assert_eq!(engine.padded_size(129), 256);
+        assert_eq!(engine.padded_size(257), 512);
         assert_eq!(engine.padded_size(513), 1024);
-        assert_eq!(engine.padded_size(1025), 4096);
+        assert_eq!(engine.padded_size(1025), 2048);
+        assert_eq!(engine.padded_size(2049), 4096);
         assert_eq!(engine.padded_size(4097), 8192);
         assert_eq!(engine.padded_size(8193), 16384);
     }
