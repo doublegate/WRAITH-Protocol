@@ -564,6 +564,70 @@ impl<'a> Frame<'a> {
     }
 }
 
+/// Build a frame directly into a pre-allocated buffer from parts (zero-allocation hot path).
+///
+/// Bypasses the builder pattern entirely for maximum performance in send loops.
+/// No intermediate `Vec<u8>` is allocated for the payload.
+///
+/// # Arguments
+///
+/// * `frame_type` - The frame type
+/// * `stream_id` - Stream identifier (0 or >= 16)
+/// * `sequence` - Sequence number
+/// * `offset` - File offset
+/// * `payload` - Payload data (borrowed, not cloned)
+/// * `buf` - Pre-allocated output buffer (must be >= FRAME_HEADER_SIZE + payload.len())
+///
+/// # Returns
+///
+/// The total number of bytes written to `buf`.
+///
+/// # Errors
+///
+/// Returns [`FrameError::PayloadOverflow`] if `buf` is too small.
+pub fn build_into_from_parts(
+    frame_type: FrameType,
+    stream_id: u16,
+    sequence: u32,
+    offset: u64,
+    payload: &[u8],
+    buf: &mut [u8],
+) -> Result<usize, FrameError> {
+    let payload_len = payload.len();
+    let total_size = buf.len();
+
+    if total_size < FRAME_HEADER_SIZE + payload_len {
+        return Err(FrameError::PayloadOverflow);
+    }
+
+    let padding_len = total_size - FRAME_HEADER_SIZE - payload_len;
+
+    // Write header (nonce left as zero -- caller should set if needed)
+    buf[..8].fill(0);
+    buf[8] = frame_type as u8;
+    buf[9] = 0; // flags
+    buf[10..12].copy_from_slice(&stream_id.to_be_bytes());
+    buf[12..16].copy_from_slice(&sequence.to_be_bytes());
+    buf[16..24].copy_from_slice(&offset.to_be_bytes());
+    #[allow(clippy::cast_possible_truncation)]
+    let payload_len_u16 = payload_len as u16;
+    buf[24..26].copy_from_slice(&payload_len_u16.to_be_bytes());
+    buf[26..28].copy_from_slice(&[0u8; 2]); // Reserved
+
+    // Write payload
+    buf[FRAME_HEADER_SIZE..FRAME_HEADER_SIZE + payload_len].copy_from_slice(payload);
+
+    // Write random padding
+    if padding_len > 0 {
+        rand::Rng::fill(
+            &mut rand::thread_rng(),
+            &mut buf[FRAME_HEADER_SIZE + payload_len..],
+        );
+    }
+
+    Ok(total_size)
+}
+
 /// Builder for constructing frames
 #[derive(Default)]
 pub struct FrameBuilder {

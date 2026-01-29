@@ -88,7 +88,7 @@ pub mod transfer;
 
 pub use congestion::BbrState;
 pub use error::Error;
-pub use frame::{Frame, FrameBuilder, FrameFlags, FrameType};
+pub use frame::{Frame, FrameBuilder, FrameFlags, FrameType, build_into_from_parts};
 pub use migration::{PathState, PathValidator, ValidatedPath};
 pub use node::{Node, NodeConfig, NodeError};
 pub use path::{DEFAULT_MTU, MAX_MTU, MIN_MTU, PathMtuDiscovery};

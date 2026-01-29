@@ -348,23 +348,41 @@ For detailed architecture documentation, see [Protocol Overview](docs/architectu
 | Memory per Session  | <10 MB    | Including buffers     |
 | CPU @ 10 Gbps       | <50%      | 8-core system         |
 
-### Benchmarks (v2.3.2)
+### Benchmarks (v2.3.2-optimized)
 
-Measured on production hardware with `cargo bench --workspace`. See [Benchmark Analysis](docs/testing/BENCHMARK-ANALYSIS-v2.3.1.md) for full methodology and results.
+Measured on production hardware (Intel i9-10850K, 64 GB RAM) with `cargo bench --workspace`. See [Benchmark Analysis](docs/testing/BENCHMARK-ANALYSIS-v2.3.2-optimized.md) for full methodology and results.
 
 | Component            | Measured Performance                        | Details                                    |
 | -------------------- | ------------------------------------------- | ------------------------------------------ |
-| Frame Parsing        | 2.4 ns/frame (~563 GiB/s equivalent)       | SIMD: AVX2/SSE4.2/NEON, 172M frames/sec   |
-| AEAD Encryption      | ~1.4 GiB/s (XChaCha20-Poly1305)            | 256-bit key, 192-bit nonce                 |
+| Frame Building       | 17.77 ns (76.3 GiB/s) via `build_into`     | Zero-allocation API, 10.9x faster than allocating build |
+| Frame Parsing        | 6.9 ns/frame (~196 GiB/s)                  | SIMD: AVX2/SSE4.2/NEON, constant-time     |
+| AEAD Encryption      | ~1.40 GiB/s (XChaCha20-Poly1305)           | 256-bit key, 192-bit nonce                 |
+| Double Ratchet       | 1.71 us encrypt (was 26.7 us)              | Cached public key, 93.6% improvement       |
 | Noise XX Handshake   | 345 us per handshake                        | Full mutual authentication                 |
 | Elligator2 Encoding  | 29.5 us per encoding                        | Key indistinguishability from random       |
 | BLAKE3 Hashing       | 4.71 GiB/s (tree), 8.5 GB/s (parallel)     | rayon + SIMD acceleration                  |
-| File Chunking        | 14.85 GiB/s                                 | io_uring async I/O                         |
-| Tree Hashing         | 4.71 GiB/s in-memory, 3.78 GiB/s from disk | Merkle tree with BLAKE3                    |
-| Chunk Verification   | 4.78 GiB/s                                  | <1 us per 256 KiB chunk                    |
+| File Chunking        | 14.48 GiB/s                                 | io_uring async I/O                         |
+| Tree Hashing         | 4.71 GiB/s in-memory, 2.61 GiB/s from disk | Merkle tree with BLAKE3                    |
+| Chunk Verification   | 4.78 GiB/s                                  | <1 us per chunk                            |
 | File Reassembly      | 5.42 GiB/s                                  | O(m) algorithm, zero-copy                  |
+| Transfer Scheduling  | 3.34 ns per request (O(log n))              | BTreeSet priority queue, 118,000x improvement |
+| Chunk Tracking       | 6.6 ns `is_chunk_missing` (O(1))            | BitVec bitmap, 1000x memory reduction      |
+| Session Creation     | 58-71% faster via BitVec tracking           | Eliminated dual HashSet overhead           |
+| Replay Protection    | 920 ps sequential accept                    | 1024-packet sliding window                 |
 | Ring Buffers (SPSC)  | ~100M ops/sec                               | Cache-line padded, lock-free               |
 | Ring Buffers (MPSC)  | ~20M ops/sec                                | CAS-based, 4 producers                     |
+
+### Optimization Highlights (v2.3.2-optimized)
+
+12 performance and infrastructure optimizations implemented based on benchmark analysis:
+
+- **Zero-allocation frame building** (`build_into_from_parts`) -- writes directly into caller buffer, 10.9x speedup
+- **Cached Double Ratchet public key** -- eliminates per-encrypt x25519 scalar multiplication, 93.6% improvement
+- **BTreeSet priority queue** for chunk scheduling -- O(log n) replacing O(n) linear scan, 118,000x speedup
+- **BitVec chunk tracking** replacing dual HashSets -- 1000x memory reduction, 58-71% session creation speedup
+- **Binary search padding size classes** via `partition_point()` -- eliminates linear scan regression
+- **Isolated benchmark infrastructure** (`scripts/bench-isolated.sh`) with CPU governor control and core pinning
+- **6 new benchmark groups** -- build_into, full_pipeline, replay_protection, transfer_throughput, in-place AEAD, Double Ratchet
 
 ---
 
@@ -715,4 +733,4 @@ WRAITH Protocol builds on excellent projects and research:
 
 **Version:** 2.3.2 | **License:** MIT | **Language:** Rust 2024 (MSRV 1.88) | **Tests:** 2,148 passing (2,123 workspace + 11 spectre-implant + 14 doc) | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server)
 
-**Last Updated:** 2026-01-28
+**Last Updated:** 2026-01-29

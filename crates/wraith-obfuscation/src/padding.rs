@@ -87,12 +87,13 @@ impl PaddingEngine {
             }
 
             PaddingMode::SizeClasses => {
-                // Find smallest size class that fits
-                SIZE_CLASSES
-                    .iter()
-                    .find(|&&size| size >= plaintext_len)
-                    .copied()
-                    .unwrap_or(*SIZE_CLASSES.last().unwrap())
+                // Binary search for smallest size class that fits
+                let idx = SIZE_CLASSES.partition_point(|&s| s < plaintext_len);
+                if idx < SIZE_CLASSES.len() {
+                    SIZE_CLASSES[idx]
+                } else {
+                    *SIZE_CLASSES.last().unwrap()
+                }
             }
 
             PaddingMode::ConstantRate => {
@@ -201,11 +202,14 @@ impl PaddingEngine {
         match self.mode {
             PaddingMode::None => plaintext_len,
             PaddingMode::PowerOfTwo => plaintext_len.next_power_of_two().max(128),
-            PaddingMode::SizeClasses => SIZE_CLASSES
-                .iter()
-                .find(|&&size| size >= plaintext_len)
-                .copied()
-                .unwrap_or(*SIZE_CLASSES.last().unwrap()),
+            PaddingMode::SizeClasses => {
+                let idx = SIZE_CLASSES.partition_point(|&s| s < plaintext_len);
+                if idx < SIZE_CLASSES.len() {
+                    SIZE_CLASSES[idx]
+                } else {
+                    *SIZE_CLASSES.last().unwrap()
+                }
+            }
             PaddingMode::ConstantRate => *SIZE_CLASSES.last().unwrap(),
             PaddingMode::Statistical => {
                 // Average case for statistical mode

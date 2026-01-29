@@ -9,11 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [2.3.2] - 2026-01-28 - Benchmark-Driven Performance & Security Optimizations
+## [2.3.2] - 2026-01-29 - Benchmark-Driven Performance & Security Optimizations
 
 ### Overview
 
-Release focused on benchmark-driven performance and security optimizations, implementing 13 of 15 proposals from the v2.3.1 benchmark analysis. Key improvements: userspace PRNG for frame padding (eliminating getrandom syscall), zero-allocation frame building API, fast-path frame parsing, O(1) transfer scheduling, tuned BBR congestion control, tighter forward secrecy limits, intermediate key zeroization, expanded replay window, and improved padding size classes.
+Release focused on benchmark-driven performance and security optimizations, implementing 13 of 15 proposals from the v2.3.1 benchmark analysis plus 12 additional P1-P3 optimizations from v2.3.2 benchmark analysis. Key improvements: userspace PRNG for frame padding (eliminating getrandom syscall), zero-allocation frame building API, fast-path frame parsing, O(1) transfer scheduling, tuned BBR congestion control, tighter forward secrecy limits, intermediate key zeroization, expanded replay window, improved padding size classes, cached Double Ratchet public key, BTreeSet priority queue, BitVec chunk tracking, and isolated benchmark infrastructure.
 
 ### Changed
 
@@ -25,6 +25,22 @@ Release focused on benchmark-driven performance and security optimizations, impl
 - **BBR congestion control**: Window sizes increased 10->20, initial pacing rate 10Mbps->100Mbps
 - **Chunk size increase**: `DEFAULT_CHUNK_SIZE` 256KiB->1MiB for reduced per-transfer overhead
 - **Transport buffers**: 256KiB->4MiB for better bandwidth-delay product coverage
+
+#### Benchmark-Driven P1-P3 Optimizations (2026-01-29)
+- **P1.1: Zero-allocation frame building**: Added `build_into_from_parts()` writing directly into caller buffer (10.9x speedup, 76.3 GiB/s at 1456B)
+- **P1.2: Cached Double Ratchet public key**: Eliminates per-encrypt x25519 scalar multiplication (93.6% improvement, 1.71 us from 26.7 us)
+- **P1.3: BTreeSet priority queue**: O(log n) `next_chunk_to_request` via BTreeSet replacing O(n) linear scan (118,000x speedup, 3.34 ns per request)
+- **P1.4: Cached assigned chunks set**: Eliminates per-call HashSet construction in transfer sessions
+- **P2.1: In-place AEAD benchmarks**: New benchmark coverage for encrypt/decrypt in-place operations
+- **P2.2: Binary search padding size classes**: `partition_point()` replacing linear scan for size class lookup
+- **P2.3: BitVec chunk tracking**: Replaces dual HashSets with compact bitmap (1000x memory reduction, 58-71% session creation speedup, 6.6 ns `is_chunk_missing`)
+- **P3.1: Isolated benchmark runner**: `scripts/bench-isolated.sh` with CPU governor control, turbo boost management, core pinning
+- **P3.2: New benchmark groups**: build_into, full_pipeline, replay_protection, transfer_throughput, in-place AEAD, Double Ratchet
+- **P3.3: Transfer throughput benchmark**: End-to-end transfer session performance measurement
+
+#### Benchmark Documentation
+- **Comprehensive analysis**: `docs/testing/BENCHMARK-ANALYSIS-v2.3.2-optimized.md` with three-version comparison (v2.3.1, v2.3.2-initial, v2.3.2-optimized)
+- **Initial analysis**: `docs/testing/BENCHMARK-ANALYSIS-v2.3.2.md` pre-optimization baseline
 
 #### Security Hardening
 - **Forward secrecy**: Rekey byte limit tightened from 1GiB to 256MiB

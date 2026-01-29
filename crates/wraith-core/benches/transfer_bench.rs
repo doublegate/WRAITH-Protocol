@@ -313,6 +313,50 @@ fn bench_peer_operations(c: &mut Criterion) {
 }
 
 // ============================================================================
+// Transfer Throughput Benchmarks
+// ============================================================================
+
+/// Benchmark a complete transfer of 1000 chunks (request + mark transferred loop)
+fn bench_transfer_throughput(c: &mut Criterion) {
+    let mut group = c.benchmark_group("transfer_throughput");
+
+    let total_chunks = 1_000u64;
+    let file_size = total_chunks * CHUNK_SIZE as u64;
+
+    group.throughput(Throughput::Elements(total_chunks));
+
+    group.bench_function("1000_chunk_transfer", |b| {
+        b.iter_batched(
+            || {
+                let mut session = TransferSession::new_receive(
+                    [1u8; 32],
+                    PathBuf::from("/tmp/bench_throughput.dat"),
+                    file_size,
+                    CHUNK_SIZE,
+                );
+                session.start();
+                let peer_id = [1u8; 32];
+                session.add_peer(peer_id);
+                (session, peer_id)
+            },
+            |(mut session, peer_id)| {
+                for _ in 0..total_chunks {
+                    if let Some(chunk_idx) = session.next_chunk_to_request() {
+                        session.assign_chunk_to_peer(&peer_id, chunk_idx);
+                        session.mark_peer_chunk_downloaded(&peer_id, chunk_idx);
+                        session.mark_chunk_transferred(chunk_idx, CHUNK_SIZE);
+                    }
+                }
+                black_box(session.is_complete())
+            },
+            criterion::BatchSize::SmallInput,
+        );
+    });
+
+    group.finish();
+}
+
+// ============================================================================
 // Session Creation Benchmarks
 // ============================================================================
 
@@ -363,11 +407,14 @@ criterion_group!(
 
 criterion_group!(peer_benches, bench_peer_operations,);
 
+criterion_group!(throughput_benches, bench_transfer_throughput,);
+
 criterion_group!(creation_benches, bench_session_creation,);
 
 criterion_main!(
     missing_chunks_benches,
     transfer_ops_benches,
     peer_benches,
+    throughput_benches,
     creation_benches,
 );

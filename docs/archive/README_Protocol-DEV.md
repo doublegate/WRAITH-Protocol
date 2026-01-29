@@ -1242,21 +1242,35 @@ Red team operations platform for authorized adversary emulation:
 
 ## Performance Evolution
 
-**Benchmark Results (v2.3.1 - see [BENCHMARK-ANALYSIS-v2.3.1.md](../testing/BENCHMARK-ANALYSIS-v2.3.1.md)):**
-- **Frame Parsing:** 2.4 ns/frame (~563 GiB/s equivalent), 172M frames/sec with SIMD (AVX2/SSE4.2/NEON)
-- **AEAD Encryption:** ~1.4 GiB/s (XChaCha20-Poly1305, 256-bit key, 192-bit nonce)
+**Benchmark Results (v2.3.2-optimized - see [BENCHMARK-ANALYSIS-v2.3.2-optimized.md](../testing/BENCHMARK-ANALYSIS-v2.3.2-optimized.md)):**
+- **Frame Building:** 17.77 ns (76.3 GiB/s) via zero-allocation `build_into_from_parts()`, 10.9x faster than allocating build
+- **Frame Parsing:** 6.9 ns/frame (~196 GiB/s), constant-time with SIMD (AVX2/SSE4.2/NEON)
+- **AEAD Encryption:** ~1.40 GiB/s (XChaCha20-Poly1305, 256-bit key, 192-bit nonce)
+- **Double Ratchet Encrypt:** 1.71 us (was 26.7 us before cached public key optimization, 93.6% improvement)
 - **Noise XX Handshake:** 345 us per full mutual authentication handshake
 - **Elligator2 Encoding:** 29.5 us per key encoding operation
 - **BLAKE3 Hashing:** 4.71 GiB/s tree hashing, 8.5 GB/s with rayon parallelization and SIMD
-- **File Chunking:** 14.85 GiB/s with io_uring async I/O
-- **Tree Hashing:** 4.71 GiB/s in-memory, 3.78 GiB/s from disk
-- **Chunk Verification:** 4.78 GiB/s (51.1 us per 256 KiB chunk)
+- **File Chunking:** 14.48 GiB/s with io_uring async I/O
+- **Tree Hashing:** 4.71 GiB/s in-memory, 2.61 GiB/s from disk
+- **Chunk Verification:** 4.78 GiB/s (<1 us per chunk)
 - **File Reassembly:** 5.42 GiB/s with O(m) algorithm
+- **Transfer Scheduling:** 3.34 ns per request, O(log n) via BTreeSet priority queue (118,000x improvement)
+- **Chunk Tracking:** 6.6 ns `is_chunk_missing`, O(1) BitVec bitmap operations (1000x memory reduction)
+- **Session Creation:** 58-71% faster via BitVec tracking (eliminated dual HashSet overhead)
+- **Replay Protection:** 920 ps sequential accept (1024-packet sliding window)
 - **Ring Buffers:** ~100M ops/sec (SPSC), ~20M ops/sec (MPSC with 4 producers)
   - Sub-microsecond latency for small batches
   - Zero allocations after initialization
   - Cache-line padding eliminates false sharing
 - **Connection Health:** Lock-free (AtomicU32), O(1) staleness detection
+
+**Protocol Configuration (v2.3.2):**
+- **Replay Window:** 1024 packets (expanded from 256)
+- **Rekey Byte Limit:** 256 MiB (tightened from 1 GiB)
+- **BBR Window Size:** 20 (increased from 10)
+- **Initial Pacing Rate:** 100 Mbps (increased from 10 Mbps)
+- **Transport Buffers:** 4 MiB (increased from 256 KiB)
+- **Default Chunk Size:** 1 MiB (increased from 256 KiB)
 
 **Performance Targets vs Achieved:**
 - Throughput (10 GbE): Target >9 Gbps | **Achieved: 10+ Gbps with AF_XDP**
@@ -1373,7 +1387,7 @@ Red team operations platform for authorized adversary emulation:
 
 ## Current Status & Next Steps
 
-**Version 2.3.1 Status (2026-01-28):**
+**Version 2.3.2 Status (2026-01-29):**
 - ✅ All 24 development phases complete (2,740+ SP delivered)
 - ✅ 2,134 tests (2,123 workspace + 11 spectre-implant, 16 ignored) - 100% pass rate
 - ✅ Zero vulnerabilities, zero warnings
@@ -1454,8 +1468,8 @@ See [../../to-dos/ROADMAP.md](../../to-dos/ROADMAP.md) for detailed future plann
 
 ---
 
-**WRAITH Protocol Development History** - *From Foundation to v2.3.1 (Phases 1-24 + Infrastructure Sprints)*
+**WRAITH Protocol Development History** - *From Foundation to v2.3.2 (Phases 1-24 + Infrastructure Sprints + Benchmark Optimizations)*
 
 **Development Period:** 2024 - 2026-01-28 | **Total Effort:** 2,740+ story points delivered across 24 phases + infrastructure sprints | **Quality:** Production-ready (98/100), 2,148 tests (2,123 workspace + 11 spectre-implant + 14 doc, 100% pass rate), 0 vulnerabilities, Grade A+ security | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server) | **Workspace:** 22 members + 2 excluded (team-server and operator-client integrated) | **TDR:** ~2.5% (Grade A - Excellent) | **CI/CD:** Optimized workflows with reusable setup, path filters, and cross-compilation via Cross.toml | **v2.3.1:** MSRV 1.88, WRAITH-RedOps ~98% complete (gap analysis v7.0.0 + UI/UX overhaul), 87% MITRE ATT&CK coverage (35/40), 0 P0 critical issues, 21 modules, 34/34 IPC wired, operator client UI/UX overhauled (~5,800 lines, zustand/toast/modal/context menus, 6 new feature sections) | **Conductor:** Project management system with code style guides
 
-*Last Updated: 2026-01-28*
+*Last Updated: 2026-01-29*

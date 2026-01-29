@@ -256,6 +256,9 @@ pub struct DoubleRatchet {
     /// Our current DH key pair
     #[zeroize(skip)]
     dh_self: PrivateKey,
+    /// Cached public key for dh_self (avoids recomputing scalar multiplication)
+    #[zeroize(skip)]
+    dh_self_public: PublicKey,
     /// Peer's current DH public key
     #[zeroize(skip)]
     dh_peer: Option<PublicKey>,
@@ -293,6 +296,7 @@ impl DoubleRatchet {
     ) -> Self {
         // Generate our ephemeral DH key
         let dh_self = PrivateKey::generate(rng);
+        let dh_self_public = dh_self.public_key();
 
         // Perform initial DH
         let dh_out = dh_self
@@ -304,6 +308,7 @@ impl DoubleRatchet {
 
         Self {
             dh_self,
+            dh_self_public,
             dh_peer: Some(peer_public),
             root_key,
             send_chain_key: Some(send_chain_key),
@@ -321,8 +326,10 @@ impl DoubleRatchet {
     /// for the initiator's first message to complete the DH ratchet.
     #[must_use]
     pub fn new_responder(shared_secret: &[u8; 32], dh_keypair: PrivateKey) -> Self {
+        let dh_self_public = dh_keypair.public_key();
         Self {
             dh_self: dh_keypair,
+            dh_self_public,
             dh_peer: None,
             root_key: *shared_secret,
             send_chain_key: None,
@@ -335,9 +342,11 @@ impl DoubleRatchet {
     }
 
     /// Get our current DH public key (for including in message headers).
+    ///
+    /// Uses the cached public key to avoid recomputing scalar multiplication.
     #[must_use]
     pub fn public_key(&self) -> PublicKey {
-        self.dh_self.public_key()
+        self.dh_self_public
     }
 
     /// Encrypt a plaintext message.
@@ -367,9 +376,9 @@ impl DoubleRatchet {
         let message_number = self.send_count;
         self.send_count += 1;
 
-        // Create header
+        // Create header (uses cached public key to avoid scalar multiplication)
         let header = MessageHeader {
-            dh_public: self.dh_self.public_key(),
+            dh_public: self.dh_self_public,
             prev_chain_length: self.prev_send_count,
             message_number,
         };
@@ -387,6 +396,7 @@ impl DoubleRatchet {
     /// Force a DH ratchet step (rotate sending key).
     pub fn force_dh_step<R: RngCore + CryptoRng>(&mut self, rng: &mut R) {
         self.dh_self = PrivateKey::generate(rng);
+        self.dh_self_public = self.dh_self.public_key();
         self.prev_send_count = self.send_count;
         self.send_count = 0;
     }
@@ -524,8 +534,9 @@ impl DoubleRatchet {
         self.root_key = new_root;
         self.recv_chain_key = Some(recv_chain_key);
 
-        // Generate new DH keypair
+        // Generate new DH keypair and cache public key
         self.dh_self = PrivateKey::generate(rng);
+        self.dh_self_public = self.dh_self.public_key();
 
         // DH with our new key and their public key
         let dh_send = self

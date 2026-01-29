@@ -241,6 +241,71 @@ fn bench_parse_throughput(c: &mut Criterion) {
     group.finish();
 }
 
+fn bench_frame_build_into(c: &mut Criterion) {
+    let sizes: Vec<(usize, &str)> = vec![
+        (64, "64_bytes"),
+        (128, "128_bytes"),
+        (256, "256_bytes"),
+        (512, "512_bytes"),
+        (1024, "1024_bytes"),
+        (1456, "1456_bytes"),
+    ];
+
+    let mut group = c.benchmark_group("frame_build_into");
+
+    for (size, name) in sizes {
+        let payload_len = size.saturating_sub(FRAME_HEADER_SIZE);
+        let payload = vec![0x42; payload_len];
+        let builder = FrameBuilder::new()
+            .frame_type(FrameType::Data)
+            .stream_id(42)
+            .sequence(1000)
+            .payload(&payload);
+
+        group.throughput(Throughput::Bytes(size as u64));
+        group.bench_function(name, |b| {
+            let mut buf = vec![0u8; size];
+            b.iter(|| builder.build_into(black_box(&mut buf)))
+        });
+    }
+
+    group.finish();
+}
+
+fn bench_frame_full_pipeline(c: &mut Criterion) {
+    let sizes: Vec<(usize, &str)> = vec![
+        (64, "64_bytes"),
+        (256, "256_bytes"),
+        (1024, "1024_bytes"),
+        (1456, "1456_bytes"),
+    ];
+
+    let mut group = c.benchmark_group("frame_full_pipeline");
+
+    for (size, name) in sizes {
+        let payload_len = size.saturating_sub(FRAME_HEADER_SIZE);
+        let payload = vec![0x42; payload_len];
+
+        group.throughput(Throughput::Bytes(size as u64));
+        group.bench_function(name, |b| {
+            b.iter(|| {
+                let frame = FrameBuilder::new()
+                    .frame_type(black_box(FrameType::Data))
+                    .stream_id(black_box(42))
+                    .sequence(black_box(1000))
+                    .payload(black_box(&payload))
+                    .build(black_box(size))
+                    .unwrap();
+
+                let parsed = Frame::parse(black_box(&frame)).unwrap();
+                black_box(parsed.payload().len())
+            })
+        });
+    }
+
+    group.finish();
+}
+
 criterion_group!(
     benches,
     bench_frame_parse,
@@ -251,6 +316,8 @@ criterion_group!(
     bench_frame_types,
     bench_scalar_vs_simd,
     bench_parse_implementations_by_size,
-    bench_parse_throughput
+    bench_parse_throughput,
+    bench_frame_build_into,
+    bench_frame_full_pipeline
 );
 criterion_main!(benches);

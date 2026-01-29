@@ -34,7 +34,7 @@
 //! assert_eq!(session.progress(), 0.5);
 //! ```
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::path::PathBuf;
 use std::time::Instant;
 use zeroize::Zeroize;
@@ -125,13 +125,18 @@ pub struct TransferSession {
     /// Current state
     state: TransferState,
 
-    /// Transferred chunks (set for quick lookup)
-    transferred_chunks: HashSet<u64>,
-    /// Missing chunks (O(m) lookup optimization)
-    /// This is the inverse of transferred_chunks for O(m) missing chunk queries
-    missing_chunks_set: HashSet<u64>,
+    /// Bitmap tracking transferred chunks (bit = 1 means transferred)
+    /// Uses Vec<u64> as a bitset: chunk_bitmap[idx/64] & (1 << (idx%64))
+    chunk_bitmap: Vec<u64>,
+    /// Count of transferred chunks (cached for O(1) access)
+    transferred_count: u64,
     /// Bytes transferred
     bytes_transferred: u64,
+
+    /// Ordered set of requestable (not transferred, not assigned) chunk indices
+    requestable_chunks: BTreeSet<u64>,
+    /// Cache of all currently assigned chunks across all peers
+    assigned_chunks_cache: HashSet<u64>,
 
     /// Start timestamp
     started_at: Option<Instant>,
@@ -141,9 +146,6 @@ pub struct TransferSession {
     /// Peer states (for multi-peer downloads)
     /// SECURITY: Peer IDs are zeroized on drop
     peers: HashMap<PeerId, PeerTransferState>,
-
-    /// Scan hint for next_chunk_to_request (avoids O(n) scans from 0)
-    next_request_hint: u64,
 }
 
 impl Drop for TransferSession {
@@ -159,8 +161,9 @@ impl Drop for TransferSession {
         }
 
         // Clear all collections
-        self.transferred_chunks.clear();
-        self.missing_chunks_set.clear();
+        self.chunk_bitmap.clear();
+        self.requestable_chunks.clear();
+        self.assigned_chunks_cache.clear();
         self.peers.clear();
 
         tracing::trace!("TransferSession zeroized and dropped");
@@ -193,8 +196,8 @@ impl TransferSession {
     #[must_use]
     pub fn new_send(id: [u8; 32], file_path: PathBuf, file_size: u64, chunk_size: usize) -> Self {
         let total_chunks = file_size.div_ceil(chunk_size as u64);
-        // For send sessions, we track which chunks have been sent (starts empty)
-        let missing_chunks_set = (0..total_chunks).collect();
+        let bitmap_words = total_chunks.div_ceil(64) as usize;
+        let requestable_chunks: BTreeSet<u64> = (0..total_chunks).collect();
 
         Self {
             id,
@@ -204,13 +207,14 @@ impl TransferSession {
             chunk_size,
             total_chunks,
             state: TransferState::Initializing,
-            transferred_chunks: HashSet::new(),
-            missing_chunks_set,
+            chunk_bitmap: vec![0u64; bitmap_words],
+            transferred_count: 0,
             bytes_transferred: 0,
+            requestable_chunks,
+            assigned_chunks_cache: HashSet::new(),
             started_at: None,
             completed_at: None,
             peers: HashMap::new(),
-            next_request_hint: 0,
         }
     }
 
@@ -244,8 +248,8 @@ impl TransferSession {
         chunk_size: usize,
     ) -> Self {
         let total_chunks = file_size.div_ceil(chunk_size as u64);
-        // For receive sessions, all chunks are initially missing
-        let missing_chunks_set = (0..total_chunks).collect();
+        let bitmap_words = total_chunks.div_ceil(64) as usize;
+        let requestable_chunks: BTreeSet<u64> = (0..total_chunks).collect();
 
         Self {
             id,
@@ -255,13 +259,14 @@ impl TransferSession {
             chunk_size,
             total_chunks,
             state: TransferState::Initializing,
-            transferred_chunks: HashSet::new(),
-            missing_chunks_set,
+            chunk_bitmap: vec![0u64; bitmap_words],
+            transferred_count: 0,
             bytes_transferred: 0,
+            requestable_chunks,
+            assigned_chunks_cache: HashSet::new(),
             started_at: None,
             completed_at: None,
             peers: HashMap::new(),
-            next_request_hint: 0,
         }
     }
 
@@ -298,13 +303,15 @@ impl TransferSession {
             return;
         }
 
-        if self.transferred_chunks.insert(chunk_index) {
-            // O(1) removal from missing set
-            self.missing_chunks_set.remove(&chunk_index);
+        if !Self::bitmap_test(&self.chunk_bitmap, chunk_index) {
+            Self::bitmap_set(&mut self.chunk_bitmap, chunk_index);
+            self.transferred_count += 1;
             self.bytes_transferred += chunk_size as u64;
+            self.requestable_chunks.remove(&chunk_index);
+            self.assigned_chunks_cache.remove(&chunk_index);
 
             // Check if complete
-            if self.transferred_chunks.len() as u64 == self.total_chunks {
+            if self.transferred_count == self.total_chunks {
                 self.state = TransferState::Complete;
                 self.completed_at = Some(Instant::now());
             }
@@ -364,35 +371,35 @@ impl TransferSession {
     /// this returns in O(100) time instead of O(4096).
     #[must_use]
     pub fn missing_chunks(&self) -> Vec<u64> {
-        self.missing_chunks_set.iter().copied().collect()
+        (0..self.total_chunks)
+            .filter(|&i| !Self::bitmap_test(&self.chunk_bitmap, i))
+            .collect()
     }
 
     /// Get missing chunks sorted
     ///
     /// Returns missing chunk indices in ascending order.
-    /// Useful for sequential chunk requests.
+    /// Naturally sorted since we iterate in order.
     #[must_use]
     pub fn missing_chunks_sorted(&self) -> Vec<u64> {
-        let mut missing: Vec<u64> = self.missing_chunks_set.iter().copied().collect();
-        missing.sort_unstable();
-        missing
+        self.missing_chunks()
     }
 
     /// Get number of missing chunks
     ///
     /// Returns the count of chunks not yet transferred.
-    /// O(1) operation using the missing_chunks_set.
+    /// O(1) operation using cached transferred count.
     #[must_use]
     pub fn missing_count(&self) -> u64 {
-        self.missing_chunks_set.len() as u64
+        self.total_chunks - self.transferred_count
     }
 
     /// Check if a specific chunk is missing
     ///
-    /// O(1) lookup operation.
+    /// O(1) lookup operation using bitmap.
     #[must_use]
     pub fn is_chunk_missing(&self, chunk_index: u64) -> bool {
-        self.missing_chunks_set.contains(&chunk_index)
+        chunk_index < self.total_chunks && !Self::bitmap_test(&self.chunk_bitmap, chunk_index)
     }
 
     /// Add peer to transfer
@@ -410,15 +417,24 @@ impl TransferSession {
 
     /// Remove peer from transfer
     pub fn remove_peer(&mut self, peer_id: &PeerId) -> Option<HashSet<u64>> {
-        self.peers
-            .remove(peer_id)
-            .map(|state| state.assigned_chunks)
+        self.peers.remove(peer_id).map(|state| {
+            // Re-add unfinished assigned chunks back to requestable pool
+            for &chunk_idx in &state.assigned_chunks {
+                self.assigned_chunks_cache.remove(&chunk_idx);
+                if !Self::bitmap_test(&self.chunk_bitmap, chunk_idx) {
+                    self.requestable_chunks.insert(chunk_idx);
+                }
+            }
+            state.assigned_chunks
+        })
     }
 
     /// Assign chunk to peer
     pub fn assign_chunk_to_peer(&mut self, peer_id: &PeerId, chunk_index: u64) -> bool {
         if let Some(peer) = self.peers.get_mut(peer_id) {
             peer.assigned_chunks.insert(chunk_index);
+            self.assigned_chunks_cache.insert(chunk_index);
+            self.requestable_chunks.remove(&chunk_index);
             peer.last_activity = Instant::now();
             true
         } else {
@@ -431,6 +447,7 @@ impl TransferSession {
         if let Some(peer) = self.peers.get_mut(peer_id)
             && peer.assigned_chunks.remove(&chunk_index)
         {
+            self.assigned_chunks_cache.remove(&chunk_index);
             peer.downloaded_chunks += 1;
             peer.last_activity = Instant::now();
         }
@@ -446,34 +463,15 @@ impl TransferSession {
 
     /// Get next chunk to request from peers
     ///
-    /// Returns the first chunk that is:
+    /// Returns the lowest-indexed chunk that is:
     /// - Not yet transferred
     /// - Not currently assigned to any peer
     ///
-    /// Uses an internal scan hint to avoid O(n) scans from index 0 on
-    /// every call. The hint tracks the lowest potentially-unassigned index.
+    /// Uses a BTreeSet for O(log n) lookup of the next requestable chunk.
     #[must_use]
     pub fn next_chunk_to_request(&mut self) -> Option<u64> {
-        // Collect all assigned chunks
-        let assigned: HashSet<u64> = self
-            .peers
-            .values()
-            .flat_map(|p| p.assigned_chunks.iter())
-            .copied()
-            .collect();
-
-        // Scan forward from hint
-        while self.next_request_hint < self.total_chunks {
-            let i = self.next_request_hint;
-            if !self.transferred_chunks.contains(&i) && !assigned.contains(&i) {
-                return Some(i);
-            }
-            self.next_request_hint += 1;
-        }
-
-        // Wrap around for sparse completion patterns (chunks freed by timeout)
-        (0..self.next_request_hint)
-            .find(|i| !self.transferred_chunks.contains(i) && !assigned.contains(i))
+        // requestable_chunks already excludes transferred and assigned chunks
+        self.requestable_chunks.iter().next().copied()
     }
 
     /// Get all assigned chunks across all peers
@@ -554,13 +552,31 @@ impl TransferSession {
     /// Get transferred chunk count
     #[must_use]
     pub fn transferred_count(&self) -> u64 {
-        self.transferred_chunks.len() as u64
+        self.transferred_count
     }
 
     /// Get bytes transferred
     #[must_use]
     pub fn bytes_transferred(&self) -> u64 {
         self.bytes_transferred
+    }
+
+    // ========================================================================
+    // Bitmap helpers
+    // ========================================================================
+
+    /// Set a bit in the bitmap
+    fn bitmap_set(bitmap: &mut [u64], idx: u64) {
+        let word = (idx / 64) as usize;
+        let bit = idx % 64;
+        bitmap[word] |= 1u64 << bit;
+    }
+
+    /// Test a bit in the bitmap
+    fn bitmap_test(bitmap: &[u64], idx: u64) -> bool {
+        let word = (idx / 64) as usize;
+        let bit = idx % 64;
+        (bitmap[word] >> bit) & 1 == 1
     }
 }
 

@@ -94,6 +94,76 @@ fn bench_aead_roundtrip(c: &mut Criterion) {
     group.finish();
 }
 
+fn bench_aead_encrypt_in_place(c: &mut Criterion) {
+    let mut group = c.benchmark_group("aead_encrypt_in_place");
+
+    let sizes = [64, 256, 1024, 4096, 16384];
+
+    for size in sizes {
+        let key_bytes = [0x42u8; 32];
+        let key = AeadKey::new(key_bytes);
+        let nonce = Nonce::from_bytes([0u8; 24]);
+        let aad = b"additional data";
+
+        group.throughput(Throughput::Bytes(size as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(size), &size, |b, &sz| {
+            b.iter_batched(
+                || vec![0xAA; sz],
+                |mut buffer| {
+                    let _tag = key
+                        .encrypt_in_place(black_box(&nonce), black_box(&mut buffer), black_box(aad))
+                        .unwrap();
+                    black_box(buffer)
+                },
+                criterion::BatchSize::SmallInput,
+            )
+        });
+    }
+
+    group.finish();
+}
+
+fn bench_aead_decrypt_in_place(c: &mut Criterion) {
+    use wraith_crypto::aead::Tag;
+
+    let mut group = c.benchmark_group("aead_decrypt_in_place");
+
+    let sizes = [64, 256, 1024, 4096, 16384];
+
+    for size in sizes {
+        let key_bytes = [0x42u8; 32];
+        let key = AeadKey::new(key_bytes);
+        let nonce = Nonce::from_bytes([0u8; 24]);
+        let aad = b"additional data";
+
+        // Pre-encrypt to get ciphertext and tag
+        let mut plaintext = vec![0xAA; size];
+        let tag = key.encrypt_in_place(&nonce, &mut plaintext, aad).unwrap();
+        let ciphertext = plaintext; // now encrypted
+        let tag_bytes = *tag.as_bytes();
+
+        group.throughput(Throughput::Bytes(size as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(size), &size, |b, _| {
+            b.iter_batched(
+                || (ciphertext.clone(), Tag::from_bytes(tag_bytes)),
+                |(mut buffer, tag)| {
+                    key.decrypt_in_place(
+                        black_box(&nonce),
+                        black_box(&mut buffer),
+                        black_box(&tag),
+                        black_box(aad),
+                    )
+                    .unwrap();
+                    black_box(buffer)
+                },
+                criterion::BatchSize::SmallInput,
+            )
+        });
+    }
+
+    group.finish();
+}
+
 // ============================================================================
 // X25519 Benchmarks
 // ============================================================================
@@ -357,6 +427,45 @@ fn bench_message_header_serialize(c: &mut Criterion) {
 }
 
 // ============================================================================
+// Replay Protection Benchmarks
+// ============================================================================
+
+fn bench_replay_protection(c: &mut Criterion) {
+    use wraith_crypto::aead::ReplayProtection;
+
+    let mut group = c.benchmark_group("replay_protection");
+
+    group.bench_function("sequential_accept", |b| {
+        b.iter_batched(
+            || (ReplayProtection::new(), 0u64),
+            |(mut rp, mut seq)| {
+                seq += 1;
+                let accepted = rp.check_and_update(black_box(seq));
+                black_box(accepted)
+            },
+            criterion::BatchSize::SmallInput,
+        )
+    });
+
+    group.bench_function("replay_reject", |b| {
+        b.iter_batched(
+            || {
+                let mut rp = ReplayProtection::new();
+                rp.check_and_update(100); // Insert seq 100
+                rp
+            },
+            |mut rp| {
+                let rejected = rp.check_and_update(black_box(100)); // Replay
+                black_box(rejected)
+            },
+            criterion::BatchSize::SmallInput,
+        )
+    });
+
+    group.finish();
+}
+
+// ============================================================================
 // Elligator2 Benchmarks
 // ============================================================================
 
@@ -444,6 +553,8 @@ criterion_group!(
     bench_aead_encrypt,
     bench_aead_decrypt,
     bench_aead_roundtrip,
+    bench_aead_encrypt_in_place,
+    bench_aead_decrypt_in_place,
 );
 
 criterion_group!(x25519_benches, bench_x25519_keygen, bench_x25519_exchange,);
@@ -476,6 +587,8 @@ criterion_group!(
 
 criterion_group!(constant_time_benches, bench_constant_time_ops,);
 
+criterion_group!(replay_benches, bench_replay_protection,);
+
 criterion_main!(
     aead_benches,
     x25519_benches,
@@ -484,4 +597,5 @@ criterion_main!(
     ratchet_benches,
     elligator_benches,
     constant_time_benches,
+    replay_benches,
 );

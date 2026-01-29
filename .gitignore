@@ -57,6 +57,7 @@ docs/archive/backups/
 
 # Benchmarks
 criterion/
+benchmarks/
 
 # Fuzzing artifacts
 fuzz/artifacts/
