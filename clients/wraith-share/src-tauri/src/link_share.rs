@@ -505,6 +505,7 @@ mod tests {
         let (db, _state, manager) = create_test_env();
         let file = create_test_file(&db);
 
+        // SECURITY: Intentional test password, not production credential
         let options = ShareLinkOptions {
             expires_in_hours: None,
             password: Some("secret123".to_string()),

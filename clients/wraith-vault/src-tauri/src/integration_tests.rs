@@ -2,6 +2,9 @@
 //!
 //! These tests verify the complete workflow of secret creation,
 //! distribution, and recovery using the vault system.
+//!
+//! SECURITY NOTE: All hard-coded cryptographic values in this file are intentional
+//! test data for integration testing, NOT production secrets.
 
 use crate::database::Database;
 use crate::guardian::{

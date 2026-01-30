@@ -6,6 +6,9 @@
 //! - BLAKE3 official test vectors
 //!
 //! These vectors ensure our implementations match the specifications exactly.
+//!
+//! SECURITY NOTE: All hard-coded cryptographic values in this file are intentional
+//! test vectors from RFCs and official specifications, NOT production keys.
 
 use wraith_crypto::aead::{AeadKey, Nonce};
 use wraith_crypto::hash;
