@@ -558,11 +558,11 @@ impl DoubleRatchet {
 
         // Verify key commitment before AEAD decrypt (when feature enabled)
         #[cfg(feature = "key-commitment")]
-        if let Some(commitment) = &header.key_commitment {
-            if !aead_key.verify_commitment(commitment) {
-                message_key.zeroize();
-                return Err(RatchetError::DecryptionFailed);
-            }
+        if let Some(commitment) = &header.key_commitment
+            && !aead_key.verify_commitment(commitment)
+        {
+            message_key.zeroize();
+            return Err(RatchetError::DecryptionFailed);
         }
 
         let nonce = derive_nonce(header.message_number);
@@ -932,6 +932,8 @@ mod tests {
             dh_public,
             prev_chain_length: 5,
             message_number: 10,
+            #[cfg(feature = "key-commitment")]
+            key_commitment: None,
         };
 
         let bytes = header.to_bytes();

@@ -126,7 +126,7 @@ pub struct TransferSession {
     state: TransferState,
 
     /// Bitmap tracking transferred chunks (bit = 1 means transferred)
-    /// Uses Vec<u64> as a bitset: chunk_bitmap[idx/64] & (1 << (idx%64))
+    /// Uses `Vec<u64>` as a bitset: `chunk_bitmap[idx/64] & (1 << (idx%64))`
     chunk_bitmap: Vec<u64>,
     /// Count of transferred chunks (cached for O(1) access)
     transferred_count: u64,

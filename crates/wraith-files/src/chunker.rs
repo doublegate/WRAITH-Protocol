@@ -260,7 +260,7 @@ pub struct FileReassembler {
     #[allow(dead_code)]
     total_size: u64,
     /// Bitmap tracking received chunks (bit = 1 means received)
-    /// Uses Vec<u64> as a bitset: bitmap[idx/64] & (1 << (idx%64))
+    /// Uses `Vec<u64>` as a bitset: `bitmap[idx/64] & (1 << (idx%64))`
     chunk_bitmap: Vec<u64>,
     /// Count of received chunks (cached for O(1) access)
     received_count: u64,
