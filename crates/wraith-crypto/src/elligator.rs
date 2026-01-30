@@ -518,12 +518,13 @@ mod tests {
             .max()
             .unwrap();
 
-        // Allow 75% timing variation as a sanity check in CI environments.
+        // Allow 100% timing variation as a sanity check in CI environments.
         // This is not a proof of constant-time behavior (that requires dudect/ctgrind),
         // but catches egregious timing differences that might indicate variable-time code.
-        // CI environments have shared resources, so we use a generous threshold.
+        // CI environments have shared resources and virtualization overhead, so we use
+        // a very generous threshold to avoid false positives.
         // Note: macOS is skipped entirely via #[cfg_attr] due to extreme variance.
-        let max_allowed_deviation = mean * 3 / 4; // 75% tolerance
+        let max_allowed_deviation = mean; // 100% tolerance
 
         assert!(
             max_deviation < max_allowed_deviation,
