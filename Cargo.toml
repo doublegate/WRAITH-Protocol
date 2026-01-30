@@ -36,6 +36,7 @@ members = [
 exclude = [
     "crates/wraith-xdp",
     "clients/wraith-redops/spectre-implant",
+    "fuzz",
 ]
 
 [workspace.package]
