@@ -50,7 +50,7 @@ pub unsafe extern "C" fn wraith_transfer_send_file(
         error_out
     );
 
-    // SAFETY: peer_id null check performed above (line 34).
+    // SAFETY: peer_id was checked for null in the argument validation above.
     // Caller must ensure peer_id points to valid, properly aligned WraithNodeId.
     // This is documented in the function's safety contract.
     let peer_id_bytes = (*peer_id).bytes;

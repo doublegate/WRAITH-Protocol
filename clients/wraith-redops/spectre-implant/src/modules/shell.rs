@@ -92,7 +92,7 @@ impl Shell {
                 let envp = [core::ptr::null()];
 
                 sys_execve(sh.as_ptr(), argv.as_ptr(), envp.as_ptr());
-                // Zeroize in all cases (only reached if execve fails, but ensures cleanup)
+                // Zeroize if execve returns (on failure); on success the process image is replaced and cmd_c is discarded.
                 cmd_c.zeroize();
                 sys_exit(1);
             } else {

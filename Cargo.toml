@@ -32,10 +32,11 @@ members = [
 
 # Excluded: wraith-xdp requires eBPF toolchain; spectre-implant is no_std with
 # custom #[panic_handler] and #[global_allocator] incompatible with workspace
-# feature unification (std linked through shared deps)
+# feature unification (std linked through shared deps); fuzz/ is cargo-fuzz managed
 exclude = [
     "crates/wraith-xdp",
     "clients/wraith-redops/spectre-implant",
+    "fuzz",
 ]
 
 [workspace.package]
