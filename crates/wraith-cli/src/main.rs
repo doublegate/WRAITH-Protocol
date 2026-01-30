@@ -715,10 +715,8 @@ async fn receive_files(
     println!("Output directory: {}", output.display());
     println!("Auto-accept: {}", auto_accept);
     if !trusted_peer_ids.is_empty() {
-        println!("Trusted peers: {}", trusted_peer_ids.len());
-        for (idx, peer_id) in trusted_peer_ids.iter().enumerate() {
-            println!("  {}: {}", idx + 1, hex::encode(&peer_id[..8]));
-        }
+        // Only log count, not actual peer IDs to avoid cleartext logging of trusted peers
+        println!("Trusted peers: {} configured", trusted_peer_ids.len());
     }
     println!();
     println!("Ready to receive files. Press Ctrl+C to stop");

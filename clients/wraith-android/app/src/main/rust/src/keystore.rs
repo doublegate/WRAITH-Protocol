@@ -339,7 +339,8 @@ pub extern "C" fn Java_com_wraith_android_WraithKeystore_getIdentityPublicKey(
 
     // Reconstruct the signing key to get the public key
     if secret_bytes.len() != 32 {
-        log::error!("Invalid secret key length: {}", secret_bytes.len());
+        // Avoid logging actual length to prevent information leakage about key material
+        log::error!("Invalid secret key length (expected 32 bytes)");
         return std::ptr::null_mut();
     }
 

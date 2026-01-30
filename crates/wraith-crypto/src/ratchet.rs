@@ -558,11 +558,12 @@ impl DoubleRatchet {
 
         // Verify key commitment before AEAD decrypt (when feature enabled)
         #[cfg(feature = "key-commitment")]
-        if let Some(commitment) = &header.key_commitment
-            && !aead_key.verify_commitment(commitment)
-        {
-            message_key.zeroize();
-            return Err(RatchetError::DecryptionFailed);
+        #[allow(clippy::collapsible_if)]
+        if let Some(commitment) = &header.key_commitment {
+            if !aead_key.verify_commitment(commitment) {
+                message_key.zeroize();
+                return Err(RatchetError::DecryptionFailed);
+            }
         }
 
         let nonce = derive_nonce(header.message_number);
@@ -928,11 +929,17 @@ mod tests {
     #[test]
     fn test_message_header_serialization() {
         let dh_public = PublicKey::from_bytes([0x42u8; 32]);
+        #[cfg(not(feature = "key-commitment"))]
         let header = MessageHeader {
             dh_public,
             prev_chain_length: 5,
             message_number: 10,
-            #[cfg(feature = "key-commitment")]
+        };
+        #[cfg(feature = "key-commitment")]
+        let header = MessageHeader {
+            dh_public,
+            prev_chain_length: 5,
+            message_number: 10,
             key_commitment: None,
         };
 

@@ -103,6 +103,7 @@ impl SessionCrypto {
     #[must_use]
     pub fn new(send_key: [u8; 32], recv_key: [u8; 32], chain_key: &[u8; 32]) -> Self {
         // Derive nonce salt from chain key
+        // SECURITY: Buffer pre-allocation, immediately overwritten with first 16 bytes of chain_key
         let mut nonce_salt = [0u8; 16];
         nonce_salt.copy_from_slice(&chain_key[..16]);
 
