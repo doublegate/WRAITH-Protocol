@@ -14,6 +14,15 @@
 use crate::FRAME_HEADER_SIZE;
 use crate::error::FrameError;
 use rand::Rng;
+use rand::SeedableRng;
+use rand::rngs::SmallRng;
+use std::cell::RefCell;
+
+thread_local! {
+    static PADDING_RNG: RefCell<SmallRng> = RefCell::new(
+        SmallRng::from_rng(&mut rand::thread_rng()).expect("RNG seeding failed")
+    );
+}
 
 /// Maximum payload size (9000 - header - auth tag = 8944)
 const MAX_PAYLOAD_SIZE: usize = 8944;
@@ -64,29 +73,46 @@ pub enum FrameType {
     PathResponse = 0x0F,
 }
 
+/// Lookup table for constant-time frame type validation.
+/// Index 0x00 = Reserved, 0x01-0x0F = valid types, 0x10-0x1F = reserved, rest = invalid.
+/// Value 0 = invalid/reserved, non-zero = valid FrameType discriminant.
+static FRAME_TYPE_TABLE: [u8; 32] = [
+    0,    // 0x00: Reserved
+    0x01, // 0x01: Data
+    0x02, // 0x02: Ack
+    0x03, // 0x03: Control
+    0x04, // 0x04: Rekey
+    0x05, // 0x05: Ping
+    0x06, // 0x06: Pong
+    0x07, // 0x07: Close
+    0x08, // 0x08: Pad
+    0x09, // 0x09: StreamOpen
+    0x0A, // 0x0A: StreamClose
+    0x0B, // 0x0B: StreamReset
+    0x0C, // 0x0C: WindowUpdate
+    0x0D, // 0x0D: GoAway
+    0x0E, // 0x0E: PathChallenge
+    0x0F, // 0x0F: PathResponse
+    0, 0, 0, 0, 0, 0, 0, 0, // 0x10-0x17: Reserved
+    0, 0, 0, 0, 0, 0, 0, 0, // 0x18-0x1F: Reserved
+];
+
 impl TryFrom<u8> for FrameType {
     type Error = FrameError;
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
-        match value {
-            0x00 => Err(FrameError::ReservedFrameType),
-            0x01 => Ok(Self::Data),
-            0x02 => Ok(Self::Ack),
-            0x03 => Ok(Self::Control),
-            0x04 => Ok(Self::Rekey),
-            0x05 => Ok(Self::Ping),
-            0x06 => Ok(Self::Pong),
-            0x07 => Ok(Self::Close),
-            0x08 => Ok(Self::Pad),
-            0x09 => Ok(Self::StreamOpen),
-            0x0A => Ok(Self::StreamClose),
-            0x0B => Ok(Self::StreamReset),
-            0x0C => Ok(Self::WindowUpdate),
-            0x0D => Ok(Self::GoAway),
-            0x0E => Ok(Self::PathChallenge),
-            0x0F => Ok(Self::PathResponse),
-            0x10..=0x1F => Err(FrameError::ReservedFrameType),
-            _ => Err(FrameError::InvalidFrameType(value)),
+        if value < 32 {
+            let entry = FRAME_TYPE_TABLE[value as usize];
+            if entry != 0 {
+                // SAFETY: entry matches a valid FrameType discriminant (0x01..=0x0F)
+                Ok(unsafe { core::mem::transmute::<u8, FrameType>(entry) })
+            } else if value == 0x00 || (0x10..=0x1F).contains(&value) {
+                Err(FrameError::ReservedFrameType)
+            } else {
+                Err(FrameError::InvalidFrameType(value))
+            }
+        } else {
+            Err(FrameError::InvalidFrameType(value))
         }
     }
 }
@@ -617,12 +643,9 @@ pub fn build_into_from_parts(
     // Write payload
     buf[FRAME_HEADER_SIZE..FRAME_HEADER_SIZE + payload_len].copy_from_slice(payload);
 
-    // Write random padding
+    // Write random padding using fast PRNG (padding is AEAD-encrypted)
     if padding_len > 0 {
-        rand::Rng::fill(
-            &mut rand::thread_rng(),
-            &mut buf[FRAME_HEADER_SIZE + payload_len..],
-        );
+        PADDING_RNG.with_borrow_mut(|rng| rng.fill(&mut buf[FRAME_HEADER_SIZE + payload_len..]));
     }
 
     Ok(total_size)
@@ -730,9 +753,10 @@ impl FrameBuilder {
         // Write payload
         buf[FRAME_HEADER_SIZE..FRAME_HEADER_SIZE + payload_len].copy_from_slice(&self.payload);
 
-        // Write random padding
+        // Write random padding using fast PRNG (padding is AEAD-encrypted)
         if padding_len > 0 {
-            rand::thread_rng().fill(&mut buf[FRAME_HEADER_SIZE + payload_len..]);
+            PADDING_RNG
+                .with_borrow_mut(|rng| rng.fill(&mut buf[FRAME_HEADER_SIZE + payload_len..]));
         }
 
         Ok(total_size)
@@ -743,41 +767,16 @@ impl FrameBuilder {
     /// # Errors
     ///
     /// Returns [`FrameError::PayloadOverflow`] if `total_size` is too small for header + payload.
+    #[allow(clippy::uninit_vec)]
     pub fn build(self, total_size: usize) -> Result<Vec<u8>, FrameError> {
-        let frame_type = self.frame_type.unwrap_or(FrameType::Data);
-        let payload_len = self.payload.len();
-
-        if total_size < FRAME_HEADER_SIZE + payload_len {
-            return Err(FrameError::PayloadOverflow);
-        }
-
-        let padding_len = total_size - FRAME_HEADER_SIZE - payload_len;
         let mut buf = Vec::with_capacity(total_size);
-
-        // Write header
-        buf.extend_from_slice(&self.nonce);
-        buf.push(frame_type as u8);
-        buf.push(self.flags.as_u8());
-        buf.extend_from_slice(&self.stream_id.to_be_bytes());
-        buf.extend_from_slice(&self.sequence.to_be_bytes());
-        buf.extend_from_slice(&self.offset.to_be_bytes());
-        #[allow(clippy::cast_possible_truncation)]
-        let payload_len_u16 = payload_len as u16;
-        buf.extend_from_slice(&payload_len_u16.to_be_bytes());
-        buf.extend_from_slice(&[0u8; 2]); // Reserved
-
-        // Write payload
-        buf.extend_from_slice(&self.payload);
-
-        // Write random padding using thread-local PRNG (fast, non-syscall).
-        // Padding bytes are encrypted by AEAD before transmission, so
-        // cryptographic-quality randomness is not required here.
-        if padding_len > 0 {
-            let start = buf.len();
-            buf.resize(start + padding_len, 0);
-            rand::thread_rng().fill(&mut buf[start..]);
-        }
-
+        // SAFETY: build_into() writes every byte of the buffer:
+        // - Header (28 bytes): nonce, type, flags, stream_id, sequence, offset, payload_len, reserved
+        // - Payload: copied from self.payload
+        // - Padding: filled with random bytes from PADDING_RNG
+        // Total = FRAME_HEADER_SIZE + payload_len + padding_len = total_size
+        unsafe { buf.set_len(total_size) };
+        self.build_into(&mut buf)?;
         Ok(buf)
     }
 }

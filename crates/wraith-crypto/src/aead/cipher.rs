@@ -308,6 +308,81 @@ impl AeadKey {
     }
 }
 
+/// Cached AEAD cipher that holds both the key and pre-constructed cipher instance.
+///
+/// Avoids calling `XChaCha20Poly1305::new()` on every encrypt/decrypt invocation.
+/// Use this when performing multiple operations with the same key.
+#[derive(Clone)]
+pub struct CachedAeadCipher {
+    cipher: XChaCha20Poly1305,
+}
+
+impl CachedAeadCipher {
+    /// Create a cached cipher from an AEAD key.
+    #[must_use]
+    pub fn new(key: &AeadKey) -> Self {
+        Self {
+            cipher: XChaCha20Poly1305::new((&key.0).into()),
+        }
+    }
+
+    /// Create from raw key bytes.
+    #[must_use]
+    pub fn from_bytes(key: &[u8; KEY_SIZE]) -> Self {
+        Self {
+            cipher: XChaCha20Poly1305::new(key.into()),
+        }
+    }
+
+    /// Encrypt plaintext with associated data.
+    ///
+    /// # Errors
+    ///
+    /// Returns `CryptoError::EncryptionFailed` if AEAD encryption fails.
+    pub fn encrypt(
+        &self,
+        nonce: &Nonce,
+        plaintext: &[u8],
+        aad: &[u8],
+    ) -> Result<Vec<u8>, CryptoError> {
+        self.cipher
+            .encrypt(
+                nonce.as_generic(),
+                chacha20poly1305::aead::Payload {
+                    msg: plaintext,
+                    aad,
+                },
+            )
+            .map_err(|_| CryptoError::EncryptionFailed)
+    }
+
+    /// Decrypt ciphertext with associated data.
+    ///
+    /// # Errors
+    ///
+    /// Returns `CryptoError::DecryptionFailed` on authentication failure.
+    pub fn decrypt(
+        &self,
+        nonce: &Nonce,
+        ciphertext_and_tag: &[u8],
+        aad: &[u8],
+    ) -> Result<Vec<u8>, CryptoError> {
+        if ciphertext_and_tag.len() < TAG_SIZE {
+            return Err(CryptoError::DecryptionFailed);
+        }
+
+        self.cipher
+            .decrypt(
+                nonce.as_generic(),
+                chacha20poly1305::aead::Payload {
+                    msg: ciphertext_and_tag,
+                    aad,
+                },
+            )
+            .map_err(|_| CryptoError::DecryptionFailed)
+    }
+}
+
 /// AEAD cipher for packet encryption (legacy API).
 ///
 /// Use `AeadKey` directly for new code.

@@ -502,14 +502,14 @@ mod replay_protection_properties {
 
         /// Packets too old (beyond window) are rejected
         #[test]
-        fn old_packets_rejected(high_seq in 1100u64..10000) {
+        fn old_packets_rejected(high_seq in 2100u64..10000) {
             let mut rp = ReplayProtection::new();
 
             // Accept a high sequence number
             rp.check_and_update(high_seq);
 
             // Old packet beyond window should be rejected
-            let old_seq = high_seq.saturating_sub(1025); // Beyond 1024-packet window
+            let old_seq = high_seq.saturating_sub(2049); // Beyond 2048-packet window
 
             prop_assert!(
                 !rp.check_and_update(old_seq),

@@ -39,7 +39,7 @@ exclude = [
 ]
 
 [workspace.package]
-version = "2.3.3"
+version = "2.3.4"
 edition = "2024"
 rust-version = "1.88"
 license = "MIT"
@@ -68,7 +68,7 @@ x25519-dalek = { version = "2.0", features = ["static_secrets"] }
 ed25519-dalek = { version = "2.1", features = ["rand_core"] }
 blake3 = "1.5"
 snow = "0.10"
-rand = "0.8"
+rand = { version = "0.8", features = ["small_rng"] }
 rand_core = { version = "0.6", features = ["getrandom"] }
 rand_distr = "0.4"
 zeroize = { version = "1.7", features = ["derive"] }

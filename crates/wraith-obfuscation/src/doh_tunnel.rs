@@ -91,18 +91,22 @@ impl DohTunnel {
     ///
     /// Generates a DNS query packet with EDNS0 OPT record carrying the payload.
     ///
+    /// # Errors
+    ///
+    /// Returns `DohError::InvalidLabel` if a DNS label is empty or exceeds 63 bytes.
+    ///
     /// # Examples
     ///
     /// ```
     /// use wraith_obfuscation::doh_tunnel::DohTunnel;
     ///
     /// let tunnel = DohTunnel::new("https://dns.example.com/dns-query".to_string());
-    /// let query = tunnel.create_dns_query("wraith.example.com", b"payload");
+    /// let query = tunnel.create_dns_query("wraith.example.com", b"payload").unwrap();
     /// assert!(query.len() > 12); // Has DNS header
     /// ```
-    #[must_use]
-    pub fn create_dns_query(&self, domain: &str, payload: &[u8]) -> Vec<u8> {
-        let mut query = Vec::new();
+    pub fn create_dns_query(&self, domain: &str, payload: &[u8]) -> Result<Vec<u8>, DohError> {
+        // Pre-allocate: 12 (header) + domain.len() + 2 (label overhead estimate) + 5 (null+type+class) + 11 (EDNS) + 2 (len) + payload
+        let mut query = Vec::with_capacity(12 + domain.len() + 2 + 5 + 11 + 2 + payload.len());
 
         // DNS header (12 bytes)
         query.extend_from_slice(&[0x00, 0x01]); // Transaction ID
@@ -112,8 +116,11 @@ impl DohTunnel {
         query.extend_from_slice(&[0x00, 0x00]); // Authority: 0
         query.extend_from_slice(&[0x00, 0x01]); // Additional: 1 (EDNS)
 
-        // Question section
+        // Question section with label validation (T5.14)
         for label in domain.split('.') {
+            if label.is_empty() || label.len() > 63 {
+                return Err(DohError::InvalidLabel);
+            }
             query.push(label.len() as u8);
             query.extend_from_slice(label.as_bytes());
         }
@@ -133,7 +140,7 @@ impl DohTunnel {
         query.extend_from_slice(&payload_len.to_be_bytes());
         query.extend_from_slice(payload);
 
-        query
+        Ok(query)
     }
 
     /// Parse fake DNS response
@@ -150,7 +157,7 @@ impl DohTunnel {
     /// use wraith_obfuscation::doh_tunnel::DohTunnel;
     ///
     /// let tunnel = DohTunnel::new("https://dns.example.com/dns-query".to_string());
-    /// let query = tunnel.create_dns_query("test.com", b"data");
+    /// let query = tunnel.create_dns_query("test.com", b"data").unwrap();
     /// let parsed = tunnel.parse_dns_response(&query).unwrap();
     /// assert_eq!(parsed, b"data");
     /// ```
@@ -162,9 +169,12 @@ impl DohTunnel {
         // Skip DNS header
         let mut offset = 12;
 
-        // Skip question section (simplified parsing)
+        // Skip question section (simplified parsing) with bounds checking (T5.15)
         while offset < response.len() && response[offset] != 0 {
             let label_len = response[offset] as usize;
+            if offset + 1 + label_len > response.len() {
+                return Err(DohError::InvalidResponse);
+            }
             offset += 1 + label_len;
         }
 
@@ -209,6 +219,66 @@ impl DohTunnel {
         Ok(response[offset..offset + payload_len].to_vec())
     }
 
+    /// Parse fake DNS response returning a zero-copy slice reference.
+    ///
+    /// Like [`parse_dns_response`](Self::parse_dns_response) but returns a borrowed slice
+    /// instead of allocating a Vec, for use in hot paths.
+    ///
+    /// # Errors
+    ///
+    /// Returns `DohError::InvalidResponse` if the response is malformed.
+    pub fn parse_dns_response_slice<'a>(&self, response: &'a [u8]) -> Result<&'a [u8], DohError> {
+        if response.len() < 12 {
+            return Err(DohError::InvalidResponse);
+        }
+
+        let mut offset = 12;
+
+        // Skip question section with bounds checking
+        while offset < response.len() && response[offset] != 0 {
+            let label_len = response[offset] as usize;
+            if offset + 1 + label_len > response.len() {
+                return Err(DohError::InvalidResponse);
+            }
+            offset += 1 + label_len;
+        }
+
+        if offset >= response.len() {
+            return Err(DohError::InvalidResponse);
+        }
+
+        offset += 1; // null terminator
+        offset += 4; // type + class
+
+        if offset >= response.len() {
+            return Err(DohError::InvalidResponse);
+        }
+        offset += 1; // OPT name (root)
+
+        if offset + 4 > response.len() {
+            return Err(DohError::InvalidResponse);
+        }
+        offset += 4; // OPT type + UDP size
+
+        if offset + 4 > response.len() {
+            return Err(DohError::InvalidResponse);
+        }
+        offset += 4; // Extended RCODE + flags
+
+        if offset + 2 > response.len() {
+            return Err(DohError::InvalidResponse);
+        }
+
+        let payload_len = u16::from_be_bytes([response[offset], response[offset + 1]]) as usize;
+        offset += 2;
+
+        if offset + payload_len > response.len() {
+            return Err(DohError::InvalidResponse);
+        }
+
+        Ok(&response[offset..offset + payload_len])
+    }
+
     /// Get the resolver URL
     #[must_use]
     pub fn resolver_url(&self) -> &str {
@@ -234,6 +304,8 @@ pub enum DohError {
     DecodeFailed,
     /// Invalid DNS response
     InvalidResponse,
+    /// Invalid DNS label (empty or exceeds 63 bytes)
+    InvalidLabel,
 }
 
 impl std::fmt::Display for DohError {
@@ -241,6 +313,7 @@ impl std::fmt::Display for DohError {
         match self {
             Self::DecodeFailed => write!(f, "Failed to decode base64 response"),
             Self::InvalidResponse => write!(f, "Invalid DNS response"),
+            Self::InvalidLabel => write!(f, "Invalid DNS label (empty or exceeds 63 bytes)"),
         }
     }
 }
@@ -279,7 +352,9 @@ mod tests {
         let tunnel = DohTunnel::new("https://dns.example.com/dns-query".to_string());
         let payload = b"test";
 
-        let query = tunnel.create_dns_query("wraith.example.com", payload);
+        let query = tunnel
+            .create_dns_query("wraith.example.com", payload)
+            .unwrap();
 
         // Should have DNS header
         assert!(query.len() > 12);
@@ -292,7 +367,7 @@ mod tests {
     #[test]
     fn test_dns_query_structure() {
         let tunnel = DohTunnel::new("https://dns.example.com/dns-query".to_string());
-        let query = tunnel.create_dns_query("test.com", b"data");
+        let query = tunnel.create_dns_query("test.com", b"data").unwrap();
 
         // Check DNS header fields
         assert_eq!(query[0..2], [0x00, 0x01]); // Transaction ID
@@ -309,7 +384,9 @@ mod tests {
 
         for i in 0..10 {
             let payload = format!("message {}", i);
-            let query = tunnel.create_dns_query("test.com", payload.as_bytes());
+            let query = tunnel
+                .create_dns_query("test.com", payload.as_bytes())
+                .unwrap();
             let parsed = tunnel.parse_dns_response(&query).unwrap();
 
             assert_eq!(parsed, payload.as_bytes());
@@ -321,7 +398,7 @@ mod tests {
         let tunnel = DohTunnel::new("https://dns.example.com/dns-query".to_string());
         let empty: &[u8] = &[];
 
-        let query = tunnel.create_dns_query("test.com", empty);
+        let query = tunnel.create_dns_query("test.com", empty).unwrap();
         let parsed = tunnel.parse_dns_response(&query).unwrap();
 
         assert_eq!(parsed.len(), 0);
@@ -332,7 +409,7 @@ mod tests {
         let tunnel = DohTunnel::new("https://dns.example.com/dns-query".to_string());
         let large = vec![0x42; 1000];
 
-        let query = tunnel.create_dns_query("test.com", &large);
+        let query = tunnel.create_dns_query("test.com", &large).unwrap();
         let parsed = tunnel.parse_dns_response(&query).unwrap();
 
         assert_eq!(parsed, large);
@@ -428,7 +505,7 @@ mod tests {
     #[test]
     fn test_dns_domain_encoding() {
         let tunnel = DohTunnel::new("https://dns.example.com/dns-query".to_string());
-        let query = tunnel.create_dns_query("example.com", b"test");
+        let query = tunnel.create_dns_query("example.com", b"test").unwrap();
 
         // Find the question section (starts after header at offset 12)
         // Should be: 7 "example" 3 "com" 0
@@ -442,7 +519,9 @@ mod tests {
     #[test]
     fn test_dns_subdomain_encoding() {
         let tunnel = DohTunnel::new("https://dns.example.com/dns-query".to_string());
-        let query = tunnel.create_dns_query("test.wraith.example.com", b"data");
+        let query = tunnel
+            .create_dns_query("test.wraith.example.com", b"data")
+            .unwrap();
 
         // Check domain encoding
         let offset = 12;
@@ -458,7 +537,7 @@ mod tests {
         let messages = vec![b"msg1".as_slice(), b"msg2", b"msg3"];
 
         for msg in messages {
-            let query = tunnel.create_dns_query("test.com", msg);
+            let query = tunnel.create_dns_query("test.com", msg).unwrap();
             let parsed = tunnel.parse_dns_response(&query).unwrap();
             assert_eq!(parsed, msg);
         }
@@ -470,7 +549,7 @@ mod tests {
 
         // Test payload with special characters
         let payload = b"test\n\r\t\0data";
-        let query = tunnel.create_dns_query("test.com", payload);
+        let query = tunnel.create_dns_query("test.com", payload).unwrap();
         let parsed = tunnel.parse_dns_response(&query).unwrap();
 
         assert_eq!(parsed, payload);

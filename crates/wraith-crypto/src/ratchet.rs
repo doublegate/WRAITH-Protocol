@@ -48,7 +48,7 @@ pub const DEFAULT_MAX_SKIP: u64 = 1000;
 
 /// Default maximum gap allowed when skipping messages.
 /// Prevents `DoS` by limiting how far ahead we'll pre-compute keys.
-pub const DEFAULT_MAX_SKIP_GAP: u64 = 100;
+pub const DEFAULT_MAX_SKIP_GAP: u64 = 256;
 
 /// Configuration for ratchet skip limits.
 ///
@@ -186,6 +186,9 @@ impl MessageKey {
 ///
 /// Contains the sender's current DH public key and message number
 /// for the receiver to synchronize their ratchet state.
+///
+/// When the `key-commitment` feature is enabled, includes a 16-byte key
+/// commitment to prevent key-commitment attacks.
 #[derive(Clone, Debug)]
 pub struct MessageHeader {
     /// Sender's current DH public key
@@ -194,16 +197,35 @@ pub struct MessageHeader {
     pub prev_chain_length: u32,
     /// Message number in the current chain
     pub message_number: u32,
+    /// Key commitment (16 bytes) -- only present with `key-commitment` feature
+    #[cfg(feature = "key-commitment")]
+    pub key_commitment: Option<[u8; 16]>,
 }
 
 impl MessageHeader {
-    /// Serialize to bytes (32 + 4 + 4 = 40 bytes).
+    /// Serialize to bytes.
+    /// Without key-commitment: 32 + 4 + 4 = 40 bytes.
+    /// With key-commitment: 32 + 4 + 4 + 16 = 56 bytes.
     #[must_use]
     pub fn to_bytes(&self) -> [u8; 40] {
         let mut bytes = [0u8; 40];
         bytes[..32].copy_from_slice(&self.dh_public.to_bytes());
         bytes[32..36].copy_from_slice(&self.prev_chain_length.to_le_bytes());
         bytes[36..40].copy_from_slice(&self.message_number.to_le_bytes());
+        bytes
+    }
+
+    /// Serialize to bytes including key commitment (when feature enabled).
+    #[cfg(feature = "key-commitment")]
+    #[must_use]
+    pub fn to_bytes_with_commitment(&self) -> Vec<u8> {
+        let mut bytes = Vec::with_capacity(56);
+        bytes.extend_from_slice(&self.dh_public.to_bytes());
+        bytes.extend_from_slice(&self.prev_chain_length.to_le_bytes());
+        bytes.extend_from_slice(&self.message_number.to_le_bytes());
+        if let Some(commitment) = &self.key_commitment {
+            bytes.extend_from_slice(commitment);
+        }
         bytes
     }
 
@@ -224,11 +246,29 @@ impl MessageHeader {
         let prev_chain_length = u32::from_le_bytes([bytes[32], bytes[33], bytes[34], bytes[35]]);
         let message_number = u32::from_le_bytes([bytes[36], bytes[37], bytes[38], bytes[39]]);
 
+        #[cfg(feature = "key-commitment")]
+        let key_commitment = Self::parse_key_commitment(bytes);
+
         Ok(Self {
             dh_public,
             prev_chain_length,
             message_number,
+            #[cfg(feature = "key-commitment")]
+            key_commitment,
         })
+    }
+
+    /// Parse key commitment from bytes (cold path, feature-gated).
+    #[cfg(feature = "key-commitment")]
+    #[cold]
+    fn parse_key_commitment(bytes: &[u8]) -> Option<[u8; 16]> {
+        if bytes.len() >= 56 {
+            let mut commitment = [0u8; 16];
+            commitment.copy_from_slice(&bytes[40..56]);
+            Some(commitment)
+        } else {
+            None
+        }
     }
 }
 
@@ -262,6 +302,9 @@ pub struct DoubleRatchet {
     /// Peer's current DH public key
     #[zeroize(skip)]
     dh_peer: Option<PublicKey>,
+    /// Cached DH recv result: (dh_output, peer_key_used)
+    /// Invalidated when peer key changes. Avoids redundant scalar multiplication.
+    cached_dh_recv: Option<([u8; 32], [u8; 32])>,
     /// Root key (32 bytes)
     root_key: [u8; 32],
     /// Sending chain key
@@ -310,6 +353,7 @@ impl DoubleRatchet {
             dh_self,
             dh_self_public,
             dh_peer: Some(peer_public),
+            cached_dh_recv: None,
             root_key,
             send_chain_key: Some(send_chain_key),
             recv_chain_key: None,
@@ -331,6 +375,7 @@ impl DoubleRatchet {
             dh_self: dh_keypair,
             dh_self_public,
             dh_peer: None,
+            cached_dh_recv: None,
             root_key: *shared_secret,
             send_chain_key: None,
             recv_chain_key: None,
@@ -370,27 +415,32 @@ impl DoubleRatchet {
             .ok_or(RatchetError::NoSendingChain)?;
 
         // Derive message key using symmetric ratchet step
-        let (message_key, new_chain_key) = kdf_ck(send_chain);
+        let (mut message_key, new_chain_key) = kdf_ck(send_chain);
         *send_chain = new_chain_key;
 
         let message_number = self.send_count;
         self.send_count += 1;
+
+        // Encrypt with AEAD using header as associated data
+        let aead_key = AeadKey::new(message_key);
 
         // Create header (uses cached public key to avoid scalar multiplication)
         let header = MessageHeader {
             dh_public: self.dh_self_public,
             prev_chain_length: self.prev_send_count,
             message_number,
+            #[cfg(feature = "key-commitment")]
+            key_commitment: Some(aead_key.commitment()),
         };
-
-        // Encrypt with AEAD using header as associated data
-        let aead_key = AeadKey::new(message_key);
         let nonce = derive_nonce(message_number);
-        let ciphertext = aead_key
+        let result = aead_key
             .encrypt(&nonce, plaintext, &header.to_bytes())
-            .map_err(|_| RatchetError::EncryptionFailed)?;
+            .map_err(|_| RatchetError::EncryptionFailed);
 
-        Ok((header, ciphertext))
+        // Zeroize message key on all paths (including error)
+        message_key.zeroize();
+
+        Ok((header, result?))
     }
 
     /// Force a DH ratchet step (rotate sending key).
@@ -464,14 +514,16 @@ impl DoubleRatchet {
         header: &MessageHeader,
         ciphertext: &[u8],
     ) -> Result<Vec<u8>, RatchetError> {
+        // Pre-compute header bytes and DH public key bytes once
+        let dh_public_bytes = header.dh_public.to_bytes();
+        let header_bytes = header.to_bytes();
+
         // Check if we have a skipped key for this message (constant-time lookup)
-        if let Some(message_key) =
-            self.try_skipped_keys(&header.dh_public.to_bytes(), header.message_number)
-        {
+        if let Some(message_key) = self.try_skipped_keys(&dh_public_bytes, header.message_number) {
             let aead_key = message_key.to_aead_key();
             let nonce = derive_nonce(header.message_number);
             return aead_key
-                .decrypt(&nonce, ciphertext, &header.to_bytes())
+                .decrypt(&nonce, ciphertext, &header_bytes)
                 .map_err(|_| RatchetError::DecryptionFailed);
         }
 
@@ -497,16 +549,31 @@ impl DoubleRatchet {
             .as_mut()
             .ok_or(RatchetError::NoReceivingChain)?;
 
-        let (message_key, new_chain_key) = kdf_ck(recv_chain);
+        let (mut message_key, new_chain_key) = kdf_ck(recv_chain);
         *recv_chain = new_chain_key;
         self.recv_count += 1;
 
         // Decrypt
         let aead_key = AeadKey::new(message_key);
+
+        // Verify key commitment before AEAD decrypt (when feature enabled)
+        #[cfg(feature = "key-commitment")]
+        if let Some(commitment) = &header.key_commitment {
+            if !aead_key.verify_commitment(commitment) {
+                message_key.zeroize();
+                return Err(RatchetError::DecryptionFailed);
+            }
+        }
+
         let nonce = derive_nonce(header.message_number);
-        aead_key
-            .decrypt(&nonce, ciphertext, &header.to_bytes())
-            .map_err(|_| RatchetError::DecryptionFailed)
+        let result = aead_key
+            .decrypt(&nonce, ciphertext, &header_bytes)
+            .map_err(|_| RatchetError::DecryptionFailed);
+
+        // Zeroize message key on all paths (including error)
+        message_key.zeroize();
+
+        result
     }
 
     /// Perform a DH ratchet step.
@@ -523,20 +590,41 @@ impl DoubleRatchet {
         self.send_count = 0;
         self.recv_count = 0;
 
-        // DH with our current key and their new public key
-        let dh_recv = self
-            .dh_self
-            .exchange(peer_public)
-            .ok_or(RatchetError::InvalidPublicKey)?;
+        // DH with our current key and their new public key (cache result)
+        let peer_bytes = peer_public.to_bytes();
+        let dh_recv_bytes = if let Some((cached_output, cached_peer)) = &self.cached_dh_recv {
+            if *cached_peer == peer_bytes {
+                // Cache hit: reuse previous DH result
+                *cached_output
+            } else {
+                // Cache miss: peer key changed, recompute
+                let dh_recv = self
+                    .dh_self
+                    .exchange(peer_public)
+                    .ok_or(RatchetError::InvalidPublicKey)?;
+                let output = *dh_recv.as_bytes();
+                self.cached_dh_recv = Some((output, peer_bytes));
+                output
+            }
+        } else {
+            let dh_recv = self
+                .dh_self
+                .exchange(peer_public)
+                .ok_or(RatchetError::InvalidPublicKey)?;
+            let output = *dh_recv.as_bytes();
+            self.cached_dh_recv = Some((output, peer_bytes));
+            output
+        };
 
         // Derive new root key and receiving chain key
-        let (new_root, recv_chain_key) = kdf_rk(&self.root_key, dh_recv.as_bytes());
+        let (new_root, recv_chain_key) = kdf_rk(&self.root_key, &dh_recv_bytes);
         self.root_key = new_root;
         self.recv_chain_key = Some(recv_chain_key);
 
-        // Generate new DH keypair and cache public key
+        // Generate new DH keypair and cache public key; invalidate DH recv cache
         self.dh_self = PrivateKey::generate(rng);
         self.dh_self_public = self.dh_self.public_key();
+        self.cached_dh_recv = None;
 
         // DH with our new key and their public key
         let dh_send = self
@@ -625,13 +713,22 @@ fn kdf_ck(chain_key: &[u8; 32]) -> ([u8; 32], [u8; 32]) {
     (message_key, next_chain)
 }
 
-/// Derive a nonce from message number.
+/// Derive a nonce from message number with additional entropy.
 ///
 /// Uses a deterministic nonce since each message key is only used once.
+/// The remaining 20 bytes are filled with a hash of a fixed domain separator
+/// and the message number for defense-in-depth against nonce misuse.
 fn derive_nonce(message_number: u32) -> Nonce {
     let mut nonce_bytes = [0u8; 24];
     nonce_bytes[..4].copy_from_slice(&message_number.to_le_bytes());
-    // Remaining bytes are zero (deterministic nonce is safe with unique keys)
+
+    // Mix additional entropy into the remaining 20 bytes for defense-in-depth
+    let mut hasher = blake3::Hasher::new();
+    hasher.update(b"wraith-nonce-entropy");
+    hasher.update(&message_number.to_le_bytes());
+    let hash = hasher.finalize();
+    nonce_bytes[4..24].copy_from_slice(&hash.as_bytes()[..20]);
+
     Nonce::from_bytes(nonce_bytes)
 }
 

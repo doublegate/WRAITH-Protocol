@@ -153,18 +153,16 @@ impl Drop for TransferSession {
         // Zeroize the transfer ID (sensitive session identifier)
         self.id.zeroize();
 
-        // Zeroize peer IDs
-        for peer_id in self.peers.keys() {
-            // Note: We can't mutate during iteration, so we collect and zeroize after
-            // The HashMap will be cleared when dropped anyway
-            let _ = peer_id; // Acknowledge the peer_id
+        // Zeroize peer IDs by draining the map and zeroizing each key
+        let peer_entries: Vec<(PeerId, PeerTransferState)> = self.peers.drain().collect();
+        for (mut peer_id, _state) in peer_entries {
+            peer_id.zeroize();
         }
 
         // Clear all collections
         self.chunk_bitmap.clear();
         self.requestable_chunks.clear();
         self.assigned_chunks_cache.clear();
-        self.peers.clear();
 
         tracing::trace!("TransferSession zeroized and dropped");
     }
@@ -371,9 +369,27 @@ impl TransferSession {
     /// this returns in O(100) time instead of O(4096).
     #[must_use]
     pub fn missing_chunks(&self) -> Vec<u64> {
-        (0..self.total_chunks)
-            .filter(|&i| !Self::bitmap_test(&self.chunk_bitmap, i))
-            .collect()
+        let missing_count = (self.total_chunks - self.transferred_count) as usize;
+        let mut missing = Vec::with_capacity(missing_count);
+
+        for (word_idx, &word) in self.chunk_bitmap.iter().enumerate() {
+            // If all bits set, no missing chunks in this word
+            if word == u64::MAX {
+                continue;
+            }
+            // Scan unset bits using inverted word
+            let mut unset = !word;
+            while unset != 0 {
+                let bit = unset.trailing_zeros() as u64;
+                let chunk_idx = (word_idx as u64) * 64 + bit;
+                if chunk_idx < self.total_chunks {
+                    missing.push(chunk_idx);
+                }
+                unset &= unset - 1; // Clear lowest set bit
+            }
+        }
+
+        missing
     }
 
     /// Get missing chunks sorted

@@ -100,7 +100,9 @@ fn bench_doh_tunnel(c: &mut Criterion) {
         group.bench_with_input(format!("create_query_{}", size), &payload, |b, payload| {
             let tunnel = DohTunnel::new("https://dns.example.com/dns-query".to_string());
             b.iter(|| {
-                let query = tunnel.create_dns_query(black_box("test.com"), black_box(payload));
+                let query = tunnel
+                    .create_dns_query(black_box("test.com"), black_box(payload))
+                    .unwrap();
                 black_box(query);
             });
         });
@@ -110,7 +112,7 @@ fn bench_doh_tunnel(c: &mut Criterion) {
             &payload,
             |b, payload| {
                 let tunnel = DohTunnel::new("https://dns.example.com/dns-query".to_string());
-                let query = tunnel.create_dns_query("test.com", payload);
+                let query = tunnel.create_dns_query("test.com", payload).unwrap();
                 b.iter(|| {
                     let parsed = tunnel.parse_dns_response(black_box(&query)).unwrap();
                     black_box(parsed);

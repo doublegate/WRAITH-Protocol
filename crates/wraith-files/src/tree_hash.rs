@@ -48,9 +48,12 @@
 //! up to 8x on supported hardware.
 
 use blake3::Hasher;
+#[cfg(feature = "parallel")]
+use rayon_crate::prelude::*;
 use std::fs::File;
 use std::io::{self, Read};
 use std::path::Path;
+use zeroize::Zeroize;
 
 /// File tree hash structure
 ///
@@ -169,32 +172,59 @@ pub fn compute_merkle_root(leaves: &[[u8; 32]]) -> [u8; 32] {
         return leaves[0];
     }
 
-    let mut current_level = leaves.to_vec();
+    // Ping-pong buffers to avoid allocating per level
+    let initial_size = leaves.len();
+    let mut buf_a: Vec<[u8; 32]> = leaves.to_vec();
+    let mut buf_b: Vec<[u8; 32]> = Vec::with_capacity(initial_size.div_ceil(2));
+    let mut use_a = true;
 
-    while current_level.len() > 1 {
-        // Pre-allocate next level with exact capacity
-        let next_level_size = current_level.len().div_ceil(2);
-        let mut next_level = Vec::with_capacity(next_level_size);
+    loop {
+        let (src, dst) = if use_a {
+            (&buf_a, &mut buf_b)
+        } else {
+            (&buf_b, &mut buf_a)
+        };
 
-        for pair in current_level.chunks(2) {
-            let hash = if pair.len() == 2 {
-                // Hash concatenation of two nodes
-                let mut hasher = Hasher::new();
-                hasher.update(&pair[0]);
-                hasher.update(&pair[1]);
-                *hasher.finalize().as_bytes()
-            } else {
-                // Odd number, promote single node
-                pair[0]
-            };
-
-            next_level.push(hash);
+        if src.len() <= 1 {
+            return if use_a { buf_a[0] } else { buf_b[0] };
         }
 
-        current_level = next_level;
-    }
+        dst.clear();
 
-    current_level[0]
+        #[cfg(feature = "parallel")]
+        {
+            *dst = src
+                .par_chunks(2)
+                .map(|pair| {
+                    if pair.len() == 2 {
+                        let mut hasher = Hasher::new();
+                        hasher.update(&pair[0]);
+                        hasher.update(&pair[1]);
+                        *hasher.finalize().as_bytes()
+                    } else {
+                        pair[0]
+                    }
+                })
+                .collect();
+        }
+
+        #[cfg(not(feature = "parallel"))]
+        {
+            for pair in src.chunks(2) {
+                let hash = if pair.len() == 2 {
+                    let mut hasher = Hasher::new();
+                    hasher.update(&pair[0]);
+                    hasher.update(&pair[1]);
+                    *hasher.finalize().as_bytes()
+                } else {
+                    pair[0]
+                };
+                dst.push(hash);
+            }
+        }
+
+        use_a = !use_a;
+    }
 }
 
 /// Verify chunk data against tree
@@ -253,24 +283,13 @@ impl IncrementalTreeHasher {
     ///
     /// Data is buffered until a complete chunk is accumulated, at which
     /// point it's hashed and added to the chunk list.
-    ///
-    /// # Performance
-    ///
-    /// Uses slice-based hashing to avoid allocation in the hot path.
-    /// Each chunk is hashed directly from the buffer without creating
-    /// an intermediate Vec.
     pub fn update(&mut self, data: &[u8]) {
         self.current_buffer.extend_from_slice(data);
 
-        // Process complete chunks without intermediate allocation
+        // Process complete chunks
         while self.current_buffer.len() >= self.chunk_size {
-            // Hash directly from the buffer slice (no allocation)
             let hash = blake3::hash(&self.current_buffer[..self.chunk_size]);
             self.chunk_hashes.push(*hash.as_bytes());
-
-            // Remove the processed bytes efficiently
-            // This is still O(n) for the remaining bytes, but avoids
-            // the intermediate allocation that drain().collect() creates
             self.current_buffer.drain(..self.chunk_size);
         }
     }
@@ -292,18 +311,23 @@ impl IncrementalTreeHasher {
     /// Hashes any remaining buffered data and computes the Merkle root.
     #[must_use]
     pub fn finalize(mut self) -> FileTreeHash {
-        // Hash remaining data
+        // Hash remaining buffered data
         if !self.current_buffer.is_empty() {
             let hash = blake3::hash(&self.current_buffer);
             self.chunk_hashes.push(*hash.as_bytes());
         }
 
         let root = compute_merkle_root(&self.chunk_hashes);
+        // Take ownership to avoid clone; Drop will zeroize the now-empty buffer
+        let chunks = std::mem::take(&mut self.chunk_hashes);
 
-        FileTreeHash {
-            root,
-            chunks: self.chunk_hashes,
-        }
+        FileTreeHash { root, chunks }
+    }
+}
+
+impl Drop for IncrementalTreeHasher {
+    fn drop(&mut self) {
+        self.current_buffer.zeroize();
     }
 }
 
@@ -319,12 +343,17 @@ impl IncrementalTreeHasher {
 /// ```
 #[must_use]
 pub fn compute_tree_hash_from_data(data: &[u8], chunk_size: usize) -> FileTreeHash {
-    let mut chunk_hashes = Vec::new();
+    #[cfg(feature = "parallel")]
+    let chunk_hashes: Vec<[u8; 32]> = data
+        .par_chunks(chunk_size)
+        .map(|chunk| *blake3::hash(chunk).as_bytes())
+        .collect();
 
-    for chunk in data.chunks(chunk_size) {
-        let hash = blake3::hash(chunk);
-        chunk_hashes.push(*hash.as_bytes());
-    }
+    #[cfg(not(feature = "parallel"))]
+    let chunk_hashes: Vec<[u8; 32]> = data
+        .chunks(chunk_size)
+        .map(|chunk| *blake3::hash(chunk).as_bytes())
+        .collect();
 
     let root = compute_merkle_root(&chunk_hashes);
 

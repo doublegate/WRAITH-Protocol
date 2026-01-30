@@ -237,7 +237,9 @@ impl Node {
         // Use wraith-obfuscation DohTunnel for protocol mimicry
         // Note: DohTunnel creates DNS query packets with EDNS0 OPT records
         let tunnel = &self.inner.doh_tunnel;
-        let wrapped = tunnel.create_dns_query("wraith.local", data);
+        let wrapped = tunnel
+            .create_dns_query("wraith.local", data)
+            .map_err(|_| NodeError::Obfuscation("DNS label encoding failed".into()))?;
 
         tracing::trace!(
             "Wrapped {} bytes as DoH (total: {} bytes)",

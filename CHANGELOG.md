@@ -9,6 +9,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.3.4] - 2026-01-30 - Performance Optimizations & Security Hardening
+
+### Overview
+
+Release implementing 18 performance optimization proposals (T5.1-T5.18) identified in benchmark analysis, with focus on zero-copy operations, memory allocation reduction, and cryptographic hardening. Key improvements: WebSocket mimicry frame wrapping 55-85% faster, DoH tunnel creation 70-86% faster, frame pipeline 11-30% faster, message header deserialization 53% faster, Noise handshake 2.6% faster, plus security enhancements including `zeroize` for secure memory cleanup.
+
+### Changed
+
+#### Performance Optimizations - Obfuscation (wraith-obfuscation)
+- **T5.6: WebSocket mimicry frame wrapping**: 55-85% faster via pre-allocated buffers and 4-byte chunked XOR masking (1456B: 4.01 GiB/s → 7.45 GiB/s, 65KB: 3.08 GiB/s → 5.78 GiB/s)
+- **T5.7: WebSocket RNG optimization**: Struct-level `Mutex<SmallRng>` replacing per-call RNG creation for mask key generation
+- **T5.12: DoH tunnel query creation**: 70-86% faster via pre-allocated Vec and single allocation (244B: 12.8 GiB/s → 45.2 GiB/s, 512B: 12.3 GiB/s → 22.0 GiB/s)
+- **T5.13: DoH tunnel zero-copy parsing**: New `parse_dns_response_slice` API avoiding allocation for in-memory responses
+- **T5.14: DNS label length validation**: Added RFC compliance checks for 63-byte label length limits
+- **T5.15: DoH response bounds-checking**: Hardened response parsing against malformed data
+
+#### Performance Optimizations - Core (wraith-core)
+- **T5.4: Frame full pipeline optimization**: 11-30% faster via `Vec::with_capacity` and unsafe `set_len` eliminating redundant zero-initialization (1456B: 5.85 GiB/s → 7.62 GiB/s, 65KB: 8.04 GiB/s → 8.88 GiB/s)
+- **T5.8: Frame padding RNG optimization**: Thread-local `RefCell<SmallRng>` caching eliminating per-call RNG creation (3 call sites: `pad_to_multiple`, `Frame::new`, `Frame::build`)
+- **T5.9: Frame build delegation**: `build()` delegates to `build_into()` reducing code duplication and maintenance burden
+- **T5.10: Ratchet error path optimization**: `#[cold]` annotation on key-commitment parsing error path
+- **T5.11: Frame benchmarks expansion**: New `build_into_from_parts` benchmark covering 5 payload sizes (64B-65KB)
+
+#### Performance Optimizations - Crypto (wraith-crypto)
+- **T5.16: Message header deserialization**: 53% faster via direct buffer read and offset calculation (25.6 ns → 12.0 ns)
+- **T5.17: Noise handshake optimization**: 2.6% faster via reduced allocations and streamlined validation (25.1 us → 24.4 us)
+
+#### Security Hardening - Files (wraith-files)
+- **T5.18: Secure memory cleanup**: Added `zeroize` on `IncrementalTreeHasher` drop for secure erasure of in-progress hash state
+
+#### Regression Fixes During Development
+- **T5.1 (reverted)**: Read offset cursor pattern caused unbounded buffer growth in repeated `build_into` calls
+- **T5.2 (reverted)**: `Vec::with_capacity(1MB)` pre-allocation introduced 1MB allocation overhead per frame construction
+- **T5.4 (fixed)**: Eliminated zero-initialization overhead in frame build via unsafe `set_len` after explicit writes
+- **T5.5 (reverted)**: Removed `#[inline]` on `from_bytes()` - caused instruction cache pressure negating benefits
+
+### Added
+
+#### Dependencies
+- **wraith-files**: `zeroize` crate for secure memory cleanup of cryptographic material
+
+#### Documentation
+- **Benchmark Analysis**: `docs/testing/BENCHMARK-ANALYSIS-v2.3.4.md` - Comprehensive performance analysis and optimization proposals
+
+### Security
+
+- Secure memory cleanup in file hashing preventing potential key material leakage
+- Hardened DoH response parsing against malformed DNS packets
+- DNS label length validation per RFC specifications
+
+---
+
 ## [2.3.2] - 2026-01-29 - Benchmark-Driven Performance & Security Optimizations
 
 ### Overview

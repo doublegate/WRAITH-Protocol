@@ -8,6 +8,10 @@ license.workspace = true
 repository.workspace = true
 authors.workspace = true
 
+[features]
+default = []
+key-commitment = []
+
 [dependencies]
 chacha20poly1305 = { version = "0.10", default-features = false, features = ["alloc"] }
 x25519-dalek = { version = "2.0", default-features = false, features = ["static_secrets", "zeroize"] }
@@ -32,7 +36,7 @@ rand = "0.8"
 
 [lints.rust]
 # Allow 'coverage' cfg set by cargo-llvm-cov for conditional test exclusion
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(coverage)'] }
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(coverage)', 'cfg(feature, values("key-commitment"))'] }
 
 [[bench]]
 name = "crypto_bench"

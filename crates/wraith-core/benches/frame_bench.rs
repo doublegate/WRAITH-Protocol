@@ -1,6 +1,6 @@
 use criterion::{Criterion, Throughput, criterion_group, criterion_main};
 use std::hint::black_box;
-use wraith_core::{FRAME_HEADER_SIZE, Frame, FrameBuilder, FrameType};
+use wraith_core::{FRAME_HEADER_SIZE, Frame, FrameBuilder, FrameType, build_into_from_parts};
 
 fn bench_frame_parse(c: &mut Criterion) {
     let frame_data = FrameBuilder::new()
@@ -306,6 +306,40 @@ fn bench_frame_full_pipeline(c: &mut Criterion) {
     group.finish();
 }
 
+fn bench_frame_build_into_from_parts(c: &mut Criterion) {
+    let sizes: Vec<(usize, &str)> = vec![
+        (64, "64_bytes"),
+        (256, "256_bytes"),
+        (512, "512_bytes"),
+        (1024, "1024_bytes"),
+        (1456, "1456_bytes"),
+    ];
+
+    let mut group = c.benchmark_group("frame_build_into_from_parts");
+
+    for (size, name) in sizes {
+        let payload_len = size.saturating_sub(FRAME_HEADER_SIZE);
+        let payload = vec![0x42; payload_len];
+
+        group.throughput(Throughput::Bytes(size as u64));
+        group.bench_function(name, |b| {
+            let mut buf = vec![0u8; size];
+            b.iter(|| {
+                build_into_from_parts(
+                    black_box(FrameType::Data),
+                    black_box(42),
+                    black_box(1000),
+                    black_box(0),
+                    black_box(&payload),
+                    black_box(&mut buf),
+                )
+            })
+        });
+    }
+
+    group.finish();
+}
+
 criterion_group!(
     benches,
     bench_frame_parse,
@@ -318,6 +352,7 @@ criterion_group!(
     bench_parse_implementations_by_size,
     bench_parse_throughput,
     bench_frame_build_into,
+    bench_frame_build_into_from_parts,
     bench_frame_full_pipeline
 );
 criterion_main!(benches);

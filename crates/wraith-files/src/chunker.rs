@@ -4,7 +4,6 @@
 //! integration for reduced allocation overhead during high-throughput transfers.
 
 use crate::DEFAULT_CHUNK_SIZE;
-use std::collections::HashSet;
 use std::fs::{File, OpenOptions};
 use std::io::{self, Read, Seek, SeekFrom, Write};
 use std::path::Path;
@@ -260,11 +259,11 @@ pub struct FileReassembler {
     total_chunks: u64,
     #[allow(dead_code)]
     total_size: u64,
-    /// Chunks that have been received (for quick lookup)
-    received_chunks: HashSet<u64>,
-    /// Chunks that are still missing (for O(m) missing queries)
-    /// This is the inverse of received_chunks for optimal missing chunk iteration
-    missing_chunks_set: HashSet<u64>,
+    /// Bitmap tracking received chunks (bit = 1 means received)
+    /// Uses Vec<u64> as a bitset: bitmap[idx/64] & (1 << (idx%64))
+    chunk_bitmap: Vec<u64>,
+    /// Count of received chunks (cached for O(1) access)
+    received_count: u64,
 }
 
 impl FileReassembler {
@@ -292,17 +291,15 @@ impl FileReassembler {
         file.set_len(total_size)?;
 
         let total_chunks = total_size.div_ceil(chunk_size as u64);
-
-        // Initialize missing set with all chunk indices
-        let missing_chunks_set: HashSet<u64> = (0..total_chunks).collect();
+        let bitmap_words = total_chunks.div_ceil(64) as usize;
 
         Ok(Self {
             file,
             chunk_size,
             total_chunks,
             total_size,
-            received_chunks: HashSet::new(),
-            missing_chunks_set,
+            chunk_bitmap: vec![0u64; bitmap_words],
+            received_count: 0,
         })
     }
 
@@ -330,9 +327,10 @@ impl FileReassembler {
         self.file.seek(SeekFrom::Start(offset))?;
         self.file.write_all(data)?;
 
-        // O(1) operations for both sets
-        if self.received_chunks.insert(chunk_index) {
-            self.missing_chunks_set.remove(&chunk_index);
+        // O(1) bitmap operations
+        if !Self::bitmap_test(&self.chunk_bitmap, chunk_index) {
+            Self::bitmap_set(&mut self.chunk_bitmap, chunk_index);
+            self.received_count += 1;
         }
 
         Ok(())
@@ -341,7 +339,7 @@ impl FileReassembler {
     /// Check if chunk is received
     #[must_use]
     pub fn has_chunk(&self, chunk_index: u64) -> bool {
-        self.received_chunks.contains(&chunk_index)
+        chunk_index < self.total_chunks && Self::bitmap_test(&self.chunk_bitmap, chunk_index)
     }
 
     /// Get missing chunk indices
@@ -355,26 +353,42 @@ impl FileReassembler {
     /// significantly faster than iterating all chunks.
     #[must_use]
     pub fn missing_chunks(&self) -> Vec<u64> {
-        self.missing_chunks_set.iter().copied().collect()
+        let missing_total = (self.total_chunks - self.received_count) as usize;
+        let mut missing = Vec::with_capacity(missing_total);
+
+        for (word_idx, &word) in self.chunk_bitmap.iter().enumerate() {
+            if word == u64::MAX {
+                continue;
+            }
+            let mut unset = !word;
+            while unset != 0 {
+                let bit = unset.trailing_zeros() as u64;
+                let chunk_idx = (word_idx as u64) * 64 + bit;
+                if chunk_idx < self.total_chunks {
+                    missing.push(chunk_idx);
+                }
+                unset &= unset - 1;
+            }
+        }
+
+        missing
     }
 
     /// Get missing chunks sorted
     ///
     /// Returns missing chunk indices in ascending order.
-    /// Useful for sequential chunk requests.
+    /// Naturally sorted since we iterate bitmap words in order.
     #[must_use]
     pub fn missing_chunks_sorted(&self) -> Vec<u64> {
-        let mut missing: Vec<u64> = self.missing_chunks_set.iter().copied().collect();
-        missing.sort_unstable();
-        missing
+        self.missing_chunks() // Already sorted by bitmap iteration order
     }
 
     /// Get number of missing chunks
     ///
-    /// O(1) operation using the missing_chunks_set.
+    /// O(1) operation using cached received count.
     #[must_use]
     pub fn missing_count(&self) -> u64 {
-        self.missing_chunks_set.len() as u64
+        self.total_chunks - self.received_count
     }
 
     /// Check if a specific chunk is missing
@@ -382,30 +396,29 @@ impl FileReassembler {
     /// O(1) lookup operation.
     #[must_use]
     pub fn is_chunk_missing(&self, chunk_index: u64) -> bool {
-        self.missing_chunks_set.contains(&chunk_index)
+        chunk_index < self.total_chunks && !Self::bitmap_test(&self.chunk_bitmap, chunk_index)
     }
 
     /// Get number of received chunks
     #[must_use]
     pub fn received_count(&self) -> u64 {
-        self.received_chunks.len() as u64
+        self.received_count
     }
 
     /// Get progress (0.0 to 1.0)
     #[must_use]
     pub fn progress(&self) -> f64 {
         if self.total_chunks == 0 {
-            // 0-byte file is always 100% complete
             1.0
         } else {
-            self.received_chunks.len() as f64 / self.total_chunks as f64
+            self.received_count as f64 / self.total_chunks as f64
         }
     }
 
     /// Check if transfer is complete
     #[must_use]
     pub fn is_complete(&self) -> bool {
-        self.received_chunks.len() as u64 == self.total_chunks
+        self.received_count == self.total_chunks
     }
 
     /// Sync file to disk
@@ -436,6 +449,24 @@ impl FileReassembler {
 
         self.sync()?;
         Ok(())
+    }
+
+    // ========================================================================
+    // Bitmap helpers
+    // ========================================================================
+
+    /// Set a bit in the bitmap
+    fn bitmap_set(bitmap: &mut [u64], idx: u64) {
+        let word = (idx / 64) as usize;
+        let bit = idx % 64;
+        bitmap[word] |= 1u64 << bit;
+    }
+
+    /// Test a bit in the bitmap
+    fn bitmap_test(bitmap: &[u64], idx: u64) -> bool {
+        let word = (idx / 64) as usize;
+        let bit = idx % 64;
+        (bitmap[word] >> bit) & 1 == 1
     }
 }
 

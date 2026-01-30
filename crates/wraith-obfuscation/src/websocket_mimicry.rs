@@ -3,6 +3,9 @@
 //! Wraps WRAITH packets in WebSocket binary frames to blend with
 //! WebSocket traffic and evade DPI.
 
+use rand::rngs::SmallRng;
+use rand::{Rng, SeedableRng};
+
 /// WebSocket opcode for binary frame
 const WEBSOCKET_OPCODE_BINARY: u8 = 0x02;
 /// WebSocket FIN bit
@@ -26,6 +29,7 @@ const WEBSOCKET_FIN_BIT: u8 = 0x80;
 /// ```
 pub struct WebSocketFrameWrapper {
     client_to_server: bool, // Clients must mask frames
+    rng: std::sync::Mutex<SmallRng>,
 }
 
 impl WebSocketFrameWrapper {
@@ -44,8 +48,13 @@ impl WebSocketFrameWrapper {
     /// let server_wrapper = WebSocketFrameWrapper::new(false);
     /// ```
     #[must_use]
-    pub const fn new(client_to_server: bool) -> Self {
-        Self { client_to_server }
+    pub fn new(client_to_server: bool) -> Self {
+        Self {
+            client_to_server,
+            rng: std::sync::Mutex::new(
+                SmallRng::from_rng(&mut rand::thread_rng()).expect("RNG seeding failed"),
+            ),
+        }
     }
 
     /// Wrap payload in WebSocket frame
@@ -63,7 +72,16 @@ impl WebSocketFrameWrapper {
     /// assert_eq!(frame[0] & 0x0F, 0x02); // Binary opcode
     /// ```
     pub fn wrap(&self, payload: &[u8]) -> Vec<u8> {
-        let mut frame = Vec::new();
+        // Pre-compute header and mask sizes for allocation
+        let header_len = if payload.len() < 126 {
+            2
+        } else if payload.len() < 65536 {
+            4
+        } else {
+            10
+        };
+        let mask_len = if self.client_to_server { 4 } else { 0 };
+        let mut frame = Vec::with_capacity(header_len + mask_len + payload.len());
 
         // Byte 1: FIN + RSV + OPCODE
         frame.push(WEBSOCKET_FIN_BIT | WEBSOCKET_OPCODE_BINARY);
@@ -81,25 +99,28 @@ impl WebSocketFrameWrapper {
             frame.extend_from_slice(&(payload.len() as u64).to_be_bytes());
         }
 
-        // Masking key (if client)
+        // Masking key (if client) -- use SmallRng for performance
         let masking_key = if self.client_to_server {
-            use rand::Rng;
-            let mut rng = rand::thread_rng();
-            let key: [u8; 4] = rng.r#gen();
+            let key: [u8; 4] = self.rng.lock().unwrap().r#gen();
             frame.extend_from_slice(&key);
             Some(key)
         } else {
             None
         };
 
-        // Payload (masked if client)
+        // Payload (masked if client) -- use 4-byte XOR for performance
         if let Some(key) = masking_key {
-            let masked: Vec<u8> = payload
-                .iter()
-                .enumerate()
-                .map(|(i, &byte)| byte ^ key[i % 4])
-                .collect();
-            frame.extend_from_slice(&masked);
+            let mask_u32 = u32::from_ne_bytes(key);
+            let aligned_len = payload.len() & !3;
+            let (chunks, remainder) = payload.split_at(aligned_len);
+
+            for chunk in chunks.chunks_exact(4) {
+                let val = u32::from_ne_bytes(chunk.try_into().unwrap()) ^ mask_u32;
+                frame.extend_from_slice(&val.to_ne_bytes());
+            }
+            for (i, &byte) in remainder.iter().enumerate() {
+                frame.push(byte ^ key[i]);
+            }
         } else {
             frame.extend_from_slice(payload);
         }
@@ -198,7 +219,7 @@ impl WebSocketFrameWrapper {
 
     /// Check if this wrapper is in client mode
     #[must_use]
-    pub const fn is_client_mode(&self) -> bool {
+    pub fn is_client_mode(&self) -> bool {
         self.client_to_server
     }
 }

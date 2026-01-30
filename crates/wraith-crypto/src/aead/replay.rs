@@ -1,33 +1,31 @@
 //! Replay protection using sliding window.
 //!
 //! Provides protection against replay attacks by tracking seen packet sequence numbers.
-//! Uses a 1024-bit window for efficient out-of-order packet handling.
-
-use subtle::ConstantTimeEq;
+//! Uses a 2048-bit window for efficient out-of-order packet handling.
 
 /// Replay protection using sliding window.
 ///
 /// Tracks seen packet sequence numbers to prevent replay attacks.
-/// Uses a 1024-bit window for efficient out-of-order packet handling.
+/// Uses a 2048-bit window for efficient out-of-order packet handling.
 ///
 /// # Security
 ///
-/// A 1024-packet window provides tolerance for:
+/// A 2048-packet window provides tolerance for:
 /// - High packet loss scenarios (>10% loss)
 /// - Severe packet reordering (network path changes, ECMP)
 /// - Bursty traffic patterns (VPN reconnects, mobile handoffs)
-/// - High-throughput scenarios (~300 us coverage at 40 Gbps)
+/// - High-throughput scenarios (~600 us coverage at 40 Gbps)
 #[derive(Clone)]
 pub struct ReplayProtection {
     /// Maximum sequence number seen
     max_seq: u64,
-    /// Sliding window bitmap (1024 bits = 1024 packets, stored as 16 × 64-bit words)
-    window: [u64; 16],
+    /// Sliding window bitmap (2048 bits = 2048 packets, stored as 32 × 64-bit words)
+    window: [u64; 32],
 }
 
 impl ReplayProtection {
-    /// Size of the replay protection window (1024 packets)
-    pub const WINDOW_SIZE: u64 = 1024;
+    /// Size of the replay protection window (2048 packets)
+    pub const WINDOW_SIZE: u64 = 2048;
 
     /// Number of 64-bit words in the window bitmap
     const WINDOW_WORDS: usize = (Self::WINDOW_SIZE / 64) as usize;
@@ -90,13 +88,11 @@ impl ReplayProtection {
         let word_index = (bit_position / 64) as usize;
         let bit_index = bit_position % 64;
 
-        // Check if already seen (constant-time comparison for side-channel resistance)
+        // Check if already seen
         let bit_mask = 1u64 << bit_index;
         let is_seen = self.window[word_index] & bit_mask;
 
-        // Use constant-time comparison to prevent timing attacks
-        // that could leak information about the replay window state
-        if is_seen.ct_ne(&0u64).into() {
+        if is_seen != 0 {
             return false; // Replay detected
         }
 

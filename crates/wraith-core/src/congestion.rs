@@ -7,9 +7,9 @@ use std::collections::VecDeque;
 use std::time::{Duration, Instant};
 
 /// Maximum number of bandwidth samples to keep.
-/// 20 samples captures 2.5 full ProbeBw 8-cycle gains, providing
-/// more stable bandwidth estimates than the previous 10-sample window.
-const BW_WINDOW_SIZE: usize = 20;
+/// 30 samples captures ~3.75 full ProbeBw 8-cycle gains, providing
+/// more stable bandwidth estimates for high-throughput scenarios.
+const BW_WINDOW_SIZE: usize = 30;
 
 /// Maximum number of RTT samples to keep.
 /// 20 samples provides more stable min-RTT estimates across
@@ -122,9 +122,9 @@ impl BbrState {
         let now = Instant::now();
         Self {
             btl_bw: 0,
-            min_rtt: Duration::from_millis(100), // Initial estimate
-            pacing_gain: 2.89,                   // Startup gain (2/ln(2))
-            pacing_gain_fp: STARTUP_GAIN_FP,     // Fixed-point startup gain
+            min_rtt: Duration::from_millis(50), // Initial estimate (50ms for modern networks)
+            pacing_gain: 2.89,                  // Startup gain (2/ln(2))
+            pacing_gain_fp: STARTUP_GAIN_FP,    // Fixed-point startup gain
             cwnd_gain: 2.0,
             cwnd_gain_fp: CWND_GAIN_FP, // Fixed-point cwnd gain
             bdp: 0,
@@ -798,8 +798,9 @@ mod tests {
     fn test_bbr_cwnd_with_bdp() {
         let mut bbr = BbrState::new();
 
-        bbr.update_bandwidth(10_000_000, Duration::from_secs(1));
+        // Update RTT first so BDP calculation uses the actual RTT, not the initial estimate
         bbr.update_rtt(Duration::from_millis(100));
+        bbr.update_bandwidth(10_000_000, Duration::from_secs(1));
 
         let cwnd = bbr.cwnd();
         let expected_bdp = (10_000_000.0 * 0.1) as u64;

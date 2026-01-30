@@ -120,8 +120,13 @@ impl Kdf {
 #[must_use]
 pub fn hkdf_extract(salt: &[u8], ikm: &[u8]) -> [u8; 32] {
     if salt.is_empty() {
-        // No salt: just hash the IKM
-        hash(ikm)
+        // No salt: use fixed all-zero 32-byte key for domain separation
+        // This distinguishes the unkeyed path from the keyed path,
+        // preventing domain confusion attacks
+        let zero_key = [0u8; 32];
+        let mut hasher = blake3::Hasher::new_keyed(&zero_key);
+        hasher.update(ikm);
+        *hasher.finalize().as_bytes()
     } else {
         // Use salt as key for keyed BLAKE3
         let salt_hash = hash(salt);
