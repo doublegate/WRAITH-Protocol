@@ -348,17 +348,19 @@ For detailed architecture documentation, see [Protocol Overview](docs/architectu
 | Memory per Session  | <10 MB    | Including buffers     |
 | CPU @ 10 Gbps       | <50%      | 8-core system         |
 
-### Benchmarks (v2.3.2-optimized)
+### Benchmarks (v2.3.4)
 
-Measured on production hardware (Intel i9-10850K, 64 GB RAM) with `cargo bench --workspace`. See [Benchmark Analysis](docs/testing/BENCHMARK-ANALYSIS-v2.3.2-optimized.md) for full methodology and results.
+Measured on production hardware (Intel i9-10850K, 64 GB RAM) with `cargo bench --workspace`. See [Benchmark Analysis v2.3.4](docs/testing/BENCHMARK-ANALYSIS-v2.3.4.md) for full methodology and results.
 
 | Component            | Measured Performance                        | Details                                    |
 | -------------------- | ------------------------------------------- | ------------------------------------------ |
 | Frame Building       | 17.77 ns (76.3 GiB/s) via `build_into`     | Zero-allocation API, 10.9x faster than allocating build |
+| Frame Full Pipeline  | 4.4 us/frame (11-30% faster)               | Pre-allocated Vec + unsafe set_len         |
 | Frame Parsing        | 6.9 ns/frame (~196 GiB/s)                  | SIMD: AVX2/SSE4.2/NEON, constant-time     |
 | AEAD Encryption      | ~1.40 GiB/s (XChaCha20-Poly1305)           | 256-bit key, 192-bit nonce                 |
 | Double Ratchet       | 1.71 us encrypt (was 26.7 us)              | Cached public key, 93.6% improvement       |
-| Noise XX Handshake   | 345 us per handshake                        | Full mutual authentication                 |
+| Message Header       | 12.0 ns deserialize (53% faster)           | Direct buffer read, was 25.6 ns            |
+| Noise XX Handshake   | 423 us per handshake (2.6% faster)         | Reduced allocations, streamlined validation |
 | Elligator2 Encoding  | 29.5 us per encoding                        | Key indistinguishability from random       |
 | BLAKE3 Hashing       | 4.71 GiB/s (tree), 8.5 GB/s (parallel)     | rayon + SIMD acceleration                  |
 | File Chunking        | 14.48 GiB/s                                 | io_uring async I/O                         |
@@ -367,22 +369,44 @@ Measured on production hardware (Intel i9-10850K, 64 GB RAM) with `cargo bench -
 | File Reassembly      | 5.42 GiB/s                                  | O(m) algorithm, zero-copy                  |
 | Transfer Scheduling  | 3.34 ns per request (O(log n))              | BTreeSet priority queue, 118,000x improvement |
 | Chunk Tracking       | 6.6 ns `is_chunk_missing` (O(1))            | BitVec bitmap, 1000x memory reduction      |
-| Session Creation     | 58-71% faster via BitVec tracking           | Eliminated dual HashSet overhead           |
+| WebSocket Mimicry    | 7.45 GiB/s @1456B (55-85% faster)          | Pre-allocated buffers, 4-byte XOR masking  |
+| DoH Tunnel Creation  | 45.2 GiB/s @244B (70-86% faster)           | Pre-allocated Vec, single allocation       |
 | Replay Protection    | 920 ps sequential accept                    | 1024-packet sliding window                 |
 | Ring Buffers (SPSC)  | ~100M ops/sec                               | Cache-line padded, lock-free               |
 | Ring Buffers (MPSC)  | ~20M ops/sec                                | CAS-based, 4 producers                     |
 
-### Optimization Highlights (v2.3.2-optimized)
+### Optimization Highlights (v2.3.4)
 
-12 performance and infrastructure optimizations implemented based on benchmark analysis:
+18 performance optimizations and security hardening improvements implemented:
 
-- **Zero-allocation frame building** (`build_into_from_parts`) -- writes directly into caller buffer, 10.9x speedup
-- **Cached Double Ratchet public key** -- eliminates per-encrypt x25519 scalar multiplication, 93.6% improvement
-- **BTreeSet priority queue** for chunk scheduling -- O(log n) replacing O(n) linear scan, 118,000x speedup
-- **BitVec chunk tracking** replacing dual HashSets -- 1000x memory reduction, 58-71% session creation speedup
-- **Binary search padding size classes** via `partition_point()` -- eliminates linear scan regression
-- **Isolated benchmark infrastructure** (`scripts/bench-isolated.sh`) with CPU governor control and core pinning
-- **6 new benchmark groups** -- build_into, full_pipeline, replay_protection, transfer_throughput, in-place AEAD, Double Ratchet
+**Obfuscation Layer (wraith-obfuscation):**
+- **WebSocket mimicry frame wrapping** -- 55-85% faster via pre-allocated buffers and 4-byte chunked XOR masking (1456B: 4.01 → 7.45 GiB/s, 65KB: 3.08 → 5.78 GiB/s)
+- **DoH tunnel query creation** -- 70-86% faster via pre-allocated Vec and single allocation (244B: 12.8 → 45.2 GiB/s, 512B: 12.3 → 22.0 GiB/s)
+- **WebSocket RNG optimization** -- Struct-level `Mutex<SmallRng>` replacing per-call RNG creation for mask key generation
+- **DoH zero-copy parsing** -- New `parse_dns_response_slice` API avoiding allocation for in-memory responses
+- **DNS label validation** -- Added RFC compliance checks for 63-byte label length limits
+- **DoH bounds-checking** -- Hardened response parsing against malformed data
+
+**Core Layer (wraith-core):**
+- **Frame full pipeline** -- 11-30% faster via `Vec::with_capacity` and unsafe `set_len` eliminating zero-initialization (1456B: 5.85 → 7.62 GiB/s, 65KB: 8.04 → 8.88 GiB/s)
+- **Frame padding RNG optimization** -- Thread-local `RefCell<SmallRng>` caching eliminating per-call RNG creation (3 call sites optimized)
+- **Frame build delegation** -- `build()` delegates to `build_into()` reducing code duplication
+- **Ratchet error path** -- `#[cold]` annotation on key-commitment parsing error path
+
+**Crypto Layer (wraith-crypto):**
+- **Message header deserialization** -- 53% faster via direct buffer read and offset calculation (25.6 → 12.0 ns)
+- **Noise handshake** -- 2.6% faster via reduced allocations and streamlined validation (25.1 → 24.4 us)
+
+**Security (wraith-files):**
+- **Secure memory cleanup** -- Added `zeroize` on `IncrementalTreeHasher` drop for secure erasure of in-progress hash state
+
+**Previous Optimizations (v2.3.2-optimized):**
+- Zero-allocation frame building (`build_into_from_parts`) -- 10.9x speedup
+- Cached Double Ratchet public key -- 93.6% improvement
+- BTreeSet priority queue -- 118,000x speedup for chunk scheduling
+- BitVec chunk tracking -- 1000x memory reduction, 58-71% session creation speedup
+- Binary search padding size classes via `partition_point()`
+- Isolated benchmark infrastructure with CPU governor control
 
 ---
 
@@ -646,7 +670,7 @@ See [CI Workflow](.github/workflows/ci.yml) and [Release Workflow](.github/workf
 
 ### Completed
 
-WRAITH Protocol v2.3.2 represents 2,740+ story points across 24 development phases:
+WRAITH Protocol v2.3.4 represents 2,740+ story points across 24 development phases:
 
 - Core protocol implementation (cryptography, transport, obfuscation, discovery)
 - 12 production-ready client applications (9 desktop + 2 mobile + 1 server platform)
@@ -731,6 +755,6 @@ WRAITH Protocol builds on excellent projects and research:
 
 **WRAITH Protocol** - _Secure. Fast. Invisible._
 
-**Version:** 2.3.2 | **License:** MIT | **Language:** Rust 2024 (MSRV 1.88) | **Tests:** 2,148 passing (2,123 workspace + 11 spectre-implant + 14 doc) | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server)
+**Version:** 2.3.4 | **License:** MIT | **Language:** Rust 2024 (MSRV 1.88) | **Tests:** 2,148 passing (2,123 workspace + 11 spectre-implant + 14 doc) | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server)
 
-**Last Updated:** 2026-01-29
+**Last Updated:** 2026-01-30

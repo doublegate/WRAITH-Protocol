@@ -16,7 +16,7 @@ WRAITH (Wire-speed Resilient Authenticated Invisible Transfer Handler) is a dece
 | Documentation | 114 files, ~62,800 lines |
 | Templates | 17 configuration/ROE templates |
 | Security | Zero vulnerabilities - EXCELLENT ([v1.1.0 audit](docs/security/SECURITY_AUDIT_v1.1.0.md), 295 deps) |
-| Performance | Frame build_into 76.3 GiB/s, frame parse 196 GiB/s, AEAD ~1.40 GiB/s, DR encrypt 1.71 us, chunking 14.48 GiB/s, tree hashing 4.71 GiB/s, transfer scheduling 3.34 ns (O(log n)), chunk tracking 6.6 ns (O(1) BitVec) |
+| Performance | Frame build_into 76.3 GiB/s, full pipeline 4.4 us (11-30% faster), msg header 12.0 ns (53% faster), WebSocket 7.45 GiB/s @1456B (55-85% faster), DoH 45.2 GiB/s @244B (70-86% faster), Noise 423 us (2.6% faster), DR encrypt 1.71 us, chunking 14.85 GiB/s, tree hash 4.71 GiB/s, verify 4.78 GiB/s, reassembly 5.42 GiB/s |
 | Quality | 98/100, technical debt 2.5%, zero clippy warnings |
 
 ## Build & Development

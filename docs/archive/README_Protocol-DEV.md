@@ -4,7 +4,7 @@
 
 This document captures the complete development journey of WRAITH Protocol from inception through version 2.0.0, including detailed phase accomplishments, sprint summaries, and implementation milestones.
 
-[![Version](https://img.shields.io/badge/version-2.3.2-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
+[![Version](https://img.shields.io/badge/version-2.3.4-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
 [![Security](https://img.shields.io/badge/security-audited-green.svg)](../security/DPI_EVASION_REPORT.md)
 [![Rust](https://img.shields.io/badge/rust-1.88%2B-orange.svg)](https://www.rust-lang.org/)
 
@@ -22,7 +22,7 @@ For the current production README, see [../../README.md](../../README.md).
 
 **Total Development Effort:** 2,685 story points delivered across 24 phases
 
-**Project Metrics (2026-01-28):**
+**Project Metrics (2026-01-30, v2.3.4):**
 - **Code Volume:** ~141,000 lines of Rust code across protocol and client crates + ~37,800 lines TypeScript
 - **Test Coverage:** 2,148 tests passing (2,123 workspace + 11 spectre-implant + 14 doc, 16 ignored) - 100% pass rate
 - **Documentation:** 114 markdown files, ~62,800 lines of comprehensive documentation

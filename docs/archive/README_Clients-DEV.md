@@ -5,7 +5,7 @@
 This document tracks the development journey of WRAITH Protocol client applications, from planning through implementation and release. Phases 15-24 delivered all 12 client applications: WRAITH-Transfer, WRAITH-Android, WRAITH-iOS, WRAITH-Chat, WRAITH-Sync, WRAITH-Share, WRAITH-Stream, WRAITH-Mesh, WRAITH-Publish, WRAITH-Vault, WRAITH-Recon, and WRAITH-RedOps.
 
 [![Version](https://img.shields.io/badge/clients-12%20complete-green.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
-[![Protocol](https://img.shields.io/badge/protocol-v2.3.2-blue.svg)](../../README.md)
+[![Protocol](https://img.shields.io/badge/protocol-v2.3.4-blue.svg)](../../README.md)
 [![Clients](https://img.shields.io/badge/clients-9%20desktop%20+%202%20mobile%20+%201%20server-brightgreen.svg)](../../to-dos/ROADMAP-clients.md)
 
 ---
@@ -32,8 +32,8 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 - **Tier 3:** Advanced use cases (Mesh, Publish, Vault, Recon - ALL COMPLETE)
 - **Tier 4:** Security Testing (RedOps - COMPLETE)
 
-**Current Status (2026-01-28):**
-- Protocol v2.3.2 complete (all 24 phases + infrastructure sprints + benchmark optimizations delivered)
+**Current Status (2026-01-30):**
+- Protocol v2.3.4 complete (all 24 phases + infrastructure sprints + benchmark optimizations delivered)
 - **All 12 Client Applications:** ✅ **COMPLETE** (1,292 SP total)
   - WRAITH-Transfer: Desktop P2P file transfer (6 tests)
   - WRAITH-Chat: E2EE messaging with voice/video/groups (107 tests)
