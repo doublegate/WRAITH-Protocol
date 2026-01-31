@@ -37,6 +37,7 @@ exclude = [
     "crates/wraith-xdp",
     "clients/wraith-redops/spectre-implant",
     "fuzz",
+    "tools/roe-signer",
 ]
 
 [workspace.package]

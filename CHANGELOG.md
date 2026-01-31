@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+#### Tools
+- **ROE Signer** (`tools/roe-signer/`): Standalone Ed25519 signing utility for WRAITH-Recon Rules of Engagement JSON documents. Supports keygen, sign, and verify subcommands. Replicates the exact `signing_data()` byte layout from `wraith-recon/src-tauri/src/roe.rs` for guaranteed signature compatibility. Excluded from the Cargo workspace (self-contained build).
+
+#### Documentation
+- **Benchmark Raw Data** (`docs/testing/benchmark-raw-data/v2.3.4-20260130/`): Raw criterion output for wraith-core, wraith-crypto, wraith-files, and wraith-obfuscation benchmarks
+- **Gap Analysis v8.0.0** (`docs/clients/wraith-redops/GAP-ANALYSIS-v2.3.4.md`): Updated RedOps audit confirming Operator Client frontend expansion (1,558 → 3,608 lines, 13 → 27 files, 33 typed IPC wrappers)
+
+### Changed
+
+- **Cargo.toml**: Added `tools/roe-signer` to workspace `exclude` list
+- **README.md**: Updated gap analysis references to v8.0.0, added tools/roe-signer to project structure and documentation links
+- **Protocol-DEV / Clients-DEV**: Updated footer metadata to reflect v2.3.4 status
+
 ---
 
 ## [2.3.4] - 2026-01-30 - Performance Optimizations & Security Hardening

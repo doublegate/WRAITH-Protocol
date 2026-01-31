@@ -1411,7 +1411,7 @@ Red team operations platform for authorized adversary emulation:
 - ✅ WRAITH-Sync file synchronization with delta transfers
 - ✅ WRAITH-Recon network reconnaissance platform (packet capture, protocol analysis, network mapping)
 - ✅ WRAITH-RedOps workspace integration: team-server and operator-client as Cargo workspace members
-- ✅ WRAITH-RedOps gap analysis v7.0.0: ~97% completion, 87% MITRE ATT&CK (35/40), 0 P0 critical, 21 modules, 32 RPCs 100% IPC, 59 SP remaining across 13 findings
+- ✅ WRAITH-RedOps gap analysis v8.0.0: ~97% completion, 87% MITRE ATT&CK (35/40), 0 P0 critical, 21 modules, 33 IPC commands 100% wired (typed wrappers), 59 SP remaining across 13 findings, Operator Client frontend expanded to 3,608 lines across 27 files
 - ✅ WRAITH-RedOps Operator Client UI/UX Enhancement: 34/34 IPC commands wired (was 19/34), 17 new files, 7 modified, zustand stores, toast/modal/context menu system, 6 new feature sections, keyboard shortcuts, ~5,800 lines TypeScript (up from ~4,200)
 - ✅ sqlx restructured to PostgreSQL-only (avoids libsqlite3-sys link conflict with Tauri rusqlite)
 - ✅ Cross-compilation with Cross.toml pre-build hooks (protobuf-compiler for gRPC builds)
@@ -1422,6 +1422,8 @@ Red team operations platform for authorized adversary emulation:
 - ✅ Frontend test infrastructure (587 tests across all clients)
 - ✅ CI/CD optimized (reusable setup.yml, path filters, checkout@v4, cache@v4, upload-artifact@v4, download-artifact@v4)
 - ✅ CI/CD workspace exclusions for RedOps clients (Tauri `generate_context!()` requires frontend assets)
+- ✅ ROE Signer tool (`tools/roe-signer/`): Standalone Ed25519 signing utility for WRAITH-Recon ROE documents (keygen, sign, verify)
+- ✅ Benchmark raw data archive (`docs/testing/benchmark-raw-data/v2.3.4-20260130/`)
 
 **v1.7.1 WRAITH-Chat UI Redesign & UI/UX Standardization:**
 - Professional header with connection status, peer ID display, session stats
@@ -1468,8 +1470,8 @@ See [../../to-dos/ROADMAP.md](../../to-dos/ROADMAP.md) for detailed future plann
 
 ---
 
-**WRAITH Protocol Development History** - *From Foundation to v2.3.2 (Phases 1-24 + Infrastructure Sprints + Benchmark Optimizations)*
+**WRAITH Protocol Development History** - *From Foundation to v2.3.4 (Phases 1-24 + Infrastructure Sprints + Benchmark Optimizations)*
 
-**Development Period:** 2024 - 2026-01-28 | **Total Effort:** 2,740+ story points delivered across 24 phases + infrastructure sprints | **Quality:** Production-ready (98/100), 2,148 tests (2,123 workspace + 11 spectre-implant + 14 doc, 100% pass rate), 0 vulnerabilities, Grade A+ security | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server) | **Workspace:** 22 members + 2 excluded (team-server and operator-client integrated) | **TDR:** ~2.5% (Grade A - Excellent) | **CI/CD:** Optimized workflows with reusable setup, path filters, and cross-compilation via Cross.toml | **v2.3.1:** MSRV 1.88, WRAITH-RedOps ~98% complete (gap analysis v7.0.0 + UI/UX overhaul), 87% MITRE ATT&CK coverage (35/40), 0 P0 critical issues, 21 modules, 34/34 IPC wired, operator client UI/UX overhauled (~5,800 lines, zustand/toast/modal/context menus, 6 new feature sections) | **Conductor:** Project management system with code style guides
+**Development Period:** 2024 - 2026-01-31 | **Total Effort:** 2,740+ story points delivered across 24 phases + infrastructure sprints | **Quality:** Production-ready (98/100), 2,148 tests (2,123 workspace + 11 spectre-implant + 14 doc, 100% pass rate), 0 vulnerabilities, Grade A+ security | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server) | **Workspace:** 22 members + 3 excluded (wraith-xdp, spectre-implant, roe-signer) | **TDR:** ~2.5% (Grade A - Excellent) | **CI/CD:** Optimized workflows with reusable setup, path filters, and cross-compilation via Cross.toml | **v2.3.4:** 18 performance optimizations (WebSocket mimicry 55-85% faster, DoH tunnel 70-86% faster, frame pipeline 11-30% faster, message header 53% faster), WRAITH-RedOps gap analysis v8.0.0 (~97% complete, 87% MITRE ATT&CK, Operator Client 3,608 lines/27 files with typed IPC), ROE Signer tool | **Conductor:** Project management system with code style guides
 
-*Last Updated: 2026-01-29*
+*Last Updated: 2026-01-31*

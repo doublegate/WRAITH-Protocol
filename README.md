@@ -199,30 +199,30 @@ WRAITH Protocol powers a comprehensive ecosystem of 12 production-ready applicat
 - Ed25519-signed Kill Switch broadcast mechanism
 - Encryption at Rest for command payloads and results
 
-### WRAITH-RedOps Gap Analysis (v7.0.0)
+### WRAITH-RedOps Gap Analysis (v8.0.0)
 
-The RedOps platform has undergone a comprehensive deep audit (v7.0.0) with line-by-line verification of all source files across all three components. The v7.0.0 audit corrected several metrics from v6.0.0, discovering 3 additional implant modules (compression.rs, exfiltration.rs, impact.rs), confirming 100% IPC coverage (32/32 RPCs wired), and expanding MITRE ATT&CK coverage to 87%.
+The RedOps platform has undergone comprehensive deep audits (v7.0.0 and v8.0.0) with exhaustive line-by-line verification of all source files across all three components. The v8.0.0 audit (2026-01-30) confirmed a major expansion of the Operator Client frontend from 1,558 to 3,608 lines across 27 files (up from 13), with 33 typed IPC wrappers and full end-to-end coverage. The Team Server and Spectre Implant backends remain unchanged.
 
-| Metric                           | Value                                                                                    |
-| -------------------------------- | ---------------------------------------------------------------------------------------- |
-| **Overall Completion**           | ~98% (up from ~97% in v7.0.0)                                                            |
-| **Modules**                      | 21 across 3 components                                                                   |
-| **MITRE ATT&CK Coverage**        | 87% (35 of 40 techniques implemented)                                                    |
-| **P0 Critical Issues**           | 0 (all resolved)                                                                         |
-| **P1 High Issues**               | 2 remaining (key ratcheting 13 SP, PowerShell runner 5 SP)                               |
-| **Frontend IPC Coverage**        | 34/34 Tauri IPC commands wired (100% -- previously 19/34)                                |
-| **Hardcoded Cryptographic Keys** | 0 (all resolved)                                                                         |
-| **Story Points Remaining**       | ~59 SP across 13 findings (down from ~73 SP / 17 findings in v6.0.0)                     |
-| **Remaining Findings**           | 13 total (0 P0, 2 P1, 5 P2, 6 P3)                                                       |
+| Metric                           | Value                                                                                     |
+| -------------------------------- | ----------------------------------------------------------------------------------------- |
+| **Overall Completion**           | ~97% (zero P0 critical issues)                                                            |
+| **Total Source Lines**           | 15,953 Rust + 3,608 TypeScript + 532 Protobuf + 208 SQL                                  |
+| **Modules**                      | 21 across 3 components                                                                    |
+| **MITRE ATT&CK Coverage**        | 87% (35 of 40 techniques implemented across 12 tactics)                                   |
+| **P0 Critical Issues**           | 0 (all resolved)                                                                          |
+| **P1 High Issues**               | 2 remaining (key ratcheting 13 SP, PowerShell runner 5 SP)                                |
+| **Frontend IPC Coverage**        | 100% (33/32 proto RPCs + 1 client-only; all wired end-to-end with typed wrappers)         |
+| **Hardcoded Cryptographic Keys** | 0 (all resolved)                                                                          |
+| **Story Points Remaining**       | ~59 SP across 13 findings (0 P0, 2 P1, 5 P2, 6 P3)                                      |
 
-| Component          | Completion | Delta (from v7.0.0) | Notes                                                                          |
-| ------------------ | ---------- | -------------------- | ------------------------------------------------------------------------------ |
-| Team Server        | 97%        | +0%                  | 5,833 lines, all 32 RPCs wired, playbook system complete, DNS + SMB listeners  |
-| Operator Client    | 99%        | +2%                  | ~5,800 lines, 21 console commands, 34/34 IPC wired, full UI/UX (zustand, toasts, modals, context menus) |
-| Spectre Implant    | 95%        | +0%                  | 8,925 lines, 21 modules (+3: compression, exfiltration, impact), 11 tests      |
-| WRAITH Integration | 97%        | +0%                  | P2P mesh C2, entropy mixing, SecureBuffer with mlock, PQ crypto integration    |
+| Component          | Completion | Lines                     | Notes                                                                          |
+| ------------------ | ---------- | ------------------------- | ------------------------------------------------------------------------------ |
+| Team Server        | 97%        | 5,833 Rust                | All 32 RPCs wired, playbook system complete, DNS + SMB listeners               |
+| Operator Client    | 99.5%      | 1,195 Rust + 3,608 TS     | 21 console commands, 33 IPC wired, full UI/UX (zustand, toasts, modals, context menus) |
+| Spectre Implant    | 95%        | 8,925 Rust                | 21 modules, 11 tests, no_std with Halo's Gate SSN resolution                  |
+| WRAITH Integration | 97%        | (integrated)              | P2P mesh C2, entropy mixing, SecureBuffer with mlock, PQ crypto integration   |
 
-For the full gap analysis, see [GAP-ANALYSIS-v2.3.0.md](docs/clients/wraith-redops/GAP-ANALYSIS-v2.3.0.md).
+For the full gap analysis, see [GAP-ANALYSIS-v2.3.4.md](docs/clients/wraith-redops/GAP-ANALYSIS-v2.3.4.md) (v8.0.0 internal).
 
 For detailed client documentation, see the [Client Overview](docs/clients/overview.md).
 
@@ -589,6 +589,8 @@ WRAITH-Protocol/
 |   |-- config/            # CLI and node configuration (2)
 |   |-- transfer/          # Transfer profile templates (1)
 |   +-- integration/       # Docker Compose, systemd service (2)
+|-- tools/                 # Standalone utilities
+|   +-- roe-signer/        # Ed25519 ROE document signing tool
 |-- conductor/             # Project management system with code style guides
 |-- docs/                  # Documentation (130+ files)
 |-- to-dos/                # Project planning
@@ -599,7 +601,8 @@ WRAITH-Protocol/
 
 Workspace: 22 members (8 protocol + 9 Tauri clients + team-server +
            operator-client + xtask + tests)
-Excluded:  wraith-xdp (eBPF toolchain), spectre-implant (no_std)
+Excluded:  wraith-xdp (eBPF toolchain), spectre-implant (no_std),
+           roe-signer (standalone tool)
 ```
 
 ---
@@ -652,12 +655,13 @@ See [CI Workflow](.github/workflows/ci.yml) and [Release Workflow](.github/workf
 - [UI/UX Design Reference](docs/clients/UI-UX-DESIGN-REFERENCE.md)
 - [Client Roadmap](to-dos/ROADMAP-clients.md)
 
-### Templates
+### Templates & Tools
 
 - [Templates Overview](templates/README.md)
 - [ROE Templates for WRAITH-Recon](templates/recon/README.md)
 - [Configuration Templates](templates/config/README.md)
 - [Integration Templates](templates/integration/README.md)
+- [ROE Signer Tool](tools/roe-signer/) - Ed25519 signing utility for WRAITH-Recon ROE documents
 
 ### Development History
 
@@ -674,7 +678,7 @@ WRAITH Protocol v2.3.4 represents 2,740+ story points across 24 development phas
 
 - Core protocol implementation (cryptography, transport, obfuscation, discovery)
 - 12 production-ready client applications (9 desktop + 2 mobile + 1 server platform)
-- WRAITH-RedOps with deep audit gap analysis v7.0.0 (~97% completion, 87% MITRE ATT&CK coverage (35/40), 0 P0 critical issues, ~59 SP remaining across 13 findings)
+- WRAITH-RedOps with deep audit gap analysis v8.0.0 (~97% completion, 87% MITRE ATT&CK coverage (35/40), 0 P0 critical issues, ~59 SP remaining across 13 findings)
 - RedOps codebase: 8,925 lines spectre-implant, 5,833 lines team-server, ~5,800 lines operator-client (21 modules, 34/34 IPC commands wired, 21 console commands, 11 spectre-implant tests)
 - Conductor project management system with code style guides for development workflow tracking
 - RedOps workspace integration: team-server and operator-client as workspace members (spectre-implant excluded for no_std compatibility)
@@ -757,4 +761,4 @@ WRAITH Protocol builds on excellent projects and research:
 
 **Version:** 2.3.4 | **License:** MIT | **Language:** Rust 2024 (MSRV 1.88) | **Tests:** 2,148 passing (2,123 workspace + 11 spectre-implant + 14 doc) | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server)
 
-**Last Updated:** 2026-01-30
+**Last Updated:** 2026-01-31
