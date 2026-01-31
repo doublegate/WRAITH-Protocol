@@ -385,11 +385,21 @@ impl MeshServer {
 }
 
 fn obfuscate_mesh_packet(data: &[u8]) -> Vec<u8> {
-    // Simple XOR obfuscation with a static key to prevent plaintext signatures
-    let key = b"WRAITH_MESH_KEY_2026";
-    let mut out = Vec::with_capacity(data.len());
+    let mut nonce = [0u8; 4];
+    crate::utils::entropy::get_random_bytes(&mut nonce);
+    
+    // Key derivation: XOR key with nonce (repeating) to get session key
+    let static_key = b"WRAITH_MESH_KEY_2026";
+    let mut session_key = Vec::with_capacity(static_key.len());
+    for (i, b) in static_key.iter().enumerate() {
+        session_key.push(b ^ nonce[i % 4]);
+    }
+
+    let mut out = Vec::with_capacity(4 + data.len());
+    out.extend_from_slice(&nonce);
+    
     for (i, b) in data.iter().enumerate() {
-        out.push(b ^ key[i % key.len()]);
+        out.push(b ^ session_key[i % session_key.len()]);
     }
     out
 }

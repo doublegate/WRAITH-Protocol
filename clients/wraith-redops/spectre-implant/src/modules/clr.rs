@@ -8,14 +8,11 @@ use crate::utils::api_resolver::{hash_str, resolve_function};
 use crate::utils::windows_definitions::*;
 
 // GUIDs (Little Endian for u32/u16/u16)
-// CLSID_CLRMetaHost: 92801892-0e52-4b67-ac20-26ef6e6e0248
-// IID_ICLRMetaHost: D332DB9E-B9B3-4125-8207-A14884F53216 (Standard)
-// Check actual IIDs.
-// CLSID_CLRMetaHost = {0x92801892,0x0e52,0x4b67,{0xac,0x20,0x26,0xef,0x6e,0x6e,0x02,0x48}};
-// IID_ICLRMetaHost  = {0xD332DB9E,0xB9B3,0x4125,{0x82,0x07,0xA1,0x48,0x84,0xF5,0x32,0x16}};
-// IID_ICLRRuntimeInfo = {0xBD39D1D2,0xBA2F,0x486a,{0x89,0xB0,0xB4,0xB0,0xCB,0x46,0x68,0x91}};
-// IID_ICLRRuntimeHost = {0x90F1A06C,0x7712,0x4762,{0x86,0xB5,0x7A,0x5E,0xBA,0x6B,0xDB,0x02}};
-// CLSID_CLRRuntimeHost = {0x90F1A06E,0x7712,0x4762,{0x86,0xB5,0x7A,0x5E,0xBA,0x6B,0xDB,0x02}};
+// CLSID_CLRMetaHost: 9280188d-0e8e-4867-b30c-7fa83884e8de
+// IID_ICLRMetaHost: D332DB9E-B9B3-4125-8207-A14884F53216
+// IID_ICLRRuntimeInfo: BD39D1D2-BA2F-486a-89B0-B4B0CB466891
+// IID_ICLRRuntimeHost: 90F1A06C-7712-4762-86B5-7A5EBA6BDB02
+// CLSID_CLRRuntimeHost: 90F1A06E-7712-4762-86B5-7A5EBA6BDB02
 
 #[cfg(target_os = "windows")]
 #[allow(non_upper_case_globals)]

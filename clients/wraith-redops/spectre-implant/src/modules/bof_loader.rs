@@ -249,7 +249,7 @@ impl BofLoader {
                         // External Symbol
                         let name_ptr = if symbol.name[0] == 0 {
                             // Long name in string table
-                            let offset = u32::from_le_bytes(symbol.name[4..8].try_into().unwrap());
+                                    let offset = u32::from_le_bytes(symbol.name[4..8].try_into().map_err(|_| ())?);
                             string_table.add(offset as usize)
                         } else {
                             symbol.name.as_ptr()
@@ -314,7 +314,7 @@ impl BofLoader {
             for i in 0..header.number_of_symbols {
                 let symbol = &*sym_table.add(i as usize);
                 let name = if symbol.name[0] == 0 {
-                    let offset = u32::from_le_bytes(symbol.name[4..8].try_into().unwrap());
+                            let offset = u32::from_le_bytes(symbol.name[4..8].try_into().map_err(|_| ())?);
                     let p = string_table.add(offset as usize);
                     let mut l = 0;
                     while *p.add(l) != 0 {

