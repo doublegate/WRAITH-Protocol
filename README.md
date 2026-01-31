@@ -14,7 +14,7 @@ A decentralized secure file transfer protocol optimized for high-throughput, low
   <a href="https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml"><img src="https://github.com/doublegate/WRAITH-Protocol/actions/workflows/codeql.yml/badge.svg" alt="CodeQL"></a>
   <a href="https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml"><img src="https://github.com/doublegate/WRAITH-Protocol/actions/workflows/release.yml/badge.svg" alt="Release"></a>
   <br>
-  <a href="https://github.com/doublegate/WRAITH-Protocol/releases"><img src="https://img.shields.io/badge/version-2.3.4-blue.svg" alt="Version"></a>
+  <a href="https://github.com/doublegate/WRAITH-Protocol/releases"><img src="https://img.shields.io/badge/version-2.3.5-blue.svg" alt="Version"></a>
   <a href="docs/security/SECURITY_AUDIT_v1.1.0.md"><img src="https://img.shields.io/badge/security-audited-green.svg" alt="Security"></a>
   <a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/rust-1.88%2B-orange.svg" alt="Rust"></a>
   <a href="https://doc.rust-lang.org/edition-guide/rust-2024/index.html"><img src="https://img.shields.io/badge/edition-2024-orange.svg" alt="Edition"></a>
@@ -36,16 +36,16 @@ WRAITH Protocol is a privacy-focused, high-performance file transfer protocol de
 
 ### Project Metrics
 
-| Metric            | Value                                                                  |
-| ----------------- | ---------------------------------------------------------------------- |
+| Metric            | Value                                                                     |
+| ----------------- | ------------------------------------------------------------------------- |
 | **Tests**         | 2,148 passing (2,123 workspace + 11 spectre-implant + 14 doc), 16 ignored |
-| **Code**          | ~141,000 lines Rust (protocol + clients) + ~37,800 lines TypeScript    |
-| **Documentation** | 114 files, ~62,800 lines                                               |
-| **Security**      | Grade A+ (zero vulnerabilities, 295 audited dependencies)              |
-| **Quality**       | 98/100, zero clippy warnings                                           |
-| **TDR**           | ~2.5% (Grade A - Excellent)                                            |
-| **Applications**  | 12 production-ready clients (9 desktop + 2 mobile + 1 server platform) |
-| **Templates**     | 17 configuration/ROE templates                                         |
+| **Code**          | ~141,000 lines Rust (protocol + clients) + ~37,800 lines TypeScript       |
+| **Documentation** | 114 files, ~62,800 lines                                                  |
+| **Security**      | Grade A+ (zero vulnerabilities, 295 audited dependencies)                 |
+| **Quality**       | 98/100, zero clippy warnings                                              |
+| **TDR**           | ~2.5% (Grade A - Excellent)                                               |
+| **Applications**  | 12 production-ready clients (9 desktop + 2 mobile + 1 server platform)    |
+| **Templates**     | 17 configuration/ROE templates                                            |
 
 ![WRAITH Protocol Banner](images/wraith-protocol_banner-graphic.jpg)
 
@@ -203,24 +203,24 @@ WRAITH Protocol powers a comprehensive ecosystem of 12 production-ready applicat
 
 The RedOps platform has undergone comprehensive deep audits (v7.0.0 and v8.0.0) with exhaustive line-by-line verification of all source files across all three components. The v8.0.0 audit (2026-01-30) confirmed a major expansion of the Operator Client frontend from 1,558 to 3,608 lines across 27 files (up from 13), with 33 typed IPC wrappers and full end-to-end coverage. The Team Server and Spectre Implant backends remain unchanged.
 
-| Metric                           | Value                                                                                     |
-| -------------------------------- | ----------------------------------------------------------------------------------------- |
-| **Overall Completion**           | ~97% (zero P0 critical issues)                                                            |
-| **Total Source Lines**           | 15,953 Rust + 3,608 TypeScript + 532 Protobuf + 208 SQL                                  |
-| **Modules**                      | 21 across 3 components                                                                    |
-| **MITRE ATT&CK Coverage**        | 87% (35 of 40 techniques implemented across 12 tactics)                                   |
-| **P0 Critical Issues**           | 0 (all resolved)                                                                          |
-| **P1 High Issues**               | 2 remaining (key ratcheting 13 SP, PowerShell runner 5 SP)                                |
-| **Frontend IPC Coverage**        | 100% (33/32 proto RPCs + 1 client-only; all wired end-to-end with typed wrappers)         |
-| **Hardcoded Cryptographic Keys** | 0 (all resolved)                                                                          |
-| **Story Points Remaining**       | ~59 SP across 13 findings (0 P0, 2 P1, 5 P2, 6 P3)                                      |
+| Metric                           | Value                                                                             |
+| -------------------------------- | --------------------------------------------------------------------------------- |
+| **Overall Completion**           | ~97% (zero P0 critical issues)                                                    |
+| **Total Source Lines**           | 15,953 Rust + 3,608 TypeScript + 532 Protobuf + 208 SQL                           |
+| **Modules**                      | 21 across 3 components                                                            |
+| **MITRE ATT&CK Coverage**        | 87% (35 of 40 techniques implemented across 12 tactics)                           |
+| **P0 Critical Issues**           | 0 (all resolved)                                                                  |
+| **P1 High Issues**               | 2 remaining (key ratcheting 13 SP, PowerShell runner 5 SP)                        |
+| **Frontend IPC Coverage**        | 100% (33/32 proto RPCs + 1 client-only; all wired end-to-end with typed wrappers) |
+| **Hardcoded Cryptographic Keys** | 0 (all resolved)                                                                  |
+| **Story Points Remaining**       | ~59 SP across 13 findings (0 P0, 2 P1, 5 P2, 6 P3)                                |
 
-| Component          | Completion | Lines                     | Notes                                                                          |
-| ------------------ | ---------- | ------------------------- | ------------------------------------------------------------------------------ |
-| Team Server        | 97%        | 5,833 Rust                | All 32 RPCs wired, playbook system complete, DNS + SMB listeners               |
-| Operator Client    | 99.5%      | 1,195 Rust + 3,608 TS     | 21 console commands, 33 IPC wired, full UI/UX (zustand, toasts, modals, context menus) |
-| Spectre Implant    | 95%        | 8,925 Rust                | 21 modules, 11 tests, no_std with Halo's Gate SSN resolution                  |
-| WRAITH Integration | 97%        | (integrated)              | P2P mesh C2, entropy mixing, SecureBuffer with mlock, PQ crypto integration   |
+| Component          | Completion | Lines                 | Notes                                                                                  |
+| ------------------ | ---------- | --------------------- | -------------------------------------------------------------------------------------- |
+| Team Server        | 97%        | 5,833 Rust            | All 32 RPCs wired, playbook system complete, DNS + SMB listeners                       |
+| Operator Client    | 99.5%      | 1,195 Rust + 3,608 TS | 21 console commands, 33 IPC wired, full UI/UX (zustand, toasts, modals, context menus) |
+| Spectre Implant    | 95%        | 8,925 Rust            | 21 modules, 11 tests, no_std with Halo's Gate SSN resolution                           |
+| WRAITH Integration | 97%        | (integrated)          | P2P mesh C2, entropy mixing, SecureBuffer with mlock, PQ crypto integration            |
 
 For the full gap analysis, see [GAP-ANALYSIS-v2.3.4.md](docs/clients/wraith-redops/GAP-ANALYSIS-v2.3.4.md) (v8.0.0 internal).
 
@@ -352,34 +352,35 @@ For detailed architecture documentation, see [Protocol Overview](docs/architectu
 
 Measured on production hardware (Intel i9-10850K, 64 GB RAM) with `cargo bench --workspace`. See [Benchmark Analysis v2.3.4](docs/testing/BENCHMARK-ANALYSIS-v2.3.4.md) for full methodology and results.
 
-| Component            | Measured Performance                        | Details                                    |
-| -------------------- | ------------------------------------------- | ------------------------------------------ |
-| Frame Building       | 17.77 ns (76.3 GiB/s) via `build_into`     | Zero-allocation API, 10.9x faster than allocating build |
-| Frame Full Pipeline  | 4.4 us/frame (11-30% faster)               | Pre-allocated Vec + unsafe set_len         |
-| Frame Parsing        | 6.9 ns/frame (~196 GiB/s)                  | SIMD: AVX2/SSE4.2/NEON, constant-time     |
-| AEAD Encryption      | ~1.40 GiB/s (XChaCha20-Poly1305)           | 256-bit key, 192-bit nonce                 |
-| Double Ratchet       | 1.71 us encrypt (was 26.7 us)              | Cached public key, 93.6% improvement       |
-| Message Header       | 12.0 ns deserialize (53% faster)           | Direct buffer read, was 25.6 ns            |
-| Noise XX Handshake   | 423 us per handshake (2.6% faster)         | Reduced allocations, streamlined validation |
-| Elligator2 Encoding  | 29.5 us per encoding                        | Key indistinguishability from random       |
-| BLAKE3 Hashing       | 4.71 GiB/s (tree), 8.5 GB/s (parallel)     | rayon + SIMD acceleration                  |
-| File Chunking        | 14.48 GiB/s                                 | io_uring async I/O                         |
-| Tree Hashing         | 4.71 GiB/s in-memory, 2.61 GiB/s from disk | Merkle tree with BLAKE3                    |
-| Chunk Verification   | 4.78 GiB/s                                  | <1 us per chunk                            |
-| File Reassembly      | 5.42 GiB/s                                  | O(m) algorithm, zero-copy                  |
-| Transfer Scheduling  | 3.34 ns per request (O(log n))              | BTreeSet priority queue, 118,000x improvement |
-| Chunk Tracking       | 6.6 ns `is_chunk_missing` (O(1))            | BitVec bitmap, 1000x memory reduction      |
-| WebSocket Mimicry    | 7.45 GiB/s @1456B (55-85% faster)          | Pre-allocated buffers, 4-byte XOR masking  |
-| DoH Tunnel Creation  | 45.2 GiB/s @244B (70-86% faster)           | Pre-allocated Vec, single allocation       |
-| Replay Protection    | 920 ps sequential accept                    | 1024-packet sliding window                 |
-| Ring Buffers (SPSC)  | ~100M ops/sec                               | Cache-line padded, lock-free               |
-| Ring Buffers (MPSC)  | ~20M ops/sec                                | CAS-based, 4 producers                     |
+| Component           | Measured Performance                       | Details                                                 |
+| ------------------- | ------------------------------------------ | ------------------------------------------------------- |
+| Frame Building      | 17.77 ns (76.3 GiB/s) via `build_into`     | Zero-allocation API, 10.9x faster than allocating build |
+| Frame Full Pipeline | 4.4 us/frame (11-30% faster)               | Pre-allocated Vec + unsafe set_len                      |
+| Frame Parsing       | 6.9 ns/frame (~196 GiB/s)                  | SIMD: AVX2/SSE4.2/NEON, constant-time                   |
+| AEAD Encryption     | ~1.40 GiB/s (XChaCha20-Poly1305)           | 256-bit key, 192-bit nonce                              |
+| Double Ratchet      | 1.71 us encrypt (was 26.7 us)              | Cached public key, 93.6% improvement                    |
+| Message Header      | 12.0 ns deserialize (53% faster)           | Direct buffer read, was 25.6 ns                         |
+| Noise XX Handshake  | 423 us per handshake (2.6% faster)         | Reduced allocations, streamlined validation             |
+| Elligator2 Encoding | 29.5 us per encoding                       | Key indistinguishability from random                    |
+| BLAKE3 Hashing      | 4.71 GiB/s (tree), 8.5 GB/s (parallel)     | rayon + SIMD acceleration                               |
+| File Chunking       | 14.48 GiB/s                                | io_uring async I/O                                      |
+| Tree Hashing        | 4.71 GiB/s in-memory, 2.61 GiB/s from disk | Merkle tree with BLAKE3                                 |
+| Chunk Verification  | 4.78 GiB/s                                 | <1 us per chunk                                         |
+| File Reassembly     | 5.42 GiB/s                                 | O(m) algorithm, zero-copy                               |
+| Transfer Scheduling | 3.34 ns per request (O(log n))             | BTreeSet priority queue, 118,000x improvement           |
+| Chunk Tracking      | 6.6 ns `is_chunk_missing` (O(1))           | BitVec bitmap, 1000x memory reduction                   |
+| WebSocket Mimicry   | 7.45 GiB/s @1456B (55-85% faster)          | Pre-allocated buffers, 4-byte XOR masking               |
+| DoH Tunnel Creation | 45.2 GiB/s @244B (70-86% faster)           | Pre-allocated Vec, single allocation                    |
+| Replay Protection   | 920 ps sequential accept                   | 1024-packet sliding window                              |
+| Ring Buffers (SPSC) | ~100M ops/sec                              | Cache-line padded, lock-free                            |
+| Ring Buffers (MPSC) | ~20M ops/sec                               | CAS-based, 4 producers                                  |
 
 ### Optimization Highlights (v2.3.4)
 
 18 performance optimizations and security hardening improvements implemented:
 
 **Obfuscation Layer (wraith-obfuscation):**
+
 - **WebSocket mimicry frame wrapping** -- 55-85% faster via pre-allocated buffers and 4-byte chunked XOR masking (1456B: 4.01 → 7.45 GiB/s, 65KB: 3.08 → 5.78 GiB/s)
 - **DoH tunnel query creation** -- 70-86% faster via pre-allocated Vec and single allocation (244B: 12.8 → 45.2 GiB/s, 512B: 12.3 → 22.0 GiB/s)
 - **WebSocket RNG optimization** -- Struct-level `Mutex<SmallRng>` replacing per-call RNG creation for mask key generation
@@ -388,19 +389,23 @@ Measured on production hardware (Intel i9-10850K, 64 GB RAM) with `cargo bench -
 - **DoH bounds-checking** -- Hardened response parsing against malformed data
 
 **Core Layer (wraith-core):**
+
 - **Frame full pipeline** -- 11-30% faster via `Vec::with_capacity` and unsafe `set_len` eliminating zero-initialization (1456B: 5.85 → 7.62 GiB/s, 65KB: 8.04 → 8.88 GiB/s)
 - **Frame padding RNG optimization** -- Thread-local `RefCell<SmallRng>` caching eliminating per-call RNG creation (3 call sites optimized)
 - **Frame build delegation** -- `build()` delegates to `build_into()` reducing code duplication
 - **Ratchet error path** -- `#[cold]` annotation on key-commitment parsing error path
 
 **Crypto Layer (wraith-crypto):**
+
 - **Message header deserialization** -- 53% faster via direct buffer read and offset calculation (25.6 → 12.0 ns)
 - **Noise handshake** -- 2.6% faster via reduced allocations and streamlined validation (25.1 → 24.4 us)
 
 **Security (wraith-files):**
+
 - **Secure memory cleanup** -- Added `zeroize` on `IncrementalTreeHasher` drop for secure erasure of in-progress hash state
 
 **Previous Optimizations (v2.3.2-optimized):**
+
 - Zero-allocation frame building (`build_into_from_parts`) -- 10.9x speedup
 - Cached Double Ratchet public key -- 93.6% improvement
 - BTreeSet priority queue -- 118,000x speedup for chunk scheduling
@@ -674,7 +679,7 @@ See [CI Workflow](.github/workflows/ci.yml) and [Release Workflow](.github/workf
 
 ### Completed
 
-WRAITH Protocol v2.3.4 represents 2,740+ story points across 24 development phases:
+WRAITH Protocol v2.3.5 represents 2,740+ story points across 24 development phases:
 
 - Core protocol implementation (cryptography, transport, obfuscation, discovery)
 - 12 production-ready client applications (9 desktop + 2 mobile + 1 server platform)
@@ -759,6 +764,6 @@ WRAITH Protocol builds on excellent projects and research:
 
 **WRAITH Protocol** - _Secure. Fast. Invisible._
 
-**Version:** 2.3.4 | **License:** MIT | **Language:** Rust 2024 (MSRV 1.88) | **Tests:** 2,148 passing (2,123 workspace + 11 spectre-implant + 14 doc) | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server)
+**Version:** 2.3.5 | **License:** MIT | **Language:** Rust 2024 (MSRV 1.88) | **Tests:** 2,148 passing (2,123 workspace + 11 spectre-implant + 14 doc) | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server)
 
 **Last Updated:** 2026-01-31
