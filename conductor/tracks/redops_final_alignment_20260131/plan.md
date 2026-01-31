@@ -33,14 +33,14 @@ This plan outlines the methodical remediation of all gaps identified in `GAP-ANA
 
 ## Phase 2: Team Server (Infrastructure & Protocol)
 
-- [ ] Task: Integrate Double Ratchet into Protocol Handler
-    - [ ] Update `team-server/src/services/protocol.rs` to handle ratchet handshake frames
-    - [ ] Implement per-message symmetric ratchet step in server session state
-    - [ ] Write integration tests for multi-message ratcheted sessions
-- [ ] Task: Enhance Infrastructure Safety and Robustness
-    - [ ] Implement graceful error handling for Kill Switch env vars (P2-3)
-    - [ ] Implement cryptographically secure nonce generation for response frames (P2-5)
-    - [ ] Verify zero warnings across all server modules
+- [x] Task: Integrate Double Ratchet into Protocol Handler 7867c95
+    - [x] Update `team-server/src/services/protocol.rs` to handle ratchet handshake frames
+    - [x] Implement per-message symmetric ratchet step in server session state
+    - [x] Write integration tests for multi-message ratcheted sessions
+- [x] Task: Enhance Infrastructure Safety and Robustness e6b3a51
+    - [x] Implement graceful error handling for Kill Switch env vars (P2-3)
+    - [x] Implement cryptographically secure nonce generation for response frames (P2-5)
+    - [x] Verify zero warnings across all server modules
 - [ ] Task: Conductor - User Manual Verification 'Team Server' (Protocol in workflow.md)
 
 ## Phase 3: Operator Client (Frontend & UX)
