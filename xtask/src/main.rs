@@ -40,6 +40,9 @@ enum Commands {
     /// Build XDP program (requires root)
     BuildXdp,
 
+    /// Build PowerShell Runner (requires dotnet)
+    BuildRunner,
+
     /// Generate documentation
     Doc,
 
@@ -63,6 +66,46 @@ fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
+        Commands::BuildRunner => {
+            println!("Building PowerShell Runner...");
+            let runner_dir = "clients/wraith-redops/spectre-implant/runner_src";
+            let dotnet_path_buf = if std::path::Path::new(".dotnet/dotnet").exists() {
+                std::fs::canonicalize(".dotnet/dotnet").ok()
+            } else {
+                None
+            };
+            
+            let dotnet_program = if let Some(p) = dotnet_path_buf {
+                p.to_string_lossy().to_string()
+            } else {
+                "dotnet".to_string()
+            };
+
+            println!("Using dotnet: {}", dotnet_program);
+
+            let status = Command::new(&dotnet_program)
+                .arg("build")
+                .arg("-c")
+                .arg("Release")
+                .current_dir(runner_dir)
+                .status();
+
+            match status {
+                Ok(s) => {
+                    if !s.success() {
+                        anyhow::bail!("dotnet build failed");
+                    }
+                    // Copy to resources
+                    let src = format!("{}/bin/Release/net48/Runner.dll", runner_dir);
+                    let dest = "clients/wraith-redops/spectre-implant/resources/Runner.dll";
+                    std::fs::copy(&src, dest)?;
+                    println!("Runner.dll built and copied to {}", dest);
+                }
+                Err(e) => {
+                    eprintln!("Failed to execute dotnet at '{}': {}. Skipping build.", dotnet_program, e);
+                }
+            }
+        }
         Commands::Test => {
             run_command("cargo", &["test", "--all-features", "--workspace"])?;
         }
