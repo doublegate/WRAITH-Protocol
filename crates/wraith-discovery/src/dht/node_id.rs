@@ -80,6 +80,7 @@ impl SybilResistance {
     /// ```
     #[must_use]
     pub fn generate_with_puzzle(&self, public_key: &[u8; 32]) -> (NodeId, u64, [u8; 32]) {
+        // Start nonce from 0 for proof-of-work puzzle solving
         let mut nonce = 0u64;
         loop {
             let mut hasher = Hasher::new();
@@ -100,6 +101,7 @@ impl SybilResistance {
                 return (node_id, nonce, hash_bytes);
             }
 
+            // Increment nonce for next iteration of proof-of-work
             nonce += 1;
         }
     }
@@ -585,7 +587,7 @@ mod tests {
         let resistance = SybilResistance::new(12);
         let (node_id, nonce, _) = resistance.generate_with_puzzle(&pubkey);
 
-        // Wrong nonce should fail verification
+        // Wrong nonce should fail verification (nonce + 1 is intentionally invalid test data)
         assert!(resistance.verify(&pubkey, &node_id, nonce + 1).is_err());
     }
 

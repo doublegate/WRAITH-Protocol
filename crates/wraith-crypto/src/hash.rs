@@ -235,6 +235,7 @@ mod tests {
 
     #[test]
     fn test_hkdf_extract() {
+        // SECURITY: Intentional test vector data, not production keys
         let salt = b"salt";
         let ikm = b"input key material";
 
@@ -247,6 +248,7 @@ mod tests {
 
     #[test]
     fn test_hkdf_expand() {
+        // SECURITY: Intentional test vector data, not production keys
         let prk = [0x42u8; 32];
         let info = b"application info";
 
@@ -262,6 +264,7 @@ mod tests {
 
     #[test]
     fn test_hkdf_combined() {
+        // SECURITY: Intentional test vector data, not production keys
         let salt = b"salt";
         let ikm = b"input";
         let info = b"info";
@@ -277,6 +280,7 @@ mod tests {
 
     #[test]
     fn test_hkdf_no_salt() {
+        // SECURITY: Intentional test vector data, not production keys
         let ikm = b"input";
         let info = b"info";
 

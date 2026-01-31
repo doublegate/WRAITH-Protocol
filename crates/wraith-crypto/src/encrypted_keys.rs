@@ -415,6 +415,7 @@ impl EncryptedPrivateKey {
 
         let params = KeyEncryptionParams::from_bytes(bytes[1..7].try_into().unwrap());
 
+        // SECURITY: Buffer pre-allocations, immediately overwritten from deserialized bytes
         let mut salt = [0u8; SALT_SIZE];
         salt.copy_from_slice(&bytes[7..7 + SALT_SIZE]);
 

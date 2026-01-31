@@ -42,6 +42,9 @@ pub unsafe extern "C" fn wraith_session_establish(
         return WraithErrorCode::InvalidArgument as c_int;
     }
 
+    // SAFETY: peer_id was checked for null earlier in this function.
+    // Caller must ensure peer_id points to valid, properly aligned WraithNodeId.
+    // This is documented in the function's safety contract.
     let peer_id_bytes = (*peer_id).bytes;
     let handle = &mut *(node as *mut NodeHandle);
     let node_clone = handle.node.clone();

@@ -1073,6 +1073,7 @@ mod tests {
     // SEC-003: STUN Security Hardening Tests
     #[test]
     fn test_stun_authentication() {
+        // SECURITY: Intentional test credentials, not production secrets
         let auth = StunAuthentication::new("testuser", "testpass", None);
         assert_eq!(auth.username, "testuser");
         assert_eq!(auth.realm, None);
@@ -1080,6 +1081,7 @@ mod tests {
 
     #[test]
     fn test_stun_authentication_with_realm() {
+        // SECURITY: Intentional test credentials, not production secrets
         let auth = StunAuthentication::new("user", "pass", Some("example.com".to_string()));
         assert_eq!(auth.username, "user");
         assert_eq!(auth.realm, Some("example.com".to_string()));
@@ -1087,6 +1089,7 @@ mod tests {
 
     #[test]
     fn test_message_integrity_roundtrip() {
+        // SECURITY: Intentional test credentials, not production secrets
         let mut msg = StunMessage::binding_request();
         let auth = StunAuthentication::new("user", "pass", None);
 
@@ -1105,6 +1108,7 @@ mod tests {
 
     #[test]
     fn test_message_integrity_wrong_password() {
+        // SECURITY: Intentional test credentials, not production secrets
         let mut msg = StunMessage::binding_request();
         let auth1 = StunAuthentication::new("user", "pass1", None);
         let auth2 = StunAuthentication::new("user", "pass2", None);
@@ -1117,6 +1121,7 @@ mod tests {
 
     #[test]
     fn test_message_integrity_long_term_credentials() {
+        // SECURITY: Intentional test credentials, not production secrets
         let mut msg = StunMessage::binding_request();
         let auth = StunAuthentication::new("user", "pass", Some("example.com".to_string()));
 
@@ -1154,6 +1159,7 @@ mod tests {
 
     #[test]
     fn test_message_integrity_and_fingerprint() {
+        // SECURITY: Intentional test credentials, not production secrets
         let mut msg = StunMessage::binding_request();
         let auth = StunAuthentication::new("user", "pass", None);
 
@@ -1382,6 +1388,7 @@ mod tests {
 
     #[test]
     fn test_authentication_zeroization() {
+        // SECURITY: Intentional test credentials, not production secrets
         let auth = StunAuthentication::new("user", "password", None);
         // Password should be zeroized on drop (can't test directly, but ensure no panics)
         drop(auth);
@@ -1389,6 +1396,7 @@ mod tests {
 
     #[test]
     fn test_authentication_key_derivation_short_term() {
+        // SECURITY: Intentional test credentials, not production secrets
         let auth = StunAuthentication::new("user", "pass", None);
         let key = auth.derive_key();
         // Short-term credentials use password directly
@@ -1397,6 +1405,7 @@ mod tests {
 
     #[test]
     fn test_authentication_key_derivation_long_term() {
+        // SECURITY: Intentional test credentials, not production secrets
         let auth = StunAuthentication::new("user", "pass", Some("realm".to_string()));
         let key = auth.derive_key();
         // Long-term credentials use MD5(username:realm:password) as mandated by RFC 5389

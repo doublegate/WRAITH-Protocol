@@ -2,6 +2,9 @@
 //!
 //! Verifies that sensitive cryptographic material is properly zeroized on drop
 //! to prevent key material from lingering in memory.
+//!
+//! SECURITY NOTE: All hard-coded cryptographic values in this file are intentional
+//! test data for verifying zeroization behavior, NOT production keys.
 
 use wraith_crypto::aead::{AeadKey, SessionCrypto};
 use wraith_crypto::ratchet::{DoubleRatchet, MessageKey, SymmetricRatchet};

@@ -3,6 +3,9 @@
 // Tests the integration between wraith-crypto and wraith-core crates,
 // verifying that cryptographic operations work correctly with frame
 // encoding/decoding and session management.
+//
+// SECURITY NOTE: All hard-coded cryptographic values in this file are intentional
+// test data for integration testing, NOT production keys.
 
 use rand_core::{OsRng, RngCore};
 use wraith_core::{

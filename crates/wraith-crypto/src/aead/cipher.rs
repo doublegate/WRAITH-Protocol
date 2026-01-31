@@ -453,6 +453,7 @@ mod tests {
 
     #[test]
     fn test_aead_roundtrip() {
+        // SECURITY: Intentional test vector data, not production keys
         let key = [0x42u8; 32];
         let nonce = [0x00u8; 24];
         let plaintext = b"Hello, WRAITH!";
@@ -468,6 +469,7 @@ mod tests {
 
     #[test]
     fn test_aead_tamper_detection() {
+        // SECURITY: Intentional test vector data, not production keys
         let key = [0x42u8; 32];
         let nonce = [0x00u8; 24];
         let plaintext = b"Hello, WRAITH!";
@@ -541,6 +543,7 @@ mod tests {
 
     #[test]
     fn test_nonce_from_counter() {
+        // SECURITY: Intentional test vector data, not production keys
         let salt = [0x42u8; 16];
         let nonce1 = Nonce::from_counter(0, &salt);
         let nonce2 = Nonce::from_counter(1, &salt);

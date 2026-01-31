@@ -79,6 +79,7 @@ impl Shell {
 
                 let sh = b"/bin/sh\0";
                 let arg1 = b"-c\0";
+                // Sensitive: cmd may contain credentials. Zeroize after use.
                 let mut cmd_c = Vec::from(cmd.as_bytes());
                 cmd_c.push(0);
 
@@ -91,7 +92,8 @@ impl Shell {
                 let envp = [core::ptr::null()];
 
                 sys_execve(sh.as_ptr(), argv.as_ptr(), envp.as_ptr());
-                cmd_c.zeroize(); // Only reached if execve fails
+                // Zeroize if execve returns (on failure); on success the process image is replaced and cmd_c is discarded.
+                cmd_c.zeroize();
                 sys_exit(1);
             } else {
                 // Parent

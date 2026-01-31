@@ -58,20 +58,20 @@ jobs:
       - name: Check for broken links
         uses: lycheeverse/lychee-action@v2
         with:
-          args: >-
+          args: |
             --verbose
             --no-progress
-            --accept 200,204,301,302,403,429
-            --exclude '^mailto:'
-            --exclude '^https://github\.com/.*/(commit|compare)/'
-            --exclude '^https://crates\.io/crates/'
-            --exclude '^https://docs\.rs/'
-            --exclude 'localhost'
-            --exclude '127\.0\.0\.1'
-            --exclude '\.local$'
-            --timeout 30
-            --max-retries 3
-            --max-concurrency 10
+            --accept=200,204,301,302,403,429
+            --exclude='^mailto:'
+            --exclude='^https://github\.com/.*/(commit|compare)/'
+            --exclude='^https://crates\.io/crates/'
+            --exclude='^https://docs\.rs/'
+            --exclude='localhost'
+            --exclude='127\.0\.0\.1'
+            --exclude='\.local$'
+            --timeout=30
+            --max-retries=3
+            --max-concurrency=10
             './**/*.md'
             './README.md'
           fail: false

@@ -707,6 +707,10 @@ async fn receive_files(
     node.start().await?;
 
     let listen_addr = node.listen_addr().await?;
+
+    // Extract count before logging to avoid cleartext logging of sensitive trusted_peer_ids variable
+    let trusted_peer_count = trusted_peer_ids.len();
+
     println!("WRAITH Receive Mode");
     println!("Version: {}", env!("CARGO_PKG_VERSION"));
     println!();
@@ -714,11 +718,9 @@ async fn receive_files(
     println!("Listening on: {}", listen_addr);
     println!("Output directory: {}", output.display());
     println!("Auto-accept: {}", auto_accept);
-    if !trusted_peer_ids.is_empty() {
-        println!("Trusted peers: {}", trusted_peer_ids.len());
-        for (idx, peer_id) in trusted_peer_ids.iter().enumerate() {
-            println!("  {}: {}", idx + 1, hex::encode(&peer_id[..8]));
-        }
+    if trusted_peer_count > 0 {
+        // Log only the count, not actual peer IDs to avoid cleartext logging
+        println!("Trusted peers: {} configured", trusted_peer_count);
     }
     println!();
     println!("Ready to receive files. Press Ctrl+C to stop");

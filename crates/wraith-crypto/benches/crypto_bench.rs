@@ -6,6 +6,9 @@
 //! - AEAD encryption: >3 GB/s (single core)
 //! - Noise handshake: <50ms (full XX)
 //! - Key ratcheting: >10M ops/sec
+//!
+//! SECURITY NOTE: All hard-coded cryptographic values in this file are intentional
+//! test data for benchmarking, NOT production keys.
 
 use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 use rand::RngCore;

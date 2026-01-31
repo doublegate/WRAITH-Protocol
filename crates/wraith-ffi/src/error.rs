@@ -352,7 +352,9 @@ mod tests {
             let result = test_function(&mut error_out);
             assert!(!result.is_null());
             assert!(error_out.is_null());
-            // SAFETY: Pointer validity verified by assert!(!result.is_null()) above
+            // SAFETY: Pointer validity verified by assert!(!result.is_null()) above.
+            // test_function allocates via Box::into_raw, ensuring valid alignment and initialization.
+            // The pointer is immediately consumed by Box::from_raw below for cleanup.
             assert_eq!(*result, 42);
 
             // Clean up

@@ -375,6 +375,7 @@ impl NoiseHandshake {
         }
 
         let h = self.state.get_handshake_hash();
+        // SECURITY: Buffer pre-allocation, immediately overwritten with handshake hash
         let mut root_key = [0u8; 32];
         root_key.copy_from_slice(h);
 
@@ -414,6 +415,7 @@ impl NoiseHandshake {
         // Use BLAKE3 to derive separate keys from the handshake hash
         // This provides domain separation between send/recv/chain keys
         // Both parties derive the SAME two directional keys, then assign based on role
+        // SECURITY: Buffer pre-allocations, immediately overwritten by derive_key() calls below
         let mut key_i_to_r = [0u8; 32]; // Key for initiator → responder direction
         let mut key_r_to_i = [0u8; 32]; // Key for responder → initiator direction
         let mut chain_key = [0u8; 32];

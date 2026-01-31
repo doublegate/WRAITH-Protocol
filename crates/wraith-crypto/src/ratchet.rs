@@ -455,6 +455,7 @@ impl DoubleRatchet {
     /// This upgrades the security of future ratchet steps.
     pub fn mix_into_root(&mut self, data: &[u8]) {
         let prk = hkdf_extract(&self.root_key, data);
+        // SECURITY: Buffer pre-allocation, immediately overwritten by HKDF expansion
         let mut new_root = [0u8; 32];
         hkdf_expand(&prk, b"wraith_root_mixed", &mut new_root);
         self.root_key = new_root;
@@ -558,11 +559,12 @@ impl DoubleRatchet {
 
         // Verify key commitment before AEAD decrypt (when feature enabled)
         #[cfg(feature = "key-commitment")]
-        if let Some(commitment) = &header.key_commitment
-            && !aead_key.verify_commitment(commitment)
-        {
-            message_key.zeroize();
-            return Err(RatchetError::DecryptionFailed);
+        #[allow(clippy::collapsible_if)]
+        if let Some(commitment) = &header.key_commitment {
+            if !aead_key.verify_commitment(commitment) {
+                message_key.zeroize();
+                return Err(RatchetError::DecryptionFailed);
+            }
         }
 
         let nonce = derive_nonce(header.message_number);
@@ -689,6 +691,7 @@ impl DoubleRatchet {
 fn kdf_rk(root_key: &[u8; 32], dh_out: &[u8; 32]) -> ([u8; 32], [u8; 32]) {
     let mut temp = hkdf_extract(root_key, dh_out);
 
+    // SECURITY: Buffer pre-allocations, immediately overwritten by HKDF expansion
     let mut new_root = [0u8; 32];
     let mut chain_key = [0u8; 32];
 
@@ -928,11 +931,17 @@ mod tests {
     #[test]
     fn test_message_header_serialization() {
         let dh_public = PublicKey::from_bytes([0x42u8; 32]);
+        #[cfg(not(feature = "key-commitment"))]
         let header = MessageHeader {
             dh_public,
             prev_chain_length: 5,
             message_number: 10,
-            #[cfg(feature = "key-commitment")]
+        };
+        #[cfg(feature = "key-commitment")]
+        let header = MessageHeader {
+            dh_public,
+            prev_chain_length: 5,
+            message_number: 10,
             key_commitment: None,
         };
 
@@ -946,6 +955,7 @@ mod tests {
 
     #[test]
     fn test_message_header_invalid() {
+        // SECURITY: Intentional test vector data, not production keys
         let result = MessageHeader::from_bytes(&[0u8; 10]);
         assert!(matches!(result, Err(RatchetError::InvalidHeader)));
     }
@@ -956,6 +966,7 @@ mod tests {
 
     #[test]
     fn test_double_ratchet_basic() {
+        // SECURITY: Intentional test vector data, not production keys
         let shared_secret = [0x42u8; 32];
 
         // Bob generates a DH keypair
@@ -1017,6 +1028,7 @@ mod tests {
 
     #[test]
     fn test_double_ratchet_multiple_messages_same_chain() {
+        // SECURITY: Intentional test vector data, not production keys
         let shared_secret = [0x42u8; 32];
 
         let bob_dh = PrivateKey::generate(&mut OsRng);
@@ -1038,6 +1050,7 @@ mod tests {
 
     #[test]
     fn test_double_ratchet_out_of_order() {
+        // SECURITY: Intentional test vector data, not production keys
         let shared_secret = [0x42u8; 32];
 
         let bob_dh = PrivateKey::generate(&mut OsRng);
@@ -1059,6 +1072,7 @@ mod tests {
 
     #[test]
     fn test_double_ratchet_wrong_key() {
+        // SECURITY: Intentional test vector data, not production keys
         let shared_secret1 = [0x42u8; 32];
         let shared_secret2 = [0x43u8; 32];
 
@@ -1080,6 +1094,7 @@ mod tests {
 
     #[test]
     fn test_double_ratchet_tampering_detected() {
+        // SECURITY: Intentional test vector data, not production keys
         let shared_secret = [0x42u8; 32];
 
         let bob_dh = PrivateKey::generate(&mut OsRng);
