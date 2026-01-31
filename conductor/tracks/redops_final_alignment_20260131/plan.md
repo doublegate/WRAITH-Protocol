@@ -48,9 +48,9 @@ This plan outlines the methodical remediation of all gaps identified in `GAP-ANA
 - [x] Task: Complete Console Command Mapping (P2-1) aea3060
     - [x] Add UI handlers for `compress`, `exfil_dns`, `wipe`, and `hijack` in `Console.tsx`
     - [x] Verify input validation for each new command
-- [ ] Task: Implement Resource Management (Delete)
-    - [ ] Add "Delete Listener" functionality to `ListenerManager.tsx`
-    - [ ] Add "Delete Attack Chain" functionality to `PlaybookBrowser.tsx`
+- [x] Task: Implement Resource Management (Delete) ccc4465
+    - [x] Add "Delete Listener" functionality to `ListenerManager.tsx`
+    - [x] Add "Delete Attack Chain" functionality to `PlaybookBrowser.tsx`
 - [ ] Task: UI/UX Polish and Advanced Features
     - [ ] Global version string update to `v2.3.4`
     - [ ] Implement multi-implant bulk operations in Beacons view
