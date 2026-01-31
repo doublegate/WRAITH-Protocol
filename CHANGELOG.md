@@ -9,6 +9,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.3.6] - 2026-01-31 - RedOps Complete Completion & Advanced Tradecraft
+
+### Added
+
+#### Spectre Implant (Advanced Tradecraft)
+- **MITRE ATT&CK Techniques**: Full, production-grade implementations of:
+  - **T1134 (Access Token Manipulation)**: `steal_token` (DuplicateTokenEx/ImpersonateLoggedOnUser) and `revert_to_self`.
+  - **T1140 (Deobfuscate/Decode)**: `decode_xor` and `decode_base64` modules for in-memory payload processing.
+  - **T1574.002 (DLL Side-Loading)**: `sideload_scan` module to identify writable system directories for persistence/privesc.
+  - **T1105 (Ingress Tool Transfer)**: `download` (HTTP/S via WinInet) for tool retrieval.
+- **Compression**: Upgraded from RLE to DEFLATE (`miniz_oxide`) for more efficient data exfiltration.
+- **Mesh Obfuscation**: Randomized nonce-based XOR obfuscation for mesh discovery packets to eliminate static signatures.
+
+#### Team Server (Infrastructure)
+- **Resource Management**: New RPCs and database operations for `DeleteListener` and `DeleteAttackChain`.
+- **Infrastructure Safety**: Replaced `.expect()` calls in Kill Switch handlers with graceful error propagation.
+- **Protocol Hardening**: Implemented cryptographically secure random nonce generation for all response frames.
+
+#### Operator Client (UX)
+- **Console Expansion**: Mapped 10 new commands (`compress`, `exfildns`, `wipe`, `hijack`, `stealtoken`, `reverttoken`, `decodexor`, `decodeb64`, `sideload`, `download`).
+- **Resource Management**: Delete functionality integrated into `ListenerManager` and `PlaybookBrowser` with confirmation dialogs.
+- **Themes**: Added infrastructure for Dark/Light theme toggle (Zustand state + Header toggle).
+- **Bulk Operations**: Multi-implant selection and bulk `kill` support in Beacons view.
+
+### Fixed
+
+- **P1-1: Key Ratcheting**: Implemented Signal-style Double Ratchet (DH + Symmetric). Fixed 'half-ratchet' KDF logic in `force_dh_step` to maintain synchronization during unilateral rekeying.
+- **P1-2: PowerShell Runner**: Transitioned to source-build model. `Runner.dll` now compiled from C# source via `dotnet` and integrated into implant build.
+- **P3-2: Linux Base Address**: Implemented dynamic Linux `.text` base address calculation using `/proc/self/maps` for PIE binary compatibility.
+- **P3-6: BOF Safety**: Replaced unsafe `.unwrap()` calls in BOF loader with structured error handling.
+
+### Changed
+
+- **Version**: Bumped all RedOps components and `wraith-crypto` to v2.3.4 (release alignment v2.3.6).
+- **xtask**: Added `build-runner` command to automate .NET assembly compilation.
+
+---
+
 ## [2.3.5] - 2026-01-31 - CI/CD Stability & Security Hardening
 
 ### Added
