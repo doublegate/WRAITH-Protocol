@@ -2,6 +2,7 @@ use crate::database::Database;
 use crate::models::{BeaconData, BeaconResponse, BeaconTask};
 use crate::services::session::SessionManager;
 use crate::wraith::redops::Event;
+use rand::RngCore;
 use std::sync::Arc;
 use tokio::sync::broadcast;
 use tracing::{debug, error};
@@ -137,35 +138,41 @@ impl ProtocolHandler {
                 if frame_type == 0x06 {
                     // FRAME_REKEY_DH
                     debug!("Received explicit REKEY_DH frame from {}", src_addr);
-                    session.transport.rekey_dh();
-                    session.packet_count = 0;
-                    session.last_rekey = std::time::SystemTime::now();
-                    debug!("Server session {} rekeyed (DH ratchet)", hex::encode(cid));
+                    if let Ok(()) = session.transport.rekey_dh() {
+                        session.packet_count = 0;
+                        session.last_rekey = std::time::SystemTime::now();
+                        debug!("Server session {} rekeyed (DH ratchet)", hex::encode(cid));
 
-                    // Send empty response frame to carry the new DH key in header
-                    // We reuse 0x06 for the response frame type to acknowledge
-                    let mut frame = Vec::with_capacity(28);
-                    frame.extend_from_slice(&0u64.to_be_bytes()); // Nonce placeholder
-                    frame.push(0x06); // FRAME_REKEY_DH
-                    frame.push(0); // flags
-                    frame.extend_from_slice(&0u16.to_be_bytes()); // stream_id
-                    frame.extend_from_slice(&0u32.to_be_bytes()); // sequence
-                    frame.extend_from_slice(&0u64.to_be_bytes()); // offset
-                    frame.extend_from_slice(&0u16.to_be_bytes()); // len
-                    frame.extend_from_slice(&[0u8; 2]); // reserved
+                        // Send empty response frame to carry the new DH key in header
+                        // We reuse 0x06 for the response frame type to acknowledge
+                        let mut frame = Vec::with_capacity(28);
+                        let mut nonce = [0u8; 8];
+                        SecureRng::new().fill_bytes(&mut nonce);
+                        frame.extend_from_slice(&nonce);
+                        frame.push(0x06); // FRAME_REKEY_DH
+                        frame.push(0); // flags
+                        frame.extend_from_slice(&0u16.to_be_bytes()); // stream_id
+                        frame.extend_from_slice(&0u32.to_be_bytes()); // sequence
+                        frame.extend_from_slice(&0u64.to_be_bytes()); // offset
+                        frame.extend_from_slice(&0u16.to_be_bytes()); // len
+                        frame.extend_from_slice(&[0u8; 2]); // reserved
 
-                    let ciphertext = match session.transport.write_message(&frame) {
-                        Ok(ct) => ct,
-                        Err(e) => {
-                            error!("Encryption failed for rekey response: {}", e);
-                            return None;
-                        }
-                    };
+                        let ciphertext = match session.transport.write_message(&frame) {
+                            Ok(ct) => ct,
+                            Err(e) => {
+                                error!("Encryption failed for rekey response: {}", e);
+                                return None;
+                            }
+                        };
 
-                    let mut response = Vec::new();
-                    response.extend_from_slice(&cid);
-                    response.extend_from_slice(&ciphertext);
-                    return Some(response);
+                        let mut response = Vec::new();
+                        response.extend_from_slice(&cid);
+                        response.extend_from_slice(&ciphertext);
+                        return Some(response);
+                    } else {
+                        error!("Failed to rekey session {}", hex::encode(cid));
+                        return None;
+                    }
                 }
 
                 if frame_type == 0x07 {
@@ -269,7 +276,9 @@ impl ProtocolHandler {
 
                         // Implement proper Frame construction (28-byte header)
                         let mut frame = Vec::with_capacity(28 + resp_json.len());
-                        frame.extend_from_slice(b"WRTH"); // Nonce placeholder (using magic for debug visibility?) Original had b"WRTH"
+                        let mut nonce = [0u8; 8];
+                        SecureRng::new().fill_bytes(&mut nonce);
+                        frame.extend_from_slice(&nonce);
                         frame.push(0x01); // FRAME_TYPE_DATA
                         frame.push(0); // flags
                         frame.extend_from_slice(&0u16.to_be_bytes()); // stream_id
@@ -323,11 +332,16 @@ impl ProtocolHandler {
                 })
                 .unwrap_or_default();
                 let mut frame = Vec::with_capacity(28 + resp_json.len());
-                frame.extend_from_slice(b"WRTH");
-                frame.extend_from_slice(&(resp_json.len() as u32).to_be_bytes());
-                frame.extend_from_slice(&0u16.to_be_bytes());
-                frame.extend_from_slice(&0u16.to_be_bytes());
-                frame.extend_from_slice(&[0u8; 16]);
+                let mut nonce = [0u8; 8];
+                SecureRng::new().fill_bytes(&mut nonce);
+                frame.extend_from_slice(&nonce);
+                frame.push(0x01); // FRAME_TYPE_DATA
+                frame.push(0); // flags
+                frame.extend_from_slice(&0u16.to_be_bytes()); // stream_id
+                frame.extend_from_slice(&0u32.to_be_bytes()); // sequence
+                frame.extend_from_slice(&0u64.to_be_bytes()); // offset
+                frame.extend_from_slice(&(resp_json.len() as u16).to_be_bytes()); // len
+                frame.extend_from_slice(&[0u8; 2]); // reserved
                 frame.extend_from_slice(&resp_json);
 
                 if let Ok(ciphertext) = upstream_session.transport.write_message(&frame) {

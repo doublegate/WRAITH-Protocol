@@ -344,11 +344,13 @@ impl OperatorService for OperatorServiceImpl {
 
     async fn kill_implant(&self, req: Request<KillImplantRequest>) -> Result<Response<()>, Status> {
         // Fail fast if configuration is missing
-        let port_str = std::env::var("KILLSWITCH_PORT").expect("KILLSWITCH_PORT must be set");
+        let port_str = std::env::var("KILLSWITCH_PORT")
+            .map_err(|_| Status::internal("KILLSWITCH_PORT must be set"))?;
         let port = port_str
             .parse()
-            .expect("KILLSWITCH_PORT must be a valid u16");
-        let secret = std::env::var("KILLSWITCH_SECRET").expect("KILLSWITCH_SECRET must be set");
+            .map_err(|_| Status::internal("KILLSWITCH_PORT must be a valid u16"))?;
+        let secret = std::env::var("KILLSWITCH_SECRET")
+            .map_err(|_| Status::internal("KILLSWITCH_SECRET must be set"))?;
 
         let req = req.into_inner();
         let id =

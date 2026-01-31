@@ -32,7 +32,7 @@ impl TrackedSession {
     }
 
     pub fn on_rekey(&mut self) {
-        self.transport.rekey_dh();
+        let _ = self.transport.rekey_dh();
         self.packet_count = 0;
         self.last_rekey = SystemTime::now();
     }
