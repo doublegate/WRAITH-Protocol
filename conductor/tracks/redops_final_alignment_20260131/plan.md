@@ -21,14 +21,14 @@ This plan outlines the methodical remediation of all gaps identified in `GAP-ANA
     - [x] T1140: In-memory Deobfuscate/Decode module
     - [x] T1574.002: DLL Side-Loading identification and exploit module
     - [x] T1105: Multi-protocol Ingress Tool Transfer (HTTP/S, SMB, DNS)
-- [ ] Task: Remediate P2/P3 Implant Findings
-    - [ ] Verify and update CLR MetaHost CLSID (P2-2)
-    - [ ] Implement Browser DPAPI decryption (P3-1)
-    - [ ] Implement dynamic Linux .text base address calculation (P3-2)
-    - [ ] Obfuscate UDP Mesh discovery signatures (P3-3)
-    - [ ] Implement missing Windows SMB client functionality (P3-4)
-    - [ ] Upgrade compression module to zlib/deflate (P3-5)
-    - [ ] Implement safe error handling for BOF parser (P3-6)
+- [x] Task: Remediate P2/P3 Implant Findings 5dd7cc3
+    - [x] Verify and update CLR MetaHost CLSID (P2-2)
+    - [x] Implement Browser DPAPI decryption (P3-1)
+    - [x] Implement dynamic Linux .text base address calculation (P3-2)
+    - [x] Obfuscate UDP Mesh discovery signatures (P3-3)
+    - [x] Implement missing Windows SMB client functionality (P3-4)
+    - [x] Upgrade compression module to zlib/deflate (P3-5)
+    - [x] Implement safe error handling for BOF parser (P3-6)
 - [ ] Task: Conductor - User Manual Verification 'Spectre Implant' (Protocol in workflow.md)
 
 ## Phase 2: Team Server (Infrastructure & Protocol)
