@@ -10,11 +10,11 @@ This plan outlines the methodical remediation of all gaps identified in `GAP-ANA
     - [x] Update `NoiseTransport` to support ratchet steps
     - [x] Integrate into `spectre-implant` C2 loop
     - [x] Verify 100% branch coverage for crypto paths
-- [ ] Task: Transition PowerShell Runner to Source-Build (P1-2)
-    - [ ] Integrate C# source code into `runner_src/`
-    - [ ] Add `dotnet build` step to project `xtask` or helper script
-    - [ ] Update `powershell.rs` to include the freshly built `Runner.dll`
-    - [ ] Write tests verifying managed code execution
+- [x] Task: Transition PowerShell Runner to Source-Build (P1-2) d3d9a1e
+    - [x] Integrate C# source code into `runner_src/`
+    - [x] Add `dotnet build` step to project `xtask` or helper script
+    - [x] Update `powershell.rs` to include the freshly built `Runner.dll`
+    - [x] Write tests verifying managed code execution
 - [ ] Task: Implement Advanced MITRE ATT&CK Techniques
     - [ ] T1059.003: Managed Windows Command Shell execution
     - [ ] T1134: Access Token Manipulation (Impersonation, Creation, Delegation)
