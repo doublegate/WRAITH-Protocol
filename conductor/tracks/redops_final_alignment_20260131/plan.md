@@ -15,12 +15,12 @@ This plan outlines the methodical remediation of all gaps identified in `GAP-ANA
     - [x] Add `dotnet build` step to project `xtask` or helper script
     - [x] Update `powershell.rs` to include the freshly built `Runner.dll`
     - [x] Write tests verifying managed code execution
-- [ ] Task: Implement Advanced MITRE ATT&CK Techniques
-    - [ ] T1059.003: Managed Windows Command Shell execution
-    - [ ] T1134: Access Token Manipulation (Impersonation, Creation, Delegation)
-    - [ ] T1140: In-memory Deobfuscate/Decode module
-    - [ ] T1574.002: DLL Side-Loading identification and exploit module
-    - [ ] T1105: Multi-protocol Ingress Tool Transfer (HTTP/S, SMB, DNS)
+- [x] Task: Implement Advanced MITRE ATT&CK Techniques 7867c95
+    - [x] T1059.003: Managed Windows Command Shell execution
+    - [x] T1134: Access Token Manipulation (Impersonation, Creation, Delegation)
+    - [x] T1140: In-memory Deobfuscate/Decode module
+    - [x] T1574.002: DLL Side-Loading identification and exploit module
+    - [x] T1105: Multi-protocol Ingress Tool Transfer (HTTP/S, SMB, DNS)
 - [ ] Task: Remediate P2/P3 Implant Findings
     - [ ] Verify and update CLR MetaHost CLSID (P2-2)
     - [ ] Implement Browser DPAPI decryption (P3-1)
