@@ -1,7 +1,7 @@
 [package]
 name = "wraith-crypto"
-description = "Cryptographic primitives for WRAITH - Noise handshake, AEAD, Elligator2, key ratcheting"
-version.workspace = true
+version = "2.3.4"
+description = "WRAITH Protocol Cryptography"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true

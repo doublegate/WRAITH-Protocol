@@ -38,6 +38,10 @@ interface AppState {
   autoRefreshInterval: number;
   setAutoRefreshInterval: (ms: number) => void;
 
+  // Theme
+  theme: 'dark' | 'light';
+  toggleTheme: () => void;
+
   // Refresh
   refreshAll: () => Promise<void>;
   refreshImplants: () => Promise<void>;
@@ -108,6 +112,15 @@ export const useAppStore = create<AppState>((set, get) => ({
   // Settings
   autoRefreshInterval: 5000,
   setAutoRefreshInterval: (ms) => set({ autoRefreshInterval: ms }),
+
+  // Theme
+  theme: 'dark',
+  toggleTheme: () => {
+    const next = get().theme === 'dark' ? 'light' : 'dark';
+    set({ theme: next });
+    if (next === 'dark') document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
+  },
 
   // Refresh
   refreshAll: async () => {

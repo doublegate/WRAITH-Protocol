@@ -27,27 +27,20 @@ import {
   Fish,
   Settings,
   Crosshair,
-  Activity,
   BookOpen,
   Info,
+  Sun,
+  Moon,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
-  { label: 'Dashboard', icon: LayoutDashboard },
-  { label: 'Campaigns', icon: FolderOpen },
-  { label: 'Attack Chains', icon: Link },
-  { label: 'Beacons', icon: Radio },
-  { label: 'Listeners', icon: Headphones },
-  { label: 'Loot', icon: Gem },
-  { label: 'Phishing', icon: Fish },
-  { label: 'Generator', icon: Crosshair },
-  { label: 'Playbooks', icon: BookOpen },
-  { label: 'Events', icon: Activity },
-];
-
+// ...
 function App() {
   const {
+    theme,
+    toggleTheme,
     activeTab,
+// ...
     setActiveTab,
     serverStatus,
     serverAddress,
@@ -82,6 +75,9 @@ function App() {
 
   // Implant detail state
   const [selectedImplantId, setSelectedImplantId] = useState<string | null>(null);
+
+  // Multi-selection state
+  const [selectedImplants, setSelectedImplants] = useState<Set<string>>(new Set());
 
   // Context menu state
   const [contextMenu, setContextMenu] = useState<{
@@ -153,44 +149,39 @@ function App() {
     });
   };
 
+  const toggleImplantSelection = (id: string) => {
+    setSelectedImplants((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleBulkKill = async () => {
+    if (selectedImplants.size === 0) return;
+    const ids = Array.from(selectedImplants);
+    try {
+      await Promise.all(ids.map((id) => ipc.killImplant(id)));
+      addToast('success', `Kill command sent to ${ids.length} beacons`);
+      setSelectedImplants(new Set());
+      refreshImplants();
+    } catch (e) {
+      addToast('error', 'Bulk kill failed: ' + e);
+    }
+  };
+
   return (
-    <div className="flex h-screen w-full flex-col font-mono text-slate-300">
+    <div className="flex h-screen w-full flex-col font-mono bg-white text-slate-700 dark:bg-slate-950 dark:text-slate-300">
       <ToastContainer />
 
-      {contextMenu && (
-        <ContextMenu
-          x={contextMenu.x}
-          y={contextMenu.y}
-          items={contextMenu.items}
-          onClose={() => setContextMenu(null)}
-        />
-      )}
-
-      {/* Header */}
-      <header className="flex h-14 items-center justify-between border-b border-slate-800 bg-slate-900 px-4 shadow-sm z-10">
-        <div className="flex items-center gap-2">
-          <div className="h-4 w-4 bg-red-600 shadow-[0_0_10px_rgba(220,38,38,0.5)]" />
-          <span className="text-lg font-bold tracking-tight text-red-500">WRAITH::REDOPS</span>
-        </div>
-        <div className="flex items-center gap-4 text-xs font-bold">
-          <span
-            className={`px-2 py-0.5 rounded ${
-              serverStatus === 'Connected'
-                ? 'bg-green-900/30 text-green-500 border border-green-900/50'
-                : 'bg-red-900/30 text-red-500 border border-red-900/50'
-            }`}
-          >
-            {serverStatus.toUpperCase()}
-          </span>
-          <span className="text-slate-500">OP: ADMIN</span>
-        </div>
-      </header>
+      {/* ... */}
 
       {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <nav className="w-48 border-r border-slate-800 bg-slate-950 p-2 text-xs flex flex-col gap-1">
-          <div className="mt-2 mb-1 px-2 text-slate-600 font-bold uppercase text-[10px] tracking-wider">
+        <nav className="w-48 border-r border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 p-2 text-xs flex flex-col gap-1">
+          <div className="mt-2 mb-1 px-2 text-slate-400 dark:text-slate-600 font-bold uppercase text-[10px] tracking-wider">
             Operations
           </div>
           {NAV_ITEMS.map(({ label, icon: Icon }) => (
@@ -298,7 +289,7 @@ function App() {
                 </h3>
                 <div className="text-xs text-slate-500 space-y-1">
                   <div>
-                    WRAITH::REDOPS Operator Console v2.3.0
+                    WRAITH::REDOPS Operator Console v2.3.4
                   </div>
                   <div>Server: {serverAddress}</div>
                   <div>Status: {serverStatus}</div>
@@ -498,9 +489,30 @@ function App() {
           {activeTab === 'beacons' && (
             <div>
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-                  ACTIVE BEACONS
-                </h2>
+                <div className="flex items-center gap-4">
+                  <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+                    ACTIVE BEACONS
+                  </h2>
+                  {selectedImplants.size > 0 && (
+                    <div className="flex items-center gap-2 px-3 py-1 bg-red-900/20 border border-red-900/30 rounded">
+                      <span className="text-[10px] font-bold text-red-500">
+                        {selectedImplants.size} SELECTED
+                      </span>
+                      <button
+                        onClick={handleBulkKill}
+                        className="text-[10px] bg-red-600 hover:bg-red-500 text-white px-2 py-0.5 rounded font-bold"
+                      >
+                        KILL ALL
+                      </button>
+                      <button
+                        onClick={() => setSelectedImplants(new Set())}
+                        className="text-[10px] text-slate-500 hover:text-white"
+                      >
+                        DESELECT
+                      </button>
+                    </div>
+                  )}
+                </div>
                 <button
                   onClick={refreshImplants}
                   className="rounded bg-slate-800 px-3 py-1 text-xs text-white hover:bg-slate-700 transition-colors"
@@ -522,6 +534,19 @@ function App() {
                 <table className="w-full text-left text-xs">
                   <thead className="border-b border-slate-800 bg-slate-950 text-slate-500">
                     <tr>
+                      <th className="px-4 py-3 w-10">
+                        <input
+                          type="checkbox"
+                          onChange={(e) => {
+                            if (e.target.checked)
+                              setSelectedImplants(new Set(implants.map((i) => i.id)));
+                            else setSelectedImplants(new Set());
+                          }}
+                          checked={
+                            selectedImplants.size === implants.length && implants.length > 0
+                          }
+                        />
+                      </th>
                       <th className="px-4 py-3 font-medium">ID</th>
                       <th className="px-4 py-3 font-medium">HOSTNAME</th>
                       <th className="px-4 py-3 font-medium">IP ADDRESS</th>
@@ -533,10 +558,7 @@ function App() {
                   <tbody className="text-slate-300">
                     {implants.length === 0 ? (
                       <tr>
-                        <td
-                          className="px-4 py-12 text-center text-slate-600 italic"
-                          colSpan={6}
-                        >
+                        <td className="px-4 py-12 text-center text-slate-600 italic" colSpan={7}>
                           No signals detected. Waiting for check-in...
                         </td>
                       </tr>
@@ -544,7 +566,9 @@ function App() {
                       implants.map((imp) => (
                         <tr
                           key={imp.id}
-                          className="border-b border-slate-800/50 hover:bg-slate-800/50 transition-colors group"
+                          className={`border-b border-slate-800/50 hover:bg-slate-800/50 transition-colors group ${
+                            selectedImplants.has(imp.id) ? 'bg-red-950/5' : ''
+                          }`}
                           onContextMenu={(e) =>
                             handleBeaconContextMenu(e, {
                               id: imp.id,
@@ -552,6 +576,13 @@ function App() {
                             })
                           }
                         >
+                          <td className="px-4 py-3">
+                            <input
+                              type="checkbox"
+                              checked={selectedImplants.has(imp.id)}
+                              onChange={() => toggleImplantSelection(imp.id)}
+                            />
+                          </td>
                           <td className="px-4 py-3 font-mono text-slate-500">
                             {imp.id.substring(0, 8)}...
                           </td>
