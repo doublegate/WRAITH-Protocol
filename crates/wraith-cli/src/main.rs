@@ -707,10 +707,10 @@ async fn receive_files(
     node.start().await?;
 
     let listen_addr = node.listen_addr().await?;
-    
+
     // Extract count before logging to avoid cleartext logging of sensitive trusted_peer_ids variable
     let trusted_peer_count = trusted_peer_ids.len();
-    
+
     println!("WRAITH Receive Mode");
     println!("Version: {}", env!("CARGO_PKG_VERSION"));
     println!();
