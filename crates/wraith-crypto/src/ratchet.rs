@@ -444,11 +444,40 @@ impl DoubleRatchet {
     }
 
     /// Force a DH ratchet step (rotate sending key).
-    pub fn force_dh_step<R: RngCore + CryptoRng>(&mut self, rng: &mut R) {
+    ///
+    /// This generates a new DH keypair and updates the sending chain key
+    /// using a DH exchange with the peer's current public key.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RatchetError::NoPeerKey`] if we don't know the peer's public key.
+    /// Returns [`RatchetError::InvalidPublicKey`] if the peer key is invalid.
+    pub fn force_dh_step<R: RngCore + CryptoRng>(&mut self, rng: &mut R) -> Result<(), RatchetError> {
+        if self.send_count == 0 {
+            return Ok(());
+        }
+
+        let peer_public = self.dh_peer.ok_or(RatchetError::NoPeerKey)?;
+
+        // Generate new DH keypair
         self.dh_self = PrivateKey::generate(rng);
         self.dh_self_public = self.dh_self.public_key();
+
+        // DH with new key and peer's current public key
+        let dh_out = self.dh_self
+            .exchange(&peer_public)
+            .ok_or(RatchetError::InvalidPublicKey)?;
+
+        // Derive new root key and sending chain key
+        let (new_root, send_chain) = kdf_rk(&self.root_key, dh_out.as_bytes());
+        self.root_key = new_root;
+        self.send_chain_key = Some(send_chain);
+
+        // Reset counters
         self.prev_send_count = self.send_count;
         self.send_count = 0;
+
+        Ok(())
     }
 
     /// Mix external entropy (e.g., Post-Quantum Shared Secret) into the root key.
