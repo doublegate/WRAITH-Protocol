@@ -85,6 +85,10 @@ export async function stopListener(listenerId: string): Promise<void> {
   await invoke('stop_listener', { listenerId });
 }
 
+export async function deleteListener(id: string): Promise<void> {
+  await invoke('delete_listener', { id });
+}
+
 // --- Commands ---
 
 export async function sendCommand(
@@ -151,6 +155,10 @@ export async function getAttackChain(id: string): Promise<AttackChain> {
 
 export async function executeAttackChain(chainId: string, implantId: string): Promise<void> {
   await invoke('execute_attack_chain', { chainId, implantId });
+}
+
+export async function deleteAttackChain(id: string): Promise<void> {
+  await invoke('delete_attack_chain', { id });
 }
 
 // --- Playbooks ---

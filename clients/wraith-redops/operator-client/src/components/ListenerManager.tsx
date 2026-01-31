@@ -4,7 +4,7 @@ import { ConfirmDialog } from './ui/ConfirmDialog';
 import { useToastStore } from '../stores/toastStore';
 import { useAppStore } from '../stores/appStore';
 import * as ipc from '../lib/ipc';
-import { Play, Square, Plus, X } from 'lucide-react';
+import { Play, Square, Plus, X, Trash2 } from 'lucide-react';
 
 export default function ListenerManager() {
   const { listeners, refreshListeners } = useAppStore();
@@ -68,6 +68,23 @@ export default function ListenerManager() {
           refreshListeners();
         } catch (e) {
           addToast('error', 'Failed to stop listener: ' + e);
+        }
+      },
+    });
+  };
+
+  const handleDelete = (id: string, lName: string) => {
+    setConfirmAction({
+      open: true,
+      title: 'Delete Listener',
+      message: `Permanently delete listener "${lName}"? This cannot be undone.`,
+      action: async () => {
+        try {
+          await ipc.deleteListener(id);
+          addToast('success', `Listener "${lName}" deleted`);
+          refreshListeners();
+        } catch (e) {
+          addToast('error', 'Failed to delete listener: ' + e);
         }
       },
     });
@@ -224,6 +241,13 @@ export default function ListenerManager() {
                           <Square className="w-3 h-3" />
                         </button>
                       )}
+                      <button
+                        onClick={() => handleDelete(l.id, l.name)}
+                        className="text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded transition-all"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
                     </div>
                   </td>
                 </tr>

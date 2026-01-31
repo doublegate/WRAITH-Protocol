@@ -43,6 +43,7 @@ service OperatorService {
     rpc ListListeners(ListListenersRequest) returns (ListListenersResponse);
     rpc StartListener(ListenerActionRequest) returns (Listener);
     rpc StopListener(ListenerActionRequest) returns (Listener);
+    rpc DeleteListener(ListenerActionRequest) returns (google.protobuf.Empty);
 
     // Builder
     rpc GenerateImplant(GenerateImplantRequest) returns (stream PayloadChunk);
@@ -57,6 +58,7 @@ service OperatorService {
     rpc ListAttackChains(ListAttackChainsRequest) returns (ListAttackChainsResponse);
     rpc ExecuteAttackChain(ExecuteAttackChainRequest) returns (google.protobuf.Empty);
     rpc GetAttackChain(GetAttackChainRequest) returns (AttackChain);
+    rpc DeleteAttackChain(GetAttackChainRequest) returns (google.protobuf.Empty);
 
     // Playbooks
     rpc ListPlaybooks(ListPlaybooksRequest) returns (ListPlaybooksResponse);

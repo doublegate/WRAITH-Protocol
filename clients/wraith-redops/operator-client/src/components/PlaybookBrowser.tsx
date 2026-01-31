@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Button } from './ui/Button';
+import { ConfirmDialog } from './ui/ConfirmDialog';
 import { useToastStore } from '../stores/toastStore';
 import * as ipc from '../lib/ipc';
 import type { Playbook, AttackChain } from '../types';
-import { BookOpen, Play, ChevronRight, List } from 'lucide-react';
+import { BookOpen, Play, ChevronRight, List, Trash2 } from 'lucide-react';
 
 export default function PlaybookBrowser() {
   const addToast = useToastStore((s) => s.addToast);
@@ -14,6 +15,13 @@ export default function PlaybookBrowser() {
   const [selectedPlaybook, setSelectedPlaybook] = useState<Playbook | null>(null);
   const [selectedChain, setSelectedChain] = useState<AttackChain | null>(null);
   const [loading, setLoading] = useState(false);
+  
+  const [confirmAction, setConfirmAction] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+    action: () => void;
+  }>({ open: false, title: '', message: '', action: () => {} });
 
   const loadPlaybooks = async () => {
     setLoading(true);
@@ -63,8 +71,37 @@ export default function PlaybookBrowser() {
     }
   };
 
+  const handleDeleteChain = (id: string, name: string) => {
+    setConfirmAction({
+      open: true,
+      title: 'Delete Attack Chain',
+      message: `Permanently delete chain "${name}"?`,
+      action: async () => {
+        try {
+          await ipc.deleteAttackChain(id);
+          addToast('success', `Chain "${name}" deleted`);
+          setSelectedChain(null);
+          loadChains();
+        } catch (e) {
+          addToast('error', 'Failed to delete chain: ' + e);
+        }
+      },
+    });
+  };
+
   return (
     <div className="flex flex-col h-full">
+      <ConfirmDialog
+        open={confirmAction.open}
+        title={confirmAction.title}
+        message={confirmAction.message}
+        onConfirm={() => {
+          confirmAction.action();
+          setConfirmAction((s) => ({ ...s, open: false }));
+        }}
+        onCancel={() => setConfirmAction((s) => ({ ...s, open: false }))}
+        variant="danger"
+      />
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-sm font-bold text-white uppercase tracking-wider">
           Playbooks & Chains
@@ -184,12 +221,20 @@ export default function PlaybookBrowser() {
             <h3 className="text-xs font-bold text-white uppercase">
               Chain: {selectedChain.name}
             </h3>
-            <button
-              onClick={() => setSelectedChain(null)}
-              className="text-slate-500 hover:text-white text-xs"
-            >
-              Close
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleDeleteChain(selectedChain.id, selectedChain.name)}
+                className="text-red-400 hover:text-red-300 text-xs flex items-center gap-1"
+              >
+                <Trash2 className="w-3 h-3" /> Delete
+              </button>
+              <button
+                onClick={() => setSelectedChain(null)}
+                className="text-slate-500 hover:text-white text-xs"
+              >
+                Close
+              </button>
+            </div>
           </div>
           <div className="space-y-1">
             {selectedChain.steps.map((step, i) => (

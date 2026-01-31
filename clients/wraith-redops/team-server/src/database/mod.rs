@@ -257,6 +257,14 @@ impl Database {
         Ok(())
     }
 
+    pub async fn delete_listener(&self, id: Uuid) -> Result<()> {
+        sqlx::query("DELETE FROM listeners WHERE id = $1")
+            .bind(id)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
+    }
+
     // --- Command Operations ---
     pub async fn queue_command(
         &self,
@@ -612,6 +620,20 @@ impl Database {
         } else {
             Ok(None)
         }
+    }
+
+    pub async fn delete_attack_chain(&self, id: Uuid) -> Result<()> {
+        let mut tx = self.pool.begin().await?;
+        sqlx::query("DELETE FROM chain_steps WHERE chain_id = $1")
+            .bind(id)
+            .execute(&mut *tx)
+            .await?;
+        sqlx::query("DELETE FROM attack_chains WHERE id = $1")
+            .bind(id)
+            .execute(&mut *tx)
+            .await?;
+        tx.commit().await?;
+        Ok(())
     }
 
     // --- Playbook Operations ---

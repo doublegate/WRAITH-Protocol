@@ -762,6 +762,24 @@ impl OperatorService for OperatorServiceImpl {
         }))
     }
 
+    async fn delete_listener(
+        &self,
+        req: Request<ListenerActionRequest>,
+    ) -> Result<Response<()>, Status> {
+        let req = req.into_inner();
+        let id = uuid::Uuid::parse_str(&req.id).map_err(|_| Status::invalid_argument("Bad ID"))?;
+
+        // Try to stop first
+        let _ = self.listener_manager.stop_listener(&req.id).await;
+
+        self.db
+            .delete_listener(id)
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?;
+
+        Ok(Response::new(()))
+    }
+
     async fn generate_implant(
         &self,
         req: Request<GenerateImplantRequest>,
@@ -1098,6 +1116,22 @@ impl OperatorService for OperatorServiceImpl {
                 })
                 .collect(),
         }))
+    }
+
+    async fn delete_attack_chain(
+        &self,
+        req: Request<GetAttackChainRequest>,
+    ) -> Result<Response<()>, Status> {
+        let req = req.into_inner();
+        let id =
+            uuid::Uuid::parse_str(&req.id).map_err(|_| Status::invalid_argument("Invalid UUID"))?;
+
+        self.db
+            .delete_attack_chain(id)
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?;
+
+        Ok(Response::new(()))
     }
 
     async fn execute_attack_chain(

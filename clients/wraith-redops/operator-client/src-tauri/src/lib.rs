@@ -517,6 +517,19 @@ async fn stop_listener(listener_id: String, state: State<'_, ClientState>) -> Re
 }
 
 #[tauri::command]
+async fn delete_listener(id: String, state: State<'_, ClientState>) -> Result<(), String> {
+    let mut lock = state.client.lock().await;
+    let client = lock.as_mut().ok_or("Not connected")?;
+
+    client
+        .delete_listener(tonic::Request::new(ListenerActionRequest { id }))
+        .await
+        .map_err(|e| format!("gRPC error: {}", e))?;
+
+    Ok(())
+}
+
+#[tauri::command]
 async fn create_phishing(
     type_: String,
     c2_url: String,
@@ -991,6 +1004,19 @@ async fn get_attack_chain(id: String, state: State<'_, ClientState>) -> Result<S
 }
 
 #[tauri::command]
+async fn delete_attack_chain(id: String, state: State<'_, ClientState>) -> Result<(), String> {
+    let mut lock = state.client.lock().await;
+    let client = lock.as_mut().ok_or("Not connected")?;
+
+    client
+        .delete_attack_chain(tonic::Request::new(GetAttackChainRequest { id }))
+        .await
+        .map_err(|e| format!("gRPC error: {}", e))?;
+
+    Ok(())
+}
+
+#[tauri::command]
 async fn set_powershell_profile(
     implant_id: String,
     profile_script: String,
@@ -1062,6 +1088,7 @@ pub fn run() {
             kill_implant,
             start_listener,
             stop_listener,
+            delete_listener,
             create_phishing,
             list_persistence,
             remove_persistence,
@@ -1070,6 +1097,7 @@ pub fn run() {
             list_attack_chains,
             execute_attack_chain,
             get_attack_chain,
+            delete_attack_chain,
             refresh_token,
             get_campaign,
             get_implant,
