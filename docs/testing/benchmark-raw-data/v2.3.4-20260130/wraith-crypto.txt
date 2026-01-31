@@ -1,0 +1,919 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+   Compiling wraith-crypto v2.3.3 (/home/parobek/Code/WRAITH-Protocol/crates/wraith-crypto)
+    Finished `bench` profile [optimized + debuginfo] target(s) in 39.95s
+     Running unittests src/lib.rs (target/release/deps/wraith_crypto-0ebc2842059625e6)
+
+running 124 tests
+test aead::cipher::tests::test_aead_in_place ... ignored
+test aead::cipher::tests::test_aead_key_encrypt_decrypt ... ignored
+test aead::cipher::tests::test_aead_roundtrip ... ignored
+test aead::cipher::tests::test_aead_tamper_detection ... ignored
+test aead::cipher::tests::test_aead_wrong_aad_fails ... ignored
+test aead::cipher::tests::test_aead_wrong_key_fails ... ignored
+test aead::cipher::tests::test_aead_wrong_nonce_fails ... ignored
+test aead::cipher::tests::test_key_commitment ... ignored
+test aead::cipher::tests::test_nonce_from_counter ... ignored
+test aead::replay::tests::test_replay_256_bit_window ... ignored
+test aead::replay::tests::test_replay_protection_basic ... ignored
+test aead::replay::tests::test_replay_protection_large_jump ... ignored
+test aead::replay::tests::test_replay_protection_out_of_order ... ignored
+test aead::replay::tests::test_replay_protection_reset ... ignored
+test aead::replay::tests::test_replay_protection_window_boundary ... ignored
+test aead::replay::tests::test_replay_shift_boundary_conditions ... ignored
+test aead::session::tests::test_buffer_pool ... ignored
+test aead::session::tests::test_needs_rekey ... ignored
+test aead::session::tests::test_session_crypto_counter_increment ... ignored
+test aead::session::tests::test_session_crypto_encrypt_decrypt ... ignored
+test aead::session::tests::test_session_crypto_rekey ... ignored
+test aead::session::tests::test_session_crypto_with_explicit_counter ... ignored
+test aead::session::tests::test_session_crypto_with_pool ... ignored
+test constant_time::tests::test_ct_and ... ignored
+test constant_time::tests::test_ct_assign_false ... ignored
+test constant_time::tests::test_ct_assign_true ... ignored
+test constant_time::tests::test_ct_eq_different ... ignored
+test constant_time::tests::test_ct_eq_different_lengths ... ignored
+test constant_time::tests::test_ct_eq_same ... ignored
+test constant_time::tests::test_ct_or ... ignored
+test constant_time::tests::test_ct_select_false ... ignored
+test constant_time::tests::test_ct_select_true ... ignored
+test constant_time::tests::test_ct_xor ... ignored
+test constant_time::tests::test_ct_xor_self_cancels ... ignored
+test constant_time::tests::test_verify_16 ... ignored
+test constant_time::tests::test_verify_32 ... ignored
+test constant_time::tests::test_verify_64 ... ignored
+test elligator::tests::test_any_bytes_decodable ... ignored
+test elligator::tests::test_decode_timing_consistency ... ignored
+test elligator::tests::test_deterministic_decoding ... ignored
+test elligator::tests::test_elligator_keypair_produces_working_exchange ... ignored
+test elligator::tests::test_elligator_keypair_struct ... ignored
+test elligator::tests::test_encoding_uses_ct_option ... ignored
+test elligator::tests::test_generate_encodable_keypair ... ignored
+test elligator::tests::test_key_exchange_mixed ... ignored
+test elligator::tests::test_key_exchange_with_representative ... ignored
+test elligator::tests::test_multiple_keypairs_unique ... ignored
+test elligator::tests::test_representative_debug ... ignored
+test elligator::tests::test_representative_from_slice ... ignored
+test elligator::tests::test_representative_looks_random ... ignored
+test encrypted_keys::tests::test_change_passphrase ... ignored
+test encrypted_keys::tests::test_decrypted_key_zeroizes ... ignored
+test encrypted_keys::tests::test_default_params ... ignored
+test encrypted_keys::tests::test_empty_passphrase_works ... ignored
+test encrypted_keys::tests::test_encrypt_decrypt_roundtrip ... ignored
+test encrypted_keys::tests::test_high_security_params ... ignored
+test encrypted_keys::tests::test_invalid_params_rejected ... ignored
+test encrypted_keys::tests::test_long_passphrase ... ignored
+test encrypted_keys::tests::test_minimum_valid_params ... ignored
+test encrypted_keys::tests::test_params_serialization ... ignored
+test encrypted_keys::tests::test_serialization_roundtrip ... ignored
+test encrypted_keys::tests::test_tampered_ciphertext_fails ... ignored
+test encrypted_keys::tests::test_truncated_data_fails ... ignored
+test encrypted_keys::tests::test_unicode_passphrase ... ignored
+test encrypted_keys::tests::test_version_check ... ignored
+test encrypted_keys::tests::test_wrong_passphrase_fails ... ignored
+test hash::tests::test_batch_update_empty_chunks ... ignored
+test hash::tests::test_batch_update_mixed_sizes ... ignored
+test hash::tests::test_batch_update_multiple_chunks ... ignored
+test hash::tests::test_batch_update_single_chunk ... ignored
+test hash::tests::test_batch_vs_sequential_identical ... ignored
+test hash::tests::test_blake3_basic ... ignored
+test hash::tests::test_blake3_different_inputs ... ignored
+test hash::tests::test_blake3_empty_string ... ignored
+test hash::tests::test_hkdf_combined ... ignored
+test hash::tests::test_hkdf_expand ... ignored
+test hash::tests::test_hkdf_extract ... ignored
+test hash::tests::test_hkdf_no_salt ... ignored
+test hash::tests::test_kdf_deterministic ... ignored
+test hash::tests::test_kdf_different_contexts ... ignored
+test hash::tests::test_kdf_different_ikm ... ignored
+test hash::tests::test_total_len_tracking ... ignored
+test hash::tests::test_tree_hasher_incremental ... ignored
+test noise::tests::test_full_handshake ... ignored
+test noise::tests::test_keypair_from_bytes ... ignored
+test noise::tests::test_keypair_generation ... ignored
+test noise::tests::test_transport_encryption ... ignored
+test ratchet::tests::test_double_ratchet_basic ... ignored
+test ratchet::tests::test_double_ratchet_bidirectional ... ignored
+test ratchet::tests::test_double_ratchet_multiple_messages_same_chain ... ignored
+test ratchet::tests::test_double_ratchet_out_of_order ... ignored
+test ratchet::tests::test_double_ratchet_tampering_detected ... ignored
+test ratchet::tests::test_double_ratchet_unique_ciphertexts ... ignored
+test ratchet::tests::test_double_ratchet_wrong_key ... ignored
+test ratchet::tests::test_legacy_chain_key_deterministic ... ignored
+test ratchet::tests::test_legacy_chain_key_ratchet ... ignored
+test ratchet::tests::test_message_header_invalid ... ignored
+test ratchet::tests::test_message_header_serialization ... ignored
+test ratchet::tests::test_symmetric_ratchet_counter ... ignored
+test ratchet::tests::test_symmetric_ratchet_deterministic ... ignored
+test ratchet::tests::test_symmetric_ratchet_skip ... ignored
+test ratchet::tests::test_symmetric_ratchet_skip_too_far ... ignored
+test ratchet::tests::test_symmetric_ratchet_unique_keys ... ignored
+test signatures::tests::test_different_messages_different_signatures ... ignored
+test signatures::tests::test_empty_message ... ignored
+test signatures::tests::test_invalid_signature_bytes ... ignored
+test signatures::tests::test_large_message ... ignored
+test signatures::tests::test_sign_verify_roundtrip ... ignored
+test signatures::tests::test_signature_deterministic ... ignored
+test signatures::tests::test_signature_from_bytes_roundtrip ... ignored
+test signatures::tests::test_signature_from_slice ... ignored
+test signatures::tests::test_signature_from_slice_wrong_size ... ignored
+test signatures::tests::test_signing_key_from_bytes_roundtrip ... ignored
+test signatures::tests::test_signing_key_generation ... ignored
+test signatures::tests::test_tampered_signature_fails ... ignored
+test signatures::tests::test_verifying_key_from_bytes_roundtrip ... ignored
+test signatures::tests::test_wrong_key_fails_verification ... ignored
+test signatures::tests::test_wrong_message_fails_verification ... ignored
+test x25519::tests::test_key_serialization_roundtrip ... ignored
+test x25519::tests::test_reject_low_order_points ... ignored
+test x25519::tests::test_rfc7748_vector_1 ... ignored
+test x25519::tests::test_rfc7748_vector_2 ... ignored, x25519-dalek clamping modifies vector 2 scalar; see comment above
+test x25519::tests::test_x25519_key_exchange ... ignored
+test x25519::tests::test_x25519_key_generation ... ignored
+
+test result: ok. 0 passed; 0 failed; 124 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running benches/crypto_bench.rs (target/release/deps/crypto_bench-1f0d56634900da0b)
+Gnuplot not found, using plotters backend
+Benchmarking aead_encrypt/64
+Benchmarking aead_encrypt/64: Warming up for 3.0000 s
+Benchmarking aead_encrypt/64: Collecting 100 samples in estimated 5.0006 s (4.0M iterations)
+Benchmarking aead_encrypt/64: Analyzing
+aead_encrypt/64         time:   [1.2985 µs 1.3371 µs 1.3847 µs]
+                        thrpt:  [44.078 MiB/s 45.649 MiB/s 47.005 MiB/s]
+                 change:
+                        time:   [+11.737% +14.591% +18.531%] (p = 0.00 < 0.05)
+                        thrpt:  [−15.634% −12.733% −10.504%]
+                        Performance has regressed.
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) high mild
+Benchmarking aead_encrypt/256
+Benchmarking aead_encrypt/256: Warming up for 3.0000 s
+Benchmarking aead_encrypt/256: Collecting 100 samples in estimated 5.0033 s (3.9M iterations)
+Benchmarking aead_encrypt/256: Analyzing
+aead_encrypt/256        time:   [1.2928 µs 1.3044 µs 1.3186 µs]
+                        thrpt:  [185.16 MiB/s 187.17 MiB/s 188.84 MiB/s]
+                 change:
+                        time:   [+1.1748% +2.3864% +3.6361%] (p = 0.00 < 0.05)
+                        thrpt:  [−3.5085% −2.3308% −1.1612%]
+                        Performance has regressed.
+Found 9 outliers among 100 measurements (9.00%)
+  1 (1.00%) high mild
+  8 (8.00%) high severe
+Benchmarking aead_encrypt/1024
+Benchmarking aead_encrypt/1024: Warming up for 3.0000 s
+Benchmarking aead_encrypt/1024: Collecting 100 samples in estimated 5.0041 s (2.7M iterations)
+Benchmarking aead_encrypt/1024: Analyzing
+aead_encrypt/1024       time:   [1.9094 µs 1.9473 µs 1.9929 µs]
+                        thrpt:  [490.03 MiB/s 501.50 MiB/s 511.45 MiB/s]
+                 change:
+                        time:   [+7.2486% +9.4299% +11.559%] (p = 0.00 < 0.05)
+                        thrpt:  [−10.361% −8.6173% −6.7587%]
+                        Performance has regressed.
+Found 17 outliers among 100 measurements (17.00%)
+  2 (2.00%) high mild
+  15 (15.00%) high severe
+Benchmarking aead_encrypt/4096
+Benchmarking aead_encrypt/4096: Warming up for 3.0000 s
+Benchmarking aead_encrypt/4096: Collecting 100 samples in estimated 5.0112 s (858k iterations)
+Benchmarking aead_encrypt/4096: Analyzing
+aead_encrypt/4096       time:   [5.1187 µs 5.3960 µs 5.7570 µs]
+                        thrpt:  [678.52 MiB/s 723.91 MiB/s 763.13 MiB/s]
+                 change:
+                        time:   [+48.968% +55.908% +62.949%] (p = 0.00 < 0.05)
+                        thrpt:  [−38.631% −35.860% −32.871%]
+                        Performance has regressed.
+Found 2 outliers among 100 measurements (2.00%)
+  1 (1.00%) high mild
+  1 (1.00%) high severe
+Benchmarking aead_encrypt/16384
+Benchmarking aead_encrypt/16384: Warming up for 3.0000 s
+Benchmarking aead_encrypt/16384: Collecting 100 samples in estimated 5.0480 s (359k iterations)
+Benchmarking aead_encrypt/16384: Analyzing
+aead_encrypt/16384      time:   [12.497 µs 12.737 µs 13.034 µs]
+                        thrpt:  [1.1707 GiB/s 1.1980 GiB/s 1.2210 GiB/s]
+                 change:
+                        time:   [+7.1309% +9.4328% +11.791%] (p = 0.00 < 0.05)
+                        thrpt:  [−10.547% −8.6197% −6.6563%]
+                        Performance has regressed.
+Found 10 outliers among 100 measurements (10.00%)
+  1 (1.00%) high mild
+  9 (9.00%) high severe
+Benchmarking aead_encrypt/65536
+Benchmarking aead_encrypt/65536: Warming up for 3.0000 s
+Benchmarking aead_encrypt/65536: Collecting 100 samples in estimated 5.2202 s (111k iterations)
+Benchmarking aead_encrypt/65536: Analyzing
+aead_encrypt/65536      time:   [45.517 µs 46.499 µs 47.689 µs]
+                        thrpt:  [1.2799 GiB/s 1.3126 GiB/s 1.3409 GiB/s]
+                 change:
+                        time:   [+4.5045% +5.9423% +7.7377%] (p = 0.00 < 0.05)
+                        thrpt:  [−7.1820% −5.6090% −4.3103%]
+                        Performance has regressed.
+Found 5 outliers among 100 measurements (5.00%)
+  1 (1.00%) high mild
+  4 (4.00%) high severe
+
+Benchmarking aead_decrypt/64
+Benchmarking aead_decrypt/64: Warming up for 3.0000 s
+Benchmarking aead_decrypt/64: Collecting 100 samples in estimated 5.0056 s (3.1M iterations)
+Benchmarking aead_decrypt/64: Analyzing
+aead_decrypt/64         time:   [1.2756 µs 1.2986 µs 1.3234 µs]
+                        thrpt:  [46.119 MiB/s 47.000 MiB/s 47.849 MiB/s]
+                 change:
+                        time:   [+7.6490% +8.8136% +9.9710%] (p = 0.00 < 0.05)
+                        thrpt:  [−9.0669% −8.0997% −7.1055%]
+                        Performance has regressed.
+Found 2 outliers among 100 measurements (2.00%)
+  2 (2.00%) high mild
+Benchmarking aead_decrypt/256
+Benchmarking aead_decrypt/256: Warming up for 3.0000 s
+Benchmarking aead_decrypt/256: Collecting 100 samples in estimated 5.0011 s (3.7M iterations)
+Benchmarking aead_decrypt/256: Analyzing
+aead_decrypt/256        time:   [1.3364 µs 1.3538 µs 1.3747 µs]
+                        thrpt:  [177.60 MiB/s 180.34 MiB/s 182.69 MiB/s]
+                 change:
+                        time:   [+3.4328% +4.3765% +5.5120%] (p = 0.00 < 0.05)
+                        thrpt:  [−5.2240% −4.1930% −3.3189%]
+                        Performance has regressed.
+Found 8 outliers among 100 measurements (8.00%)
+  1 (1.00%) high mild
+  7 (7.00%) high severe
+Benchmarking aead_decrypt/1024
+Benchmarking aead_decrypt/1024: Warming up for 3.0000 s
+Benchmarking aead_decrypt/1024: Collecting 100 samples in estimated 5.0003 s (2.6M iterations)
+Benchmarking aead_decrypt/1024: Analyzing
+aead_decrypt/1024       time:   [1.8726 µs 1.9100 µs 1.9552 µs]
+                        thrpt:  [499.47 MiB/s 511.28 MiB/s 521.50 MiB/s]
+                 change:
+                        time:   [+3.9271% +5.6482% +7.5972%] (p = 0.00 < 0.05)
+                        thrpt:  [−7.0607% −5.3462% −3.7788%]
+                        Performance has regressed.
+Found 18 outliers among 100 measurements (18.00%)
+  5 (5.00%) high mild
+  13 (13.00%) high severe
+Benchmarking aead_decrypt/4096
+Benchmarking aead_decrypt/4096: Warming up for 3.0000 s
+Benchmarking aead_decrypt/4096: Collecting 100 samples in estimated 5.0017 s (1.3M iterations)
+Benchmarking aead_decrypt/4096: Analyzing
+aead_decrypt/4096       time:   [3.8202 µs 3.8938 µs 3.9843 µs]
+                        thrpt:  [980.42 MiB/s 1003.2 MiB/s 1022.5 MiB/s]
+                 change:
+                        time:   [+1.4113% +2.8451% +5.0030%] (p = 0.00 < 0.05)
+                        thrpt:  [−4.7646% −2.7664% −1.3917%]
+                        Performance has regressed.
+Found 10 outliers among 100 measurements (10.00%)
+  3 (3.00%) high mild
+  7 (7.00%) high severe
+Benchmarking aead_decrypt/16384
+Benchmarking aead_decrypt/16384: Warming up for 3.0000 s
+Benchmarking aead_decrypt/16384: Collecting 100 samples in estimated 5.0116 s (399k iterations)
+Benchmarking aead_decrypt/16384: Analyzing
+aead_decrypt/16384      time:   [11.842 µs 12.253 µs 12.737 µs]
+                        thrpt:  [1.1980 GiB/s 1.2453 GiB/s 1.2886 GiB/s]
+                 change:
+                        time:   [+1.4655% +2.8710% +4.7691%] (p = 0.00 < 0.05)
+                        thrpt:  [−4.5520% −2.7908% −1.4443%]
+                        Performance has regressed.
+Found 7 outliers among 100 measurements (7.00%)
+  1 (1.00%) high mild
+  6 (6.00%) high severe
+Benchmarking aead_decrypt/65536
+Benchmarking aead_decrypt/65536: Warming up for 3.0000 s
+Benchmarking aead_decrypt/65536: Collecting 100 samples in estimated 5.1279 s (111k iterations)
+Benchmarking aead_decrypt/65536: Analyzing
+aead_decrypt/65536      time:   [44.896 µs 46.029 µs 47.328 µs]
+                        thrpt:  [1.2896 GiB/s 1.3260 GiB/s 1.3595 GiB/s]
+                 change:
+                        time:   [+2.1749% +3.6153% +5.3844%] (p = 0.00 < 0.05)
+                        thrpt:  [−5.1093% −3.4892% −2.1286%]
+                        Performance has regressed.
+Found 18 outliers among 100 measurements (18.00%)
+  9 (9.00%) high mild
+  9 (9.00%) high severe
+
+Benchmarking aead_roundtrip/1200
+Benchmarking aead_roundtrip/1200: Warming up for 3.0000 s
+Benchmarking aead_roundtrip/1200: Collecting 100 samples in estimated 5.0162 s (1.2M iterations)
+Benchmarking aead_roundtrip/1200: Analyzing
+aead_roundtrip/1200     time:   [4.1542 µs 4.2548 µs 4.3778 µs]
+                        thrpt:  [261.41 MiB/s 268.97 MiB/s 275.48 MiB/s]
+                 change:
+                        time:   [+0.5950% +1.7569% +3.3154%] (p = 0.00 < 0.05)
+                        thrpt:  [−3.2090% −1.7266% −0.5915%]
+                        Change within noise threshold.
+Found 12 outliers among 100 measurements (12.00%)
+  4 (4.00%) high mild
+  8 (8.00%) high severe
+Benchmarking aead_roundtrip/1400
+Benchmarking aead_roundtrip/1400: Warming up for 3.0000 s
+Benchmarking aead_roundtrip/1400: Collecting 100 samples in estimated 5.0165 s (1.1M iterations)
+Benchmarking aead_roundtrip/1400: Analyzing
+aead_roundtrip/1400     time:   [4.4322 µs 4.5760 µs 4.7259 µs]
+                        thrpt:  [282.52 MiB/s 291.77 MiB/s 301.24 MiB/s]
+                 change:
+                        time:   [+2.0393% +3.4646% +5.0539%] (p = 0.00 < 0.05)
+                        thrpt:  [−4.8108% −3.3485% −1.9985%]
+                        Performance has regressed.
+Found 11 outliers among 100 measurements (11.00%)
+  2 (2.00%) high mild
+  9 (9.00%) high severe
+Benchmarking aead_roundtrip/4096
+Benchmarking aead_roundtrip/4096: Warming up for 3.0000 s
+Benchmarking aead_roundtrip/4096: Collecting 100 samples in estimated 5.0034 s (651k iterations)
+Benchmarking aead_roundtrip/4096: Analyzing
+aead_roundtrip/4096     time:   [7.7741 µs 8.4626 µs 9.2928 µs]
+                        thrpt:  [420.35 MiB/s 461.59 MiB/s 502.47 MiB/s]
+                 change:
+                        time:   [+2.8153% +6.2028% +10.585%] (p = 0.00 < 0.05)
+                        thrpt:  [−9.5718% −5.8405% −2.7383%]
+                        Performance has regressed.
+Found 11 outliers among 100 measurements (11.00%)
+  4 (4.00%) high mild
+  7 (7.00%) high severe
+
+Benchmarking aead_encrypt_in_place/64
+Benchmarking aead_encrypt_in_place/64: Warming up for 3.0000 s
+Benchmarking aead_encrypt_in_place/64: Collecting 100 samples in estimated 5.0049 s (3.9M iterations)
+Benchmarking aead_encrypt_in_place/64: Analyzing
+aead_encrypt_in_place/64
+                        time:   [1.2361 µs 1.2669 µs 1.3034 µs]
+                        thrpt:  [46.828 MiB/s 48.175 MiB/s 49.378 MiB/s]
+                 change:
+                        time:   [+3.2130% +4.8865% +6.7209%] (p = 0.00 < 0.05)
+                        thrpt:  [−6.2977% −4.6589% −3.1130%]
+                        Performance has regressed.
+Found 12 outliers among 100 measurements (12.00%)
+  12 (12.00%) high severe
+Benchmarking aead_encrypt_in_place/256
+Benchmarking aead_encrypt_in_place/256: Warming up for 3.0000 s
+Benchmarking aead_encrypt_in_place/256: Collecting 100 samples in estimated 5.0042 s (3.3M iterations)
+Benchmarking aead_encrypt_in_place/256: Analyzing
+aead_encrypt_in_place/256
+                        time:   [1.3183 µs 1.3482 µs 1.3793 µs]
+                        thrpt:  [177.00 MiB/s 181.08 MiB/s 185.20 MiB/s]
+                 change:
+                        time:   [+2.4591% +3.8477% +5.2243%] (p = 0.00 < 0.05)
+                        thrpt:  [−4.9649% −3.7051% −2.4001%]
+                        Performance has regressed.
+Found 17 outliers among 100 measurements (17.00%)
+  3 (3.00%) high mild
+  14 (14.00%) high severe
+Benchmarking aead_encrypt_in_place/1024
+Benchmarking aead_encrypt_in_place/1024: Warming up for 3.0000 s
+Benchmarking aead_encrypt_in_place/1024: Collecting 100 samples in estimated 5.0023 s (2.2M iterations)
+Benchmarking aead_encrypt_in_place/1024: Analyzing
+aead_encrypt_in_place/1024
+                        time:   [1.8366 µs 1.9399 µs 2.0689 µs]
+                        thrpt:  [472.01 MiB/s 503.41 MiB/s 531.71 MiB/s]
+                 change:
+                        time:   [−0.9579% +3.5011% +8.8401%] (p = 0.15 > 0.05)
+                        thrpt:  [−8.1221% −3.3826% +0.9671%]
+                        No change in performance detected.
+Found 10 outliers among 100 measurements (10.00%)
+  3 (3.00%) high mild
+  7 (7.00%) high severe
+Benchmarking aead_encrypt_in_place/4096
+Benchmarking aead_encrypt_in_place/4096: Warming up for 3.0000 s
+Benchmarking aead_encrypt_in_place/4096: Collecting 100 samples in estimated 5.0080 s (965k iterations)
+Benchmarking aead_encrypt_in_place/4096: Analyzing
+aead_encrypt_in_place/4096
+                        time:   [4.2366 µs 4.3371 µs 4.4390 µs]
+                        thrpt:  [879.99 MiB/s 900.66 MiB/s 922.02 MiB/s]
+                 change:
+                        time:   [+3.8682% +6.8711% +9.7265%] (p = 0.00 < 0.05)
+                        thrpt:  [−8.8643% −6.4293% −3.7242%]
+                        Performance has regressed.
+Benchmarking aead_encrypt_in_place/16384
+Benchmarking aead_encrypt_in_place/16384: Warming up for 3.0000 s
+Benchmarking aead_encrypt_in_place/16384: Collecting 100 samples in estimated 5.0696 s (278k iterations)
+Benchmarking aead_encrypt_in_place/16384: Analyzing
+aead_encrypt_in_place/16384
+                        time:   [12.442 µs 12.726 µs 13.064 µs]
+                        thrpt:  [1.1680 GiB/s 1.1991 GiB/s 1.2264 GiB/s]
+                 change:
+                        time:   [+3.4003% +6.7322% +10.141%] (p = 0.00 < 0.05)
+                        thrpt:  [−9.2073% −6.3075% −3.2884%]
+                        Performance has regressed.
+
+Benchmarking aead_decrypt_in_place/64
+Benchmarking aead_decrypt_in_place/64: Warming up for 3.0000 s
+Benchmarking aead_decrypt_in_place/64: Collecting 100 samples in estimated 5.0026 s (3.8M iterations)
+Benchmarking aead_decrypt_in_place/64: Analyzing
+aead_decrypt_in_place/64
+                        time:   [1.2345 µs 1.2613 µs 1.2932 µs]
+                        thrpt:  [47.196 MiB/s 48.390 MiB/s 49.440 MiB/s]
+                 change:
+                        time:   [+2.7161% +4.4621% +6.5933%] (p = 0.00 < 0.05)
+                        thrpt:  [−6.1855% −4.2715% −2.6443%]
+                        Performance has regressed.
+Found 14 outliers among 100 measurements (14.00%)
+  2 (2.00%) high mild
+  12 (12.00%) high severe
+Benchmarking aead_decrypt_in_place/256
+Benchmarking aead_decrypt_in_place/256: Warming up for 3.0000 s
+Benchmarking aead_decrypt_in_place/256: Collecting 100 samples in estimated 5.0060 s (3.3M iterations)
+Benchmarking aead_decrypt_in_place/256: Analyzing
+aead_decrypt_in_place/256
+                        time:   [1.3516 µs 1.3820 µs 1.4164 µs]
+                        thrpt:  [172.37 MiB/s 176.66 MiB/s 180.63 MiB/s]
+                 change:
+                        time:   [+3.7231% +5.1260% +7.0865%] (p = 0.00 < 0.05)
+                        thrpt:  [−6.6175% −4.8760% −3.5895%]
+                        Performance has regressed.
+Found 18 outliers among 100 measurements (18.00%)
+  3 (3.00%) high mild
+  15 (15.00%) high severe
+Benchmarking aead_decrypt_in_place/1024
+Benchmarking aead_decrypt_in_place/1024: Warming up for 3.0000 s
+Benchmarking aead_decrypt_in_place/1024: Collecting 100 samples in estimated 5.0047 s (2.1M iterations)
+Benchmarking aead_decrypt_in_place/1024: Analyzing
+aead_decrypt_in_place/1024
+                        time:   [1.8554 µs 1.9030 µs 1.9609 µs]
+                        thrpt:  [498.01 MiB/s 513.17 MiB/s 526.33 MiB/s]
+                 change:
+                        time:   [−2.4730% +0.2007% +3.2658%] (p = 0.89 > 0.05)
+                        thrpt:  [−3.1625% −0.2003% +2.5357%]
+                        No change in performance detected.
+Found 15 outliers among 100 measurements (15.00%)
+  1 (1.00%) high mild
+  14 (14.00%) high severe
+Benchmarking aead_decrypt_in_place/4096
+Benchmarking aead_decrypt_in_place/4096: Warming up for 3.0000 s
+Benchmarking aead_decrypt_in_place/4096: Collecting 100 samples in estimated 5.0002 s (808k iterations)
+Benchmarking aead_decrypt_in_place/4096: Analyzing
+aead_decrypt_in_place/4096
+                        time:   [4.0141 µs 4.1086 µs 4.2155 µs]
+                        thrpt:  [926.64 MiB/s 950.74 MiB/s 973.13 MiB/s]
+                 change:
+                        time:   [+4.1156% +7.1365% +10.065%] (p = 0.00 < 0.05)
+                        thrpt:  [−9.1447% −6.6611% −3.9529%]
+                        Performance has regressed.
+Found 3 outliers among 100 measurements (3.00%)
+  3 (3.00%) high mild
+Benchmarking aead_decrypt_in_place/16384
+Benchmarking aead_decrypt_in_place/16384: Warming up for 3.0000 s
+Benchmarking aead_decrypt_in_place/16384: Collecting 100 samples in estimated 5.0613 s (268k iterations)
+Benchmarking aead_decrypt_in_place/16384: Analyzing
+aead_decrypt_in_place/16384
+                        time:   [12.600 µs 12.980 µs 13.367 µs]
+                        thrpt:  [1.1415 GiB/s 1.1756 GiB/s 1.2110 GiB/s]
+                 change:
+                        time:   [−3.7304% −0.6810% +2.3197%] (p = 0.66 > 0.05)
+                        thrpt:  [−2.2671% +0.6856% +3.8749%]
+                        No change in performance detected.
+Found 7 outliers among 100 measurements (7.00%)
+  7 (7.00%) high mild
+
+Benchmarking x25519_keygen
+Benchmarking x25519_keygen: Warming up for 3.0000 s
+Benchmarking x25519_keygen: Collecting 100 samples in estimated 5.0010 s (21M iterations)
+Benchmarking x25519_keygen: Analyzing
+x25519_keygen           time:   [248.19 ns 252.53 ns 258.26 ns]
+                        change: [+7.4192% +11.106% +15.260%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 19 outliers among 100 measurements (19.00%)
+  1 (1.00%) high mild
+  18 (18.00%) high severe
+
+Benchmarking x25519_exchange
+Benchmarking x25519_exchange: Warming up for 3.0000 s
+Benchmarking x25519_exchange: Collecting 100 samples in estimated 5.0066 s (111k iterations)
+Benchmarking x25519_exchange: Analyzing
+x25519_exchange         time:   [41.597 µs 41.739 µs 41.898 µs]
+                        change: [+2.5085% +3.0372% +3.6050%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 8 outliers among 100 measurements (8.00%)
+  1 (1.00%) low mild
+  3 (3.00%) high mild
+  4 (4.00%) high severe
+
+Benchmarking blake3_hash/32
+Benchmarking blake3_hash/32: Warming up for 3.0000 s
+Benchmarking blake3_hash/32: Collecting 100 samples in estimated 5.0002 s (85M iterations)
+Benchmarking blake3_hash/32: Analyzing
+blake3_hash/32          time:   [58.575 ns 59.713 ns 61.038 ns]
+                        thrpt:  [499.98 MiB/s 511.07 MiB/s 521.00 MiB/s]
+                 change:
+                        time:   [+6.1523% +8.0417% +10.551%] (p = 0.00 < 0.05)
+                        thrpt:  [−9.5444% −7.4431% −5.7957%]
+                        Performance has regressed.
+Found 10 outliers among 100 measurements (10.00%)
+  2 (2.00%) high mild
+  8 (8.00%) high severe
+Benchmarking blake3_hash/256
+Benchmarking blake3_hash/256: Warming up for 3.0000 s
+Benchmarking blake3_hash/256: Collecting 100 samples in estimated 5.0010 s (23M iterations)
+Benchmarking blake3_hash/256: Analyzing
+blake3_hash/256         time:   [208.71 ns 211.60 ns 215.28 ns]
+                        thrpt:  [1.1075 GiB/s 1.1268 GiB/s 1.1424 GiB/s]
+                 change:
+                        time:   [+2.1208% +3.8244% +5.5845%] (p = 0.00 < 0.05)
+                        thrpt:  [−5.2891% −3.6835% −2.0767%]
+                        Performance has regressed.
+Found 8 outliers among 100 measurements (8.00%)
+  8 (8.00%) high severe
+Benchmarking blake3_hash/1024
+Benchmarking blake3_hash/1024: Warming up for 3.0000 s
+Benchmarking blake3_hash/1024: Collecting 100 samples in estimated 5.0026 s (5.9M iterations)
+Benchmarking blake3_hash/1024: Analyzing
+blake3_hash/1024        time:   [814.24 ns 837.41 ns 865.63 ns]
+                        thrpt:  [1.1017 GiB/s 1.1388 GiB/s 1.1712 GiB/s]
+                 change:
+                        time:   [+0.6455% +2.0036% +3.8204%] (p = 0.00 < 0.05)
+                        thrpt:  [−3.6798% −1.9642% −0.6414%]
+                        Change within noise threshold.
+Found 14 outliers among 100 measurements (14.00%)
+  8 (8.00%) high mild
+  6 (6.00%) high severe
+Benchmarking blake3_hash/4096
+Benchmarking blake3_hash/4096: Warming up for 3.0000 s
+Benchmarking blake3_hash/4096: Collecting 100 samples in estimated 5.0041 s (2.4M iterations)
+Benchmarking blake3_hash/4096: Analyzing
+blake3_hash/4096        time:   [2.0755 µs 2.1479 µs 2.2358 µs]
+                        thrpt:  [1.7062 GiB/s 1.7760 GiB/s 1.8380 GiB/s]
+                 change:
+                        time:   [+1.9181% +3.7826% +5.8905%] (p = 0.00 < 0.05)
+                        thrpt:  [−5.5628% −3.6448% −1.8820%]
+                        Performance has regressed.
+Found 11 outliers among 100 measurements (11.00%)
+  4 (4.00%) high mild
+  7 (7.00%) high severe
+Benchmarking blake3_hash/65536
+Benchmarking blake3_hash/65536: Warming up for 3.0000 s
+Benchmarking blake3_hash/65536: Collecting 100 samples in estimated 5.1434 s (152k iterations)
+Benchmarking blake3_hash/65536: Analyzing
+blake3_hash/65536       time:   [32.790 µs 33.859 µs 35.182 µs]
+                        thrpt:  [1.7349 GiB/s 1.8026 GiB/s 1.8614 GiB/s]
+                 change:
+                        time:   [+3.4179% +5.1206% +7.0843%] (p = 0.00 < 0.05)
+                        thrpt:  [−6.6156% −4.8711% −3.3050%]
+                        Performance has regressed.
+Found 6 outliers among 100 measurements (6.00%)
+  1 (1.00%) high mild
+  5 (5.00%) high severe
+
+Benchmarking hkdf_extract
+Benchmarking hkdf_extract: Warming up for 3.0000 s
+Benchmarking hkdf_extract: Collecting 100 samples in estimated 5.0002 s (41M iterations)
+Benchmarking hkdf_extract: Analyzing
+hkdf_extract            time:   [119.66 ns 123.48 ns 128.02 ns]
+                        change: [+2.3626% +4.4793% +6.8388%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 7 outliers among 100 measurements (7.00%)
+  1 (1.00%) high mild
+  6 (6.00%) high severe
+
+Benchmarking hkdf_expand
+Benchmarking hkdf_expand: Warming up for 3.0000 s
+Benchmarking hkdf_expand: Collecting 100 samples in estimated 5.0004 s (63M iterations)
+Benchmarking hkdf_expand: Analyzing
+hkdf_expand             time:   [76.723 ns 78.428 ns 80.563 ns]
+                        change: [+2.7897% +4.5463% +6.7212%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 11 outliers among 100 measurements (11.00%)
+  5 (5.00%) high mild
+  6 (6.00%) high severe
+
+Benchmarking hkdf_full
+Benchmarking hkdf_full: Warming up for 3.0000 s
+Benchmarking hkdf_full: Collecting 100 samples in estimated 5.0009 s (24M iterations)
+Benchmarking hkdf_full: Analyzing
+hkdf_full               time:   [197.57 ns 204.17 ns 212.32 ns]
+                        change: [+3.8396% +6.2753% +9.0241%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 11 outliers among 100 measurements (11.00%)
+  2 (2.00%) high mild
+  9 (9.00%) high severe
+
+Benchmarking kdf_derive_key
+Benchmarking kdf_derive_key: Warming up for 3.0000 s
+Benchmarking kdf_derive_key: Collecting 100 samples in estimated 5.0005 s (36M iterations)
+Benchmarking kdf_derive_key: Analyzing
+kdf_derive_key          time:   [133.75 ns 136.34 ns 139.52 ns]
+                        change: [+3.0849% +5.1119% +7.5698%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 14 outliers among 100 measurements (14.00%)
+  2 (2.00%) high mild
+  12 (12.00%) high severe
+
+Benchmarking noise_keypair_generate
+Benchmarking noise_keypair_generate: Warming up for 3.0000 s
+Benchmarking noise_keypair_generate: Collecting 100 samples in estimated 5.0664 s (197k iterations)
+Benchmarking noise_keypair_generate: Analyzing
+noise_keypair_generate  time:   [24.780 µs 25.444 µs 26.261 µs]
+                        change: [+4.0157% +6.4830% +9.4733%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 8 outliers among 100 measurements (8.00%)
+  3 (3.00%) high mild
+  5 (5.00%) high severe
+
+Benchmarking noise_xx_handshake
+Benchmarking noise_xx_handshake: Warming up for 3.0000 s
+Benchmarking noise_xx_handshake: Collecting 100 samples in estimated 6.4131 s (15k iterations)
+Benchmarking noise_xx_handshake: Analyzing
+noise_xx_handshake      time:   [420.07 µs 423.84 µs 428.82 µs]
+                        change: [+5.5325% +9.6194% +13.747%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 10 outliers among 100 measurements (10.00%)
+  1 (1.00%) high mild
+  9 (9.00%) high severe
+
+Benchmarking noise_write_message_1
+Benchmarking noise_write_message_1: Warming up for 3.0000 s
+Benchmarking noise_write_message_1: Collecting 100 samples in estimated 5.2320 s (106k iterations)
+Benchmarking noise_write_message_1: Analyzing
+noise_write_message_1   time:   [48.863 µs 49.830 µs 51.087 µs]
+                        change: [+0.0076% +2.7372% +5.2182%] (p = 0.03 < 0.05)
+                        Change within noise threshold.
+Found 6 outliers among 100 measurements (6.00%)
+  6 (6.00%) high severe
+
+Benchmarking symmetric_ratchet_step
+Benchmarking symmetric_ratchet_step: Warming up for 3.0000 s
+Benchmarking symmetric_ratchet_step: Collecting 100 samples in estimated 5.0003 s (26M iterations)
+Benchmarking symmetric_ratchet_step: Analyzing
+symmetric_ratchet_step  time:   [170.26 ns 176.03 ns 183.08 ns]
+                        change: [+2.3706% +4.1102% +6.4136%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 14 outliers among 100 measurements (14.00%)
+  3 (3.00%) high mild
+  11 (11.00%) high severe
+
+Benchmarking double_ratchet_init_initiator
+Benchmarking double_ratchet_init_initiator: Warming up for 3.0000 s
+Benchmarking double_ratchet_init_initiator: Collecting 100 samples in estimated 5.3251 s (81k iterations)
+Benchmarking double_ratchet_init_initiator: Analyzing
+double_ratchet_init_initiator
+                        time:   [67.338 µs 70.103 µs 73.459 µs]
+                        change: [+1.5600% +3.6657% +6.2486%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 8 outliers among 100 measurements (8.00%)
+  1 (1.00%) high mild
+  7 (7.00%) high severe
+
+Benchmarking double_ratchet_init_responder
+Benchmarking double_ratchet_init_responder: Warming up for 3.0000 s
+Benchmarking double_ratchet_init_responder: Collecting 100 samples in estimated 5.0800 s (197k iterations)
+Benchmarking double_ratchet_init_responder: Analyzing
+double_ratchet_init_responder
+                        time:   [26.555 µs 27.609 µs 28.779 µs]
+                        change: [+8.1038% +9.9691% +11.875%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 12 outliers among 100 measurements (12.00%)
+  4 (4.00%) high mild
+  8 (8.00%) high severe
+
+Benchmarking double_ratchet_encrypt/64
+Benchmarking double_ratchet_encrypt/64: Warming up for 3.0000 s
+Benchmarking double_ratchet_encrypt/64: Collecting 100 samples in estimated 5.2178 s (56k iterations)
+Benchmarking double_ratchet_encrypt/64: Analyzing
+double_ratchet_encrypt/64
+                        time:   [1.7351 µs 1.7767 µs 1.8277 µs]
+                        thrpt:  [33.394 MiB/s 34.354 MiB/s 35.177 MiB/s]
+                 change:
+                        time:   [+18.638% +21.591% +24.714%] (p = 0.00 < 0.05)
+                        thrpt:  [−19.817% −17.757% −15.710%]
+                        Performance has regressed.
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) high mild
+Benchmarking double_ratchet_encrypt/256
+Benchmarking double_ratchet_encrypt/256: Warming up for 3.0000 s
+Benchmarking double_ratchet_encrypt/256: Collecting 100 samples in estimated 5.4678 s (56k iterations)
+Benchmarking double_ratchet_encrypt/256: Analyzing
+double_ratchet_encrypt/256
+                        time:   [1.7420 µs 1.7640 µs 1.7872 µs]
+                        thrpt:  [136.61 MiB/s 138.41 MiB/s 140.15 MiB/s]
+                 change:
+                        time:   [+7.7360% +9.7148% +11.527%] (p = 0.00 < 0.05)
+                        thrpt:  [−10.335% −8.8546% −7.1805%]
+                        Performance has regressed.
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) high mild
+Benchmarking double_ratchet_encrypt/1024
+Benchmarking double_ratchet_encrypt/1024: Warming up for 3.0000 s
+Benchmarking double_ratchet_encrypt/1024: Collecting 100 samples in estimated 5.4048 s (56k iterations)
+Benchmarking double_ratchet_encrypt/1024: Analyzing
+double_ratchet_encrypt/1024
+                        time:   [2.2660 µs 2.2901 µs 2.3210 µs]
+                        thrpt:  [420.75 MiB/s 426.43 MiB/s 430.97 MiB/s]
+                 change:
+                        time:   [+7.2860% +9.6001% +12.455%] (p = 0.00 < 0.05)
+                        thrpt:  [−11.076% −8.7592% −6.7912%]
+                        Performance has regressed.
+Found 16 outliers among 100 measurements (16.00%)
+  10 (10.00%) low mild
+  1 (1.00%) high mild
+  5 (5.00%) high severe
+Benchmarking double_ratchet_encrypt/4096
+Benchmarking double_ratchet_encrypt/4096: Warming up for 3.0000 s
+Benchmarking double_ratchet_encrypt/4096: Collecting 100 samples in estimated 5.0611 s (50k iterations)
+Benchmarking double_ratchet_encrypt/4096: Analyzing
+double_ratchet_encrypt/4096
+                        time:   [4.7281 µs 4.8219 µs 4.9068 µs]
+                        thrpt:  [796.09 MiB/s 810.11 MiB/s 826.18 MiB/s]
+                 change:
+                        time:   [−3.8318% −0.9993% +2.0025%] (p = 0.51 > 0.05)
+                        thrpt:  [−1.9632% +1.0094% +3.9844%]
+                        No change in performance detected.
+
+Benchmarking double_ratchet_decrypt/64
+Benchmarking double_ratchet_decrypt/64: Warming up for 3.0000 s
+Benchmarking double_ratchet_decrypt/64: Collecting 100 samples in estimated 5.6418 s (25k iterations)
+Benchmarking double_ratchet_decrypt/64: Analyzing
+double_ratchet_decrypt/64
+                        time:   [108.95 µs 110.47 µs 112.51 µs]
+                        thrpt:  [555.52 KiB/s 565.75 KiB/s 573.66 KiB/s]
+                 change:
+                        time:   [+0.8673% +3.9095% +7.6412%] (p = 0.02 < 0.05)
+                        thrpt:  [−7.0988% −3.7624% −0.8599%]
+                        Change within noise threshold.
+Found 19 outliers among 100 measurements (19.00%)
+  9 (9.00%) low mild
+  2 (2.00%) high mild
+  8 (8.00%) high severe
+Benchmarking double_ratchet_decrypt/256
+Benchmarking double_ratchet_decrypt/256: Warming up for 3.0000 s
+Benchmarking double_ratchet_decrypt/256: Collecting 100 samples in estimated 5.6491 s (25k iterations)
+Benchmarking double_ratchet_decrypt/256: Analyzing
+double_ratchet_decrypt/256
+                        time:   [110.46 µs 111.28 µs 112.26 µs]
+                        thrpt:  [2.1747 MiB/s 2.1939 MiB/s 2.2103 MiB/s]
+                 change:
+                        time:   [+6.7290% +11.033% +16.285%] (p = 0.00 < 0.05)
+                        thrpt:  [−14.004% −9.9365% −6.3047%]
+                        Performance has regressed.
+Found 17 outliers among 100 measurements (17.00%)
+  2 (2.00%) high mild
+  15 (15.00%) high severe
+Benchmarking double_ratchet_decrypt/1024
+Benchmarking double_ratchet_decrypt/1024: Warming up for 3.0000 s
+Benchmarking double_ratchet_decrypt/1024: Collecting 100 samples in estimated 5.7849 s (25k iterations)
+Benchmarking double_ratchet_decrypt/1024: Analyzing
+double_ratchet_decrypt/1024
+                        time:   [113.00 µs 114.27 µs 115.78 µs]
+                        thrpt:  [8.4350 MiB/s 8.5463 MiB/s 8.6421 MiB/s]
+                 change:
+                        time:   [+15.665% +22.147% +29.605%] (p = 0.00 < 0.05)
+                        thrpt:  [−22.842% −18.132% −13.543%]
+                        Performance has regressed.
+Found 22 outliers among 100 measurements (22.00%)
+  22 (22.00%) high severe
+Benchmarking double_ratchet_decrypt/4096
+Benchmarking double_ratchet_decrypt/4096: Warming up for 3.0000 s
+Benchmarking double_ratchet_decrypt/4096: Collecting 100 samples in estimated 5.9077 s (25k iterations)
+Benchmarking double_ratchet_decrypt/4096: Analyzing
+double_ratchet_decrypt/4096
+                        time:   [114.04 µs 115.21 µs 116.71 µs]
+                        thrpt:  [33.470 MiB/s 33.906 MiB/s 34.254 MiB/s]
+                 change:
+                        time:   [+4.3930% +8.7289% +13.710%] (p = 0.00 < 0.05)
+                        thrpt:  [−12.057% −8.0281% −4.2082%]
+                        Performance has regressed.
+Found 13 outliers among 100 measurements (13.00%)
+  3 (3.00%) high mild
+  10 (10.00%) high severe
+
+Benchmarking double_ratchet_roundtrip_1k
+Benchmarking double_ratchet_roundtrip_1k: Warming up for 3.0000 s
+Benchmarking double_ratchet_roundtrip_1k: Collecting 100 samples in estimated 6.0102 s (25k iterations)
+Benchmarking double_ratchet_roundtrip_1k: Analyzing
+double_ratchet_roundtrip_1k
+                        time:   [114.25 µs 116.54 µs 119.48 µs]
+                        change: [+1.8969% +4.2540% +7.4736%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 9 outliers among 100 measurements (9.00%)
+  9 (9.00%) high severe
+
+Benchmarking message_header_serialize
+Benchmarking message_header_serialize: Warming up for 3.0000 s
+Benchmarking message_header_serialize: Collecting 100 samples in estimated 5.0000 s (5.4B iterations)
+Benchmarking message_header_serialize: Analyzing
+message_header_serialize
+                        time:   [927.64 ps 932.69 ps 938.97 ps]
+                        change: [+6.5445% +10.678% +15.447%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 19 outliers among 100 measurements (19.00%)
+  1 (1.00%) low mild
+  18 (18.00%) high severe
+
+Benchmarking message_header_deserialize
+Benchmarking message_header_deserialize: Warming up for 3.0000 s
+Benchmarking message_header_deserialize: Collecting 100 samples in estimated 5.0000 s (995M iterations)
+Benchmarking message_header_deserialize: Analyzing
+message_header_deserialize
+                        time:   [4.9942 ns 5.0313 ns 5.0748 ns]
+                        change: [+13.224% +14.477% +15.765%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 20 outliers among 100 measurements (20.00%)
+  8 (8.00%) high mild
+  12 (12.00%) high severe
+
+Benchmarking elligator_generate_keypair
+Benchmarking elligator_generate_keypair: Warming up for 3.0000 s
+Benchmarking elligator_generate_keypair: Collecting 100 samples in estimated 5.1718 s (91k iterations)
+Benchmarking elligator_generate_keypair: Analyzing
+elligator_generate_keypair
+                        time:   [55.951 µs 56.417 µs 56.947 µs]
+                        change: [+7.0144% +12.783% +19.404%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 22 outliers among 100 measurements (22.00%)
+  22 (22.00%) high severe
+
+Benchmarking elligator_keypair_struct
+Benchmarking elligator_keypair_struct: Warming up for 3.0000 s
+Benchmarking elligator_keypair_struct: Collecting 100 samples in estimated 5.0951 s (91k iterations)
+Benchmarking elligator_keypair_struct: Analyzing
+elligator_keypair_struct
+                        time:   [57.134 µs 58.322 µs 59.824 µs]
+                        change: [−2.2531% −0.0757% +2.7695%] (p = 0.95 > 0.05)
+                        No change in performance detected.
+Found 7 outliers among 100 measurements (7.00%)
+  1 (1.00%) high mild
+  6 (6.00%) high severe
+
+Benchmarking elligator_decode_representative
+Benchmarking elligator_decode_representative: Warming up for 3.0000 s
+Benchmarking elligator_decode_representative: Collecting 100 samples in estimated 5.0749 s (252k iterations)
+Benchmarking elligator_decode_representative: Analyzing
+elligator_decode_representative
+                        time:   [20.045 µs 20.214 µs 20.435 µs]
+                        change: [+2.4491% +5.4259% +8.4520%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 12 outliers among 100 measurements (12.00%)
+  1 (1.00%) high mild
+  11 (11.00%) high severe
+
+Benchmarking elligator_decode_random_bytes
+Benchmarking elligator_decode_random_bytes: Warming up for 3.0000 s
+Benchmarking elligator_decode_random_bytes: Collecting 100 samples in estimated 5.0303 s (242k iterations)
+Benchmarking elligator_decode_random_bytes: Analyzing
+elligator_decode_random_bytes
+                        time:   [20.187 µs 20.310 µs 20.448 µs]
+                        change: [+0.6210% +1.2869% +1.9552%] (p = 0.00 < 0.05)
+                        Change within noise threshold.
+Found 5 outliers among 100 measurements (5.00%)
+  3 (3.00%) high mild
+  2 (2.00%) high severe
+
+Benchmarking elligator_exchange_representative
+Benchmarking elligator_exchange_representative: Warming up for 3.0000 s
+Benchmarking elligator_exchange_representative: Collecting 100 samples in estimated 5.2890 s (81k iterations)
+Benchmarking elligator_exchange_representative: Analyzing
+elligator_exchange_representative
+                        time:   [61.689 µs 61.907 µs 62.135 µs]
+                        change: [+2.1672% +2.5484% +2.9707%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 2 outliers among 100 measurements (2.00%)
+  2 (2.00%) high mild
+
+Benchmarking ct_eq_32_bytes_equal
+Benchmarking ct_eq_32_bytes_equal: Warming up for 3.0000 s
+Benchmarking ct_eq_32_bytes_equal: Collecting 100 samples in estimated 5.0002 s (119M iterations)
+Benchmarking ct_eq_32_bytes_equal: Analyzing
+ct_eq_32_bytes_equal    time:   [40.482 ns 40.673 ns 40.918 ns]
+                        change: [−0.1417% +0.2126% +0.6205%] (p = 0.28 > 0.05)
+                        No change in performance detected.
+Found 10 outliers among 100 measurements (10.00%)
+  6 (6.00%) high mild
+  4 (4.00%) high severe
+
+Benchmarking ct_eq_32_bytes_unequal
+Benchmarking ct_eq_32_bytes_unequal: Warming up for 3.0000 s
+Benchmarking ct_eq_32_bytes_unequal: Collecting 100 samples in estimated 5.0001 s (120M iterations)
+Benchmarking ct_eq_32_bytes_unequal: Analyzing
+ct_eq_32_bytes_unequal  time:   [40.340 ns 40.410 ns 40.486 ns]
+                        change: [−0.4956% −0.1616% +0.1745%] (p = 0.36 > 0.05)
+                        No change in performance detected.
+Found 16 outliers among 100 measurements (16.00%)
+  7 (7.00%) high mild
+  9 (9.00%) high severe
+
+Benchmarking ct_select_8_bytes
+Benchmarking ct_select_8_bytes: Warming up for 3.0000 s
+Benchmarking ct_select_8_bytes: Collecting 100 samples in estimated 5.0000 s (1.9B iterations)
+Benchmarking ct_select_8_bytes: Analyzing
+ct_select_8_bytes       time:   [2.5301 ns 2.5355 ns 2.5410 ns]
+                        change: [−2.2528% −1.6872% −1.1405%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 4 outliers among 100 measurements (4.00%)
+  4 (4.00%) high mild
+
+Benchmarking replay_protection/sequential_accept
+Benchmarking replay_protection/sequential_accept: Warming up for 3.0000 s
+Benchmarking replay_protection/sequential_accept: Collecting 100 samples in estimated 5.0002 s (27M iterations)
+Benchmarking replay_protection/sequential_accept: Analyzing
+replay_protection/sequential_accept
+                        time:   [67.682 ns 78.820 ns 88.073 ns]
+                        change: [+43.499% +85.038% +132.28%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Benchmarking replay_protection/replay_reject
+Benchmarking replay_protection/replay_reject: Warming up for 3.0000 s
+Benchmarking replay_protection/replay_reject: Collecting 100 samples in estimated 5.0009 s (26M iterations)
+Benchmarking replay_protection/replay_reject: Analyzing
+replay_protection/replay_reject
+                        time:   [100.98 ns 104.93 ns 108.81 ns]
+                        change: [+38.554% +68.982% +109.35%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+

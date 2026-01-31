@@ -1,0 +1,1437 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+   Compiling wraith-crypto v2.3.3 (/home/parobek/Code/WRAITH-Protocol/crates/wraith-crypto)
+   Compiling wraith-discovery v2.3.3 (/home/parobek/Code/WRAITH-Protocol/crates/wraith-discovery)
+   Compiling wraith-obfuscation v2.3.3 (/home/parobek/Code/WRAITH-Protocol/crates/wraith-obfuscation)
+   Compiling wraith-files v2.3.3 (/home/parobek/Code/WRAITH-Protocol/crates/wraith-files)
+   Compiling wraith-core v2.3.3 (/home/parobek/Code/WRAITH-Protocol/crates/wraith-core)
+    Finished `bench` profile [optimized + debuginfo] target(s) in 2m 04s
+     Running unittests src/lib.rs (target/release/deps/wraith_core-8dad4e419121ca73)
+
+running 439 tests
+test congestion::tests::test_bbr_accessors ... ignored
+test congestion::tests::test_bbr_bandwidth_estimation ... ignored
+test congestion::tests::test_bbr_bandwidth_estimation_accuracy ... ignored
+test congestion::tests::test_bbr_bandwidth_window_max ... ignored
+test congestion::tests::test_bbr_bdp_calculation ... ignored
+test congestion::tests::test_bbr_can_send ... ignored
+test congestion::tests::test_bbr_complete_phase_cycle ... ignored
+test congestion::tests::test_bbr_cwnd_initial ... ignored
+test congestion::tests::test_bbr_cwnd_minimum ... ignored
+test congestion::tests::test_bbr_cwnd_with_bdp ... ignored
+test congestion::tests::test_bbr_default_impl ... ignored
+test congestion::tests::test_bbr_drain_phase ... ignored
+test congestion::tests::test_bbr_drain_to_probe_bw ... ignored
+test congestion::tests::test_bbr_inflight_never_negative ... ignored
+test congestion::tests::test_bbr_inflight_tracking ... ignored
+test congestion::tests::test_bbr_initial_state ... ignored
+test congestion::tests::test_bbr_pacing_rate_initial ... ignored
+test congestion::tests::test_bbr_pacing_rate_with_bandwidth ... ignored
+test congestion::tests::test_bbr_packet_acked ... ignored
+test congestion::tests::test_bbr_packet_lost ... ignored
+test congestion::tests::test_bbr_packet_sent ... ignored
+test congestion::tests::test_bbr_probe_bw_cycle ... ignored
+test congestion::tests::test_bbr_probe_bw_full_cycle ... ignored
+test congestion::tests::test_bbr_probe_bw_phase ... ignored
+test congestion::tests::test_bbr_probe_rtt_cwnd ... ignored
+test congestion::tests::test_bbr_probe_rtt_entry ... ignored
+test congestion::tests::test_bbr_probe_rtt_exit ... ignored
+test congestion::tests::test_bbr_rtt_measurement_accuracy ... ignored
+test congestion::tests::test_bbr_rtt_update ... ignored
+test congestion::tests::test_bbr_rtt_window_limit ... ignored
+test congestion::tests::test_bbr_startup_continuous_growth ... ignored
+test congestion::tests::test_bbr_startup_exit_on_plateau ... ignored
+test congestion::tests::test_bbr_startup_phase ... ignored
+test congestion::tests::test_bbr_state_transitions ... ignored
+test congestion::tests::test_can_send_paced_initial ... ignored
+test congestion::tests::test_congestion_window_alias ... ignored
+test congestion::tests::test_cwnd_fixed_point ... ignored
+test congestion::tests::test_drain_gain_fixed_point ... ignored
+test congestion::tests::test_estimated_bandwidth ... ignored
+test congestion::tests::test_estimated_rtt ... ignored
+test congestion::tests::test_fixed_point_gain_application ... ignored
+test congestion::tests::test_is_bandwidth_limited_drain ... ignored
+test congestion::tests::test_is_bandwidth_limited_probe_bw ... ignored
+test congestion::tests::test_is_bandwidth_limited_probe_rtt ... ignored
+test congestion::tests::test_is_bandwidth_limited_startup ... ignored
+test congestion::tests::test_on_packet_sent_paced ... ignored
+test congestion::tests::test_pacing_delay_calculation ... ignored
+test congestion::tests::test_pacing_enforcement_prevents_bursts ... ignored
+test congestion::tests::test_pacing_integration_with_existing_api ... ignored
+test congestion::tests::test_pacing_rate_fixed_point ... ignored
+test congestion::tests::test_pacing_rate_getter ... ignored
+test congestion::tests::test_pacing_rate_updates_on_bandwidth_change ... ignored
+test congestion::tests::test_pacing_rate_updates_on_phase_change ... ignored
+test congestion::tests::test_pacing_with_zero_bandwidth ... ignored
+test congestion::tests::test_probe_bw_gains_fixed_point ... ignored
+test congestion::tests::test_probe_rtt_gain_fixed_point ... ignored
+test frame::tests::proptests::prop_all_valid_frame_types_parseable ... ignored
+test frame::tests::proptests::prop_flags_roundtrip ... ignored
+test frame::tests::proptests::prop_invalid_frame_types_rejected ... ignored
+test frame::tests::proptests::prop_parse_doesnt_panic ... ignored
+test frame::tests::proptests::prop_payload_length_respected ... ignored
+test frame::tests::proptests::prop_roundtrip_preserves_data ... ignored
+test frame::tests::test_all_frame_types ... ignored
+test frame::tests::test_combined_validation ... ignored
+test frame::tests::test_frame_builder_default_type ... ignored
+test frame::tests::test_frame_flags ... ignored
+test frame::tests::test_frame_minimum_size ... ignored
+test frame::tests::test_frame_nonce_extraction ... ignored
+test frame::tests::test_frame_offset_large ... ignored
+test frame::tests::test_frame_padding_is_random ... ignored
+test frame::tests::test_frame_payload_overflow ... ignored
+test frame::tests::test_frame_roundtrip ... ignored
+test frame::tests::test_frame_sequence_wrap ... ignored
+test frame::tests::test_frame_stream_id_range ... ignored
+test frame::tests::test_frame_too_short ... ignored
+test frame::tests::test_frame_with_max_payload ... ignored
+test frame::tests::test_frame_zero_payload ... ignored
+test frame::tests::test_invalid_frame_type ... ignored
+test frame::tests::test_multiple_validation_failures ... ignored
+test frame::tests::test_offset_bounds_invalid ... ignored
+test frame::tests::test_offset_bounds_valid ... ignored
+test frame::tests::test_payload_size_limits_invalid ... ignored
+test frame::tests::test_payload_size_limits_valid ... ignored
+test frame::tests::test_payload_size_max_boundary ... ignored
+test frame::tests::test_reserved_frame_type ... ignored
+test frame::tests::test_reserved_stream_id_rejection ... ignored
+test frame::tests::test_scalar_vs_simd_parsing ... ignored
+test frame::tests::test_sequence_number_validation_valid ... ignored
+test frame::tests::test_simd_all_frame_types ... ignored
+test frame::tests::test_simd_boundary_values ... ignored
+test frame::tests::test_simd_nonce_extraction ... ignored
+test frame::tests::test_simd_with_flags ... ignored
+test frame::tests::test_simd_zero_fields ... ignored
+test frame::tests::test_stream_id_above_reserved_allowed ... ignored
+test frame::tests::test_stream_id_zero_allowed ... ignored
+test frame::tests::test_validation_constants ... ignored
+test migration::tests::test_challenge_uniqueness ... ignored
+test migration::tests::test_cleanup_expired ... ignored
+test migration::tests::test_cleanup_expired_keeps_recent ... ignored
+test migration::tests::test_default_validator ... ignored
+test migration::tests::test_handle_challenge ... ignored
+test migration::tests::test_handle_response_success ... ignored
+test migration::tests::test_handle_response_unknown ... ignored
+test migration::tests::test_initiate_challenge ... ignored
+test migration::tests::test_is_path_validated ... ignored
+test migration::tests::test_multiple_challenges_same_path ... ignored
+test migration::tests::test_path_state_enum ... ignored
+test migration::tests::test_path_validator_new ... ignored
+test migration::tests::test_rtt_measurement ... ignored
+test migration::tests::test_validated_path_clone ... ignored
+test migration::tests::test_validated_paths ... ignored
+test node::circuit_breaker::tests::test_circuit_breaker_creation ... ignored
+test node::circuit_breaker::tests::test_circuit_closes_on_success ... ignored
+test node::circuit_breaker::tests::test_circuit_metrics ... ignored
+test node::circuit_breaker::tests::test_circuit_opens_on_failures ... ignored
+test node::circuit_breaker::tests::test_circuit_remove ... ignored
+test node::circuit_breaker::tests::test_circuit_reopens_on_half_open_failure ... ignored
+test node::circuit_breaker::tests::test_circuit_reset ... ignored
+test node::circuit_breaker::tests::test_circuit_reset_on_success ... ignored
+test node::circuit_breaker::tests::test_circuit_transitions_to_half_open ... ignored
+test node::circuit_breaker::tests::test_retry_backoff_calculation ... ignored
+test node::circuit_breaker::tests::test_retry_backoff_with_jitter ... ignored
+test node::connection::tests::test_cleanup_stale_sessions_empty ... ignored
+test node::connection::tests::test_get_all_connection_health_empty ... ignored
+test node::connection::tests::test_get_all_connection_health_with_sessions ... ignored
+test node::connection::tests::test_get_connection_health_not_found ... ignored
+test node::connection::tests::test_get_connection_health_with_session ... ignored
+test node::connection::tests::test_health_check_all_sessions_empty ... ignored
+test node::connection::tests::test_health_metrics_creation ... ignored
+test node::connection::tests::test_health_status_equality ... ignored
+test node::connection::tests::test_migrate_session_not_found ... ignored
+test node::discovery::tests::test_announce ... ignored
+test node::discovery::tests::test_bootstrap_empty_list ... ignored
+test node::discovery::tests::test_bootstrap_success ... ignored
+test node::discovery::tests::test_capabilities ... ignored
+test node::discovery::tests::test_find_peers ... ignored
+test node::discovery::tests::test_local_addresses ... ignored
+test node::discovery::tests::test_lookup_peer ... ignored
+test node::discovery::tests::test_nat_type_equality ... ignored
+test node::discovery::tests::test_node_capabilities ... ignored
+test node::discovery::tests::test_peer_announcement_creation ... ignored
+test node::error::tests::test_convenience_constructors ... ignored
+test node::error::tests::test_error_display ... ignored
+test node::error::tests::test_io_error_conversion ... ignored
+test node::error::tests::test_mutual_exclusivity ... ignored
+test node::error::tests::test_permanent_errors ... ignored
+test node::error::tests::test_should_retry ... ignored
+test node::error::tests::test_transient_errors ... ignored
+test node::file_transfer::tests::test_build_chunk_frame ... ignored
+test node::file_transfer::tests::test_build_metadata_frame ... ignored
+test node::file_transfer::tests::test_metadata_deserialize_truncated ... ignored
+test node::file_transfer::tests::test_metadata_long_filename ... ignored
+test node::file_transfer::tests::test_metadata_serialization_roundtrip ... ignored
+test node::health::tests::test_health_monitor_accept_connection ... ignored
+test node::health::tests::test_health_monitor_accept_transfer ... ignored
+test node::health::tests::test_health_monitor_creation ... ignored
+test node::health::tests::test_health_monitor_recommended_action ... ignored
+test node::health::tests::test_health_monitor_state_transitions ... ignored
+test node::health::tests::test_health_monitor_transition_cooldown ... ignored
+test node::health::tests::test_health_monitor_update ... ignored
+test node::health::tests::test_health_status_determination ... ignored
+test node::ice::tests::test_add_remote_candidate ... ignored
+test node::ice::tests::test_candidate_pair_display ... ignored
+test node::ice::tests::test_candidate_priority_calculation ... ignored
+test node::ice::tests::test_candidate_sdp_roundtrip ... ignored
+test node::ice::tests::test_candidate_sdp_with_related ... ignored
+test node::ice::tests::test_candidate_types ... ignored
+test node::ice::tests::test_check_list_operations ... ignored
+test node::ice::tests::test_check_state_display ... ignored
+test node::ice::tests::test_credentials_generation ... ignored
+test node::ice::tests::test_credentials_validation ... ignored
+test node::ice::tests::test_ice_agent_close ... ignored
+test node::ice::tests::test_ice_agent_creation ... ignored
+test node::ice::tests::test_ice_agent_restart ... ignored
+test node::ice::tests::test_ice_config_defaults ... ignored
+test node::ice::tests::test_ice_states ... ignored
+test node::ice::tests::test_ice_stats_snapshot ... ignored
+test node::ice::tests::test_pair_priority_calculation ... ignored
+test node::ice::tests::test_set_remote_credentials ... ignored
+test node::identity::tests::test_identity_clone ... ignored
+test node::identity::tests::test_identity_debug ... ignored
+test node::identity::tests::test_identity_from_components ... ignored
+test node::identity::tests::test_identity_generation ... ignored
+test node::identity::tests::test_identity_unique ... ignored
+test node::identity::tests::test_parse_peer_id_invalid_hex ... ignored
+test node::identity::tests::test_parse_peer_id_invalid_length ... ignored
+test node::identity::tests::test_parse_peer_id_uppercase_prefix ... ignored
+test node::identity::tests::test_parse_peer_id_with_prefix ... ignored
+test node::identity::tests::test_parse_peer_id_without_prefix ... ignored
+test node::identity::tests::test_parse_transfer_id_whitespace ... ignored
+test node::identity::tests::test_parse_transfer_id_with_prefix ... ignored
+test node::identity::tests::test_parse_transfer_id_without_prefix ... ignored
+test node::identity::tests::test_transfer_id_type ... ignored
+test node::ip_reputation::tests::test_backoff_delay_progressive ... ignored
+test node::ip_reputation::tests::test_cleanup ... ignored
+test node::ip_reputation::tests::test_clear_reputation ... ignored
+test node::ip_reputation::tests::test_metrics ... ignored
+test node::ip_reputation::tests::test_reputation_decay ... ignored
+test node::ip_reputation::tests::test_reputation_progression ... ignored
+test node::multi_peer::tests::test_multi_peer_add_remove ... ignored
+test node::multi_peer::tests::test_multi_peer_coordinator_creation ... ignored
+test node::multi_peer::tests::test_multi_peer_fastest_first ... ignored
+test node::multi_peer::tests::test_multi_peer_geographic ... ignored
+test node::multi_peer::tests::test_multi_peer_reassignment ... ignored
+test node::multi_peer::tests::test_multi_peer_record_success ... ignored
+test node::multi_peer::tests::test_multi_peer_round_robin ... ignored
+test node::multi_peer::tests::test_peer_performance_capacity ... ignored
+test node::multi_peer::tests::test_peer_performance_creation ... ignored
+test node::multi_peer::tests::test_peer_performance_failure_rate ... ignored
+test node::multi_peer::tests::test_peer_performance_rtt_update ... ignored
+test node::multi_peer::tests::test_peer_performance_scores ... ignored
+test node::multi_peer::tests::test_peer_performance_throughput_update ... ignored
+test node::nat::tests::test_candidate_serialization_ipv6 ... ignored
+test node::nat::tests::test_candidate_serialization_roundtrip ... ignored
+test node::nat::tests::test_candidate_type_conversions ... ignored
+test node::nat::tests::test_candidate_type_equality ... ignored
+test node::nat::tests::test_detect_nat_type ... ignored
+test node::nat::tests::test_exchange_candidates ... ignored
+test node::nat::tests::test_gather_ice_candidates ... ignored
+test node::nat::tests::test_ice_agent_diagnostics_struct ... ignored
+test node::nat::tests::test_ice_candidate_creation ... ignored
+test node::nat::tests::test_ice_diagnostics ... ignored
+test node::nat::tests::test_prioritize_candidates ... ignored
+test node::nat::tests::test_signaling_key_computation ... ignored
+test node::node::tests::test_active_sessions_empty ... ignored
+test node::node::tests::test_encrypted_frame_tampering_detection ... ignored
+test node::node::tests::test_frame_encryption_roundtrip ... ignored
+test node::node::tests::test_identity_generation ... ignored
+test node::node::tests::test_node_creation ... ignored
+test node::node::tests::test_node_start_stop ... ignored
+test node::node::tests::test_transfer_id_generation ... ignored
+test node::obfuscation::tests::test_apply_padding_none ... ignored
+test node::obfuscation::tests::test_cover_traffic_config_default ... ignored
+test node::obfuscation::tests::test_doh_wrap_unwrap_roundtrip ... ignored
+test node::obfuscation::tests::test_full_obfuscation_pipeline ... ignored
+test node::obfuscation::tests::test_get_timing_delay_none ... ignored
+test node::obfuscation::tests::test_obfuscation_pipeline_none ... ignored
+test node::obfuscation::tests::test_obfuscation_stats ... ignored
+test node::obfuscation::tests::test_padding_power_of_two ... ignored
+test node::obfuscation::tests::test_padding_size_classes ... ignored
+test node::obfuscation::tests::test_protocol_equality ... ignored
+test node::obfuscation::tests::test_timing_delay_fixed ... ignored
+test node::obfuscation::tests::test_timing_delay_uniform ... ignored
+test node::obfuscation::tests::test_tls_wrap_unwrap_roundtrip ... ignored
+test node::obfuscation::tests::test_unwrap_doh ... ignored
+test node::obfuscation::tests::test_unwrap_tls ... ignored
+test node::obfuscation::tests::test_unwrap_websocket ... ignored
+test node::obfuscation::tests::test_websocket_wrap_unwrap_roundtrip ... ignored
+test node::obfuscation::tests::test_wrap_as_doh ... ignored
+test node::obfuscation::tests::test_wrap_as_tls ... ignored
+test node::obfuscation::tests::test_wrap_as_websocket ... ignored
+test node::obfuscation::tests::test_wrap_protocol_none ... ignored
+test node::packet_handler::tests::test_cover_traffic_distribution_constant ... ignored
+test node::padding_strategy::tests::test_constant_rate_padding ... ignored
+test node::padding_strategy::tests::test_expected_overhead ... ignored
+test node::padding_strategy::tests::test_factory_creation ... ignored
+test node::padding_strategy::tests::test_none_padding ... ignored
+test node::padding_strategy::tests::test_power_of_two_padding ... ignored
+test node::padding_strategy::tests::test_size_classes_padding ... ignored
+test node::padding_strategy::tests::test_statistical_padding ... ignored
+test node::padding_strategy::tests::test_strategy_names ... ignored
+test node::progress::tests::test_eta_string ... ignored
+test node::progress::tests::test_speed_string ... ignored
+test node::progress::tests::test_transfer_progress_complete ... ignored
+test node::progress::tests::test_transfer_progress_new ... ignored
+test node::progress::tests::test_transfer_progress_update ... ignored
+test node::rate_limiter::tests::test_rate_limiter_bandwidth ... ignored
+test node::rate_limiter::tests::test_rate_limiter_cleanup ... ignored
+test node::rate_limiter::tests::test_rate_limiter_connection ... ignored
+test node::rate_limiter::tests::test_rate_limiter_packet ... ignored
+test node::rate_limiter::tests::test_rate_limiter_remove_session ... ignored
+test node::rate_limiter::tests::test_rate_limiter_session_limit ... ignored
+test node::rate_limiter::tests::test_token_bucket_basic ... ignored
+test node::rate_limiter::tests::test_token_bucket_refill ... ignored
+test node::resume::tests::test_resume_manager_delete ... ignored
+test node::resume::tests::test_resume_manager_list ... ignored
+test node::resume::tests::test_resume_manager_save_load ... ignored
+test node::resume::tests::test_resume_manager_update ... ignored
+test node::resume::tests::test_resume_state_bitmap ... ignored
+test node::resume::tests::test_resume_state_completion ... ignored
+test node::resume::tests::test_resume_state_creation ... ignored
+test node::resume::tests::test_resume_state_mark_complete ... ignored
+test node::resume::tests::test_resume_state_missing_chunks ... ignored
+test node::routing::tests::test_active_routes ... ignored
+test node::routing::tests::test_add_and_lookup_route ... ignored
+test node::routing::tests::test_clear_routes ... ignored
+test node::routing::tests::test_concurrent_route_operations ... ignored
+test node::routing::tests::test_extract_connection_id ... ignored
+test node::routing::tests::test_hit_rate_calculation ... ignored
+test node::routing::tests::test_lookup_nonexistent_route ... ignored
+test node::routing::tests::test_multiple_routes ... ignored
+test node::routing::tests::test_remove_route ... ignored
+test node::routing::tests::test_route_replacement ... ignored
+test node::routing::tests::test_routing_statistics ... ignored
+test node::routing::tests::test_routing_table_creation ... ignored
+test node::security_monitor::tests::test_cleanup ... ignored
+test node::security_monitor::tests::test_event_callback ... ignored
+test node::security_monitor::tests::test_event_rate_calculation ... ignored
+test node::security_monitor::tests::test_ip_event_count ... ignored
+test node::security_monitor::tests::test_metrics_all_types ... ignored
+test node::security_monitor::tests::test_record_event ... ignored
+test node::security_monitor::tests::test_suspicious_pattern_detection ... ignored
+test node::session::tests::test_connection_stats ... ignored
+test node::session::tests::test_counter_increment ... ignored
+test node::session::tests::test_decrypt_wrong_key_fails ... ignored
+test node::session::tests::test_encrypt_decrypt_frame ... ignored
+test node::session::tests::test_handshake_keypair_generation ... ignored
+test node::session::tests::test_multiple_frames_sequential ... ignored
+test node::session::tests::test_needs_rekey_detection ... ignored
+test node::session::tests::test_peer_connection_creation ... ignored
+test node::session::tests::test_stale_detection ... ignored
+test node::session_manager::tests::test_close_session_not_found ... ignored
+test node::session_manager::tests::test_find_pending_handshake_exact ... ignored
+test node::session_manager::tests::test_find_pending_handshake_inaddr_any ... ignored
+test node::session_manager::tests::test_get_session_not_found ... ignored
+test node::session_manager::tests::test_has_session ... ignored
+test node::session_manager::tests::test_session_manager_creation ... ignored
+test node::session_manager::tests::test_take_pending_handshake ... ignored
+test node::transfer::tests::test_announce_file ... ignored
+test node::transfer::tests::test_assign_chunks_multiple_peers ... ignored
+test node::transfer::tests::test_assign_chunks_single_peer ... ignored
+test node::transfer::tests::test_fetch_file_metadata_no_peers ... ignored
+test node::transfer::tests::test_fetch_file_metadata_no_sessions ... ignored
+test node::transfer::tests::test_file_metadata_creation ... ignored
+test node::transfer::tests::test_list_available_files ... ignored
+test node::transfer::tests::test_unannounce_file ... ignored
+test node::transfer_manager::tests::test_find_transfer_by_stream_id_not_found ... ignored
+test node::transfer_manager::tests::test_generate_transfer_id ... ignored
+test node::transfer_manager::tests::test_get_transfer_not_found ... ignored
+test node::transfer_manager::tests::test_get_transfer_progress_not_found ... ignored
+test node::transfer_manager::tests::test_remove_transfer_not_found ... ignored
+test node::transfer_manager::tests::test_transfer_manager_creation ... ignored
+test node::transfer_manager::tests::test_wait_for_transfer_not_found ... ignored
+test path::tests::test_pmtud_at_max_mtu ... ignored
+test path::tests::test_pmtud_binary_search ... ignored
+test path::tests::test_pmtud_cannot_start_multiple_probes ... ignored
+test path::tests::test_pmtud_default ... ignored
+test path::tests::test_pmtud_initial_state ... ignored
+test path::tests::test_pmtud_probe_acked ... ignored
+test path::tests::test_pmtud_probe_failed ... ignored
+test path::tests::test_pmtud_probe_max_retries ... ignored
+test path::tests::test_pmtud_should_probe_initial ... ignored
+test path::tests::test_pmtud_should_probe_retry ... ignored
+test path::tests::test_pmtud_start_probe ... ignored
+test path::tests::test_pmtud_wrong_size_ack ... ignored
+test ring_buffer::tests::test_arc_buffers_zero_copy ... ignored
+test ring_buffer::tests::test_capacity_rounding ... ignored
+test ring_buffer::tests::test_mpsc_basic ... ignored
+test ring_buffer::tests::test_mpsc_multi_producer ... ignored
+test ring_buffer::tests::test_spsc_basic ... ignored
+test ring_buffer::tests::test_spsc_batch ... ignored
+test ring_buffer::tests::test_spsc_concurrent ... ignored
+test ring_buffer::tests::test_spsc_full ... ignored
+test ring_buffer::tests::test_spsc_wraparound ... ignored
+test ring_buffer::tests::test_zero_capacity_panics - should panic ... ignored
+test session::tests::test_activity_tracking ... ignored
+test session::tests::test_connection_id_assignment ... ignored
+test session::tests::test_connection_id_rotation ... ignored
+test session::tests::test_connection_id_roundtrip ... ignored
+test session::tests::test_connection_id_special_values ... ignored
+test session::tests::test_draining_state ... ignored
+test session::tests::test_handshake_phases ... ignored
+test session::tests::test_idle_detection ... ignored
+test session::tests::test_max_streams_limit ... ignored
+test session::tests::test_migration_state ... ignored
+test session::tests::test_packet_counter ... ignored
+test session::tests::test_record_sent_received ... ignored
+test session::tests::test_rekey_after_rekey_resets_timer ... ignored
+test session::tests::test_rekey_bytes_emergency_threshold ... ignored
+test session::tests::test_rekey_bytes_hard_limit ... ignored
+test session::tests::test_rekey_combined_sent_received_bytes ... ignored
+test session::tests::test_rekey_combined_sent_received_packets ... ignored
+test session::tests::test_rekey_multiple_thresholds ... ignored
+test session::tests::test_rekey_needed_packets ... ignored
+test session::tests::test_rekey_needed_time ... ignored
+test session::tests::test_rekey_no_false_positives ... ignored
+test session::tests::test_rekey_packets_emergency_threshold ... ignored
+test session::tests::test_rekey_time_emergency_threshold ... ignored
+test session::tests::test_rekey_transition ... ignored
+test session::tests::test_session_bbr_integration ... ignored
+test session::tests::test_session_creation ... ignored
+test session::tests::test_session_initiator_responder ... ignored
+test session::tests::test_session_stats ... ignored
+test session::tests::test_state_cleanup_on_close ... ignored
+test session::tests::test_state_transitions_invalid ... ignored
+test session::tests::test_state_transitions_valid ... ignored
+test session::tests::test_stream_creation ... ignored
+test session::tests::test_stream_management ... ignored
+test stream::tests::test_stream_both_fins_exchanged ... ignored
+test stream::tests::test_stream_buffer_sizes ... ignored
+test stream::tests::test_stream_can_receive ... ignored
+test stream::tests::test_stream_can_receive_with_zero_window ... ignored
+test stream::tests::test_stream_can_send ... ignored
+test stream::tests::test_stream_can_send_with_zero_window ... ignored
+test stream::tests::test_stream_cleanup_on_close ... ignored
+test stream::tests::test_stream_client_vs_server_initiated ... ignored
+test stream::tests::test_stream_close_transition ... ignored
+test stream::tests::test_stream_config_default ... ignored
+test stream::tests::test_stream_consume_recv_window ... ignored
+test stream::tests::test_stream_consume_recv_window_overflow ... ignored
+test stream::tests::test_stream_consume_send_window ... ignored
+test stream::tests::test_stream_consume_send_window_overflow ... ignored
+test stream::tests::test_stream_creation ... ignored
+test stream::tests::test_stream_fin_idempotent ... ignored
+test stream::tests::test_stream_fin_received_transition ... ignored
+test stream::tests::test_stream_fin_sent_transition ... ignored
+test stream::tests::test_stream_half_close_local ... ignored
+test stream::tests::test_stream_half_close_remote ... ignored
+test stream::tests::test_stream_invalid_state_transitions ... ignored
+test stream::tests::test_stream_lite_activation ... ignored
+test stream::tests::test_stream_lite_creation ... ignored
+test stream::tests::test_stream_lite_server_vs_client ... ignored
+test stream::tests::test_stream_max_window_enforced ... ignored
+test stream::tests::test_stream_multiple_writes ... ignored
+test stream::tests::test_stream_open_transition ... ignored
+test stream::tests::test_stream_peek_data ... ignored
+test stream::tests::test_stream_read_data ... ignored
+test stream::tests::test_stream_reset ... ignored
+test stream::tests::test_stream_send_window_max_limit ... ignored
+test stream::tests::test_stream_update_recv_window ... ignored
+test stream::tests::test_stream_update_send_window ... ignored
+test stream::tests::test_stream_valid_state_transitions ... ignored
+test stream::tests::test_stream_variant_activation ... ignored
+test stream::tests::test_stream_variant_as_full_mut ... ignored
+test stream::tests::test_stream_variant_new_full ... ignored
+test stream::tests::test_stream_variant_new_lite ... ignored
+test stream::tests::test_stream_variant_operations_after_activation ... ignored
+test stream::tests::test_stream_write_data ... ignored
+test stream::tests::test_stream_write_when_half_closed_remote ... ignored
+test stream::tests::test_stream_write_when_not_open ... ignored
+test transfer::session::tests::test_assigned_chunks ... ignored
+test transfer::session::tests::test_direction ... ignored
+test transfer::session::tests::test_missing_chunks ... ignored
+test transfer::session::tests::test_multi_peer_coordination ... ignored
+test transfer::session::tests::test_pause_resume ... ignored
+test transfer::session::tests::test_peer_speed_tracking ... ignored
+test transfer::session::tests::test_remove_peer ... ignored
+test transfer::session::tests::test_speed_and_eta ... ignored
+test transfer::session::tests::test_transfer_progress ... ignored
+
+test result: ok. 0 passed; 0 failed; 439 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running benches/frame_bench.rs (target/release/deps/frame_bench-869122e3129e55f8)
+Gnuplot not found, using plotters backend
+Benchmarking frame_parse/parse_1456_bytes
+Benchmarking frame_parse/parse_1456_bytes: Warming up for 3.0000 s
+Benchmarking frame_parse/parse_1456_bytes: Collecting 100 samples in estimated 5.0000 s (715M iterations)
+Benchmarking frame_parse/parse_1456_bytes: Analyzing
+frame_parse/parse_1456_bytes
+                        time:   [6.8095 ns 6.8829 ns 6.9744 ns]
+                        thrpt:  [194.43 GiB/s 197.01 GiB/s 199.14 GiB/s]
+                 change:
+                        time:   [−0.7718% +0.4425% +1.6966%] (p = 0.53 > 0.05)
+                        thrpt:  [−1.6683% −0.4406% +0.7778%]
+                        No change in performance detected.
+Found 12 outliers among 100 measurements (12.00%)
+  3 (3.00%) high mild
+  9 (9.00%) high severe
+
+Benchmarking frame_parse_by_size/64_bytes
+Benchmarking frame_parse_by_size/64_bytes: Warming up for 3.0000 s
+Benchmarking frame_parse_by_size/64_bytes: Collecting 100 samples in estimated 5.0000 s (726M iterations)
+Benchmarking frame_parse_by_size/64_bytes: Analyzing
+frame_parse_by_size/64_bytes
+                        time:   [6.8347 ns 6.9144 ns 7.0086 ns]
+                        thrpt:  [8.5045 GiB/s 8.6204 GiB/s 8.7209 GiB/s]
+                 change:
+                        time:   [+0.9358% +1.9093% +3.0474%] (p = 0.00 < 0.05)
+                        thrpt:  [−2.9573% −1.8735% −0.9272%]
+                        Change within noise threshold.
+Found 8 outliers among 100 measurements (8.00%)
+  8 (8.00%) high severe
+Benchmarking frame_parse_by_size/128_bytes
+Benchmarking frame_parse_by_size/128_bytes: Warming up for 3.0000 s
+Benchmarking frame_parse_by_size/128_bytes: Collecting 100 samples in estimated 5.0000 s (735M iterations)
+Benchmarking frame_parse_by_size/128_bytes: Analyzing
+frame_parse_by_size/128_bytes
+                        time:   [6.8292 ns 6.9064 ns 7.0051 ns]
+                        thrpt:  [17.018 GiB/s 17.261 GiB/s 17.456 GiB/s]
+                 change:
+                        time:   [+2.2143% +3.5405% +4.9952%] (p = 0.00 < 0.05)
+                        thrpt:  [−4.7575% −3.4195% −2.1663%]
+                        Performance has regressed.
+Found 20 outliers among 100 measurements (20.00%)
+  4 (4.00%) high mild
+  16 (16.00%) high severe
+Benchmarking frame_parse_by_size/256_bytes
+Benchmarking frame_parse_by_size/256_bytes: Warming up for 3.0000 s
+Benchmarking frame_parse_by_size/256_bytes: Collecting 100 samples in estimated 5.0000 s (739M iterations)
+Benchmarking frame_parse_by_size/256_bytes: Analyzing
+frame_parse_by_size/256_bytes
+                        time:   [6.8496 ns 6.9540 ns 7.0733 ns]
+                        thrpt:  [33.707 GiB/s 34.285 GiB/s 34.808 GiB/s]
+                 change:
+                        time:   [+1.4736% +2.5811% +3.7284%] (p = 0.00 < 0.05)
+                        thrpt:  [−3.5944% −2.5162% −1.4522%]
+                        Performance has regressed.
+Found 16 outliers among 100 measurements (16.00%)
+  16 (16.00%) high severe
+Benchmarking frame_parse_by_size/512_bytes
+Benchmarking frame_parse_by_size/512_bytes: Warming up for 3.0000 s
+Benchmarking frame_parse_by_size/512_bytes: Collecting 100 samples in estimated 5.0000 s (742M iterations)
+Benchmarking frame_parse_by_size/512_bytes: Analyzing
+frame_parse_by_size/512_bytes
+                        time:   [6.8532 ns 6.9848 ns 7.1271 ns]
+                        thrpt:  [66.904 GiB/s 68.268 GiB/s 69.578 GiB/s]
+                 change:
+                        time:   [+0.8041% +1.7115% +2.7556%] (p = 0.00 < 0.05)
+                        thrpt:  [−2.6817% −1.6827% −0.7977%]
+                        Change within noise threshold.
+Found 17 outliers among 100 measurements (17.00%)
+  3 (3.00%) high mild
+  14 (14.00%) high severe
+Benchmarking frame_parse_by_size/1024_bytes
+Benchmarking frame_parse_by_size/1024_bytes: Warming up for 3.0000 s
+Benchmarking frame_parse_by_size/1024_bytes: Collecting 100 samples in estimated 5.0000 s (737M iterations)
+Benchmarking frame_parse_by_size/1024_bytes: Analyzing
+frame_parse_by_size/1024_bytes
+                        time:   [6.8073 ns 6.9121 ns 7.0340 ns]
+                        thrpt:  [135.58 GiB/s 137.97 GiB/s 140.10 GiB/s]
+                 change:
+                        time:   [+0.4905% +1.5098% +2.4964%] (p = 0.00 < 0.05)
+                        thrpt:  [−2.4356% −1.4874% −0.4881%]
+                        Change within noise threshold.
+Found 12 outliers among 100 measurements (12.00%)
+  3 (3.00%) high mild
+  9 (9.00%) high severe
+Benchmarking frame_parse_by_size/1456_bytes
+Benchmarking frame_parse_by_size/1456_bytes: Warming up for 3.0000 s
+Benchmarking frame_parse_by_size/1456_bytes: Collecting 100 samples in estimated 5.0000 s (732M iterations)
+Benchmarking frame_parse_by_size/1456_bytes: Analyzing
+frame_parse_by_size/1456_bytes
+                        time:   [6.7730 ns 6.8100 ns 6.8544 ns]
+                        thrpt:  [197.83 GiB/s 199.12 GiB/s 200.21 GiB/s]
+                 change:
+                        time:   [+0.8168% +1.3368% +1.9094%] (p = 0.00 < 0.05)
+                        thrpt:  [−1.8736% −1.3192% −0.8102%]
+                        Change within noise threshold.
+Found 16 outliers among 100 measurements (16.00%)
+  8 (8.00%) high mild
+  8 (8.00%) high severe
+
+Benchmarking frame_build/build_1456_bytes
+Benchmarking frame_build/build_1456_bytes: Warming up for 3.0000 s
+Benchmarking frame_build/build_1456_bytes: Collecting 100 samples in estimated 5.0003 s (35M iterations)
+Benchmarking frame_build/build_1456_bytes: Analyzing
+frame_build/build_1456_bytes
+                        time:   [140.05 ns 146.38 ns 154.21 ns]
+                        thrpt:  [8.7933 GiB/s 9.2634 GiB/s 9.6821 GiB/s]
+                 change:
+                        time:   [−10.723% −8.5501% −6.0730%] (p = 0.00 < 0.05)
+                        thrpt:  [+6.4657% +9.3495% +12.010%]
+                        Performance has improved.
+Found 11 outliers among 100 measurements (11.00%)
+  4 (4.00%) high mild
+  7 (7.00%) high severe
+
+Benchmarking frame_build_by_size/64_bytes
+Benchmarking frame_build_by_size/64_bytes: Warming up for 3.0000 s
+Benchmarking frame_build_by_size/64_bytes: Collecting 100 samples in estimated 5.0001 s (206M iterations)
+Benchmarking frame_build_by_size/64_bytes: Analyzing
+frame_build_by_size/64_bytes
+                        time:   [22.538 ns 23.449 ns 24.537 ns]
+                        thrpt:  [2.4292 GiB/s 2.5419 GiB/s 2.6446 GiB/s]
+                 change:
+                        time:   [−1.3000% +0.3065% +2.3682%] (p = 0.77 > 0.05)
+                        thrpt:  [−2.3134% −0.3055% +1.3171%]
+                        No change in performance detected.
+Found 11 outliers among 100 measurements (11.00%)
+  3 (3.00%) high mild
+  8 (8.00%) high severe
+Benchmarking frame_build_by_size/128_bytes
+Benchmarking frame_build_by_size/128_bytes: Warming up for 3.0000 s
+Benchmarking frame_build_by_size/128_bytes: Collecting 100 samples in estimated 5.0000 s (201M iterations)
+Benchmarking frame_build_by_size/128_bytes: Analyzing
+frame_build_by_size/128_bytes
+                        time:   [23.250 ns 23.583 ns 24.164 ns]
+                        thrpt:  [4.9334 GiB/s 5.0549 GiB/s 5.1273 GiB/s]
+                 change:
+                        time:   [−22.766% −22.286% −21.597%] (p = 0.00 < 0.05)
+                        thrpt:  [+27.546% +28.677% +29.477%]
+                        Performance has improved.
+Found 11 outliers among 100 measurements (11.00%)
+  7 (7.00%) high mild
+  4 (4.00%) high severe
+Benchmarking frame_build_by_size/256_bytes
+Benchmarking frame_build_by_size/256_bytes: Warming up for 3.0000 s
+Benchmarking frame_build_by_size/256_bytes: Collecting 100 samples in estimated 5.0000 s (183M iterations)
+Benchmarking frame_build_by_size/256_bytes: Analyzing
+frame_build_by_size/256_bytes
+                        time:   [26.107 ns 26.185 ns 26.267 ns]
+                        thrpt:  [9.0766 GiB/s 9.1053 GiB/s 9.1325 GiB/s]
+                 change:
+                        time:   [−22.693% −22.461% −22.215%] (p = 0.00 < 0.05)
+                        thrpt:  [+28.559% +28.968% +29.354%]
+                        Performance has improved.
+Found 6 outliers among 100 measurements (6.00%)
+  6 (6.00%) high mild
+Benchmarking frame_build_by_size/512_bytes
+Benchmarking frame_build_by_size/512_bytes: Warming up for 3.0000 s
+Benchmarking frame_build_by_size/512_bytes: Collecting 100 samples in estimated 5.0002 s (145M iterations)
+Benchmarking frame_build_by_size/512_bytes: Analyzing
+frame_build_by_size/512_bytes
+                        time:   [30.520 ns 30.634 ns 30.755 ns]
+                        thrpt:  [15.504 GiB/s 15.566 GiB/s 15.624 GiB/s]
+                 change:
+                        time:   [−26.700% −26.378% −26.043%] (p = 0.00 < 0.05)
+                        thrpt:  [+35.214% +35.829% +36.426%]
+                        Performance has improved.
+Found 6 outliers among 100 measurements (6.00%)
+  4 (4.00%) high mild
+  2 (2.00%) high severe
+Benchmarking frame_build_by_size/1024_bytes
+Benchmarking frame_build_by_size/1024_bytes: Warming up for 3.0000 s
+Benchmarking frame_build_by_size/1024_bytes: Collecting 100 samples in estimated 5.0001 s (120M iterations)
+Benchmarking frame_build_by_size/1024_bytes: Analyzing
+frame_build_by_size/1024_bytes
+                        time:   [39.268 ns 40.512 ns 42.055 ns]
+                        thrpt:  [22.677 GiB/s 23.541 GiB/s 24.286 GiB/s]
+                 change:
+                        time:   [−28.447% −27.371% −25.827%] (p = 0.00 < 0.05)
+                        thrpt:  [+34.819% +37.687% +39.757%]
+                        Performance has improved.
+Found 14 outliers among 100 measurements (14.00%)
+  4 (4.00%) high mild
+  10 (10.00%) high severe
+Benchmarking frame_build_by_size/1456_bytes
+Benchmarking frame_build_by_size/1456_bytes: Warming up for 3.0000 s
+Benchmarking frame_build_by_size/1456_bytes: Collecting 100 samples in estimated 5.0000 s (40M iterations)
+Benchmarking frame_build_by_size/1456_bytes: Analyzing
+frame_build_by_size/1456_bytes
+                        time:   [116.49 ns 116.80 ns 117.11 ns]
+                        thrpt:  [11.579 GiB/s 11.610 GiB/s 11.641 GiB/s]
+                 change:
+                        time:   [−20.438% −19.974% −19.518%] (p = 0.00 < 0.05)
+                        thrpt:  [+24.252% +24.960% +25.687%]
+                        Performance has improved.
+Found 3 outliers among 100 measurements (3.00%)
+  3 (3.00%) high mild
+
+Benchmarking frame_roundtrip/build_and_parse
+Benchmarking frame_roundtrip/build_and_parse: Warming up for 3.0000 s
+Benchmarking frame_roundtrip/build_and_parse: Collecting 100 samples in estimated 5.0007 s (32M iterations)
+Benchmarking frame_roundtrip/build_and_parse: Analyzing
+frame_roundtrip/build_and_parse
+                        time:   [142.04 ns 149.91 ns 159.29 ns]
+                        thrpt:  [8.5130 GiB/s 9.0455 GiB/s 9.5466 GiB/s]
+                 change:
+                        time:   [−6.3051% −4.3622% −1.9007%] (p = 0.00 < 0.05)
+                        thrpt:  [+1.9376% +4.5611% +6.7294%]
+                        Performance has improved.
+Found 9 outliers among 100 measurements (9.00%)
+  1 (1.00%) high mild
+  8 (8.00%) high severe
+
+Benchmarking frame_types/data
+Benchmarking frame_types/data: Warming up for 3.0000 s
+Benchmarking frame_types/data: Collecting 100 samples in estimated 5.0000 s (721M iterations)
+Benchmarking frame_types/data: Analyzing
+frame_types/data        time:   [6.9263 ns 7.1465 ns 7.3888 ns]
+                        change: [+0.7431% +2.1419% +3.7442%] (p = 0.00 < 0.05)
+                        Change within noise threshold.
+Found 12 outliers among 100 measurements (12.00%)
+  4 (4.00%) high mild
+  8 (8.00%) high severe
+Benchmarking frame_types/ack
+Benchmarking frame_types/ack: Warming up for 3.0000 s
+Benchmarking frame_types/ack: Collecting 100 samples in estimated 5.0000 s (726M iterations)
+Benchmarking frame_types/ack: Analyzing
+frame_types/ack         time:   [6.8601 ns 6.9541 ns 7.0562 ns]
+                        change: [+0.1894% +1.8900% +3.4465%] (p = 0.02 < 0.05)
+                        Change within noise threshold.
+Found 16 outliers among 100 measurements (16.00%)
+  1 (1.00%) high mild
+  15 (15.00%) high severe
+Benchmarking frame_types/ping
+Benchmarking frame_types/ping: Warming up for 3.0000 s
+Benchmarking frame_types/ping: Collecting 100 samples in estimated 5.0000 s (738M iterations)
+Benchmarking frame_types/ping: Analyzing
+frame_types/ping        time:   [6.7618 ns 6.7912 ns 6.8280 ns]
+                        change: [+2.5117% +3.5940% +4.8782%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 18 outliers among 100 measurements (18.00%)
+  3 (3.00%) high mild
+  15 (15.00%) high severe
+Benchmarking frame_types/stream_open
+Benchmarking frame_types/stream_open: Warming up for 3.0000 s
+Benchmarking frame_types/stream_open: Collecting 100 samples in estimated 5.0000 s (719M iterations)
+Benchmarking frame_types/stream_open: Analyzing
+frame_types/stream_open time:   [6.7850 ns 6.8247 ns 6.8748 ns]
+                        change: [+0.7335% +1.7524% +2.8819%] (p = 0.00 < 0.05)
+                        Change within noise threshold.
+Found 14 outliers among 100 measurements (14.00%)
+  2 (2.00%) high mild
+  12 (12.00%) high severe
+
+Benchmarking scalar_vs_simd/scalar
+Benchmarking scalar_vs_simd/scalar: Warming up for 3.0000 s
+Benchmarking scalar_vs_simd/scalar: Collecting 100 samples in estimated 5.0000 s (1.7B iterations)
+Benchmarking scalar_vs_simd/scalar: Analyzing
+scalar_vs_simd/scalar   time:   [2.8696 ns 2.9889 ns 3.1352 ns]
+                        thrpt:  [432.51 GiB/s 453.68 GiB/s 472.54 GiB/s]
+                 change:
+                        time:   [+5.6787% +8.4959% +11.630%] (p = 0.00 < 0.05)
+                        thrpt:  [−10.418% −7.8306% −5.3735%]
+                        Performance has regressed.
+Found 20 outliers among 100 measurements (20.00%)
+  3 (3.00%) high mild
+  17 (17.00%) high severe
+Benchmarking scalar_vs_simd/simd
+Benchmarking scalar_vs_simd/simd: Warming up for 3.0000 s
+Benchmarking scalar_vs_simd/simd: Collecting 100 samples in estimated 5.0000 s (1.8B iterations)
+Benchmarking scalar_vs_simd/simd: Analyzing
+scalar_vs_simd/simd     time:   [2.9948 ns 3.1427 ns 3.3191 ns]
+                        thrpt:  [408.55 GiB/s 431.48 GiB/s 452.79 GiB/s]
+                 change:
+                        time:   [+7.2949% +11.428% +15.247%] (p = 0.00 < 0.05)
+                        thrpt:  [−13.230% −10.256% −6.7990%]
+                        Performance has regressed.
+Found 14 outliers among 100 measurements (14.00%)
+  3 (3.00%) high mild
+  11 (11.00%) high severe
+Benchmarking scalar_vs_simd/default
+Benchmarking scalar_vs_simd/default: Warming up for 3.0000 s
+Benchmarking scalar_vs_simd/default: Collecting 100 samples in estimated 5.0000 s (720M iterations)
+Benchmarking scalar_vs_simd/default: Analyzing
+scalar_vs_simd/default  time:   [6.7768 ns 6.8541 ns 6.9461 ns]
+                        thrpt:  [195.22 GiB/s 197.84 GiB/s 200.09 GiB/s]
+                 change:
+                        time:   [+2.5923% +3.5846% +4.7695%] (p = 0.00 < 0.05)
+                        thrpt:  [−4.5524% −3.4606% −2.5268%]
+                        Performance has regressed.
+Found 5 outliers among 100 measurements (5.00%)
+  5 (5.00%) high mild
+
+Benchmarking parse_impl_64_bytes/scalar
+Benchmarking parse_impl_64_bytes/scalar: Warming up for 3.0000 s
+Benchmarking parse_impl_64_bytes/scalar: Collecting 100 samples in estimated 5.0000 s (1.7B iterations)
+Benchmarking parse_impl_64_bytes/scalar: Analyzing
+parse_impl_64_bytes/scalar
+                        time:   [2.8383 ns 2.8893 ns 2.9570 ns]
+                        thrpt:  [20.157 GiB/s 20.629 GiB/s 21.000 GiB/s]
+                 change:
+                        time:   [+7.4228% +11.106% +14.905%] (p = 0.00 < 0.05)
+                        thrpt:  [−12.971% −9.9958% −6.9099%]
+                        Performance has regressed.
+Found 21 outliers among 100 measurements (21.00%)
+  7 (7.00%) high mild
+  14 (14.00%) high severe
+Benchmarking parse_impl_64_bytes/simd
+Benchmarking parse_impl_64_bytes/simd: Warming up for 3.0000 s
+Benchmarking parse_impl_64_bytes/simd: Collecting 100 samples in estimated 5.0000 s (1.8B iterations)
+Benchmarking parse_impl_64_bytes/simd: Analyzing
+parse_impl_64_bytes/simd
+                        time:   [2.9258 ns 3.0135 ns 3.1249 ns]
+                        thrpt:  [19.074 GiB/s 19.779 GiB/s 20.372 GiB/s]
+                 change:
+                        time:   [+6.4421% +10.899% +16.089%] (p = 0.00 < 0.05)
+                        thrpt:  [−13.859% −9.8282% −6.0522%]
+                        Performance has regressed.
+Found 15 outliers among 100 measurements (15.00%)
+  1 (1.00%) high mild
+  14 (14.00%) high severe
+
+Benchmarking parse_impl_128_bytes/scalar
+Benchmarking parse_impl_128_bytes/scalar: Warming up for 3.0000 s
+Benchmarking parse_impl_128_bytes/scalar: Collecting 100 samples in estimated 5.0000 s (1.8B iterations)
+Benchmarking parse_impl_128_bytes/scalar: Analyzing
+parse_impl_128_bytes/scalar
+                        time:   [2.8808 ns 3.0258 ns 3.2058 ns]
+                        thrpt:  [37.185 GiB/s 39.397 GiB/s 41.381 GiB/s]
+                 change:
+                        time:   [−6.8329% +2.5423% +9.4116%] (p = 0.62 > 0.05)
+                        thrpt:  [−8.6020% −2.4792% +7.3341%]
+                        No change in performance detected.
+Found 12 outliers among 100 measurements (12.00%)
+  2 (2.00%) high mild
+  10 (10.00%) high severe
+Benchmarking parse_impl_128_bytes/simd
+Benchmarking parse_impl_128_bytes/simd: Warming up for 3.0000 s
+Benchmarking parse_impl_128_bytes/simd: Collecting 100 samples in estimated 5.0000 s (1.8B iterations)
+Benchmarking parse_impl_128_bytes/simd: Analyzing
+parse_impl_128_bytes/simd
+                        time:   [2.9233 ns 3.0608 ns 3.2255 ns]
+                        thrpt:  [36.959 GiB/s 38.947 GiB/s 40.779 GiB/s]
+                 change:
+                        time:   [−0.9623% +2.8747% +7.0587%] (p = 0.17 > 0.05)
+                        thrpt:  [−6.5933% −2.7943% +0.9716%]
+                        No change in performance detected.
+Found 13 outliers among 100 measurements (13.00%)
+  1 (1.00%) high mild
+  12 (12.00%) high severe
+
+Benchmarking parse_impl_512_bytes/scalar
+Benchmarking parse_impl_512_bytes/scalar: Warming up for 3.0000 s
+Benchmarking parse_impl_512_bytes/scalar: Collecting 100 samples in estimated 5.0000 s (1.7B iterations)
+Benchmarking parse_impl_512_bytes/scalar: Analyzing
+parse_impl_512_bytes/scalar
+                        time:   [2.8090 ns 2.9127 ns 3.0472 ns]
+                        thrpt:  [156.49 GiB/s 163.71 GiB/s 169.76 GiB/s]
+                 change:
+                        time:   [−39.704% −22.921% −8.2838%] (p = 0.03 < 0.05)
+                        thrpt:  [+9.0320% +29.737% +65.848%]
+                        Performance has improved.
+Found 6 outliers among 100 measurements (6.00%)
+  1 (1.00%) high mild
+  5 (5.00%) high severe
+Benchmarking parse_impl_512_bytes/simd
+Benchmarking parse_impl_512_bytes/simd: Warming up for 3.0000 s
+Benchmarking parse_impl_512_bytes/simd: Collecting 100 samples in estimated 5.0000 s (1.7B iterations)
+Benchmarking parse_impl_512_bytes/simd: Analyzing
+parse_impl_512_bytes/simd
+                        time:   [2.9031 ns 3.0255 ns 3.1843 ns]
+                        thrpt:  [149.75 GiB/s 157.61 GiB/s 164.25 GiB/s]
+                 change:
+                        time:   [−1.0336% +4.2851% +9.9858%] (p = 0.13 > 0.05)
+                        thrpt:  [−9.0792% −4.1090% +1.0444%]
+                        No change in performance detected.
+Found 13 outliers among 100 measurements (13.00%)
+  13 (13.00%) high severe
+
+Benchmarking parse_impl_1456_bytes/scalar
+Benchmarking parse_impl_1456_bytes/scalar: Warming up for 3.0000 s
+Benchmarking parse_impl_1456_bytes/scalar: Collecting 100 samples in estimated 5.0000 s (1.8B iterations)
+Benchmarking parse_impl_1456_bytes/scalar: Analyzing
+parse_impl_1456_bytes/scalar
+                        time:   [2.8515 ns 2.9867 ns 3.1567 ns]
+                        thrpt:  [429.57 GiB/s 454.01 GiB/s 475.54 GiB/s]
+                 change:
+                        time:   [−31.825% −23.413% −13.736%] (p = 0.00 < 0.05)
+                        thrpt:  [+15.923% +30.570% +46.680%]
+                        Performance has improved.
+Found 15 outliers among 100 measurements (15.00%)
+  2 (2.00%) high mild
+  13 (13.00%) high severe
+Benchmarking parse_impl_1456_bytes/simd
+Benchmarking parse_impl_1456_bytes/simd: Warming up for 3.0000 s
+Benchmarking parse_impl_1456_bytes/simd: Collecting 100 samples in estimated 5.0000 s (1.7B iterations)
+Benchmarking parse_impl_1456_bytes/simd: Analyzing
+parse_impl_1456_bytes/simd
+                        time:   [2.8251 ns 2.8777 ns 2.9447 ns]
+                        thrpt:  [460.49 GiB/s 471.21 GiB/s 479.99 GiB/s]
+                 change:
+                        time:   [−1.5802% +1.9445% +5.4699%] (p = 0.30 > 0.05)
+                        thrpt:  [−5.1862% −1.9074% +1.6056%]
+                        No change in performance detected.
+Found 10 outliers among 100 measurements (10.00%)
+  1 (1.00%) high mild
+  9 (9.00%) high severe
+
+Benchmarking parse_throughput/scalar_fps
+Benchmarking parse_throughput/scalar_fps: Warming up for 3.0000 s
+Benchmarking parse_throughput/scalar_fps: Collecting 100 samples in estimated 5.0001 s (118M iterations)
+Benchmarking parse_throughput/scalar_fps: Analyzing
+parse_throughput/scalar_fps
+                        time:   [42.609 ns 42.980 ns 43.425 ns]
+                        thrpt:  [23.028 Melem/s 23.267 Melem/s 23.469 Melem/s]
+                 change:
+                        time:   [+0.4238% +3.2307% +5.8650%] (p = 0.01 < 0.05)
+                        thrpt:  [−5.5401% −3.1296% −0.4220%]
+                        Change within noise threshold.
+Found 20 outliers among 100 measurements (20.00%)
+  3 (3.00%) high mild
+  17 (17.00%) high severe
+Benchmarking parse_throughput/simd_fps
+Benchmarking parse_throughput/simd_fps: Warming up for 3.0000 s
+Benchmarking parse_throughput/simd_fps: Collecting 100 samples in estimated 5.0001 s (116M iterations)
+Benchmarking parse_throughput/simd_fps: Analyzing
+parse_throughput/simd_fps
+                        time:   [42.389 ns 42.704 ns 43.194 ns]
+                        thrpt:  [23.151 Melem/s 23.417 Melem/s 23.591 Melem/s]
+                 change:
+                        time:   [−0.0508% +0.3049% +0.8414%] (p = 0.18 > 0.05)
+                        thrpt:  [−0.8344% −0.3040% +0.0508%]
+                        No change in performance detected.
+Found 14 outliers among 100 measurements (14.00%)
+  8 (8.00%) high mild
+  6 (6.00%) high severe
+
+Benchmarking frame_build_into/64_bytes
+Benchmarking frame_build_into/64_bytes: Warming up for 3.0000 s
+Benchmarking frame_build_into/64_bytes: Collecting 100 samples in estimated 5.0000 s (583M iterations)
+Benchmarking frame_build_into/64_bytes: Analyzing
+frame_build_into/64_bytes
+                        time:   [8.4134 ns 8.4361 ns 8.4620 ns]
+                        thrpt:  [7.0438 GiB/s 7.0654 GiB/s 7.0844 GiB/s]
+                 change:
+                        time:   [+2.4845% +2.7002% +2.9223%] (p = 0.00 < 0.05)
+                        thrpt:  [−2.8393% −2.6292% −2.4243%]
+                        Performance has regressed.
+Found 2 outliers among 100 measurements (2.00%)
+  1 (1.00%) high mild
+  1 (1.00%) high severe
+Benchmarking frame_build_into/128_bytes
+Benchmarking frame_build_into/128_bytes: Warming up for 3.0000 s
+Benchmarking frame_build_into/128_bytes: Collecting 100 samples in estimated 5.0000 s (532M iterations)
+Benchmarking frame_build_into/128_bytes: Analyzing
+frame_build_into/128_bytes
+                        time:   [9.0932 ns 9.1589 ns 9.2319 ns]
+                        thrpt:  [12.913 GiB/s 13.016 GiB/s 13.110 GiB/s]
+                 change:
+                        time:   [+2.4087% +2.8186% +3.3924%] (p = 0.00 < 0.05)
+                        thrpt:  [−3.2811% −2.7413% −2.3521%]
+                        Performance has regressed.
+Found 9 outliers among 100 measurements (9.00%)
+  1 (1.00%) high mild
+  8 (8.00%) high severe
+Benchmarking frame_build_into/256_bytes
+Benchmarking frame_build_into/256_bytes: Warming up for 3.0000 s
+Benchmarking frame_build_into/256_bytes: Collecting 100 samples in estimated 5.0000 s (468M iterations)
+Benchmarking frame_build_into/256_bytes: Analyzing
+frame_build_into/256_bytes
+                        time:   [10.366 ns 10.530 ns 10.731 ns]
+                        thrpt:  [22.218 GiB/s 22.642 GiB/s 22.999 GiB/s]
+                 change:
+                        time:   [+0.5806% +1.4086% +2.3411%] (p = 0.00 < 0.05)
+                        thrpt:  [−2.2876% −1.3890% −0.5772%]
+                        Change within noise threshold.
+Found 11 outliers among 100 measurements (11.00%)
+  6 (6.00%) high mild
+  5 (5.00%) high severe
+Benchmarking frame_build_into/512_bytes
+Benchmarking frame_build_into/512_bytes: Warming up for 3.0000 s
+Benchmarking frame_build_into/512_bytes: Collecting 100 samples in estimated 5.0000 s (412M iterations)
+Benchmarking frame_build_into/512_bytes: Analyzing
+frame_build_into/512_bytes
+                        time:   [12.116 ns 12.418 ns 12.791 ns]
+                        thrpt:  [37.280 GiB/s 38.399 GiB/s 39.355 GiB/s]
+                 change:
+                        time:   [+2.0960% +3.4580% +5.1004%] (p = 0.00 < 0.05)
+                        thrpt:  [−4.8529% −3.3424% −2.0529%]
+                        Performance has regressed.
+Found 14 outliers among 100 measurements (14.00%)
+  3 (3.00%) high mild
+  11 (11.00%) high severe
+Benchmarking frame_build_into/1024_bytes
+Benchmarking frame_build_into/1024_bytes: Warming up for 3.0000 s
+Benchmarking frame_build_into/1024_bytes: Collecting 100 samples in estimated 5.0000 s (294M iterations)
+Benchmarking frame_build_into/1024_bytes: Analyzing
+frame_build_into/1024_bytes
+                        time:   [16.905 ns 17.167 ns 17.491 ns]
+                        thrpt:  [54.523 GiB/s 55.553 GiB/s 56.415 GiB/s]
+                 change:
+                        time:   [+6.8081% +7.9601% +9.5126%] (p = 0.00 < 0.05)
+                        thrpt:  [−8.6863% −7.3732% −6.3742%]
+                        Performance has regressed.
+Found 12 outliers among 100 measurements (12.00%)
+  6 (6.00%) high mild
+  6 (6.00%) high severe
+Benchmarking frame_build_into/1456_bytes
+Benchmarking frame_build_into/1456_bytes: Warming up for 3.0000 s
+Benchmarking frame_build_into/1456_bytes: Collecting 100 samples in estimated 5.0001 s (278M iterations)
+Benchmarking frame_build_into/1456_bytes: Analyzing
+frame_build_into/1456_bytes
+                        time:   [18.007 ns 18.121 ns 18.272 ns]
+                        thrpt:  [74.210 GiB/s 74.830 GiB/s 75.304 GiB/s]
+                 change:
+                        time:   [−5.7905% −3.0261% −0.1430%] (p = 0.03 < 0.05)
+                        thrpt:  [+0.1432% +3.1206% +6.1464%]
+                        Change within noise threshold.
+Found 15 outliers among 100 measurements (15.00%)
+  2 (2.00%) high mild
+  13 (13.00%) high severe
+
+Benchmarking frame_build_into_from_parts/64_bytes
+Benchmarking frame_build_into_from_parts/64_bytes: Warming up for 3.0000 s
+Benchmarking frame_build_into_from_parts/64_bytes: Collecting 100 samples in estimated 5.0000 s (361M iterations)
+Benchmarking frame_build_into_from_parts/64_bytes: Analyzing
+frame_build_into_from_parts/64_bytes
+                        time:   [13.912 ns 13.985 ns 14.078 ns]
+                        thrpt:  [4.2340 GiB/s 4.2621 GiB/s 4.2845 GiB/s]
+                 change:
+                        time:   [+0.5951% +1.3783% +2.2911%] (p = 0.00 < 0.05)
+                        thrpt:  [−2.2398% −1.3596% −0.5915%]
+                        Change within noise threshold.
+Found 13 outliers among 100 measurements (13.00%)
+  2 (2.00%) high mild
+  11 (11.00%) high severe
+Benchmarking frame_build_into_from_parts/256_bytes
+Benchmarking frame_build_into_from_parts/256_bytes: Warming up for 3.0000 s
+Benchmarking frame_build_into_from_parts/256_bytes: Collecting 100 samples in estimated 5.0000 s (297M iterations)
+Benchmarking frame_build_into_from_parts/256_bytes: Analyzing
+frame_build_into_from_parts/256_bytes
+                        time:   [16.990 ns 17.117 ns 17.280 ns]
+                        thrpt:  [13.798 GiB/s 13.929 GiB/s 14.033 GiB/s]
+                 change:
+                        time:   [+1.8673% +3.1720% +4.7102%] (p = 0.00 < 0.05)
+                        thrpt:  [−4.4983% −3.0745% −1.8331%]
+                        Performance has regressed.
+Found 7 outliers among 100 measurements (7.00%)
+  2 (2.00%) high mild
+  5 (5.00%) high severe
+Benchmarking frame_build_into_from_parts/512_bytes
+Benchmarking frame_build_into_from_parts/512_bytes: Warming up for 3.0000 s
+Benchmarking frame_build_into_from_parts/512_bytes: Collecting 100 samples in estimated 5.0001 s (266M iterations)
+Benchmarking frame_build_into_from_parts/512_bytes: Analyzing
+frame_build_into_from_parts/512_bytes
+                        time:   [18.763 ns 18.870 ns 19.003 ns]
+                        thrpt:  [25.092 GiB/s 25.270 GiB/s 25.414 GiB/s]
+                 change:
+                        time:   [+2.5134% +3.7454% +4.9902%] (p = 0.00 < 0.05)
+                        thrpt:  [−4.7530% −3.6102% −2.4518%]
+                        Performance has regressed.
+Found 11 outliers among 100 measurements (11.00%)
+  2 (2.00%) high mild
+  9 (9.00%) high severe
+Benchmarking frame_build_into_from_parts/1024_bytes
+Benchmarking frame_build_into_from_parts/1024_bytes: Warming up for 3.0000 s
+Benchmarking frame_build_into_from_parts/1024_bytes: Collecting 100 samples in estimated 5.0000 s (223M iterations)
+Benchmarking frame_build_into_from_parts/1024_bytes: Analyzing
+frame_build_into_from_parts/1024_bytes
+                        time:   [22.230 ns 22.558 ns 22.954 ns]
+                        thrpt:  [41.547 GiB/s 42.277 GiB/s 42.900 GiB/s]
+                 change:
+                        time:   [−2.6603% −1.7836% −0.7473%] (p = 0.00 < 0.05)
+                        thrpt:  [+0.7529% +1.8160% +2.7330%]
+                        Change within noise threshold.
+Found 9 outliers among 100 measurements (9.00%)
+  2 (2.00%) high mild
+  7 (7.00%) high severe
+Benchmarking frame_build_into_from_parts/1456_bytes
+Benchmarking frame_build_into_from_parts/1456_bytes: Warming up for 3.0000 s
+Benchmarking frame_build_into_from_parts/1456_bytes: Collecting 100 samples in estimated 5.0001 s (194M iterations)
+Benchmarking frame_build_into_from_parts/1456_bytes: Analyzing
+frame_build_into_from_parts/1456_bytes
+                        time:   [26.054 ns 26.312 ns 26.640 ns]
+                        thrpt:  [50.901 GiB/s 51.536 GiB/s 52.046 GiB/s]
+                 change:
+                        time:   [+8.0494% +10.160% +12.553%] (p = 0.00 < 0.05)
+                        thrpt:  [−11.153% −9.2226% −7.4497%]
+                        Performance has regressed.
+Found 17 outliers among 100 measurements (17.00%)
+  1 (1.00%) high mild
+  16 (16.00%) high severe
+
+Benchmarking frame_full_pipeline/64_bytes
+Benchmarking frame_full_pipeline/64_bytes: Warming up for 3.0000 s
+Benchmarking frame_full_pipeline/64_bytes: Collecting 100 samples in estimated 5.0000 s (225M iterations)
+Benchmarking frame_full_pipeline/64_bytes: Analyzing
+frame_full_pipeline/64_bytes
+                        time:   [21.318 ns 21.381 ns 21.447 ns]
+                        thrpt:  [2.7792 GiB/s 2.7878 GiB/s 2.7960 GiB/s]
+                 change:
+                        time:   [−17.842% −17.597% −17.367%] (p = 0.00 < 0.05)
+                        thrpt:  [+21.017% +21.355% +21.716%]
+                        Performance has improved.
+Found 4 outliers among 100 measurements (4.00%)
+  2 (2.00%) high mild
+  2 (2.00%) high severe
+Benchmarking frame_full_pipeline/256_bytes
+Benchmarking frame_full_pipeline/256_bytes: Warming up for 3.0000 s
+Benchmarking frame_full_pipeline/256_bytes: Collecting 100 samples in estimated 5.0000 s (203M iterations)
+Benchmarking frame_full_pipeline/256_bytes: Analyzing
+frame_full_pipeline/256_bytes
+                        time:   [24.761 ns 25.229 ns 25.855 ns]
+                        thrpt:  [9.2215 GiB/s 9.4502 GiB/s 9.6287 GiB/s]
+                 change:
+                        time:   [−31.406% −29.471% −27.116%] (p = 0.00 < 0.05)
+                        thrpt:  [+37.203% +41.785% +45.786%]
+                        Performance has improved.
+Found 6 outliers among 100 measurements (6.00%)
+  6 (6.00%) high severe
+Benchmarking frame_full_pipeline/1024_bytes
+Benchmarking frame_full_pipeline/1024_bytes: Warming up for 3.0000 s
+Benchmarking frame_full_pipeline/1024_bytes: Collecting 100 samples in estimated 5.0001 s (120M iterations)
+Benchmarking frame_full_pipeline/1024_bytes: Analyzing
+frame_full_pipeline/1024_bytes
+                        time:   [40.448 ns 40.636 ns 40.876 ns]
+                        thrpt:  [23.331 GiB/s 23.469 GiB/s 23.578 GiB/s]
+                 change:
+                        time:   [−31.973% −30.353% −29.189%] (p = 0.00 < 0.05)
+                        thrpt:  [+41.222% +43.581% +47.000%]
+                        Performance has improved.
+Found 15 outliers among 100 measurements (15.00%)
+  6 (6.00%) high mild
+  9 (9.00%) high severe
+Benchmarking frame_full_pipeline/1456_bytes
+Benchmarking frame_full_pipeline/1456_bytes: Warming up for 3.0000 s
+Benchmarking frame_full_pipeline/1456_bytes: Collecting 100 samples in estimated 5.0002 s (37M iterations)
+Benchmarking frame_full_pipeline/1456_bytes: Analyzing
+frame_full_pipeline/1456_bytes
+                        time:   [128.65 ns 129.31 ns 130.24 ns]
+                        thrpt:  [10.412 GiB/s 10.486 GiB/s 10.540 GiB/s]
+                 change:
+                        time:   [−12.003% −11.454% −10.901%] (p = 0.00 < 0.05)
+                        thrpt:  [+12.235% +12.936% +13.641%]
+                        Performance has improved.
+Found 6 outliers among 100 measurements (6.00%)
+  2 (2.00%) high mild
+  4 (4.00%) high severe
+
+     Running benches/transfer_bench.rs (target/release/deps/transfer_bench-641d6742e22d4f54)
+Gnuplot not found, using plotters backend
+Benchmarking transfer_missing_chunks/completion_pct/0
+Benchmarking transfer_missing_chunks/completion_pct/0: Warming up for 3.0000 s
+Benchmarking transfer_missing_chunks/completion_pct/0: Collecting 100 samples in estimated 5.0317 s (697k iterations)
+Benchmarking transfer_missing_chunks/completion_pct/0: Analyzing
+transfer_missing_chunks/completion_pct/0
+                        time:   [7.3425 µs 7.4040 µs 7.4785 µs]
+                        thrpt:  [1.3372 Gelem/s 1.3506 Gelem/s 1.3619 Gelem/s]
+                 change:
+                        time:   [+6.4613% +10.474% +15.682%] (p = 0.00 < 0.05)
+                        thrpt:  [−13.556% −9.4807% −6.0692%]
+                        Performance has regressed.
+Found 14 outliers among 100 measurements (14.00%)
+  2 (2.00%) high mild
+  12 (12.00%) high severe
+Benchmarking transfer_missing_chunks/completion_pct/50
+Benchmarking transfer_missing_chunks/completion_pct/50: Warming up for 3.0000 s
+Benchmarking transfer_missing_chunks/completion_pct/50: Collecting 100 samples in estimated 5.0189 s (1.3M iterations)
+Benchmarking transfer_missing_chunks/completion_pct/50: Analyzing
+transfer_missing_chunks/completion_pct/50
+                        time:   [3.8115 µs 3.8880 µs 3.9796 µs]
+                        thrpt:  [1.2564 Gelem/s 1.2860 Gelem/s 1.3118 Gelem/s]
+                 change:
+                        time:   [+2.5249% +4.9252% +7.6002%] (p = 0.00 < 0.05)
+                        thrpt:  [−7.0633% −4.6940% −2.4627%]
+                        Performance has regressed.
+Found 11 outliers among 100 measurements (11.00%)
+  3 (3.00%) high mild
+  8 (8.00%) high severe
+Benchmarking transfer_missing_chunks/completion_pct/90
+Benchmarking transfer_missing_chunks/completion_pct/90: Warming up for 3.0000 s
+Benchmarking transfer_missing_chunks/completion_pct/90: Collecting 100 samples in estimated 5.0034 s (5.3M iterations)
+Benchmarking transfer_missing_chunks/completion_pct/90: Analyzing
+transfer_missing_chunks/completion_pct/90
+                        time:   [935.34 ns 957.22 ns 985.95 ns]
+                        thrpt:  [1.0142 Gelem/s 1.0447 Gelem/s 1.0691 Gelem/s]
+                 change:
+                        time:   [+2.0571% +5.0071% +8.9669%] (p = 0.00 < 0.05)
+                        thrpt:  [−8.2290% −4.7683% −2.0156%]
+                        Performance has regressed.
+Found 17 outliers among 100 measurements (17.00%)
+  7 (7.00%) high mild
+  10 (10.00%) high severe
+Benchmarking transfer_missing_chunks/completion_pct/95
+Benchmarking transfer_missing_chunks/completion_pct/95: Warming up for 3.0000 s
+Benchmarking transfer_missing_chunks/completion_pct/95: Collecting 100 samples in estimated 5.0022 s (8.7M iterations)
+Benchmarking transfer_missing_chunks/completion_pct/95: Analyzing
+transfer_missing_chunks/completion_pct/95
+                        time:   [577.89 ns 589.28 ns 603.42 ns]
+                        thrpt:  [828.60 Melem/s 848.49 Melem/s 865.21 Melem/s]
+                 change:
+                        time:   [+0.7373% +2.5521% +4.3895%] (p = 0.00 < 0.05)
+                        thrpt:  [−4.2050% −2.4886% −0.7319%]
+                        Change within noise threshold.
+Found 10 outliers among 100 measurements (10.00%)
+  4 (4.00%) high mild
+  6 (6.00%) high severe
+Benchmarking transfer_missing_chunks/completion_pct/99
+Benchmarking transfer_missing_chunks/completion_pct/99: Warming up for 3.0000 s
+Benchmarking transfer_missing_chunks/completion_pct/99: Collecting 100 samples in estimated 5.0003 s (19M iterations)
+Benchmarking transfer_missing_chunks/completion_pct/99: Analyzing
+transfer_missing_chunks/completion_pct/99
+                        time:   [264.97 ns 268.97 ns 273.75 ns]
+                        thrpt:  [365.29 Melem/s 371.79 Melem/s 377.40 Melem/s]
+                 change:
+                        time:   [+1.2615% +2.2658% +3.2684%] (p = 0.00 < 0.05)
+                        thrpt:  [−3.1650% −2.2156% −1.2458%]
+                        Performance has regressed.
+Found 16 outliers among 100 measurements (16.00%)
+  6 (6.00%) high mild
+  10 (10.00%) high severe
+Benchmarking transfer_missing_chunks/completion_pct/100
+Benchmarking transfer_missing_chunks/completion_pct/100: Warming up for 3.0000 s
+Benchmarking transfer_missing_chunks/completion_pct/100: Collecting 100 samples in estimated 5.0006 s (26M iterations)
+Benchmarking transfer_missing_chunks/completion_pct/100: Analyzing
+transfer_missing_chunks/completion_pct/100
+                        time:   [190.37 ns 191.74 ns 193.40 ns]
+                        thrpt:  [0.0000  elem/s 0.0000  elem/s 0.0000  elem/s]
+                 change:
+                        time:   [+0.5770% +0.8684% +1.2692%] (p = 0.00 < 0.05)
+                        thrpt:  [−1.2533% −0.8609% −0.5737%]
+                        Change within noise threshold.
+Found 15 outliers among 100 measurements (15.00%)
+  12 (12.00%) high mild
+  3 (3.00%) high severe
+
+Benchmarking transfer_missing_count/completion_pct/0
+Benchmarking transfer_missing_count/completion_pct/0: Warming up for 3.0000 s
+Benchmarking transfer_missing_count/completion_pct/0: Collecting 100 samples in estimated 5.0000 s (12B iterations)
+Benchmarking transfer_missing_count/completion_pct/0: Analyzing
+transfer_missing_count/completion_pct/0
+                        time:   [427.21 ps 433.01 ps 440.36 ps]
+                        change: [+0.7667% +2.5915% +4.8769%] (p = 0.02 < 0.05)
+                        Change within noise threshold.
+Found 10 outliers among 100 measurements (10.00%)
+  1 (1.00%) high mild
+  9 (9.00%) high severe
+Benchmarking transfer_missing_count/completion_pct/50
+Benchmarking transfer_missing_count/completion_pct/50: Warming up for 3.0000 s
+Benchmarking transfer_missing_count/completion_pct/50: Collecting 100 samples in estimated 5.0000 s (12B iterations)
+Benchmarking transfer_missing_count/completion_pct/50: Analyzing
+transfer_missing_count/completion_pct/50
+                        time:   [425.01 ps 429.86 ps 435.85 ps]
+                        change: [+2.8606% +5.1542% +7.6568%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 12 outliers among 100 measurements (12.00%)
+  4 (4.00%) high mild
+  8 (8.00%) high severe
+Benchmarking transfer_missing_count/completion_pct/99
+Benchmarking transfer_missing_count/completion_pct/99: Warming up for 3.0000 s
+Benchmarking transfer_missing_count/completion_pct/99: Collecting 100 samples in estimated 5.0000 s (12B iterations)
+Benchmarking transfer_missing_count/completion_pct/99: Analyzing
+transfer_missing_count/completion_pct/99
+                        time:   [419.63 ps 420.78 ps 422.19 ps]
+                        change: [−0.6010% −0.3374% −0.0509%] (p = 0.02 < 0.05)
+                        Change within noise threshold.
+Found 20 outliers among 100 measurements (20.00%)
+  1 (1.00%) low severe
+  7 (7.00%) low mild
+  6 (6.00%) high mild
+  6 (6.00%) high severe
+
+Benchmarking transfer_is_chunk_missing/check_missing
+Benchmarking transfer_is_chunk_missing/check_missing: Warming up for 3.0000 s
+Benchmarking transfer_is_chunk_missing/check_missing: Collecting 100 samples in estimated 5.0000 s (746M iterations)
+Benchmarking transfer_is_chunk_missing/check_missing: Analyzing
+transfer_is_chunk_missing/check_missing
+                        time:   [6.6602 ns 6.6748 ns 6.6905 ns]
+                        change: [−0.3093% +0.0684% +0.4221%] (p = 0.71 > 0.05)
+                        No change in performance detected.
+Found 11 outliers among 100 measurements (11.00%)
+  7 (7.00%) high mild
+  4 (4.00%) high severe
+Benchmarking transfer_is_chunk_missing/check_transferred
+Benchmarking transfer_is_chunk_missing/check_transferred: Warming up for 3.0000 s
+Benchmarking transfer_is_chunk_missing/check_transferred: Collecting 100 samples in estimated 5.0000 s (751M iterations)
+Benchmarking transfer_is_chunk_missing/check_transferred: Analyzing
+transfer_is_chunk_missing/check_transferred
+                        time:   [6.5923 ns 6.6124 ns 6.6383 ns]
+                        change: [+0.3913% +1.1712% +1.9922%] (p = 0.01 < 0.05)
+                        Change within noise threshold.
+Found 17 outliers among 100 measurements (17.00%)
+  3 (3.00%) low mild
+  2 (2.00%) high mild
+  12 (12.00%) high severe
+
+Benchmarking mark_chunk_transferred/mark_single
+Benchmarking mark_chunk_transferred/mark_single: Warming up for 3.0000 s
+Benchmarking mark_chunk_transferred/mark_single: Collecting 100 samples in estimated 5.7383 s (35k iterations)
+Benchmarking mark_chunk_transferred/mark_single: Analyzing
+mark_chunk_transferred/mark_single
+                        time:   [50.302 µs 58.921 µs 67.836 µs]
+                        thrpt:  [14.741 Kelem/s 16.972 Kelem/s 19.880 Kelem/s]
+                 change:
+                        time:   [−17.784% +0.0633% +22.144%] (p = 0.99 > 0.05)
+                        thrpt:  [−18.130% −0.0633% +21.631%]
+                        No change in performance detected.
+Found 5 outliers among 100 measurements (5.00%)
+  5 (5.00%) high mild
+Benchmarking mark_chunk_transferred/mark_batch_100
+Benchmarking mark_chunk_transferred/mark_batch_100: Warming up for 3.0000 s
+Benchmarking mark_chunk_transferred/mark_batch_100: Collecting 100 samples in estimated 5.5776 s (35k iterations)
+Benchmarking mark_chunk_transferred/mark_batch_100: Analyzing
+mark_chunk_transferred/mark_batch_100
+                        time:   [50.918 µs 58.624 µs 65.840 µs]
+                        thrpt:  [15.188 Kelem/s 17.058 Kelem/s 19.639 Kelem/s]
+                 change:
+                        time:   [−13.917% +3.2905% +24.706%] (p = 0.73 > 0.05)
+                        thrpt:  [−19.811% −3.1857% +16.167%]
+                        No change in performance detected.
+
+Benchmarking progress_calculation/progress
+Benchmarking progress_calculation/progress: Warming up for 3.0000 s
+Benchmarking progress_calculation/progress: Collecting 100 samples in estimated 5.0000 s (9.2B iterations)
+Benchmarking progress_calculation/progress: Analyzing
+progress_calculation/progress
+                        time:   [543.85 ps 544.73 ps 545.73 ps]
+                        change: [−0.1978% +0.0663% +0.3762%] (p = 0.66 > 0.05)
+                        No change in performance detected.
+Found 19 outliers among 100 measurements (19.00%)
+  1 (1.00%) low severe
+  3 (3.00%) low mild
+  3 (3.00%) high mild
+  12 (12.00%) high severe
+Benchmarking progress_calculation/transferred_count
+Benchmarking progress_calculation/transferred_count: Warming up for 3.0000 s
+Benchmarking progress_calculation/transferred_count: Collecting 100 samples in estimated 5.0000 s (12B iterations)
+Benchmarking progress_calculation/transferred_count: Analyzing
+progress_calculation/transferred_count
+                        time:   [423.00 ps 425.75 ps 429.90 ps]
+                        change: [+0.0433% +0.5819% +1.1898%] (p = 0.04 < 0.05)
+                        Change within noise threshold.
+Found 4 outliers among 100 measurements (4.00%)
+  3 (3.00%) high mild
+  1 (1.00%) high severe
+Benchmarking progress_calculation/bytes_transferred
+Benchmarking progress_calculation/bytes_transferred: Warming up for 3.0000 s
+Benchmarking progress_calculation/bytes_transferred: Collecting 100 samples in estimated 5.0000 s (12B iterations)
+Benchmarking progress_calculation/bytes_transferred: Analyzing
+progress_calculation/bytes_transferred
+                        time:   [420.16 ps 421.40 ps 422.90 ps]
+                        change: [−0.4597% +0.2712% +1.2576%] (p = 0.50 > 0.05)
+                        No change in performance detected.
+Found 11 outliers among 100 measurements (11.00%)
+  2 (2.00%) high mild
+  9 (9.00%) high severe
+
+Benchmarking peer_operations/add_peer
+Benchmarking peer_operations/add_peer: Warming up for 3.0000 s
+Benchmarking peer_operations/add_peer: Collecting 100 samples in estimated 5.4684 s (50k iterations)
+Benchmarking peer_operations/add_peer: Analyzing
+peer_operations/add_peer
+                        time:   [35.600 µs 39.102 µs 42.435 µs]
+                        change: [+23.039% +33.718% +44.974%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Benchmarking peer_operations/assign_chunk
+Benchmarking peer_operations/assign_chunk: Warming up for 3.0000 s
+Benchmarking peer_operations/assign_chunk: Collecting 100 samples in estimated 5.0002 s (68M iterations)
+Benchmarking peer_operations/assign_chunk: Analyzing
+peer_operations/assign_chunk
+                        time:   [73.429 ns 73.875 ns 74.379 ns]
+                        change: [+0.9527% +2.6362% +5.3406%] (p = 0.01 < 0.05)
+                        Change within noise threshold.
+Found 7 outliers among 100 measurements (7.00%)
+  1 (1.00%) high mild
+  6 (6.00%) high severe
+Benchmarking peer_operations/next_chunk_to_request
+Benchmarking peer_operations/next_chunk_to_request: Warming up for 3.0000 s
+Benchmarking peer_operations/next_chunk_to_request: Collecting 100 samples in estimated 5.0000 s (1.5B iterations)
+Benchmarking peer_operations/next_chunk_to_request: Analyzing
+peer_operations/next_chunk_to_request
+                        time:   [3.3530 ns 3.3573 ns 3.3623 ns]
+                        change: [−0.9773% −0.5770% −0.2199%] (p = 0.00 < 0.05)
+                        Change within noise threshold.
+Found 12 outliers among 100 measurements (12.00%)
+  8 (8.00%) high mild
+  4 (4.00%) high severe
+Benchmarking peer_operations/assigned_chunks
+Benchmarking peer_operations/assigned_chunks: Warming up for 3.0000 s
+Benchmarking peer_operations/assigned_chunks: Collecting 100 samples in estimated 6.0537 s (20k iterations)
+Benchmarking peer_operations/assigned_chunks: Analyzing
+peer_operations/assigned_chunks
+                        time:   [296.72 µs 298.19 µs 300.24 µs]
+                        change: [+0.1747% +0.7434% +1.3904%] (p = 0.01 < 0.05)
+                        Change within noise threshold.
+Found 15 outliers among 100 measurements (15.00%)
+  4 (4.00%) high mild
+  11 (11.00%) high severe
+Benchmarking peer_operations/aggregate_peer_speed
+Benchmarking peer_operations/aggregate_peer_speed: Warming up for 3.0000 s
+Benchmarking peer_operations/aggregate_peer_speed: Collecting 100 samples in estimated 5.0000 s (1.3B iterations)
+Benchmarking peer_operations/aggregate_peer_speed: Analyzing
+peer_operations/aggregate_peer_speed
+                        time:   [3.6304 ns 3.6569 ns 3.6894 ns]
+                        change: [−0.9546% −0.3662% +0.2334%] (p = 0.23 > 0.05)
+                        No change in performance detected.
+Found 7 outliers among 100 measurements (7.00%)
+  2 (2.00%) high mild
+  5 (5.00%) high severe
+
+Benchmarking transfer_throughput/1000_chunk_transfer
+Benchmarking transfer_throughput/1000_chunk_transfer: Warming up for 3.0000 s
+Benchmarking transfer_throughput/1000_chunk_transfer: Collecting 100 samples in estimated 5.4050 s (30k iterations)
+Benchmarking transfer_throughput/1000_chunk_transfer: Analyzing
+transfer_throughput/1000_chunk_transfer
+                        time:   [166.08 µs 166.72 µs 167.39 µs]
+                        thrpt:  [5.9741 Melem/s 5.9981 Melem/s 6.0211 Melem/s]
+                 change:
+                        time:   [−1.3545% −1.0941% −0.8136%] (p = 0.00 < 0.05)
+                        thrpt:  [+0.8202% +1.1062% +1.3731%]
+                        Change within noise threshold.
+Found 11 outliers among 100 measurements (11.00%)
+  6 (6.00%) high mild
+  5 (5.00%) high severe
+
+Benchmarking session_creation/chunks/100
+Benchmarking session_creation/chunks/100: Warming up for 3.0000 s
+Benchmarking session_creation/chunks/100: Collecting 100 samples in estimated 5.0010 s (11M iterations)
+Benchmarking session_creation/chunks/100: Analyzing
+session_creation/chunks/100
+                        time:   [446.61 ns 447.44 ns 448.35 ns]
+                        thrpt:  [223.04 Melem/s 223.49 Melem/s 223.91 Melem/s]
+                 change:
+                        time:   [−8.8286% −4.8117% −1.8998%] (p = 0.00 < 0.05)
+                        thrpt:  [+1.9366% +5.0549% +9.6835%]
+                        Performance has improved.
+Found 7 outliers among 100 measurements (7.00%)
+  6 (6.00%) high mild
+  1 (1.00%) high severe
+Benchmarking session_creation/chunks/1000
+Benchmarking session_creation/chunks/1000: Warming up for 3.0000 s
+Benchmarking session_creation/chunks/1000: Collecting 100 samples in estimated 5.0071 s (924k iterations)
+Benchmarking session_creation/chunks/1000: Analyzing
+session_creation/chunks/1000
+                        time:   [5.3831 µs 5.3947 µs 5.4075 µs]
+                        thrpt:  [184.93 Melem/s 185.37 Melem/s 185.77 Melem/s]
+                 change:
+                        time:   [−27.512% −17.532% −10.339%] (p = 0.00 < 0.05)
+                        thrpt:  [+11.532% +21.260% +37.954%]
+                        Performance has improved.
+Found 10 outliers among 100 measurements (10.00%)
+  4 (4.00%) low mild
+  3 (3.00%) high mild
+  3 (3.00%) high severe
+Benchmarking session_creation/chunks/10000
+Benchmarking session_creation/chunks/10000: Warming up for 3.0000 s
+Benchmarking session_creation/chunks/10000: Collecting 100 samples in estimated 5.0486 s (96k iterations)
+Benchmarking session_creation/chunks/10000: Analyzing
+session_creation/chunks/10000
+                        time:   [51.872 µs 52.121 µs 52.379 µs]
+                        thrpt:  [190.92 Melem/s 191.86 Melem/s 192.78 Melem/s]
+                 change:
+                        time:   [−0.2817% +0.2833% +0.8010%] (p = 0.32 > 0.05)
+                        thrpt:  [−0.7947% −0.2825% +0.2825%]
+                        No change in performance detected.
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) high mild
+Benchmarking session_creation/chunks/100000
+Benchmarking session_creation/chunks/100000: Warming up for 3.0000 s
+Benchmarking session_creation/chunks/100000: Collecting 100 samples in estimated 5.4227 s (10k iterations)
+Benchmarking session_creation/chunks/100000: Analyzing
+session_creation/chunks/100000
+                        time:   [545.93 µs 561.01 µs 578.79 µs]
+                        thrpt:  [172.77 Melem/s 178.25 Melem/s 183.17 Melem/s]
+                 change:
+                        time:   [+0.2207% +1.8434% +3.8928%] (p = 0.05 < 0.05)
+                        thrpt:  [−3.7469% −1.8100% −0.2203%]
+                        Change within noise threshold.
+Found 9 outliers among 100 measurements (9.00%)
+  3 (3.00%) high mild
+  6 (6.00%) high severe
+

@@ -1,0 +1,484 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+   Compiling wraith-crypto v2.3.3 (/home/parobek/Code/WRAITH-Protocol/crates/wraith-crypto)
+   Compiling wraith-files v2.3.3 (/home/parobek/Code/WRAITH-Protocol/crates/wraith-files)
+    Finished `bench` profile [optimized + debuginfo] target(s) in 57.94s
+     Running unittests src/lib.rs (target/release/deps/wraith_files-845ac7f3cc32930c)
+
+running 34 tests
+test async_file::tests::test_async_reader_multiple_reads ... ignored
+test async_file::tests::test_async_reader_partial_read ... ignored
+test async_file::tests::test_async_reader_poll_completions ... ignored
+test async_file::tests::test_async_reader_single_read ... ignored
+test async_file::tests::test_async_writer_multiple_writes ... ignored
+test async_file::tests::test_async_writer_single_write ... ignored
+test async_file::tests::test_async_writer_wait_all ... ignored
+test chunker::tests::test_chunk_info ... ignored
+test chunker::tests::test_chunker_buffer_pool_last_chunk ... ignored
+test chunker::tests::test_chunker_buffer_pool_roundtrip ... ignored
+test chunker::tests::test_chunker_release_without_pool ... ignored
+test chunker::tests::test_chunker_set_buffer_pool ... ignored
+test chunker::tests::test_chunker_with_buffer_pool ... ignored
+test chunker::tests::test_chunking_roundtrip ... ignored
+test chunker::tests::test_incomplete_finalize_fails ... ignored
+test chunker::tests::test_missing_chunks ... ignored
+test chunker::tests::test_out_of_order_reassembly ... ignored
+test chunker::tests::test_seek_to_chunk ... ignored
+test io_uring::tests::test_completion_methods ... ignored
+test io_uring::tests::test_io_uring_batching ... ignored
+test io_uring::tests::test_io_uring_creation ... ignored
+test io_uring::tests::test_io_uring_read ... ignored
+test io_uring::tests::test_io_uring_write ... ignored
+test tree_hash::tests::test_chunk_verification ... ignored
+test tree_hash::tests::test_file_tree_hash_methods ... ignored
+test tree_hash::tests::test_incremental_hasher ... ignored
+test tree_hash::tests::test_incremental_hasher_buffering ... ignored
+test tree_hash::tests::test_incremental_vs_batch ... ignored
+test tree_hash::tests::test_merkle_root_empty ... ignored
+test tree_hash::tests::test_merkle_root_multiple_leaves ... ignored
+test tree_hash::tests::test_merkle_root_odd_number ... ignored
+test tree_hash::tests::test_merkle_root_single_leaf ... ignored
+test tree_hash::tests::test_tree_hash_computation ... ignored
+test tree_hash::tests::test_tree_hash_from_data ... ignored
+
+test result: ok. 0 passed; 0 failed; 34 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running benches/files_bench.rs (target/release/deps/files_bench-ca60bc967c01bee6)
+Gnuplot not found, using plotters backend
+Benchmarking missing_chunks_completion/completion_pct/0
+Benchmarking missing_chunks_completion/completion_pct/0: Warming up for 3.0000 s
+Benchmarking missing_chunks_completion/completion_pct/0: Collecting 100 samples in estimated 5.0164 s (773k iterations)
+Benchmarking missing_chunks_completion/completion_pct/0: Analyzing
+missing_chunks_completion/completion_pct/0
+                        time:   [6.4593 µs 6.5339 µs 6.6201 µs]
+                        thrpt:  [1.5106 Gelem/s 1.5305 Gelem/s 1.5482 Gelem/s]
+                 change:
+                        time:   [+5.6506% +10.628% +16.680%] (p = 0.00 < 0.05)
+                        thrpt:  [−14.295% −9.6067% −5.3484%]
+                        Performance has regressed.
+Found 13 outliers among 100 measurements (13.00%)
+  1 (1.00%) high mild
+  12 (12.00%) high severe
+Benchmarking missing_chunks_completion/completion_pct/50
+Benchmarking missing_chunks_completion/completion_pct/50: Warming up for 3.0000 s
+Benchmarking missing_chunks_completion/completion_pct/50: Collecting 100 samples in estimated 5.0128 s (1.4M iterations)
+Benchmarking missing_chunks_completion/completion_pct/50: Analyzing
+missing_chunks_completion/completion_pct/50
+                        time:   [3.5060 µs 3.7382 µs 4.0148 µs]
+                        thrpt:  [1.2454 Gelem/s 1.3375 Gelem/s 1.4261 Gelem/s]
+                 change:
+                        time:   [+9.9417% +15.879% +23.836%] (p = 0.00 < 0.05)
+                        thrpt:  [−19.248% −13.703% −9.0427%]
+                        Performance has regressed.
+Found 18 outliers among 100 measurements (18.00%)
+  1 (1.00%) high mild
+  17 (17.00%) high severe
+Benchmarking missing_chunks_completion/completion_pct/90
+Benchmarking missing_chunks_completion/completion_pct/90: Warming up for 3.0000 s
+Benchmarking missing_chunks_completion/completion_pct/90: Collecting 100 samples in estimated 5.0007 s (5.7M iterations)
+Benchmarking missing_chunks_completion/completion_pct/90: Analyzing
+missing_chunks_completion/completion_pct/90
+                        time:   [864.72 ns 899.39 ns 942.23 ns]
+                        thrpt:  [1.0613 Gelem/s 1.1119 Gelem/s 1.1564 Gelem/s]
+                 change:
+                        time:   [+7.4937% +10.364% +14.009%] (p = 0.00 < 0.05)
+                        thrpt:  [−12.288% −9.3904% −6.9713%]
+                        Performance has regressed.
+Found 11 outliers among 100 measurements (11.00%)
+  2 (2.00%) high mild
+  9 (9.00%) high severe
+Benchmarking missing_chunks_completion/completion_pct/95
+Benchmarking missing_chunks_completion/completion_pct/95: Warming up for 3.0000 s
+Benchmarking missing_chunks_completion/completion_pct/95: Collecting 100 samples in estimated 5.0022 s (9.4M iterations)
+Benchmarking missing_chunks_completion/completion_pct/95: Analyzing
+missing_chunks_completion/completion_pct/95
+                        time:   [520.11 ns 525.45 ns 533.51 ns]
+                        thrpt:  [937.20 Melem/s 951.57 Melem/s 961.33 Melem/s]
+                 change:
+                        time:   [−1.6714% +0.1259% +2.4060%] (p = 0.92 > 0.05)
+                        thrpt:  [−2.3495% −0.1258% +1.6998%]
+                        No change in performance detected.
+Found 15 outliers among 100 measurements (15.00%)
+  4 (4.00%) high mild
+  11 (11.00%) high severe
+Benchmarking missing_chunks_completion/completion_pct/99
+Benchmarking missing_chunks_completion/completion_pct/99: Warming up for 3.0000 s
+Benchmarking missing_chunks_completion/completion_pct/99: Collecting 100 samples in estimated 5.0001 s (19M iterations)
+Benchmarking missing_chunks_completion/completion_pct/99: Analyzing
+missing_chunks_completion/completion_pct/99
+                        time:   [261.81 ns 262.66 ns 263.68 ns]
+                        thrpt:  [379.24 Melem/s 380.72 Melem/s 381.96 Melem/s]
+                 change:
+                        time:   [+1.4377% +2.1108% +2.7266%] (p = 0.00 < 0.05)
+                        thrpt:  [−2.6542% −2.0672% −1.4173%]
+                        Performance has regressed.
+Found 13 outliers among 100 measurements (13.00%)
+  6 (6.00%) high mild
+  7 (7.00%) high severe
+Benchmarking missing_chunks_completion/completion_pct/100
+Benchmarking missing_chunks_completion/completion_pct/100: Warming up for 3.0000 s
+Benchmarking missing_chunks_completion/completion_pct/100: Collecting 100 samples in estimated 5.0000 s (26M iterations)
+Benchmarking missing_chunks_completion/completion_pct/100: Analyzing
+missing_chunks_completion/completion_pct/100
+                        time:   [189.58 ns 189.88 ns 190.28 ns]
+                        thrpt:  [0.0000  elem/s 0.0000  elem/s 0.0000  elem/s]
+                 change:
+                        time:   [−0.3317% +0.0946% +0.7853%] (p = 0.76 > 0.05)
+                        thrpt:  [−0.7792% −0.0945% +0.3328%]
+                        No change in performance detected.
+Found 13 outliers among 100 measurements (13.00%)
+  5 (5.00%) high mild
+  8 (8.00%) high severe
+
+Benchmarking missing_count_o1/completion_pct/0
+Benchmarking missing_count_o1/completion_pct/0: Warming up for 3.0000 s
+Benchmarking missing_count_o1/completion_pct/0: Collecting 100 samples in estimated 5.0000 s (12B iterations)
+Benchmarking missing_count_o1/completion_pct/0: Analyzing
+missing_count_o1/completion_pct/0
+                        time:   [419.21 ps 420.88 ps 422.85 ps]
+                        change: [−0.7381% −0.2704% +0.1720%] (p = 0.24 > 0.05)
+                        No change in performance detected.
+Found 5 outliers among 100 measurements (5.00%)
+  1 (1.00%) high mild
+  4 (4.00%) high severe
+Benchmarking missing_count_o1/completion_pct/50
+Benchmarking missing_count_o1/completion_pct/50: Warming up for 3.0000 s
+Benchmarking missing_count_o1/completion_pct/50: Collecting 100 samples in estimated 5.0000 s (12B iterations)
+Benchmarking missing_count_o1/completion_pct/50: Analyzing
+missing_count_o1/completion_pct/50
+                        time:   [420.21 ps 423.12 ps 427.42 ps]
+                        change: [−0.8581% −0.2847% +0.3113%] (p = 0.35 > 0.05)
+                        No change in performance detected.
+Found 15 outliers among 100 measurements (15.00%)
+  1 (1.00%) low severe
+  1 (1.00%) low mild
+  6 (6.00%) high mild
+  7 (7.00%) high severe
+Benchmarking missing_count_o1/completion_pct/99
+Benchmarking missing_count_o1/completion_pct/99: Warming up for 3.0000 s
+Benchmarking missing_count_o1/completion_pct/99: Collecting 100 samples in estimated 5.0000 s (12B iterations)
+Benchmarking missing_count_o1/completion_pct/99: Analyzing
+missing_count_o1/completion_pct/99
+                        time:   [418.88 ps 419.52 ps 420.25 ps]
+                        change: [−0.3228% −0.0894% +0.1478%] (p = 0.47 > 0.05)
+                        No change in performance detected.
+Found 8 outliers among 100 measurements (8.00%)
+  4 (4.00%) high mild
+  4 (4.00%) high severe
+
+Benchmarking is_chunk_missing_o1/check_missing
+Benchmarking is_chunk_missing_o1/check_missing: Warming up for 3.0000 s
+Benchmarking is_chunk_missing_o1/check_missing: Collecting 100 samples in estimated 5.0000 s (756M iterations)
+Benchmarking is_chunk_missing_o1/check_missing: Analyzing
+is_chunk_missing_o1/check_missing
+                        time:   [6.6016 ns 6.6118 ns 6.6224 ns]
+                        change: [+0.4312% +0.6185% +0.8016%] (p = 0.00 < 0.05)
+                        Change within noise threshold.
+Found 11 outliers among 100 measurements (11.00%)
+  4 (4.00%) low mild
+  5 (5.00%) high mild
+  2 (2.00%) high severe
+Benchmarking is_chunk_missing_o1/check_received
+Benchmarking is_chunk_missing_o1/check_received: Warming up for 3.0000 s
+Benchmarking is_chunk_missing_o1/check_received: Collecting 100 samples in estimated 5.0000 s (12B iterations)
+Benchmarking is_chunk_missing_o1/check_received: Analyzing
+is_chunk_missing_o1/check_received
+                        time:   [423.66 ps 424.48 ps 425.41 ps]
+                        change: [+0.3492% +0.7507% +1.2023%] (p = 0.00 < 0.05)
+                        Change within noise threshold.
+Found 16 outliers among 100 measurements (16.00%)
+  2 (2.00%) low severe
+  2 (2.00%) low mild
+  8 (8.00%) high mild
+  4 (4.00%) high severe
+
+Benchmarking chunk_write/sequential_write
+Benchmarking chunk_write/sequential_write: Warming up for 3.0000 s
+Benchmarking chunk_write/sequential_write: Collecting 100 samples in estimated 5.6535 s (200 iterations)
+Benchmarking chunk_write/sequential_write: Analyzing
+chunk_write/sequential_write
+                        time:   [23.997 ms 24.259 ms 24.526 ms]
+                        thrpt:  [40.773 MiB/s 41.222 MiB/s 41.672 MiB/s]
+                 change:
+                        time:   [+3.6220% +5.1372% +6.7343%] (p = 0.00 < 0.05)
+                        thrpt:  [−6.3094% −4.8862% −3.4954%]
+                        Performance has regressed.
+Benchmarking chunk_write/random_write
+Benchmarking chunk_write/random_write: Warming up for 3.0000 s
+Benchmarking chunk_write/random_write: Collecting 100 samples in estimated 7.1929 s (300 iterations)
+Benchmarking chunk_write/random_write: Analyzing
+chunk_write/random_write
+                        time:   [23.218 ms 23.374 ms 23.536 ms]
+                        thrpt:  [42.489 MiB/s 42.782 MiB/s 43.070 MiB/s]
+                 change:
+                        time:   [−1.1401% +0.0418% +1.1706%] (p = 0.94 > 0.05)
+                        thrpt:  [−1.1570% −0.0418% +1.1533%]
+                        No change in performance detected.
+Found 2 outliers among 100 measurements (2.00%)
+  2 (2.00%) high mild
+
+Benchmarking incremental_hasher_update/1024
+Benchmarking incremental_hasher_update/1024: Warming up for 3.0000 s
+Benchmarking incremental_hasher_update/1024: Collecting 100 samples in estimated 7.1712 s (15k iterations)
+Benchmarking incremental_hasher_update/1024: Analyzing
+incremental_hasher_update/1024
+                        time:   [414.07 µs 426.53 µs 436.05 µs]
+                        thrpt:  [2.2396 MiB/s 2.2896 MiB/s 2.3584 MiB/s]
+                 change:
+                        time:   [−5.8952% +1.5549% +10.476%] (p = 0.70 > 0.05)
+                        thrpt:  [−9.4825% −1.5311% +6.2645%]
+                        No change in performance detected.
+Benchmarking incremental_hasher_update/4096
+Benchmarking incremental_hasher_update/4096: Warming up for 3.0000 s
+Benchmarking incremental_hasher_update/4096: Collecting 100 samples in estimated 7.2556 s (15k iterations)
+Benchmarking incremental_hasher_update/4096: Analyzing
+incremental_hasher_update/4096
+                        time:   [414.40 µs 428.16 µs 438.99 µs]
+                        thrpt:  [8.8983 MiB/s 9.1233 MiB/s 9.4263 MiB/s]
+                 change:
+                        time:   [−7.8570% −0.1107% +8.3201%] (p = 0.98 > 0.05)
+                        thrpt:  [−7.6810% +0.1108% +8.5269%]
+                        No change in performance detected.
+Benchmarking incremental_hasher_update/16384
+Benchmarking incremental_hasher_update/16384: Warming up for 3.0000 s
+Benchmarking incremental_hasher_update/16384: Collecting 100 samples in estimated 7.3190 s (15k iterations)
+Benchmarking incremental_hasher_update/16384: Analyzing
+incremental_hasher_update/16384
+                        time:   [415.69 µs 428.93 µs 438.96 µs]
+                        thrpt:  [35.595 MiB/s 36.427 MiB/s 37.588 MiB/s]
+                 change:
+                        time:   [−8.4190% −0.8240% +6.3992%] (p = 0.83 > 0.05)
+                        thrpt:  [−6.0143% +0.8309% +9.1930%]
+                        No change in performance detected.
+Benchmarking incremental_hasher_update/65536
+Benchmarking incremental_hasher_update/65536: Warming up for 3.0000 s
+Benchmarking incremental_hasher_update/65536: Collecting 100 samples in estimated 5.0155 s (10k iterations)
+Benchmarking incremental_hasher_update/65536: Analyzing
+incremental_hasher_update/65536
+                        time:   [353.20 µs 378.80 µs 400.16 µs]
+                        thrpt:  [156.19 MiB/s 164.99 MiB/s 176.96 MiB/s]
+                 change:
+                        time:   [−4.6878% +2.2121% +9.8493%] (p = 0.55 > 0.05)
+                        thrpt:  [−8.9662% −2.1642% +4.9184%]
+                        No change in performance detected.
+
+Benchmarking incremental_hasher_full/1000000
+Benchmarking incremental_hasher_full/1000000: Warming up for 3.0000 s
+Benchmarking incremental_hasher_full/1000000: Collecting 100 samples in estimated 7.0997 s (10k iterations)
+Benchmarking incremental_hasher_full/1000000: Analyzing
+incremental_hasher_full/1000000
+                        time:   [702.81 µs 704.53 µs 706.53 µs]
+                        thrpt:  [1.3182 GiB/s 1.3219 GiB/s 1.3251 GiB/s]
+                 change:
+                        time:   [+0.4312% +0.6666% +0.9180%] (p = 0.00 < 0.05)
+                        thrpt:  [−0.9097% −0.6622% −0.4294%]
+                        Change within noise threshold.
+Found 8 outliers among 100 measurements (8.00%)
+  3 (3.00%) high mild
+  5 (5.00%) high severe
+Benchmarking incremental_hasher_full/10000000
+Benchmarking incremental_hasher_full/10000000: Warming up for 3.0000 s
+Benchmarking incremental_hasher_full/10000000: Collecting 100 samples in estimated 5.2814 s (1600 iterations)
+Benchmarking incremental_hasher_full/10000000: Analyzing
+incremental_hasher_full/10000000
+                        time:   [3.4534 ms 3.5766 ms 3.7078 ms]
+                        thrpt:  [2.5118 GiB/s 2.6039 GiB/s 2.6968 GiB/s]
+                 change:
+                        time:   [−20.071% −15.814% −11.662%] (p = 0.00 < 0.05)
+                        thrpt:  [+13.202% +18.784% +25.111%]
+                        Performance has improved.
+Found 8 outliers among 100 measurements (8.00%)
+  8 (8.00%) high mild
+Benchmarking incremental_hasher_full/100000000
+Benchmarking incremental_hasher_full/100000000: Warming up for 3.0000 s
+Benchmarking incremental_hasher_full/100000000: Collecting 100 samples in estimated 9.7632 s (200 iterations)
+Benchmarking incremental_hasher_full/100000000: Analyzing
+incremental_hasher_full/100000000
+                        time:   [51.841 ms 52.098 ms 52.367 ms]
+                        thrpt:  [1.7785 GiB/s 1.7876 GiB/s 1.7965 GiB/s]
+                 change:
+                        time:   [+6.4420% +7.3074% +8.1999%] (p = 0.00 < 0.05)
+                        thrpt:  [−7.5785% −6.8098% −6.0521%]
+                        Performance has regressed.
+Found 6 outliers among 100 measurements (6.00%)
+  2 (2.00%) low mild
+  3 (3.00%) high mild
+  1 (1.00%) high severe
+
+Benchmarking merkle_root_computation/4
+Benchmarking merkle_root_computation/4: Warming up for 3.0000 s
+Benchmarking merkle_root_computation/4: Collecting 100 samples in estimated 5.0006 s (24M iterations)
+Benchmarking merkle_root_computation/4: Analyzing
+merkle_root_computation/4
+                        time:   [206.06 ns 206.54 ns 207.07 ns]
+                        thrpt:  [19.317 Melem/s 19.367 Melem/s 19.412 Melem/s]
+                 change:
+                        time:   [+2.1213% +2.3624% +2.6262%] (p = 0.00 < 0.05)
+                        thrpt:  [−2.5590% −2.3079% −2.0772%]
+                        Performance has regressed.
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) high mild
+Benchmarking merkle_root_computation/16
+Benchmarking merkle_root_computation/16: Warming up for 3.0000 s
+Benchmarking merkle_root_computation/16: Collecting 100 samples in estimated 5.0028 s (5.0M iterations)
+Benchmarking merkle_root_computation/16: Analyzing
+merkle_root_computation/16
+                        time:   [988.80 ns 990.68 ns 992.86 ns]
+                        thrpt:  [16.115 Melem/s 16.151 Melem/s 16.181 Melem/s]
+                 change:
+                        time:   [+1.6665% +2.2418% +3.2633%] (p = 0.00 < 0.05)
+                        thrpt:  [−3.1602% −2.1927% −1.6392%]
+                        Performance has regressed.
+Found 8 outliers among 100 measurements (8.00%)
+  3 (3.00%) high mild
+  5 (5.00%) high severe
+Benchmarking merkle_root_computation/64
+Benchmarking merkle_root_computation/64: Warming up for 3.0000 s
+Benchmarking merkle_root_computation/64: Collecting 100 samples in estimated 5.0112 s (1.2M iterations)
+Benchmarking merkle_root_computation/64: Analyzing
+merkle_root_computation/64
+                        time:   [4.0660 µs 4.0716 µs 4.0775 µs]
+                        thrpt:  [15.696 Melem/s 15.719 Melem/s 15.740 Melem/s]
+                 change:
+                        time:   [+2.1166% +2.3097% +2.5171%] (p = 0.00 < 0.05)
+                        thrpt:  [−2.4553% −2.2576% −2.0728%]
+                        Performance has regressed.
+Found 3 outliers among 100 measurements (3.00%)
+  2 (2.00%) high mild
+  1 (1.00%) high severe
+Benchmarking merkle_root_computation/256
+Benchmarking merkle_root_computation/256: Warming up for 3.0000 s
+Benchmarking merkle_root_computation/256: Collecting 100 samples in estimated 5.0198 s (308k iterations)
+Benchmarking merkle_root_computation/256: Analyzing
+merkle_root_computation/256
+                        time:   [16.258 µs 16.283 µs 16.312 µs]
+                        thrpt:  [15.694 Melem/s 15.722 Melem/s 15.746 Melem/s]
+                 change:
+                        time:   [+2.2119% +2.3966% +2.5846%] (p = 0.00 < 0.05)
+                        thrpt:  [−2.5195% −2.3405% −2.1640%]
+                        Performance has regressed.
+Found 10 outliers among 100 measurements (10.00%)
+  3 (3.00%) high mild
+  7 (7.00%) high severe
+Benchmarking merkle_root_computation/1024
+Benchmarking merkle_root_computation/1024: Warming up for 3.0000 s
+Benchmarking merkle_root_computation/1024: Collecting 100 samples in estimated 5.0206 s (76k iterations)
+Benchmarking merkle_root_computation/1024: Analyzing
+merkle_root_computation/1024
+                        time:   [65.548 µs 65.690 µs 65.859 µs]
+                        thrpt:  [15.548 Melem/s 15.588 Melem/s 15.622 Melem/s]
+                 change:
+                        time:   [+2.6188% +2.9289% +3.2759%] (p = 0.00 < 0.05)
+                        thrpt:  [−3.1720% −2.8456% −2.5520%]
+                        Performance has regressed.
+Found 9 outliers among 100 measurements (9.00%)
+  7 (7.00%) high mild
+  2 (2.00%) high severe
+Benchmarking merkle_root_computation/4096
+Benchmarking merkle_root_computation/4096: Warming up for 3.0000 s
+Benchmarking merkle_root_computation/4096: Collecting 100 samples in estimated 5.3310 s (20k iterations)
+Benchmarking merkle_root_computation/4096: Analyzing
+merkle_root_computation/4096
+                        time:   [262.87 µs 263.78 µs 264.80 µs]
+                        thrpt:  [15.468 Melem/s 15.528 Melem/s 15.582 Melem/s]
+                 change:
+                        time:   [+1.8103% +2.0747% +2.3292%] (p = 0.00 < 0.05)
+                        thrpt:  [−2.2761% −2.0325% −1.7781%]
+                        Performance has regressed.
+Found 8 outliers among 100 measurements (8.00%)
+  5 (5.00%) high mild
+  3 (3.00%) high severe
+
+Benchmarking tree_hash_from_data/1000000
+Benchmarking tree_hash_from_data/1000000: Warming up for 3.0000 s
+Benchmarking tree_hash_from_data/1000000: Collecting 100 samples in estimated 5.0323 s (25k iterations)
+Benchmarking tree_hash_from_data/1000000: Analyzing
+tree_hash_from_data/1000000
+                        time:   [197.63 µs 197.83 µs 198.04 µs]
+                        thrpt:  [4.7028 GiB/s 4.7076 GiB/s 4.7125 GiB/s]
+                 change:
+                        time:   [+0.0727% +0.2953% +0.4989%] (p = 0.00 < 0.05)
+                        thrpt:  [−0.4964% −0.2944% −0.0726%]
+                        Change within noise threshold.
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) high mild
+Benchmarking tree_hash_from_data/10000000
+Benchmarking tree_hash_from_data/10000000: Warming up for 3.0000 s
+Benchmarking tree_hash_from_data/10000000: Collecting 100 samples in estimated 5.1866 s (1700 iterations)
+Benchmarking tree_hash_from_data/10000000: Analyzing
+tree_hash_from_data/10000000
+                        time:   [2.8833 ms 2.9564 ms 3.0345 ms]
+                        thrpt:  [3.0691 GiB/s 3.1502 GiB/s 3.2301 GiB/s]
+                 change:
+                        time:   [+32.819% +37.410% +42.679%] (p = 0.00 < 0.05)
+                        thrpt:  [−29.913% −27.225% −24.710%]
+                        Performance has regressed.
+Found 8 outliers among 100 measurements (8.00%)
+  7 (7.00%) high mild
+  1 (1.00%) high severe
+Benchmarking tree_hash_from_data/100000000
+Benchmarking tree_hash_from_data/100000000: Warming up for 3.0000 s
+Benchmarking tree_hash_from_data/100000000: Collecting 100 samples in estimated 7.1997 s (200 iterations)
+Benchmarking tree_hash_from_data/100000000: Analyzing
+tree_hash_from_data/100000000
+                        time:   [35.215 ms 35.481 ms 35.753 ms]
+                        thrpt:  [2.6049 GiB/s 2.6249 GiB/s 2.6447 GiB/s]
+                 change:
+                        time:   [+10.762% +11.940% +13.175%] (p = 0.00 < 0.05)
+                        thrpt:  [−11.641% −10.666% −9.7165%]
+                        Performance has regressed.
+Found 3 outliers among 100 measurements (3.00%)
+  3 (3.00%) high mild
+
+Benchmarking file_chunking/1000000
+Benchmarking file_chunking/1000000: Warming up for 3.0000 s
+Benchmarking file_chunking/1000000: Collecting 100 samples in estimated 5.0685 s (76k iterations)
+Benchmarking file_chunking/1000000: Analyzing
+file_chunking/1000000   time:   [66.603 µs 67.091 µs 67.566 µs]
+                        thrpt:  [13.784 GiB/s 13.882 GiB/s 13.983 GiB/s]
+                 change:
+                        time:   [+1.7920% +2.6395% +3.4738%] (p = 0.00 < 0.05)
+                        thrpt:  [−3.3571% −2.5716% −1.7604%]
+                        Performance has regressed.
+Benchmarking file_chunking/10000000
+Benchmarking file_chunking/10000000: Warming up for 3.0000 s
+Benchmarking file_chunking/10000000: Collecting 100 samples in estimated 5.2632 s (1000 iterations)
+Benchmarking file_chunking/10000000: Analyzing
+file_chunking/10000000  time:   [2.4678 ms 2.7580 ms 3.0543 ms]
+                        thrpt:  [3.0492 GiB/s 3.3769 GiB/s 3.7738 GiB/s]
+                 change:
+                        time:   [+97.438% +132.92% +172.89%] (p = 0.00 < 0.05)
+                        thrpt:  [−63.356% −57.067% −49.351%]
+                        Performance has regressed.
+Benchmarking file_chunking/100000000
+Benchmarking file_chunking/100000000: Warming up for 3.0000 s
+Benchmarking file_chunking/100000000: Collecting 100 samples in estimated 7.8301 s (200 iterations)
+Benchmarking file_chunking/100000000: Analyzing
+file_chunking/100000000 time:   [38.714 ms 39.127 ms 39.570 ms]
+                        thrpt:  [2.3536 GiB/s 2.3803 GiB/s 2.4057 GiB/s]
+                 change:
+                        time:   [+1.5849% +3.4694% +5.4633%] (p = 0.00 < 0.05)
+                        thrpt:  [−5.1803% −3.3531% −1.5602%]
+                        Performance has regressed.
+Found 13 outliers among 100 measurements (13.00%)
+  12 (12.00%) high mild
+  1 (1.00%) high severe
+
+Benchmarking random_access_chunking/seek_and_read
+Benchmarking random_access_chunking/seek_and_read: Warming up for 3.0000 s
+Benchmarking random_access_chunking/seek_and_read: Collecting 100 samples in estimated 6.2505 s (15k iterations)
+Benchmarking random_access_chunking/seek_and_read: Analyzing
+random_access_chunking/seek_and_read
+                        time:   [414.86 µs 425.25 µs 435.09 µs]
+                        thrpt:  [2.2445 GiB/s 2.2965 GiB/s 2.3540 GiB/s]
+                 change:
+                        time:   [+3.8879% +5.9971% +8.2553%] (p = 0.00 < 0.05)
+                        thrpt:  [−7.6257% −5.6578% −3.7424%]
+                        Performance has regressed.
+Found 3 outliers among 100 measurements (3.00%)
+  1 (1.00%) low mild
+  2 (2.00%) high mild
+

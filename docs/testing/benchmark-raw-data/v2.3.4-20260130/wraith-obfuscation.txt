@@ -1,0 +1,648 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling wraith-crypto v2.3.3 (/home/parobek/Code/WRAITH-Protocol/crates/wraith-crypto)
+   Compiling wraith-obfuscation v2.3.3 (/home/parobek/Code/WRAITH-Protocol/crates/wraith-obfuscation)
+    Finished `bench` profile [optimized + debuginfo] target(s) in 19.09s
+     Running unittests src/lib.rs (target/release/deps/wraith_obfuscation-f0d7f1aeed4930e9)
+
+running 130 tests
+test adaptive::tests::test_assess_security_level ... ignored
+test adaptive::tests::test_custom_profile ... ignored
+test adaptive::tests::test_default_profile ... ignored
+test adaptive::tests::test_meets_minimum_security ... ignored
+test adaptive::tests::test_mimicry_mode_variants ... ignored
+test adaptive::tests::test_overhead_components ... ignored
+test adaptive::tests::test_overhead_estimation_high ... ignored
+test adaptive::tests::test_overhead_estimation_low ... ignored
+test adaptive::tests::test_overhead_estimation_medium ... ignored
+test adaptive::tests::test_overhead_estimation_paranoid ... ignored
+test adaptive::tests::test_profile_clone ... ignored
+test adaptive::tests::test_recommend_threat_level ... ignored
+test adaptive::tests::test_threat_level_high ... ignored
+test adaptive::tests::test_threat_level_low ... ignored
+test adaptive::tests::test_threat_level_medium ... ignored
+test adaptive::tests::test_threat_level_ordering ... ignored
+test adaptive::tests::test_threat_level_paranoid ... ignored
+test cover::tests::test_cover_traffic_constant_distribution ... ignored
+test cover::tests::test_cover_traffic_default ... ignored
+test cover::tests::test_cover_traffic_inactive_should_not_send ... ignored
+test cover::tests::test_cover_traffic_mark_sent ... ignored
+test cover::tests::test_cover_traffic_new ... ignored
+test cover::tests::test_cover_traffic_poisson_distribution ... ignored
+test cover::tests::test_cover_traffic_random_pad_size ... ignored
+test cover::tests::test_cover_traffic_reactivation_resets_timer ... ignored
+test cover::tests::test_cover_traffic_set_active ... ignored
+test cover::tests::test_cover_traffic_should_send ... ignored
+test cover::tests::test_cover_traffic_time_until_next ... ignored
+test cover::tests::test_cover_traffic_uniform_distribution ... ignored
+test doh_tunnel::tests::test_base64url_encoding ... ignored
+test doh_tunnel::tests::test_dns_domain_encoding ... ignored
+test doh_tunnel::tests::test_dns_parse_incomplete ... ignored
+test doh_tunnel::tests::test_dns_parse_too_short ... ignored
+test doh_tunnel::tests::test_dns_query_creation ... ignored
+test doh_tunnel::tests::test_dns_query_structure ... ignored
+test doh_tunnel::tests::test_dns_subdomain_encoding ... ignored
+test doh_tunnel::tests::test_doh_decode_invalid ... ignored
+test doh_tunnel::tests::test_doh_default ... ignored
+test doh_tunnel::tests::test_doh_empty_payload ... ignored
+test doh_tunnel::tests::test_doh_encode_decode ... ignored
+test doh_tunnel::tests::test_doh_error_display ... ignored
+test doh_tunnel::tests::test_doh_large_payload ... ignored
+test doh_tunnel::tests::test_doh_multiple_messages ... ignored
+test doh_tunnel::tests::test_doh_query_url_format ... ignored
+test doh_tunnel::tests::test_doh_resolver_url_getter ... ignored
+test doh_tunnel::tests::test_doh_resolver_url_setter ... ignored
+test doh_tunnel::tests::test_doh_roundtrip ... ignored
+test doh_tunnel::tests::test_doh_special_characters ... ignored
+test padding::tests::test_all_modes_enumeration ... ignored
+test padding::tests::test_constant_rate ... ignored
+test padding::tests::test_default_engine ... ignored
+test padding::tests::test_mode_comparison ... ignored
+test padding::tests::test_mode_getter_setter ... ignored
+test padding::tests::test_no_padding ... ignored
+test padding::tests::test_overhead_constant_rate ... ignored
+test padding::tests::test_overhead_zero_length ... ignored
+test padding::tests::test_pad_larger_buffer ... ignored
+test padding::tests::test_pad_preserves_original_data ... ignored
+test padding::tests::test_pad_unpad_roundtrip ... ignored
+test padding::tests::test_padding_overhead ... ignored
+test padding::tests::test_power_of_two ... ignored
+test padding::tests::test_power_of_two_edge_cases ... ignored
+test padding::tests::test_random_padding_data ... ignored
+test padding::tests::test_size_classes ... ignored
+test padding::tests::test_size_classes_boundaries ... ignored
+test padding::tests::test_size_classes_constant ... ignored
+test padding::tests::test_statistical_bounds ... ignored
+test padding::tests::test_statistical_padding ... ignored
+test padding::tests::test_unpad_empty_buffer ... ignored
+test padding::tests::test_unpad_exact_length ... ignored
+test padding::tests::test_unpad_longer_than_buffer ... ignored
+test timing::tests::test_all_timing_modes ... ignored
+test timing::tests::test_exponential_delay ... ignored
+test timing::tests::test_exponential_distribution_mean ... ignored
+test timing::tests::test_fixed_delay ... ignored
+test timing::tests::test_none_delay ... ignored
+test timing::tests::test_normal_delay ... ignored
+test timing::tests::test_normal_distribution_mean ... ignored
+test timing::tests::test_sleep_fixed_delay ... ignored
+test timing::tests::test_sleep_zero_delay ... ignored
+test timing::tests::test_timing_mode_clone ... ignored
+test timing::tests::test_timing_obfuscator_default ... ignored
+test timing::tests::test_timing_obfuscator_mode_getter ... ignored
+test timing::tests::test_timing_obfuscator_mode_setter ... ignored
+test timing::tests::test_traffic_shaper_basic ... ignored
+test timing::tests::test_traffic_shaper_default ... ignored
+test timing::tests::test_traffic_shaper_reset ... ignored
+test timing::tests::test_traffic_shaper_set_rate ... ignored
+test timing::tests::test_traffic_shaper_time_until_next ... ignored
+test timing::tests::test_uniform_delay ... ignored
+test timing::tests::test_uniform_delay_min_equals_max ... ignored
+test timing::tests::test_uniform_delay_min_greater_than_max ... ignored
+test timing::tests::test_uniform_distribution_mean ... ignored
+test tls_mimicry::tests::test_application_data_wrapping ... ignored
+test tls_mimicry::tests::test_client_hello_structure ... ignored
+test tls_mimicry::tests::test_empty_payload ... ignored
+test tls_mimicry::tests::test_handshake_messages_different ... ignored
+test tls_mimicry::tests::test_large_payload ... ignored
+test tls_mimicry::tests::test_multiple_wraps ... ignored
+test tls_mimicry::tests::test_session_default ... ignored
+test tls_mimicry::tests::test_session_reset ... ignored
+test tls_mimicry::tests::test_tls_error_display ... ignored
+test tls_mimicry::tests::test_tls_handshake_generation ... ignored
+test tls_mimicry::tests::test_tls_record_default ... ignored
+test tls_mimicry::tests::test_tls_record_incomplete ... ignored
+test tls_mimicry::tests::test_tls_record_invalid_content_type ... ignored
+test tls_mimicry::tests::test_tls_record_reset ... ignored
+test tls_mimicry::tests::test_tls_record_sequence_number ... ignored
+test tls_mimicry::tests::test_tls_record_too_short ... ignored
+test tls_mimicry::tests::test_tls_record_wrap_unwrap ... ignored
+test websocket_mimicry::tests::test_websocket_client_vs_server ... ignored
+test websocket_mimicry::tests::test_websocket_default ... ignored
+test websocket_mimicry::tests::test_websocket_empty_payload ... ignored
+test websocket_mimicry::tests::test_websocket_error_display ... ignored
+test websocket_mimicry::tests::test_websocket_error_incomplete ... ignored
+test websocket_mimicry::tests::test_websocket_error_invalid_opcode ... ignored
+test websocket_mimicry::tests::test_websocket_error_too_short ... ignored
+test websocket_mimicry::tests::test_websocket_extended_length_large ... ignored
+test websocket_mimicry::tests::test_websocket_extended_length_medium ... ignored
+test websocket_mimicry::tests::test_websocket_frame_structure ... ignored
+test websocket_mimicry::tests::test_websocket_is_client_mode ... ignored
+test websocket_mimicry::tests::test_websocket_length_boundary_125 ... ignored
+test websocket_mimicry::tests::test_websocket_length_boundary_126 ... ignored
+test websocket_mimicry::tests::test_websocket_length_boundary_65535 ... ignored
+test websocket_mimicry::tests::test_websocket_length_boundary_65536 ... ignored
+test websocket_mimicry::tests::test_websocket_masking ... ignored
+test websocket_mimicry::tests::test_websocket_masking_different_each_time ... ignored
+test websocket_mimicry::tests::test_websocket_masking_roundtrip ... ignored
+test websocket_mimicry::tests::test_websocket_wrap_unwrap_client ... ignored
+test websocket_mimicry::tests::test_websocket_wrap_unwrap_server ... ignored
+
+test result: ok. 0 passed; 0 failed; 130 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running benches/obfuscation.rs (target/release/deps/obfuscation-772ac1a11de6e680)
+Gnuplot not found, using plotters backend
+Benchmarking padding/size_classes_128
+Benchmarking padding/size_classes_128: Warming up for 3.0000 s
+Benchmarking padding/size_classes_128: Collecting 100 samples in estimated 5.0000 s (407M iterations)
+Benchmarking padding/size_classes_128: Analyzing
+padding/size_classes_128
+                        time:   [11.066 ns 11.107 ns 11.158 ns]
+                        thrpt:  [10.684 GiB/s 10.733 GiB/s 10.772 GiB/s]
+                 change:
+                        time:   [+1.8022% +2.4362% +3.4999%] (p = 0.00 < 0.05)
+                        thrpt:  [−3.3815% −2.3782% −1.7703%]
+                        Performance has regressed.
+Found 5 outliers among 100 measurements (5.00%)
+  3 (3.00%) high mild
+  2 (2.00%) high severe
+Benchmarking padding/statistical_128
+Benchmarking padding/statistical_128: Warming up for 3.0000 s
+Benchmarking padding/statistical_128: Collecting 100 samples in estimated 5.0000 s (64M iterations)
+Benchmarking padding/statistical_128: Analyzing
+padding/statistical_128 time:   [67.795 ns 68.101 ns 68.536 ns]
+                        thrpt:  [1.7394 GiB/s 1.7505 GiB/s 1.7584 GiB/s]
+                 change:
+                        time:   [+8.8493% +9.1571% +9.5141%] (p = 0.00 < 0.05)
+                        thrpt:  [−8.6876% −8.3889% −8.1299%]
+                        Performance has regressed.
+Found 5 outliers among 100 measurements (5.00%)
+  4 (4.00%) high mild
+  1 (1.00%) high severe
+Benchmarking padding/size_classes_512
+Benchmarking padding/size_classes_512: Warming up for 3.0000 s
+Benchmarking padding/size_classes_512: Collecting 100 samples in estimated 5.0000 s (325M iterations)
+Benchmarking padding/size_classes_512: Analyzing
+padding/size_classes_512
+                        time:   [17.359 ns 18.522 ns 19.696 ns]
+                        thrpt:  [24.209 GiB/s 25.745 GiB/s 27.469 GiB/s]
+                 change:
+                        time:   [+10.406% +14.460% +19.579%] (p = 0.00 < 0.05)
+                        thrpt:  [−16.373% −12.633% −9.4249%]
+                        Performance has regressed.
+Found 19 outliers among 100 measurements (19.00%)
+  7 (7.00%) high mild
+  12 (12.00%) high severe
+Benchmarking padding/statistical_512
+Benchmarking padding/statistical_512: Warming up for 3.0000 s
+Benchmarking padding/statistical_512: Collecting 100 samples in estimated 5.0002 s (71M iterations)
+Benchmarking padding/statistical_512: Analyzing
+padding/statistical_512 time:   [66.580 ns 66.755 ns 66.950 ns]
+                        thrpt:  [7.1223 GiB/s 7.1431 GiB/s 7.1618 GiB/s]
+                 change:
+                        time:   [+0.7689% +1.0826% +1.3953%] (p = 0.00 < 0.05)
+                        thrpt:  [−1.3761% −1.0711% −0.7630%]
+                        Change within noise threshold.
+Found 6 outliers among 100 measurements (6.00%)
+  5 (5.00%) high mild
+  1 (1.00%) high severe
+Benchmarking padding/size_classes_1024
+Benchmarking padding/size_classes_1024: Warming up for 3.0000 s
+Benchmarking padding/size_classes_1024: Collecting 100 samples in estimated 5.0001 s (253M iterations)
+Benchmarking padding/size_classes_1024: Analyzing
+padding/size_classes_1024
+                        time:   [19.726 ns 20.542 ns 21.463 ns]
+                        thrpt:  [44.434 GiB/s 46.426 GiB/s 48.345 GiB/s]
+                 change:
+                        time:   [+2.0454% +4.3423% +6.8350%] (p = 0.00 < 0.05)
+                        thrpt:  [−6.3977% −4.1616% −2.0044%]
+                        Performance has regressed.
+Found 10 outliers among 100 measurements (10.00%)
+  3 (3.00%) high mild
+  7 (7.00%) high severe
+Benchmarking padding/statistical_1024
+Benchmarking padding/statistical_1024: Warming up for 3.0000 s
+Benchmarking padding/statistical_1024: Collecting 100 samples in estimated 5.0001 s (54M iterations)
+Benchmarking padding/statistical_1024: Analyzing
+padding/statistical_1024
+                        time:   [144.39 ns 147.45 ns 150.29 ns]
+                        thrpt:  [6.3456 GiB/s 6.4678 GiB/s 6.6047 GiB/s]
+                 change:
+                        time:   [+81.114% +85.635% +89.709%] (p = 0.00 < 0.05)
+                        thrpt:  [−47.288% −46.131% −44.786%]
+                        Performance has regressed.
+Benchmarking padding/size_classes_4096
+Benchmarking padding/size_classes_4096: Warming up for 3.0000 s
+Benchmarking padding/size_classes_4096: Collecting 100 samples in estimated 5.0000 s (41M iterations)
+Benchmarking padding/size_classes_4096: Analyzing
+padding/size_classes_4096
+                        time:   [85.835 ns 87.813 ns 90.310 ns]
+                        thrpt:  [42.240 GiB/s 43.441 GiB/s 44.442 GiB/s]
+                 change:
+                        time:   [+22.222% +25.468% +28.534%] (p = 0.00 < 0.05)
+                        thrpt:  [−22.200% −20.298% −18.181%]
+                        Performance has regressed.
+Benchmarking padding/statistical_4096
+Benchmarking padding/statistical_4096: Warming up for 3.0000 s
+Benchmarking padding/statistical_4096: Collecting 100 samples in estimated 5.0002 s (39M iterations)
+Benchmarking padding/statistical_4096: Analyzing
+padding/statistical_4096
+                        time:   [119.45 ns 120.05 ns 120.86 ns]
+                        thrpt:  [31.564 GiB/s 31.776 GiB/s 31.935 GiB/s]
+                 change:
+                        time:   [−2.2620% −1.8070% −1.2433%] (p = 0.00 < 0.05)
+                        thrpt:  [+1.2590% +1.8402% +2.3144%]
+                        Performance has improved.
+Found 6 outliers among 100 measurements (6.00%)
+  2 (2.00%) high mild
+  4 (4.00%) high severe
+
+Benchmarking tls_mimicry/wrap_128
+Benchmarking tls_mimicry/wrap_128: Warming up for 3.0000 s
+Benchmarking tls_mimicry/wrap_128: Collecting 100 samples in estimated 5.0000 s (316M iterations)
+Benchmarking tls_mimicry/wrap_128: Analyzing
+tls_mimicry/wrap_128    time:   [14.663 ns 14.926 ns 15.270 ns]
+                        thrpt:  [7.8070 GiB/s 7.9865 GiB/s 8.1299 GiB/s]
+                 change:
+                        time:   [+27.808% +32.811% +38.317%] (p = 0.00 < 0.05)
+                        thrpt:  [−27.702% −24.705% −21.758%]
+                        Performance has regressed.
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) high mild
+Benchmarking tls_mimicry/unwrap_128
+Benchmarking tls_mimicry/unwrap_128: Warming up for 3.0000 s
+Benchmarking tls_mimicry/unwrap_128: Collecting 100 samples in estimated 5.0000 s (657M iterations)
+Benchmarking tls_mimicry/unwrap_128: Analyzing
+tls_mimicry/unwrap_128  time:   [7.1362 ns 7.2006 ns 7.2803 ns]
+                        thrpt:  [16.374 GiB/s 16.556 GiB/s 16.705 GiB/s]
+                 change:
+                        time:   [−12.273% −11.333% −10.247%] (p = 0.00 < 0.05)
+                        thrpt:  [+11.417% +12.782% +13.990%]
+                        Performance has improved.
+Found 17 outliers among 100 measurements (17.00%)
+  1 (1.00%) low mild
+  6 (6.00%) high mild
+  10 (10.00%) high severe
+Benchmarking tls_mimicry/wrap_512
+Benchmarking tls_mimicry/wrap_512: Warming up for 3.0000 s
+Benchmarking tls_mimicry/wrap_512: Collecting 100 samples in estimated 5.0001 s (308M iterations)
+Benchmarking tls_mimicry/wrap_512: Analyzing
+tls_mimicry/wrap_512    time:   [15.449 ns 15.526 ns 15.613 ns]
+                        thrpt:  [30.541 GiB/s 30.712 GiB/s 30.865 GiB/s]
+                 change:
+                        time:   [+0.6409% +1.1215% +1.7521%] (p = 0.00 < 0.05)
+                        thrpt:  [−1.7220% −1.1091% −0.6368%]
+                        Change within noise threshold.
+Found 9 outliers among 100 measurements (9.00%)
+  7 (7.00%) high mild
+  2 (2.00%) high severe
+Benchmarking tls_mimicry/unwrap_512
+Benchmarking tls_mimicry/unwrap_512: Warming up for 3.0000 s
+Benchmarking tls_mimicry/unwrap_512: Collecting 100 samples in estimated 5.0000 s (358M iterations)
+Benchmarking tls_mimicry/unwrap_512: Analyzing
+tls_mimicry/unwrap_512  time:   [13.432 ns 13.729 ns 14.108 ns]
+                        thrpt:  [33.799 GiB/s 34.732 GiB/s 35.501 GiB/s]
+                 change:
+                        time:   [+8.1129% +10.081% +12.217%] (p = 0.00 < 0.05)
+                        thrpt:  [−10.887% −9.1577% −7.5041%]
+                        Performance has regressed.
+Found 7 outliers among 100 measurements (7.00%)
+  7 (7.00%) high severe
+Benchmarking tls_mimicry/wrap_1024
+Benchmarking tls_mimicry/wrap_1024: Warming up for 3.0000 s
+Benchmarking tls_mimicry/wrap_1024: Collecting 100 samples in estimated 5.0000 s (244M iterations)
+Benchmarking tls_mimicry/wrap_1024: Analyzing
+tls_mimicry/wrap_1024   time:   [19.790 ns 20.005 ns 20.285 ns]
+                        thrpt:  [47.015 GiB/s 47.672 GiB/s 48.191 GiB/s]
+                 change:
+                        time:   [+6.2399% +10.417% +14.846%] (p = 0.00 < 0.05)
+                        thrpt:  [−12.927% −9.4342% −5.8734%]
+                        Performance has regressed.
+Found 18 outliers among 100 measurements (18.00%)
+  1 (1.00%) high mild
+  17 (17.00%) high severe
+Benchmarking tls_mimicry/unwrap_1024
+Benchmarking tls_mimicry/unwrap_1024: Warming up for 3.0000 s
+Benchmarking tls_mimicry/unwrap_1024: Collecting 100 samples in estimated 5.0001 s (278M iterations)
+Benchmarking tls_mimicry/unwrap_1024: Analyzing
+tls_mimicry/unwrap_1024 time:   [16.664 ns 16.722 ns 16.799 ns]
+                        thrpt:  [56.771 GiB/s 57.031 GiB/s 57.229 GiB/s]
+                 change:
+                        time:   [+0.8009% +1.9579% +3.1660%] (p = 0.00 < 0.05)
+                        thrpt:  [−3.0688% −1.9203% −0.7946%]
+                        Change within noise threshold.
+Found 8 outliers among 100 measurements (8.00%)
+  3 (3.00%) high mild
+  5 (5.00%) high severe
+Benchmarking tls_mimicry/wrap_4096
+Benchmarking tls_mimicry/wrap_4096: Warming up for 3.0000 s
+Benchmarking tls_mimicry/wrap_4096: Collecting 100 samples in estimated 5.0001 s (58M iterations)
+Benchmarking tls_mimicry/wrap_4096: Analyzing
+tls_mimicry/wrap_4096   time:   [78.853 ns 79.117 ns 79.398 ns]
+                        thrpt:  [48.045 GiB/s 48.216 GiB/s 48.378 GiB/s]
+                 change:
+                        time:   [+1.1940% +1.5811% +2.0227%] (p = 0.00 < 0.05)
+                        thrpt:  [−1.9826% −1.5565% −1.1799%]
+                        Performance has regressed.
+Found 6 outliers among 100 measurements (6.00%)
+  3 (3.00%) high mild
+  3 (3.00%) high severe
+Benchmarking tls_mimicry/unwrap_4096
+Benchmarking tls_mimicry/unwrap_4096: Warming up for 3.0000 s
+Benchmarking tls_mimicry/unwrap_4096: Collecting 100 samples in estimated 5.0001 s (62M iterations)
+Benchmarking tls_mimicry/unwrap_4096: Analyzing
+tls_mimicry/unwrap_4096 time:   [75.008 ns 75.266 ns 75.545 ns]
+                        thrpt:  [50.496 GiB/s 50.683 GiB/s 50.857 GiB/s]
+                 change:
+                        time:   [+0.9066% +1.2005% +1.5087%] (p = 0.00 < 0.05)
+                        thrpt:  [−1.4863% −1.1862% −0.8985%]
+                        Change within noise threshold.
+Found 6 outliers among 100 measurements (6.00%)
+  6 (6.00%) high mild
+
+Benchmarking websocket_mimicry/wrap_server_128
+Benchmarking websocket_mimicry/wrap_server_128: Warming up for 3.0000 s
+Benchmarking websocket_mimicry/wrap_server_128: Collecting 100 samples in estimated 5.0000 s (277M iterations)
+Benchmarking websocket_mimicry/wrap_server_128: Analyzing
+websocket_mimicry/wrap_server_128
+                        time:   [16.889 ns 17.145 ns 17.498 ns]
+                        thrpt:  [6.8128 GiB/s 6.9528 GiB/s 7.0584 GiB/s]
+                 change:
+                        time:   [+22.314% +23.283% +24.644%] (p = 0.00 < 0.05)
+                        thrpt:  [−19.772% −18.886% −18.243%]
+                        Performance has regressed.
+Found 11 outliers among 100 measurements (11.00%)
+  4 (4.00%) high mild
+  7 (7.00%) high severe
+Benchmarking websocket_mimicry/wrap_client_128
+Benchmarking websocket_mimicry/wrap_client_128: Warming up for 3.0000 s
+Benchmarking websocket_mimicry/wrap_client_128: Collecting 100 samples in estimated 5.0001 s (104M iterations)
+Benchmarking websocket_mimicry/wrap_client_128: Analyzing
+websocket_mimicry/wrap_client_128
+                        time:   [44.407 ns 44.637 ns 44.905 ns]
+                        thrpt:  [2.6547 GiB/s 2.6706 GiB/s 2.6844 GiB/s]
+                 change:
+                        time:   [+2.6299% +3.1417% +3.7049%] (p = 0.00 < 0.05)
+                        thrpt:  [−3.5725% −3.0460% −2.5625%]
+                        Performance has regressed.
+Found 5 outliers among 100 measurements (5.00%)
+  1 (1.00%) high mild
+  4 (4.00%) high severe
+Benchmarking websocket_mimicry/wrap_server_512
+Benchmarking websocket_mimicry/wrap_server_512: Warming up for 3.0000 s
+Benchmarking websocket_mimicry/wrap_server_512: Collecting 100 samples in estimated 5.0000 s (278M iterations)
+Benchmarking websocket_mimicry/wrap_server_512: Analyzing
+websocket_mimicry/wrap_server_512
+                        time:   [16.267 ns 16.330 ns 16.396 ns]
+                        thrpt:  [29.082 GiB/s 29.201 GiB/s 29.313 GiB/s]
+                 change:
+                        time:   [−4.0847% −3.4273% −2.5119%] (p = 0.00 < 0.05)
+                        thrpt:  [+2.5766% +3.5489% +4.2586%]
+                        Performance has improved.
+Found 8 outliers among 100 measurements (8.00%)
+  1 (1.00%) high mild
+  7 (7.00%) high severe
+Benchmarking websocket_mimicry/wrap_client_512
+Benchmarking websocket_mimicry/wrap_client_512: Warming up for 3.0000 s
+Benchmarking websocket_mimicry/wrap_client_512: Collecting 100 samples in estimated 5.0005 s (41M iterations)
+Benchmarking websocket_mimicry/wrap_client_512: Analyzing
+websocket_mimicry/wrap_client_512
+                        time:   [109.08 ns 109.46 ns 109.86 ns]
+                        thrpt:  [4.3405 GiB/s 4.3563 GiB/s 4.3715 GiB/s]
+                 change:
+                        time:   [+0.2292% +0.5143% +0.8133%] (p = 0.00 < 0.05)
+                        thrpt:  [−0.8067% −0.5116% −0.2286%]
+                        Change within noise threshold.
+Benchmarking websocket_mimicry/wrap_server_1024
+Benchmarking websocket_mimicry/wrap_server_1024: Warming up for 3.0000 s
+Benchmarking websocket_mimicry/wrap_server_1024: Collecting 100 samples in estimated 5.0000 s (250M iterations)
+Benchmarking websocket_mimicry/wrap_server_1024: Analyzing
+websocket_mimicry/wrap_server_1024
+                        time:   [19.705 ns 20.448 ns 21.396 ns]
+                        thrpt:  [44.572 GiB/s 46.640 GiB/s 48.397 GiB/s]
+                 change:
+                        time:   [−3.8628% −1.8770% +0.3545%] (p = 0.11 > 0.05)
+                        thrpt:  [−0.3532% +1.9129% +4.0181%]
+                        No change in performance detected.
+Found 5 outliers among 100 measurements (5.00%)
+  1 (1.00%) high mild
+  4 (4.00%) high severe
+Benchmarking websocket_mimicry/wrap_client_1024
+Benchmarking websocket_mimicry/wrap_client_1024: Warming up for 3.0000 s
+Benchmarking websocket_mimicry/wrap_client_1024: Collecting 100 samples in estimated 5.0003 s (24M iterations)
+Benchmarking websocket_mimicry/wrap_client_1024: Analyzing
+websocket_mimicry/wrap_client_1024
+                        time:   [194.14 ns 204.67 ns 217.01 ns]
+                        thrpt:  [4.3947 GiB/s 4.6595 GiB/s 4.9123 GiB/s]
+                 change:
+                        time:   [+3.0195% +5.1601% +8.0473%] (p = 0.00 < 0.05)
+                        thrpt:  [−7.4480% −4.9069% −2.9310%]
+                        Performance has regressed.
+Found 11 outliers among 100 measurements (11.00%)
+  3 (3.00%) high mild
+  8 (8.00%) high severe
+Benchmarking websocket_mimicry/wrap_server_4096
+Benchmarking websocket_mimicry/wrap_server_4096: Warming up for 3.0000 s
+Benchmarking websocket_mimicry/wrap_server_4096: Collecting 100 samples in estimated 5.0001 s (59M iterations)
+Benchmarking websocket_mimicry/wrap_server_4096: Analyzing
+websocket_mimicry/wrap_server_4096
+                        time:   [83.820 ns 88.168 ns 93.460 ns]
+                        thrpt:  [40.816 GiB/s 43.266 GiB/s 45.511 GiB/s]
+                 change:
+                        time:   [+5.3218% +8.3360% +12.325%] (p = 0.00 < 0.05)
+                        thrpt:  [−10.973% −7.6946% −5.0529%]
+                        Performance has regressed.
+Found 11 outliers among 100 measurements (11.00%)
+  1 (1.00%) high mild
+  10 (10.00%) high severe
+Benchmarking websocket_mimicry/wrap_client_4096
+Benchmarking websocket_mimicry/wrap_client_4096: Warming up for 3.0000 s
+Benchmarking websocket_mimicry/wrap_client_4096: Collecting 100 samples in estimated 5.0039 s (6.3M iterations)
+Benchmarking websocket_mimicry/wrap_client_4096: Analyzing
+websocket_mimicry/wrap_client_4096
+                        time:   [762.05 ns 800.27 ns 848.60 ns]
+                        thrpt:  [4.4953 GiB/s 4.7668 GiB/s 5.0058 GiB/s]
+                 change:
+                        time:   [+4.2586% +6.4376% +9.1542%] (p = 0.00 < 0.05)
+                        thrpt:  [−8.3865% −6.0482% −4.0847%]
+                        Performance has regressed.
+Found 11 outliers among 100 measurements (11.00%)
+  3 (3.00%) high mild
+  8 (8.00%) high severe
+
+Benchmarking doh_tunnel/create_query_128
+Benchmarking doh_tunnel/create_query_128: Warming up for 3.0000 s
+Benchmarking doh_tunnel/create_query_128: Collecting 100 samples in estimated 5.0001 s (192M iterations)
+Benchmarking doh_tunnel/create_query_128: Analyzing
+doh_tunnel/create_query_128
+                        time:   [23.858 ns 23.934 ns 24.017 ns]
+                        thrpt:  [4.9635 GiB/s 4.9808 GiB/s 4.9966 GiB/s]
+                 change:
+                        time:   [−0.1741% +0.5597% +1.2537%] (p = 0.13 > 0.05)
+                        thrpt:  [−1.2382% −0.5566% +0.1744%]
+                        No change in performance detected.
+Found 4 outliers among 100 measurements (4.00%)
+  2 (2.00%) high mild
+  2 (2.00%) high severe
+Benchmarking doh_tunnel/parse_response_128
+Benchmarking doh_tunnel/parse_response_128: Warming up for 3.0000 s
+Benchmarking doh_tunnel/parse_response_128: Collecting 100 samples in estimated 5.0000 s (322M iterations)
+Benchmarking doh_tunnel/parse_response_128: Analyzing
+doh_tunnel/parse_response_128
+                        time:   [14.387 ns 14.506 ns 14.649 ns]
+                        thrpt:  [8.1377 GiB/s 8.2181 GiB/s 8.2859 GiB/s]
+                 change:
+                        time:   [−1.0663% −0.4169% +0.3212%] (p = 0.24 > 0.05)
+                        thrpt:  [−0.3201% +0.4186% +1.0778%]
+                        No change in performance detected.
+Found 9 outliers among 100 measurements (9.00%)
+  3 (3.00%) high mild
+  6 (6.00%) high severe
+Benchmarking doh_tunnel/create_query_512
+Benchmarking doh_tunnel/create_query_512: Warming up for 3.0000 s
+Benchmarking doh_tunnel/create_query_512: Collecting 100 samples in estimated 5.0001 s (166M iterations)
+Benchmarking doh_tunnel/create_query_512: Analyzing
+doh_tunnel/create_query_512
+                        time:   [28.371 ns 28.919 ns 29.619 ns]
+                        thrpt:  [16.099 GiB/s 16.489 GiB/s 16.807 GiB/s]
+                 change:
+                        time:   [+4.0323% +7.3807% +11.799%] (p = 0.00 < 0.05)
+                        thrpt:  [−10.554% −6.8734% −3.8760%]
+                        Performance has regressed.
+Found 11 outliers among 100 measurements (11.00%)
+  1 (1.00%) high mild
+  10 (10.00%) high severe
+Benchmarking doh_tunnel/parse_response_512
+Benchmarking doh_tunnel/parse_response_512: Warming up for 3.0000 s
+Benchmarking doh_tunnel/parse_response_512: Collecting 100 samples in estimated 5.0001 s (273M iterations)
+Benchmarking doh_tunnel/parse_response_512: Analyzing
+doh_tunnel/parse_response_512
+                        time:   [17.002 ns 17.848 ns 18.831 ns]
+                        thrpt:  [25.322 GiB/s 26.716 GiB/s 28.047 GiB/s]
+                 change:
+                        time:   [+0.1064% +1.9181% +4.4525%] (p = 0.05 < 0.05)
+                        thrpt:  [−4.2627% −1.8820% −0.1063%]
+                        Change within noise threshold.
+Found 4 outliers among 100 measurements (4.00%)
+  4 (4.00%) high severe
+Benchmarking doh_tunnel/create_query_1024
+Benchmarking doh_tunnel/create_query_1024: Warming up for 3.0000 s
+Benchmarking doh_tunnel/create_query_1024: Collecting 100 samples in estimated 5.0000 s (71M iterations)
+Benchmarking doh_tunnel/create_query_1024: Analyzing
+doh_tunnel/create_query_1024
+                        time:   [66.696 ns 69.921 ns 73.795 ns]
+                        thrpt:  [12.923 GiB/s 13.639 GiB/s 14.299 GiB/s]
+                 change:
+                        time:   [+1.7134% +4.1426% +6.9918%] (p = 0.00 < 0.05)
+                        thrpt:  [−6.5349% −3.9778% −1.6845%]
+                        Performance has regressed.
+Found 6 outliers among 100 measurements (6.00%)
+  1 (1.00%) high mild
+  5 (5.00%) high severe
+Benchmarking doh_tunnel/parse_response_1024
+Benchmarking doh_tunnel/parse_response_1024: Warming up for 3.0000 s
+Benchmarking doh_tunnel/parse_response_1024: Collecting 100 samples in estimated 5.0000 s (227M iterations)
+Benchmarking doh_tunnel/parse_response_1024: Analyzing
+doh_tunnel/parse_response_1024
+                        time:   [21.434 ns 21.750 ns 22.135 ns]
+                        thrpt:  [43.085 GiB/s 43.846 GiB/s 44.493 GiB/s]
+                 change:
+                        time:   [+3.9183% +6.3004% +9.0926%] (p = 0.00 < 0.05)
+                        thrpt:  [−8.3347% −5.9270% −3.7706%]
+                        Performance has regressed.
+Found 10 outliers among 100 measurements (10.00%)
+  2 (2.00%) high mild
+  8 (8.00%) high severe
+Benchmarking doh_tunnel/create_query_4096
+Benchmarking doh_tunnel/create_query_4096: Warming up for 3.0000 s
+Benchmarking doh_tunnel/create_query_4096: Collecting 100 samples in estimated 5.0001 s (48M iterations)
+Benchmarking doh_tunnel/create_query_4096: Analyzing
+doh_tunnel/create_query_4096
+                        time:   [96.137 ns 98.719 ns 102.11 ns]
+                        thrpt:  [37.358 GiB/s 38.642 GiB/s 39.680 GiB/s]
+                 change:
+                        time:   [+10.487% +16.060% +22.398%] (p = 0.00 < 0.05)
+                        thrpt:  [−18.299% −13.838% −9.4920%]
+                        Performance has regressed.
+Found 19 outliers among 100 measurements (19.00%)
+  4 (4.00%) high mild
+  15 (15.00%) high severe
+Benchmarking doh_tunnel/parse_response_4096
+Benchmarking doh_tunnel/parse_response_4096: Warming up for 3.0000 s
+Benchmarking doh_tunnel/parse_response_4096: Collecting 100 samples in estimated 5.0004 s (57M iterations)
+Benchmarking doh_tunnel/parse_response_4096: Analyzing
+doh_tunnel/parse_response_4096
+                        time:   [82.514 ns 82.748 ns 82.984 ns]
+                        thrpt:  [45.969 GiB/s 46.100 GiB/s 46.231 GiB/s]
+                 change:
+                        time:   [+5.7230% +6.0471% +6.4034%] (p = 0.00 < 0.05)
+                        thrpt:  [−6.0181% −5.7023% −5.4132%]
+                        Performance has regressed.
+Found 3 outliers among 100 measurements (3.00%)
+  2 (2.00%) high mild
+  1 (1.00%) high severe
+
+Benchmarking timing/none
+Benchmarking timing/none: Warming up for 3.0000 s
+Benchmarking timing/none: Collecting 100 samples in estimated 5.0000 s (2.5B iterations)
+Benchmarking timing/none: Analyzing
+timing/none             time:   [1.9323 ns 1.9728 ns 2.0262 ns]
+                        change: [+2.7211% +5.9033% +9.6831%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 8 outliers among 100 measurements (8.00%)
+  8 (8.00%) high severe
+Benchmarking timing/fixed
+Benchmarking timing/fixed: Warming up for 3.0000 s
+Benchmarking timing/fixed: Collecting 100 samples in estimated 5.0000 s (2.4B iterations)
+Benchmarking timing/fixed: Analyzing
+timing/fixed            time:   [1.9555 ns 1.9726 ns 1.9941 ns]
+                        change: [+9.7523% +14.131% +19.179%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 17 outliers among 100 measurements (17.00%)
+  1 (1.00%) high mild
+  16 (16.00%) high severe
+Benchmarking timing/uniform
+Benchmarking timing/uniform: Warming up for 3.0000 s
+Benchmarking timing/uniform: Collecting 100 samples in estimated 5.0000 s (390M iterations)
+Benchmarking timing/uniform: Analyzing
+timing/uniform          time:   [12.162 ns 12.245 ns 12.351 ns]
+                        change: [+4.9955% +8.6935% +13.142%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 15 outliers among 100 measurements (15.00%)
+  1 (1.00%) high mild
+  14 (14.00%) high severe
+Benchmarking timing/normal
+Benchmarking timing/normal: Warming up for 3.0000 s
+Benchmarking timing/normal: Collecting 100 samples in estimated 5.0001 s (257M iterations)
+Benchmarking timing/normal: Analyzing
+timing/normal           time:   [17.602 ns 17.662 ns 17.723 ns]
+                        change: [+0.4902% +0.8558% +1.2696%] (p = 0.00 < 0.05)
+                        Change within noise threshold.
+Found 7 outliers among 100 measurements (7.00%)
+  5 (5.00%) high mild
+  2 (2.00%) high severe
+Benchmarking timing/exponential
+Benchmarking timing/exponential: Warming up for 3.0000 s
+Benchmarking timing/exponential: Collecting 100 samples in estimated 5.0000 s (345M iterations)
+Benchmarking timing/exponential: Analyzing
+timing/exponential      time:   [14.295 ns 14.627 ns 15.033 ns]
+                        change: [+4.2538% +6.8533% +9.9219%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 8 outliers among 100 measurements (8.00%)
+  2 (2.00%) high mild
+  6 (6.00%) high severe
+
+Benchmarking profile_from_threat_level
+Benchmarking profile_from_threat_level: Warming up for 3.0000 s
+Benchmarking profile_from_threat_level: Collecting 100 samples in estimated 5.0000 s (3.1B iterations)
+Benchmarking profile_from_threat_level: Analyzing
+profile_from_threat_level
+                        time:   [1.5149 ns 1.5610 ns 1.6216 ns]
+                        change: [+0.5053% +4.4297% +8.9251%] (p = 0.04 < 0.05)
+                        Change within noise threshold.
+Found 10 outliers among 100 measurements (10.00%)
+  1 (1.00%) high mild
+  9 (9.00%) high severe
+
+Benchmarking profile_estimated_overhead
+Benchmarking profile_estimated_overhead: Warming up for 3.0000 s
+Benchmarking profile_estimated_overhead: Collecting 100 samples in estimated 5.0000 s (22B iterations)
+Benchmarking profile_estimated_overhead: Analyzing
+profile_estimated_overhead
+                        time:   [214.22 ps 219.50 ps 226.62 ps]
+                        change: [+3.0651% +8.0772% +13.483%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 13 outliers among 100 measurements (13.00%)
+  5 (5.00%) high mild
+  8 (8.00%) high severe
+
