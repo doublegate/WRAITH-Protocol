@@ -51,10 +51,10 @@ This plan outlines the methodical remediation of all gaps identified in `GAP-ANA
 - [x] Task: Implement Resource Management (Delete) ccc4465
     - [x] Add "Delete Listener" functionality to `ListenerManager.tsx`
     - [x] Add "Delete Attack Chain" functionality to `PlaybookBrowser.tsx`
-- [ ] Task: UI/UX Polish and Advanced Features
-    - [ ] Global version string update to `v2.3.4`
-    - [ ] Implement multi-implant bulk operations in Beacons view
-    - [ ] Add Dark/Light theme toggle support
+- [x] Task: UI/UX Polish and Advanced Features e5f166d
+    - [x] Global version string update to `v2.3.4`
+    - [x] Implement multi-implant bulk operations in Beacons view
+    - [x] Add Dark/Light theme toggle support
 - [ ] Task: Conductor - User Manual Verification 'Operator Client' (Protocol in workflow.md)
 
 ## Phase 4: Final Integration & Release Prep
