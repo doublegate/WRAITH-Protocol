@@ -289,7 +289,7 @@ function App() {
                 </h3>
                 <div className="text-xs text-slate-500 space-y-1">
                   <div>
-                    WRAITH::REDOPS Operator Console v2.3.4
+                    WRAITH::REDOPS Operator Console v2.3.6
                   </div>
                   <div>Server: {serverAddress}</div>
                   <div>Status: {serverStatus}</div>

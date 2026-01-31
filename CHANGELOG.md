@@ -42,7 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Version**: Bumped all RedOps components and `wraith-crypto` to v2.3.4 (release alignment v2.3.6).
+- **Version**: Bumped all RedOps components and `wraith-crypto` to v2.3.6.
 - **xtask**: Added `build-runner` command to automate .NET assembly compilation.
 
 ---

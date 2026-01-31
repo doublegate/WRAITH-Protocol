@@ -1,6 +1,6 @@
 [package]
 name = "operator-client"
-version = "2.3.4"
+version = "2.3.6"
 description = "WRAITH RedOps Operator Console"
 authors = ["WRAITH Protocol Contributors"]
 license = "MIT OR Apache-2.0"
