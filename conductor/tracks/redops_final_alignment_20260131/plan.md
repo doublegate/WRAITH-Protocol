@@ -45,9 +45,9 @@ This plan outlines the methodical remediation of all gaps identified in `GAP-ANA
 
 ## Phase 3: Operator Client (Frontend & UX)
 
-- [ ] Task: Complete Console Command Mapping (P2-1)
-    - [ ] Add UI handlers for `compress`, `exfil_dns`, `wipe`, and `hijack` in `Console.tsx`
-    - [ ] Verify input validation for each new command
+- [x] Task: Complete Console Command Mapping (P2-1) aea3060
+    - [x] Add UI handlers for `compress`, `exfil_dns`, `wipe`, and `hijack` in `Console.tsx`
+    - [x] Verify input validation for each new command
 - [ ] Task: Implement Resource Management (Delete)
     - [ ] Add "Delete Listener" functionality to `ListenerManager.tsx`
     - [ ] Add "Delete Attack Chain" functionality to `PlaybookBrowser.tsx`
