@@ -32,8 +32,8 @@ export async function loadRoe(roe: RulesOfEngagement): Promise<void> {
   return invoke<void>('load_roe', { roe });
 }
 
-export async function loadRoeFile(path: string): Promise<void> {
-  return invoke<void>('load_roe_file', { path });
+export async function loadRoeFile(filePath: string): Promise<void> {
+  return invoke<void>('load_roe_file', { filePath });
 }
 
 export async function getRoe(): Promise<RulesOfEngagement | null> {

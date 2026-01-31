@@ -4,7 +4,7 @@
 
 This document captures the complete development journey of WRAITH Protocol from inception through version 2.0.0, including detailed phase accomplishments, sprint summaries, and implementation milestones.
 
-[![Version](https://img.shields.io/badge/version-2.3.4-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
+[![Version](https://img.shields.io/badge/version-2.3.5-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
 [![Security](https://img.shields.io/badge/security-audited-green.svg)](../security/DPI_EVASION_REPORT.md)
 [![Rust](https://img.shields.io/badge/rust-1.88%2B-orange.svg)](https://www.rust-lang.org/)
 
@@ -22,7 +22,7 @@ For the current production README, see [../../README.md](../../README.md).
 
 **Total Development Effort:** 2,685 story points delivered across 24 phases
 
-**Project Metrics (2026-01-30, v2.3.4):**
+**Project Metrics (2026-01-31, v2.3.5):**
 - **Code Volume:** ~141,000 lines of Rust code across protocol and client crates + ~37,800 lines TypeScript
 - **Test Coverage:** 2,148 tests passing (2,123 workspace + 11 spectre-implant + 14 doc, 16 ignored) - 100% pass rate
 - **Documentation:** 114 markdown files, ~62,800 lines of comprehensive documentation
@@ -1387,9 +1387,9 @@ Red team operations platform for authorized adversary emulation:
 
 ## Current Status & Next Steps
 
-**Version 2.3.2 Status (2026-01-29):**
+**Version 2.3.5 Status (2026-01-31):**
 - ✅ All 24 development phases complete (2,740+ SP delivered)
-- ✅ 2,134 tests (2,123 workspace + 11 spectre-implant, 16 ignored) - 100% pass rate
+- ✅ 2,148 tests (2,123 workspace + 11 spectre-implant + 14 doc, 16 ignored) - 100% pass rate
 - ✅ Zero vulnerabilities, zero warnings
 - ✅ Code quality: 98/100 (production-ready)
 - ✅ 12 production client applications deployed (9 desktop + 2 mobile + 1 server platform)
@@ -1470,8 +1470,8 @@ See [../../to-dos/ROADMAP.md](../../to-dos/ROADMAP.md) for detailed future plann
 
 ---
 
-**WRAITH Protocol Development History** - *From Foundation to v2.3.4 (Phases 1-24 + Infrastructure Sprints + Benchmark Optimizations)*
+**WRAITH Protocol Development History** - *From Foundation to v2.3.5 (Phases 1-24 + Infrastructure Sprints + Benchmark Optimizations + Security Hardening)*
 
-**Development Period:** 2024 - 2026-01-31 | **Total Effort:** 2,740+ story points delivered across 24 phases + infrastructure sprints | **Quality:** Production-ready (98/100), 2,148 tests (2,123 workspace + 11 spectre-implant + 14 doc, 100% pass rate), 0 vulnerabilities, Grade A+ security | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server) | **Workspace:** 22 members + 3 excluded (wraith-xdp, spectre-implant, roe-signer) | **TDR:** ~2.5% (Grade A - Excellent) | **CI/CD:** Optimized workflows with reusable setup, path filters, and cross-compilation via Cross.toml | **v2.3.4:** 18 performance optimizations (WebSocket mimicry 55-85% faster, DoH tunnel 70-86% faster, frame pipeline 11-30% faster, message header 53% faster), WRAITH-RedOps gap analysis v8.0.0 (~97% complete, 87% MITRE ATT&CK, Operator Client 3,608 lines/27 files with typed IPC), ROE Signer tool | **Conductor:** Project management system with code style guides
+**Development Period:** 2024 - 2026-01-31 | **Total Effort:** 2,740+ story points delivered across 24 phases + infrastructure sprints | **Quality:** Production-ready (98/100), 2,148 tests (2,123 workspace + 11 spectre-implant + 14 doc, 100% pass rate), 0 vulnerabilities, Grade A+ security | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server) | **Workspace:** 22 members + 3 excluded (wraith-xdp, spectre-implant, roe-signer) | **TDR:** ~2.5% (Grade A - Excellent) | **CI/CD:** Optimized workflows with reusable setup, path filters, and cross-compilation via Cross.toml | **v2.3.5:** CI/CD stability fixes, 58 CodeQL security alerts resolved, ROE Signer tool, benchmark analysis documentation | **v2.3.4:** 18 performance optimizations (WebSocket mimicry 55-85% faster, DoH tunnel 70-86% faster, frame pipeline 11-30% faster, message header 53% faster), WRAITH-RedOps gap analysis v8.0.0 (~97% complete, 87% MITRE ATT&CK, Operator Client 3,608 lines/27 files with typed IPC) | **Conductor:** Project management system with code style guides
 
 *Last Updated: 2026-01-31*
