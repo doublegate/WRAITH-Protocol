@@ -2,7 +2,7 @@
 
 This plan follows the TDD methodology and the "Phase Completion Verification and Checkpointing Protocol" defined in `workflow.md`.
 
-## Phase 1: Security Hardening & Tradecraft
+## Phase 1: Security Hardening & Tradecraft [checkpoint: 1579c4b]
 Focus on Mesh AEAD, ROP Stack Spoofing, and Memory Zeroization.
 
 - [x] Task: **Write Tests: Mesh AEAD Key Derivation**
@@ -10,17 +10,17 @@ Focus on Mesh AEAD, ROP Stack Spoofing, and Memory Zeroization.
     - [x] Write tests to verify key derivation from a mock Campaign ID using BLAKE3.
     - [x] Write tests to verify XChaCha20-Poly1305 encryption/decryption of mesh packets.
 - [x] Task: **Implement: Campaign-Derived Mesh AEAD**
-    - [ ] Update `Cargo.toml` with `chacha20poly1305` if missing (verified: already in workspace).
-    - [ ] Replace static XOR logic in `modules/mesh.rs` with `chacha20poly1305`.
-    - [ ] Implement build-time key derivation logic in `modules/mesh.rs`.
+    - [x] Update `Cargo.toml` with `chacha20poly1305` if missing (verified: already in workspace).
+    - [x] Replace static XOR logic in `modules/mesh.rs` with `chacha20poly1305`.
+    - [x] Implement build-time key derivation logic in `modules/mesh.rs`.
 - [x] Task: **Write Tests: Memory Zeroization in Transform**
     - [x] Write a test in `modules/transform.rs` using a custom wrapper to verify buffer clearing (using `zeroize`).
 - [x] Task: **Implement: Explicit Zeroization**
     - [x] Update `modules/transform.rs` to call `.zeroize()` on the decoded buffer in `decode_base64`.
 - [x] Task: **Implement: ROP-based Stack Spoofing**
-    - [ ] Refactor `utils/obfuscation.rs` to replace basic stack spoofing with a ROP chain implementation.
-    - [ ] Verify functionality via existing sleep mask tests.
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Security Hardening & Tradecraft' (Protocol in workflow.md)
+    - [x] Refactor `utils/obfuscation.rs` to replace basic stack spoofing with a ROP chain implementation.
+    - [x] Verify functionality via existing sleep mask tests.
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Security Hardening & Tradecraft' (Protocol in workflow.md)
 
 ## Phase 2: Networking & Polish
 Focus on IPv6 support, timezone awareness, and comment cleanup.
