@@ -23,3 +23,6 @@ pub mod socks;
 pub mod sideload;
 pub mod token;
 pub mod transform;
+
+#[cfg(test)]
+pub mod test_mesh_crypto;

