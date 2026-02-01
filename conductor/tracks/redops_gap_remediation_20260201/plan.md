@@ -33,9 +33,9 @@ Focus on IPv6 support, timezone awareness, and comment cleanup.
     - [x] Update `modules/socks.rs` to handle `ATYP 0x04` (IPv6).
 - [x] Task: **Implement: Timezone-Aware Killswitch**
     - [x] Update date parsing logic in `c2/mod.rs` to support ISO8601 with timezones.
-- [ ] Task: **Implement: Documentation & Frontend Cleanup**
-    - [ ] Update comments in `exfiltration.rs` and `impact.rs`.
-    - [ ] Remove/standardize `console.error` in `DiscoveryDashboard.tsx` and `LootGallery.tsx`.
+- [x] Task: **Implement: Documentation & Frontend Cleanup**
+    - [x] Update comments in `exfiltration.rs` and `impact.rs`.
+    - [x] Remove/standardize `console.error` in `DiscoveryDashboard.tsx` and `LootGallery.tsx`.
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Networking & Polish' (Protocol in workflow.md)
 
 ## Phase 3: Testing Expansion & Final Audit

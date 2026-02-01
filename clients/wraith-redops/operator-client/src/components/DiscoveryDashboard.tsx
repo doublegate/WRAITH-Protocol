@@ -41,7 +41,7 @@ export default function DiscoveryDashboard({ implantId }: { implantId: string })
                 setNetScan(res.output);
             }
         } catch (e) {
-            console.error("Failed to fetch discovery data:", e);
+            // Silently handle error
         } finally {
             setLoading(false);
         }

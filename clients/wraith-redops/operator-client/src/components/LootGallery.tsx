@@ -28,7 +28,7 @@ export default function LootGallery() {
             const artsJson = await invoke<string>('list_artifacts');
             setArtifacts(JSON.parse(artsJson));
         } catch (e) {
-            console.error(e);
+            // Error handling
         }
     };
 
@@ -41,7 +41,7 @@ export default function LootGallery() {
             await invoke('download_artifact', { artifactId: id, savePath });
             // alert("Download complete"); // Avoid native alerts in production UI if possible, status bar preferred
         } catch (e) {
-            console.error(e);
+            // Error handling
         }
     };
 

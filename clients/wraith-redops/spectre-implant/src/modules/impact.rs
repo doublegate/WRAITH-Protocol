@@ -95,7 +95,7 @@ impl Impact {
         Err(())
     }
 
-    /// T1496: Resource Hijacking - Simulate CPU resource usage.
+    /// T1496: Resource Hijacking - Perform CPU resource usage.
     pub fn hijack_resources(&self, duration_ms: u32) {
         let start = crate::utils::obfuscation::get_tick_count();
         while crate::utils::obfuscation::get_tick_count() - start < duration_ms as u64 {

