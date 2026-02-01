@@ -44,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Version**: Bumped all RedOps components and `wraith-crypto` to v2.3.6.
 - **xtask**: Added `build-runner` command to automate .NET assembly compilation.
+- **Conductor**: Full planning track (`redops_final_alignment_20260131`) with 8 tasks tracking the complete remediation workflow from Signal Double Ratchet through UI/UX polish.
 
 ---
 

@@ -195,9 +195,13 @@ WRAITH Protocol powers a comprehensive ecosystem of 12 production-ready applicat
 - BOF Loader with COFF parsing, section mapping, and relocation support
 - SOCKS4a/5 proxy for tunneling operator traffic
 - Halo's Gate SSN resolution for direct syscalls
-- MITRE ATT&CK technique coverage across 12 tactics (TA0001-TA0011, TA0040)
-- Ed25519-signed Kill Switch broadcast mechanism
+- MITRE ATT&CK technique coverage across 12 tactics (TA0001-TA0011, TA0040), including T1055.012 (Process Hollowing), T1021.002 (SMB/Admin Shares), T1090.003 (Multi-hop Proxy), T1572 (Protocol Tunneling), T1134 (Access Token Manipulation), T1140 (Deobfuscate/Decode), T1574.002 (DLL Side-Loading), T1105 (Ingress Tool Transfer)
+- Signal-style Double Ratchet (DH + Symmetric) for C2 key ratcheting with synchronization fix
+- DEFLATE compression (miniz_oxide) for efficient data exfiltration
+- Randomized nonce-based XOR obfuscation for mesh discovery packets
+- Ed25519-signed Kill Switch broadcast mechanism with graceful error propagation
 - Encryption at Rest for command payloads and results
+- Runner.dll source-build model (compiled from C# source via dotnet, integrated into implant build)
 
 ### WRAITH-RedOps Gap Analysis (v8.0.0)
 
@@ -687,7 +691,8 @@ WRAITH Protocol v2.3.6 represents 2,740+ story points across 24 development phas
 - RedOps codebase: 8,925 lines spectre-implant, 5,833 lines team-server, ~5,800 lines operator-client (21 modules, 34/34 IPC commands wired, 21 console commands, 11 spectre-implant tests)
 - Conductor project management system with code style guides for development workflow tracking
 - RedOps workspace integration: team-server and operator-client as workspace members (spectre-implant excluded for no_std compatibility)
-- Comprehensive documentation (114 files, ~62,800 lines) and testing (2,134 tests across all components)
+- v2.3.6 RedOps Advanced Tradecraft: Signal Double Ratchet C2 ratcheting, 4 new MITRE ATT&CK techniques (T1134, T1140, T1574.002, T1105), Runner source-build, operator UX polish, team server safety hardening
+- Comprehensive documentation (114 files, ~62,800 lines) and testing (2,148 tests across all components)
 - CI/CD infrastructure with multi-platform releases
 
 ### Future Development

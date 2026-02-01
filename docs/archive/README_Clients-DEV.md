@@ -239,6 +239,17 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 - Test infrastructure: 11 spectre-implant tests passing
 - Gap analysis v8.0.0 in [GAP-ANALYSIS-v2.3.4.md](../clients/wraith-redops/GAP-ANALYSIS-v2.3.4.md)
 
+**v2.3.6 Advanced Tradecraft (2026-02-01):**
+- P1-1 resolved: Signal-style Double Ratchet (DH + Symmetric) for C2 key ratcheting with synchronization fix in `force_dh_step`
+- P1-2 resolved: PowerShell Runner transitioned to source-build model (C# compiled via dotnet, integrated into implant build via `cargo xtask build-runner`)
+- 4 new MITRE ATT&CK techniques: T1134 (Access Token Manipulation), T1140 (Deobfuscate/Decode), T1574.002 (DLL Side-Loading), T1105 (Ingress Tool Transfer)
+- Compression upgraded from RLE to DEFLATE (miniz_oxide) for efficient exfiltration
+- Mesh discovery obfuscation: randomized nonce-based XOR eliminating static signatures
+- Team Server: DeleteListener/DeleteAttackChain RPCs, graceful Kill Switch error propagation, cryptographic nonce generation
+- Operator Client: 10 new console commands, delete functionality in ListenerManager/PlaybookBrowser, Dark/Light theme toggle, bulk kill in Beacons view
+- P3-2: Dynamic Linux `.text` base address via `/proc/self/maps` for PIE compatibility
+- P3-6: BOF loader `.unwrap()` replaced with structured error handling
+
 **UI/UX Enhancement (2026-01-28):**
 - 34/34 IPC commands wired (was 19/34): added listener CRUD, implant detail/kill, campaign detail/edit, implant generator, playbook browser, attack chain list/detail, event streaming, command cancellation, token refresh
 - 17 new files: types/index.ts, lib/ipc.ts, lib/utils.ts, stores/appStore.ts, stores/toastStore.ts, ui/Toast.tsx, ui/ConfirmDialog.tsx, ui/Modal.tsx, ui/ContextMenu.tsx, ListenerManager.tsx, ImplantDetailPanel.tsx, CampaignDetail.tsx, ImplantGenerator.tsx, PlaybookBrowser.tsx, EventLog.tsx, hooks/useKeyboardShortcuts.ts
@@ -1330,6 +1341,6 @@ RedOps                                                          [=============]
 
 **WRAITH Protocol Client Applications Development History** - *From Planning to v2.3.6*
 
-**Status:** Phases 15-24 Complete (All 12 Clients) | **Total Scope:** 12 clients, 1,292 SP | **Delivered:** 1,292 SP (100%) | **Protocol:** v2.3.6 Complete | **Tests:** 2,148 total (2,123 workspace + 11 spectre-implant + 14 doc, 663+ client tests) | **Workspace:** 22 members + 3 excluded | **TDR:** ~2.5% (Grade A) | **CI/CD:** Optimized workflows with reusable setup, path filters, and cross-compilation via Cross.toml | **v2.3.5:** CI/CD stability fixes, 58 CodeQL security alerts resolved, ROE Signer tool, benchmark analysis documentation | **RedOps:** Gap analysis v8.0.0 (~97% complete, 87% MITRE ATT&CK (35/40), 0 P0 critical, 21 modules, 33 IPC wired with typed wrappers, Operator Client 3,608 lines/27 files with zustand/toast/modal/context menus) | **Conductor:** Project management system with code style guides
+**Status:** Phases 15-24 Complete (All 12 Clients) | **Total Scope:** 12 clients, 1,292 SP | **Delivered:** 1,292 SP (100%) | **Protocol:** v2.3.6 Complete | **Tests:** 2,148 total (2,123 workspace + 11 spectre-implant + 14 doc, 663+ client tests) | **Workspace:** 22 members + 3 excluded | **TDR:** ~2.5% (Grade A) | **CI/CD:** Optimized workflows with reusable setup, path filters, and cross-compilation via Cross.toml | **v2.3.6:** RedOps Advanced Tradecraft -- Signal Double Ratchet, 4 MITRE ATT&CK techniques (T1134, T1140, T1574.002, T1105), DEFLATE compression, Runner source-build, operator UX polish, team server safety | **v2.3.5:** CI/CD stability fixes, 58 CodeQL security alerts resolved, ROE Signer tool, benchmark analysis documentation | **RedOps:** Gap analysis v8.0.0 (~97% complete, 87% MITRE ATT&CK (35/40), 0 P0 critical, 21 modules, 33 IPC wired with typed wrappers, Operator Client 3,608 lines/27 files with zustand/toast/modal/context menus) | **Conductor:** Project management system with code style guides
 
-*Last Updated: 2026-01-31*
+*Last Updated: 2026-02-01*
