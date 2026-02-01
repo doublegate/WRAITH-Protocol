@@ -511,9 +511,7 @@ impl NoiseTransport {
     /// Returns [`CryptoError::InvalidState`] if peer key is unknown.
     pub fn rekey_dh(&mut self) -> Result<(), CryptoError> {
         let mut rng = SecureRng::new();
-        self.ratchet
-            .force_dh_step(&mut rng)
-            .map_err(Into::into)
+        self.ratchet.force_dh_step(&mut rng).map_err(Into::into)
     }
 
     /// Mix external key material (e.g. PQ KEM) into the ratchet.

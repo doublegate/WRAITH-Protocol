@@ -1,6 +1,6 @@
 use wraith_crypto::noise::{NoiseHandshake, NoiseKeypair};
-use wraith_crypto::x25519::PrivateKey;
 use wraith_crypto::random::SecureRng;
+use wraith_crypto::x25519::PrivateKey;
 
 #[test]
 fn test_double_ratchet_rekeying_integration() {
@@ -27,8 +27,10 @@ fn test_double_ratchet_rekeying_integration() {
     let bob_ratchet_pub = bob_ratchet_priv.public_key();
 
     // Alice (Initiator) needs Bob's public ratchet key
-    let mut alice = alice_hs.into_transport(None, Some(bob_ratchet_pub)).unwrap();
-    
+    let mut alice = alice_hs
+        .into_transport(None, Some(bob_ratchet_pub))
+        .unwrap();
+
     // Bob (Responder) needs his own private ratchet key
     let mut bob = bob_hs.into_transport(Some(bob_ratchet_priv), None).unwrap();
 
@@ -50,18 +52,18 @@ fn test_double_ratchet_rekeying_integration() {
     // 4. Alice sends message with NEW key
     let plaintext2 = b"msg2 - rekeyed";
     let ciphertext2 = alice.write_message(plaintext2).unwrap();
-    
+
     // Verify ciphertext is different/valid structure
     // Header is 40 bytes.
     let header_bytes = &ciphertext2[0..40];
-    
+
     // 5. Bob receives. Should trigger DH ratchet.
     let decrypted2 = bob.read_message(&ciphertext2).unwrap();
     assert_eq!(decrypted2, plaintext2);
 
     // 6. Verify forward secrecy (can't decrypt old msg with new state? DoubleRatchet zeroizes keys)
     // But verify Bob accepted the new key.
-    
+
     // If Bob replies, he should use the new ratchet.
     let plaintext3 = b"msg3 - reply";
     let ciphertext3 = bob.write_message(plaintext3).unwrap();

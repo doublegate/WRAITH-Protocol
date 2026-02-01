@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [2.3.6] - 2026-01-31 - RedOps Complete Completion & Advanced Tradecraft
+## [2.3.6] - 2026-02-01 - RedOps Complete Completion & Advanced Tradecraft
 
 ### Added
 

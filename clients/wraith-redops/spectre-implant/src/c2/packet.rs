@@ -19,8 +19,12 @@ pub struct WraithFrame {
 
 impl WraithFrame {
     pub fn new(frame_type: u8, payload: Vec<u8>) -> Self {
+        let mut nonce_bytes = [0u8; 8];
+        crate::utils::entropy::get_random_bytes(&mut nonce_bytes);
+        let nonce = u64::from_be_bytes(nonce_bytes);
+
         Self {
-            nonce: 0, // Should be set by session
+            nonce,
             frame_type,
             flags: 0,
             stream_id: 0,

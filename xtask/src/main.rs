@@ -74,7 +74,7 @@ fn main() -> anyhow::Result<()> {
             } else {
                 None
             };
-            
+
             let dotnet_program = if let Some(p) = dotnet_path_buf {
                 p.to_string_lossy().to_string()
             } else {
@@ -102,7 +102,10 @@ fn main() -> anyhow::Result<()> {
                     println!("Runner.dll built and copied to {}", dest);
                 }
                 Err(e) => {
-                    eprintln!("Failed to execute dotnet at '{}': {}. Skipping build.", dotnet_program, e);
+                    eprintln!(
+                        "Failed to execute dotnet at '{}': {}. Skipping build.",
+                        dotnet_program, e
+                    );
                 }
             }
         }

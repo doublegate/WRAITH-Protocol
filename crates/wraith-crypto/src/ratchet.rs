@@ -452,7 +452,10 @@ impl DoubleRatchet {
     ///
     /// Returns [`RatchetError::NoPeerKey`] if we don't know the peer's public key.
     /// Returns [`RatchetError::InvalidPublicKey`] if the peer key is invalid.
-    pub fn force_dh_step<R: RngCore + CryptoRng>(&mut self, rng: &mut R) -> Result<(), RatchetError> {
+    pub fn force_dh_step<R: RngCore + CryptoRng>(
+        &mut self,
+        rng: &mut R,
+    ) -> Result<(), RatchetError> {
         if self.send_count == 0 {
             return Ok(());
         }
@@ -464,7 +467,8 @@ impl DoubleRatchet {
         self.dh_self_public = self.dh_self.public_key();
 
         // DH with new key and peer's current public key
-        let dh_out = self.dh_self
+        let dh_out = self
+            .dh_self
             .exchange(&peer_public)
             .ok_or(RatchetError::InvalidPublicKey)?;
 

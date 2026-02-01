@@ -5,7 +5,7 @@
 This document tracks the development journey of WRAITH Protocol client applications, from planning through implementation and release. Phases 15-24 delivered all 12 client applications: WRAITH-Transfer, WRAITH-Android, WRAITH-iOS, WRAITH-Chat, WRAITH-Sync, WRAITH-Share, WRAITH-Stream, WRAITH-Mesh, WRAITH-Publish, WRAITH-Vault, WRAITH-Recon, and WRAITH-RedOps.
 
 [![Version](https://img.shields.io/badge/clients-12%20complete-green.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
-[![Protocol](https://img.shields.io/badge/protocol-v2.3.5-blue.svg)](../../README.md)
+[![Protocol](https://img.shields.io/badge/protocol-v2.3.6-blue.svg)](../../README.md)
 [![Clients](https://img.shields.io/badge/clients-9%20desktop%20+%202%20mobile%20+%201%20server-brightgreen.svg)](../../to-dos/ROADMAP-clients.md)
 
 ---
@@ -33,7 +33,7 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 - **Tier 4:** Security Testing (RedOps - COMPLETE)
 
 **Current Status (2026-01-31):**
-- Protocol v2.3.5 complete (all 24 phases + infrastructure sprints + benchmark optimizations + security hardening delivered)
+- Protocol v2.3.6 complete (all 24 phases + infrastructure sprints + benchmark optimizations + security hardening delivered)
 - **All 12 Client Applications:** ✅ **COMPLETE** (1,292 SP total)
   - WRAITH-Transfer: Desktop P2P file transfer (6 tests)
   - WRAITH-Chat: E2EE messaging with voice/video/groups (107 tests)
@@ -1193,7 +1193,7 @@ RedOps                                                          [=============]
 - ✅ 2,148 tests passing (2,123 workspace + 11 spectre-implant + 14 doc, 16 ignored) - 100% pass rate
 - ✅ Zero vulnerabilities, zero clippy warnings
 - ✅ Grade A+ quality (98/100), TDR ~2.5%
-- ✅ Production-ready architecture with v2.3.5 release (CI/CD stability, 58 CodeQL alerts resolved, ROE Signer tool, benchmark analysis documentation)
+- ✅ Production-ready architecture with v2.3.6 release (RedOps advanced tradecraft, Signal Double Ratchet, 58 CodeQL alerts resolved, ROE Signer tool, benchmark analysis documentation)
 - ✅ v2.3.4 benchmark-driven optimizations (WebSocket mimicry 55-85% faster, DoH tunnel 70-86% faster, frame pipeline 11-30% faster, message header 53% faster)
 - ✅ v2.3.2 benchmark-driven optimizations (10.9x frame building, 93.6% Double Ratchet improvement, 118,000x transfer scheduling)
 - ✅ WRAITH-RedOps workspace integration: team-server and operator-client as Cargo workspace members
@@ -1328,8 +1328,8 @@ RedOps                                                          [=============]
 
 ---
 
-**WRAITH Protocol Client Applications Development History** - *From Planning to v2.3.5*
+**WRAITH Protocol Client Applications Development History** - *From Planning to v2.3.6*
 
-**Status:** Phases 15-24 Complete (All 12 Clients) | **Total Scope:** 12 clients, 1,292 SP | **Delivered:** 1,292 SP (100%) | **Protocol:** v2.3.5 Complete | **Tests:** 2,148 total (2,123 workspace + 11 spectre-implant + 14 doc, 663+ client tests) | **Workspace:** 22 members + 3 excluded | **TDR:** ~2.5% (Grade A) | **CI/CD:** Optimized workflows with reusable setup, path filters, and cross-compilation via Cross.toml | **v2.3.5:** CI/CD stability fixes, 58 CodeQL security alerts resolved, ROE Signer tool, benchmark analysis documentation | **RedOps:** Gap analysis v8.0.0 (~97% complete, 87% MITRE ATT&CK (35/40), 0 P0 critical, 21 modules, 33 IPC wired with typed wrappers, Operator Client 3,608 lines/27 files with zustand/toast/modal/context menus) | **Conductor:** Project management system with code style guides
+**Status:** Phases 15-24 Complete (All 12 Clients) | **Total Scope:** 12 clients, 1,292 SP | **Delivered:** 1,292 SP (100%) | **Protocol:** v2.3.6 Complete | **Tests:** 2,148 total (2,123 workspace + 11 spectre-implant + 14 doc, 663+ client tests) | **Workspace:** 22 members + 3 excluded | **TDR:** ~2.5% (Grade A) | **CI/CD:** Optimized workflows with reusable setup, path filters, and cross-compilation via Cross.toml | **v2.3.5:** CI/CD stability fixes, 58 CodeQL security alerts resolved, ROE Signer tool, benchmark analysis documentation | **RedOps:** Gap analysis v8.0.0 (~97% complete, 87% MITRE ATT&CK (35/40), 0 P0 critical, 21 modules, 33 IPC wired with typed wrappers, Operator Client 3,608 lines/27 files with zustand/toast/modal/context menus) | **Conductor:** Project management system with code style guides
 
 *Last Updated: 2026-01-31*

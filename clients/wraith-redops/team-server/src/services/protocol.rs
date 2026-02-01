@@ -190,7 +190,9 @@ impl ProtocolHandler {
 
                         // Respond with Ciphertext frame
                         let mut frame = Vec::with_capacity(28 + ct_bytes.len());
-                        frame.extend_from_slice(b"WRTH");
+                        let mut nonce = [0u8; 8];
+                        SecureRng::new().fill_bytes(&mut nonce);
+                        frame.extend_from_slice(&nonce);
                         frame.push(0x07); // FRAME_PQ_KEX
                         frame.push(0); // flags
                         frame.extend_from_slice(&0u16.to_be_bytes()); // stream_id

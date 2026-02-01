@@ -8,6 +8,9 @@ This file tracks all major work tracks for the WRAITH Protocol project. Each tra
 
 ## Active Tracks
 
+- [~] **Track: WRAITH-RedOps Final Alignment and Completion**
+*Link: [./tracks/redops_final_alignment_20260131/](./tracks/redops_final_alignment_20260131/)*
+
 ---
 
 ## Archived Tracks

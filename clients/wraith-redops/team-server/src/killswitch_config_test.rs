@@ -12,8 +12,7 @@ use wraith_crypto::noise::NoiseKeypair;
 
 #[tokio::test]
 #[serial]
-#[should_panic(expected = "KILLSWITCH_PORT must be set")]
-async fn test_kill_implant_panics_without_port() {
+async fn test_kill_implant_fails_without_port() {
     // Ensure the relevant env vars are NOT set
     unsafe {
         std::env::remove_var("KILLSWITCH_PORT");
@@ -58,14 +57,15 @@ async fn test_kill_implant_panics_without_port() {
         clean_artifacts: false,
     });
 
-    // This should panic
-    let _ = operator_service.kill_implant(req).await;
+    let res = operator_service.kill_implant(req).await;
+    assert!(res.is_err());
+    let status = res.unwrap_err();
+    assert!(status.message().contains("KILLSWITCH_PORT must be set"));
 }
 
 #[tokio::test]
 #[serial]
-#[should_panic(expected = "KILLSWITCH_SECRET must be set")]
-async fn test_kill_implant_panics_without_secret() {
+async fn test_kill_implant_fails_without_secret() {
     // Set port but not secret
     unsafe {
         std::env::set_var("KILLSWITCH_PORT", "1234");
@@ -110,6 +110,8 @@ async fn test_kill_implant_panics_without_secret() {
         clean_artifacts: false,
     });
 
-    // This should panic
-    let _ = operator_service.kill_implant(req).await;
+    let res = operator_service.kill_implant(req).await;
+    assert!(res.is_err());
+    let status = res.unwrap_err();
+    assert!(status.message().contains("KILLSWITCH_SECRET must be set"));
 }
