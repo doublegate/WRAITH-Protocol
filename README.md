@@ -39,7 +39,7 @@ WRAITH Protocol is a privacy-focused, high-performance file transfer protocol de
 | Metric            | Value                                                                     |
 | ----------------- | ------------------------------------------------------------------------- |
 | **Tests**         | 2,148 passing (2,123 workspace + 11 spectre-implant + 14 doc), 16 ignored |
-| **Code**          | ~141,000 lines Rust (protocol + clients) + ~37,800 lines TypeScript       |
+| **Code**          | ~141,000 lines Rust (protocol + clients) + ~36,600 lines TypeScript       |
 | **Documentation** | 114 files, ~62,800 lines                                                  |
 | **Security**      | Grade A+ (zero vulnerabilities, 295 audited dependencies)                 |
 | **Quality**       | 98/100, zero clippy warnings                                              |
@@ -202,6 +202,9 @@ WRAITH Protocol powers a comprehensive ecosystem of 12 production-ready applicat
 - Ed25519-signed Kill Switch broadcast mechanism with graceful error propagation
 - Encryption at Rest for command payloads and results
 - Runner.dll source-build model (compiled from C# source via dotnet, integrated into implant build)
+- IPv6 support for C2 beacon communication and SOCKS proxy with dual-stack fallback
+- Timezone-aware working hours for beacon activity scheduling
+- Authenticated mesh encryption for peer discovery packets
 
 ### WRAITH-RedOps Gap Analysis (v9.0.0)
 
@@ -772,4 +775,4 @@ WRAITH Protocol builds on excellent projects and research:
 
 **Version:** 2.3.6 | **License:** MIT | **Language:** Rust 2024 (MSRV 1.88) | **Tests:** 2,148 passing (2,123 workspace + 11 spectre-implant + 14 doc) | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server)
 
-**Last Updated:** 2026-01-31
+**Last Updated:** 2026-02-01

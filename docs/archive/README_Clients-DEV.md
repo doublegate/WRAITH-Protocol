@@ -32,7 +32,7 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 - **Tier 3:** Advanced use cases (Mesh, Publish, Vault, Recon - ALL COMPLETE)
 - **Tier 4:** Security Testing (RedOps - COMPLETE)
 
-**Current Status (2026-01-31):**
+**Current Status (2026-02-01):**
 - Protocol v2.3.6 complete (all 24 phases + infrastructure sprints + benchmark optimizations + security hardening delivered)
 - **All 12 Client Applications:** ✅ **COMPLETE** (1,292 SP total)
   - WRAITH-Transfer: Desktop P2P file transfer (6 tests)
@@ -249,6 +249,10 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 - Operator Client: 10 new console commands, delete functionality in ListenerManager/PlaybookBrowser, Dark/Light theme toggle, bulk kill in Beacons view
 - P3-2: Dynamic Linux `.text` base address via `/proc/self/maps` for PIE compatibility
 - P3-6: BOF loader `.unwrap()` replaced with structured error handling
+- IPv6 support for C2 beacon communication and SOCKS proxy tunneling with dual-stack fallback
+- Timezone-aware working hours for beacon activity scheduling
+- Authenticated mesh encryption for peer discovery packets
+- CI fixes: corrected `--exclude` package name in workflows, prefixed unused variable for `-Dwarnings`
 
 **UI/UX Enhancement (2026-01-28):**
 - 34/34 IPC commands wired (was 19/34): added listener CRUD, implant detail/kill, campaign detail/edit, implant generator, playbook browser, attack chain list/detail, event streaming, command cancellation, token refresh
@@ -1199,7 +1203,7 @@ RedOps                                                          [=============]
 
 ## Current Status & Next Steps
 
-**Protocol Status (2026-01-31):**
+**Protocol Status (2026-02-01):**
 - ✅ All 24 protocol development phases complete (2,740+ SP delivered)
 - ✅ 2,148 tests passing (2,123 workspace + 11 spectre-implant + 14 doc, 16 ignored) - 100% pass rate
 - ✅ Zero vulnerabilities, zero clippy warnings

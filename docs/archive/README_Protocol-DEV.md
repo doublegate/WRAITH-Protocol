@@ -23,7 +23,7 @@ For the current production README, see [../../README.md](../../README.md).
 **Total Development Effort:** 2,685 story points delivered across 24 phases
 
 **Project Metrics (2026-02-01, v2.3.6):**
-- **Code Volume:** ~141,000 lines of Rust code across protocol and client crates + ~37,800 lines TypeScript
+- **Code Volume:** ~141,000 lines of Rust code across protocol and client crates + ~36,600 lines TypeScript
 - **Test Coverage:** 2,148 tests passing (2,123 workspace + 11 spectre-implant + 14 doc, 16 ignored) - 100% pass rate
 - **Documentation:** 114 markdown files, ~62,800 lines of comprehensive documentation
 - **Dependencies:** 295 audited packages (zero vulnerabilities via cargo-audit)
@@ -1220,7 +1220,7 @@ Red team operations platform for authorized adversary emulation:
 | **wraith-recon** | ✅ v2.2.0 | ~4,500 | - | - | 78 | Network reconnaissance platform (Tauri 2.0 + React 18), packet capture with pcap/BPF, protocol analysis and dissection, network mapping and visualization, device fingerprinting, traffic anomaly detection, 17 Tauri IPC commands, real-time dashboard with dark theme |
 | **wraith-xdp** | 📋 Planned | 0 | 0 | 0 | 0 | eBPF/XDP programs for in-kernel packet filtering (excluded from default build) |
 
-**Total Protocol:** ~141,000 lines Rust across protocol and client crates + ~37,800 lines TypeScript/Kotlin/Swift
+**Total Protocol:** ~141,000 lines Rust across protocol and client crates + ~36,600 lines TypeScript/Kotlin/Swift
 
 **Workspace:** 22 members (8 protocol crates + 9 Tauri clients + team-server + operator-client + xtask + tests), 2 excluded (wraith-xdp, spectre-implant)
 

@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 #### Spectre Implant (Advanced Tradecraft)
+- **IPv6 Support**: Full IPv6 support for C2 beacon communication and SOCKS proxy tunneling, with automatic protocol detection (IPv4/IPv6) and dual-stack fallback.
+- **Timezone-Aware Working Hours**: Configurable working hours with timezone support for beacon activity scheduling, reducing detection risk by limiting C2 communication to business hours.
+- **Authenticated Mesh Encryption**: Real cryptographic authentication for mesh peer discovery packets.
 - **MITRE ATT&CK Techniques**: Full, production-grade implementations of:
   - **T1134 (Access Token Manipulation)**: `steal_token` (DuplicateTokenEx/ImpersonateLoggedOnUser) and `revert_to_self`.
   - **T1140 (Deobfuscate/Decode)**: `decode_xor` and `decode_base64` modules for in-memory payload processing.
@@ -40,6 +43,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **P3-2: Linux Base Address**: Implemented dynamic Linux `.text` base address calculation using `/proc/self/maps` for PIE binary compatibility.
 - **P3-6: BOF Safety**: Replaced unsafe `.unwrap()` calls in BOF loader with structured error handling.
 
+#### CI/CD
+
+- **ci.yml/codeql.yml/release.yml**: Corrected `--exclude` package name across all workflow files (was using wrong crate name).
+- **spectre-implant**: Prefixed unused variable with underscore to satisfy `-Dwarnings` clippy enforcement.
+
 #### Documentation
 
 - **Gap Analysis v9.0.0** (`docs/clients/wraith-redops/GAP-ANALYSIS-v2.3.6.md`): Comprehensive RedOps audit confirming ~99% completion, all P0/P1/P2 issues resolved, 97.5% MITRE ATT&CK coverage (39/40), 25 modules, 35 IPC commands, 16,719 Rust + 3,749 TypeScript lines
@@ -51,6 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Conductor**: Full planning track (`redops_final_alignment_20260131`) with 8 tasks tracking the complete remediation workflow from Signal Double Ratchet through UI/UX polish.
 - **README.md**: Updated gap analysis references to v9.0.0, synced RedOps metrics (~99% completion, 0 P0/P1/P2)
 - **Protocol-DEV / Clients-DEV**: Updated gap analysis references to v9.0.0 with current metrics
+- **Documentation Cleanup**: Removed excessive frontend console.log statements, cleaned up documentation formatting
 
 ---
 
