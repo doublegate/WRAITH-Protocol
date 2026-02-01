@@ -55,7 +55,7 @@ fn test_double_ratchet_rekeying_integration() {
 
     // Verify ciphertext is different/valid structure
     // Header is 40 bytes.
-    let header_bytes = &ciphertext2[0..40];
+    let _header_bytes = &ciphertext2[0..40];
 
     // 5. Bob receives. Should trigger DH ratchet.
     let decrypted2 = bob.read_message(&ciphertext2).unwrap();
