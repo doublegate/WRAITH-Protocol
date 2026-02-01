@@ -46,7 +46,7 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
   - WRAITH-Publish: Decentralized content publishing (56 tests)
   - WRAITH-Vault: Distributed secret storage (101 tests)
   - WRAITH-Recon: Network reconnaissance platform (98 tests)
-  - WRAITH-RedOps: Red team operations platform (Team Server + Operator Client as workspace members; Spectre Implant excluded for no_std, 11 tests run separately; Operator Client: 34/34 IPC wired, 21 console commands, zustand/toast/modal/context menu UI)
+  - WRAITH-RedOps: Red team operations platform (Team Server + Operator Client as workspace members; Spectre Implant excluded for no_std, 11 tests run separately; 35 IPC wired, 21 console commands, 25 modules, ~99% complete per v9.0.0 gap analysis)
 - **Development Status:** 12 of 12 clients complete (1,292 SP delivered)
 - **CI/CD:** GitHub Actions optimized with reusable setup.yml, path filters, client build support
 - **Test Coverage:** 663+ client tests across all applications (RedOps team-server and operator-client now part of workspace build/test)
@@ -1341,6 +1341,6 @@ RedOps                                                          [=============]
 
 **WRAITH Protocol Client Applications Development History** - *From Planning to v2.3.6*
 
-**Status:** Phases 15-24 Complete (All 12 Clients) | **Total Scope:** 12 clients, 1,292 SP | **Delivered:** 1,292 SP (100%) | **Protocol:** v2.3.6 Complete | **Tests:** 2,148 total (2,123 workspace + 11 spectre-implant + 14 doc, 663+ client tests) | **Workspace:** 22 members + 3 excluded | **TDR:** ~2.5% (Grade A) | **CI/CD:** Optimized workflows with reusable setup, path filters, and cross-compilation via Cross.toml | **v2.3.6:** RedOps Advanced Tradecraft -- Signal Double Ratchet, 4 MITRE ATT&CK techniques (T1134, T1140, T1574.002, T1105), DEFLATE compression, Runner source-build, operator UX polish, team server safety | **v2.3.5:** CI/CD stability fixes, 58 CodeQL security alerts resolved, ROE Signer tool, benchmark analysis documentation | **RedOps:** Gap analysis v8.0.0 (~97% complete, 87% MITRE ATT&CK (35/40), 0 P0 critical, 21 modules, 33 IPC wired with typed wrappers, Operator Client 3,608 lines/27 files with zustand/toast/modal/context menus) | **Conductor:** Project management system with code style guides
+**Status:** Phases 15-24 Complete (All 12 Clients) | **Total Scope:** 12 clients, 1,292 SP | **Delivered:** 1,292 SP (100%) | **Protocol:** v2.3.6 Complete | **Tests:** 2,148 total (2,123 workspace + 11 spectre-implant + 14 doc, 663+ client tests) | **Workspace:** 22 members + 3 excluded | **TDR:** ~2.5% (Grade A) | **CI/CD:** Optimized workflows with reusable setup, path filters, and cross-compilation via Cross.toml | **v2.3.6:** RedOps Advanced Tradecraft -- Signal Double Ratchet, 4 MITRE ATT&CK techniques (T1134, T1140, T1574.002, T1105), DEFLATE compression, Runner source-build, operator UX polish, team server safety | **v2.3.5:** CI/CD stability fixes, 58 CodeQL security alerts resolved, ROE Signer tool, benchmark analysis documentation | **RedOps:** Gap analysis v9.0.0 (~99% complete, 97.5% MITRE ATT&CK (39/40), 0 P0/P1/P2, 25 modules, 35 IPC wired with typed wrappers, 16,719 Rust + 3,749 TS lines) | **Conductor:** Project management system with code style guides
 
 *Last Updated: 2026-02-01*

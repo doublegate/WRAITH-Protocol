@@ -40,11 +40,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **P3-2: Linux Base Address**: Implemented dynamic Linux `.text` base address calculation using `/proc/self/maps` for PIE binary compatibility.
 - **P3-6: BOF Safety**: Replaced unsafe `.unwrap()` calls in BOF loader with structured error handling.
 
+#### Documentation
+
+- **Gap Analysis v9.0.0** (`docs/clients/wraith-redops/GAP-ANALYSIS-v2.3.6.md`): Comprehensive RedOps audit confirming ~99% completion, all P0/P1/P2 issues resolved, 97.5% MITRE ATT&CK coverage (39/40), 25 modules, 35 IPC commands, 16,719 Rust + 3,749 TypeScript lines
+
 ### Changed
 
 - **Version**: Bumped all RedOps components and `wraith-crypto` to v2.3.6.
 - **xtask**: Added `build-runner` command to automate .NET assembly compilation.
 - **Conductor**: Full planning track (`redops_final_alignment_20260131`) with 8 tasks tracking the complete remediation workflow from Signal Double Ratchet through UI/UX polish.
+- **README.md**: Updated gap analysis references to v9.0.0, synced RedOps metrics (~99% completion, 0 P0/P1/P2)
+- **Protocol-DEV / Clients-DEV**: Updated gap analysis references to v9.0.0 with current metrics
 
 ---
 
