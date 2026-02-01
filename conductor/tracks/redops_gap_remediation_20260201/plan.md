@@ -25,12 +25,12 @@ Focus on Mesh AEAD, ROP Stack Spoofing, and Memory Zeroization.
 ## Phase 2: Networking & Polish
 Focus on IPv6 support, timezone awareness, and comment cleanup.
 
-- [ ] Task: **Write Tests: IPv6 C2 and SOCKS Parsing**
-    - [ ] Create tests in `c2/mod.rs` for IPv6 address parsing.
-    - [ ] Create tests in `modules/socks.rs` for SOCKS5 IPv6 request handling.
-- [ ] Task: **Implement: IPv6 Support**
-    - [ ] Update host parsing in `c2/mod.rs` to handle `[` and `]` for IPv6.
-    - [ ] Update `modules/socks.rs` to handle `ATYP 0x04` (IPv6).
+- [x] Task: **Write Tests: IPv6 C2 and SOCKS Parsing**
+    - [x] Create tests in `c2/mod.rs` for IPv6 address parsing.
+    - [x] Create tests in `modules/socks.rs` for SOCKS5 IPv6 request handling.
+- [x] Task: **Implement: IPv6 Support**
+    - [x] Update host parsing in `c2/mod.rs` to handle `[` and `]` for IPv6.
+    - [x] Update `modules/socks.rs` to handle `ATYP 0x04` (IPv6).
 - [ ] Task: **Implement: Timezone-Aware Killswitch**
     - [ ] Update date parsing logic in `c2/mod.rs` to support ISO8601 with timezones.
 - [ ] Task: **Implement: Documentation & Frontend Cleanup**

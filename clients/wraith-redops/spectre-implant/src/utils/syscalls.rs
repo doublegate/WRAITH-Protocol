@@ -493,6 +493,15 @@ pub struct SockAddrIn {
     pub sin_zero: [u8; 8],
 }
 
+#[repr(C)]
+pub struct SockAddrIn6 {
+    pub sin6_family: u16,
+    pub sin6_port: u16,
+    pub sin6_flowinfo: u32,
+    pub sin6_addr: [u8; 16],
+    pub sin6_scope_id: u32,
+}
+
 // -----------------------------------------------------------------------------
 // Windows Implementation
 // -----------------------------------------------------------------------------

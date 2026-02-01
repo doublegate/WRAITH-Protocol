@@ -26,3 +26,5 @@ pub mod transform;
 
 #[cfg(test)]
 pub mod test_mesh_crypto;
+#[cfg(test)]
+pub mod test_ipv6;

