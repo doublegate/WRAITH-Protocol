@@ -51,7 +51,7 @@ env:
     --exclude wraith-publish
     --exclude wraith-vault
     --exclude wraith-recon
-    --exclude wraith-redops-client
+    --exclude operator-client
     --exclude team-server
 
 jobs:
@@ -199,7 +199,7 @@ jobs:
           --exclude wraith-publish
           --exclude wraith-vault
           --exclude wraith-recon
-          --exclude wraith-redops-client
+          --exclude operator-client
           --exclude team-server
           ${{ matrix.test_flags }}
         shell: bash
@@ -258,7 +258,7 @@ jobs:
           --exclude wraith-publish
           --exclude wraith-vault
           --exclude wraith-recon
-          --exclude wraith-redops-client
+          --exclude operator-client
           --exclude team-server
           -- -D warnings
 
@@ -314,7 +314,7 @@ jobs:
           --exclude wraith-publish
           --exclude wraith-vault
           --exclude wraith-recon
-          --exclude wraith-redops-client
+          --exclude operator-client
           --exclude team-server
         env:
           RUSTDOCFLAGS: -Dwarnings
@@ -370,7 +370,7 @@ jobs:
           --exclude wraith-publish
           --exclude wraith-vault
           --exclude wraith-recon
-          --exclude wraith-redops-client
+          --exclude operator-client
           --exclude team-server
 
   #############################################################################
@@ -430,7 +430,7 @@ jobs:
           --exclude wraith-publish
           --exclude wraith-vault
           --exclude wraith-recon
-          --exclude wraith-redops-client
+          --exclude operator-client
           --exclude team-server
           --lcov --output-path lcov.info
 

@@ -91,7 +91,7 @@ jobs:
       # CodeQL needs the build to understand the code structure
       - name: Build project
         run: |
-          cargo build --workspace --all-features --release --exclude wraith-transfer --exclude wraith-chat --exclude wraith-sync --exclude wraith-share --exclude wraith-stream --exclude wraith-mesh --exclude wraith-publish --exclude wraith-vault --exclude wraith-recon --exclude wraith-redops-client --exclude team-server
+          cargo build --workspace --all-features --release --exclude wraith-transfer --exclude wraith-chat --exclude wraith-sync --exclude wraith-share --exclude wraith-stream --exclude wraith-mesh --exclude wraith-publish --exclude wraith-vault --exclude wraith-recon --exclude operator-client --exclude team-server
 
       # Perform CodeQL Analysis
       - name: Perform CodeQL Analysis
