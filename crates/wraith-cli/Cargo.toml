@@ -41,7 +41,7 @@ url = "2.5"
 
 # RedOps TUI & gRPC
 tonic = "0.10"
-prost = "0.12"
+prost = "0.14"
 prost-types = "0.12"
 tokio-stream = "0.1"
 ratatui = "0.26"
