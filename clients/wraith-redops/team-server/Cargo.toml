@@ -51,7 +51,7 @@ rand = "0.8"
 hex = "0.4"
 
 # Authentication
-jsonwebtoken = "9.2"
+jsonwebtoken = "10.3"
 argon2 = "0.5"
 hmac = "0.12"
 sha2 = "0.10"
