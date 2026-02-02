@@ -18,7 +18,7 @@ fn nonce_from_pn(pn: u64) -> Nonce {
 #[test]
 fn full_pipeline_alice_bob_key_exchange_and_messaging() {
     // 1. Alice and Bob each generate hybrid keypairs
-    let alice_kp = HybridKeyPair::generate(&mut OsRng);
+    let _alice_kp = HybridKeyPair::generate(&mut OsRng);
     let bob_kp = HybridKeyPair::generate(&mut OsRng);
 
     // 2. Alice encapsulates to Bob's public key
@@ -80,7 +80,7 @@ fn full_pipeline_alice_bob_key_exchange_and_messaging() {
 
 #[test]
 fn ten_message_bidirectional_exchange() {
-    let alice_kp = HybridKeyPair::generate(&mut OsRng);
+    let _alice_kp = HybridKeyPair::generate(&mut OsRng);
     let bob_kp = HybridKeyPair::generate(&mut OsRng);
 
     let (ss, ct) = bob_kp.public.encapsulate(&mut OsRng).unwrap();
@@ -129,7 +129,7 @@ fn ten_message_bidirectional_exchange() {
 fn simulate_packet_loss_and_reorder() {
     let kp = HybridKeyPair::generate(&mut OsRng);
     let (ss, ct) = kp.public.encapsulate(&mut OsRng).unwrap();
-    let ss_dec = kp.secret.decapsulate(&ct).unwrap();
+    let _ss_dec = kp.secret.decapsulate(&ct).unwrap();
 
     let transcript = blake3::hash(b"reorder test");
     let keys = derive_session_keys_v2(ss.as_bytes(), transcript.as_bytes());
@@ -165,7 +165,7 @@ fn simulate_packet_loss_and_reorder() {
 fn full_pipeline_via_crypto_context() {
     let ctx = CryptoContextV2::new(CryptoSuite::SuiteA);
 
-    let alice_kp = ctx.generate_keypair(&mut OsRng);
+    let _alice_kp = ctx.generate_keypair(&mut OsRng);
     let bob_kp = ctx.generate_keypair(&mut OsRng);
 
     // Alice encapsulates to Bob via context

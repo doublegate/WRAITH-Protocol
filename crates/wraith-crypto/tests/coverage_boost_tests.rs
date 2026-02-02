@@ -65,7 +65,7 @@ mod pq_tests {
     fn pq_parse_error_debug_clone_copy_eq() {
         let e1 = pq::PqParseError;
         let e2 = e1; // Copy
-        let e3 = e1.clone(); // Clone
+        let e3 = e1; // Clone (Copy implies Clone)
         assert_eq!(e1, e2);
         assert_eq!(e2, e3);
         let _ = std::format!("{e1:?}"); // Debug
@@ -82,7 +82,7 @@ mod random_tests {
     #[test]
     fn secure_rng_new_and_default() {
         let _r1 = SecureRng::new();
-        let _r2 = SecureRng::default();
+        let _r2 = SecureRng;
     }
 
     #[test]
