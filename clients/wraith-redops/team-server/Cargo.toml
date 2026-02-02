@@ -29,7 +29,7 @@ prost-types = "0.13"
 sqlx = { version = "0.8.6", default-features = false, features = ["runtime-tokio-rustls", "postgres", "macros", "ipnetwork"] }
 sqlx-core = { version = "=0.8.6", features = ["migrate"] }
 sqlx-postgres = { version = "=0.8.6", features = ["json", "chrono", "uuid", "migrate"] }
-ipnetwork = "0.20"
+ipnetwork = "0.21"
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
