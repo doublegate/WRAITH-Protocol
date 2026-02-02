@@ -45,7 +45,7 @@ prost = "0.12"
 prost-types = "0.12"
 tokio-stream = "0.1"
 ratatui = "0.26"
-crossterm = "0.27"
+crossterm = "0.29"
 
 [build-dependencies]
 tonic-build = "0.10"
