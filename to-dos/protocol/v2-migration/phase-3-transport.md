@@ -419,8 +419,64 @@ pub struct TransportStats {
 
 ---
 
+## Gap Analysis (v2.3.7 Assessment)
+
+### Current Implementation State
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Transport trait (async) | PARTIAL | `crates/wraith-transport/src/transport.rs` has async trait but missing `characteristics()`, `mtu()`, `close()` |
+| UDP transport | COMPLETE | Both sync (`udp.rs`) and async (`udp_async.rs`) |
+| AF_XDP | COMPLETE | `af_xdp.rs` with UMEM, ring buffers, batch ops, full stats |
+| io_uring | COMPLETE | `io_uring.rs` for async file I/O |
+| QUIC transport | STUB | `quic.rs` exists as placeholder |
+| WebSocket mimicry | PARTIAL | `wraith-obfuscation/src/websocket_mimicry.rs` for framing, not transport |
+| TLS mimicry | PARTIAL | `wraith-obfuscation/src/tls_mimicry.rs` for wrapping, not transport |
+| DoH tunnel | COMPLETE | `wraith-obfuscation/src/doh_tunnel.rs` |
+| Buffer pool | COMPLETE | `buffer_pool.rs` with NUMA-aware allocation |
+| NUMA support | COMPLETE | `numa.rs` |
+| Worker pools | COMPLETE | `worker.rs` |
+| MTU discovery | COMPLETE | `mtu.rs` |
+| Transport factory | COMPLETE | `factory.rs` |
+
+### Gaps Identified
+
+1. **Unified Transport trait**: Current trait is partial. Need to add `characteristics()`, `peer_addr()`, `close()` per v2 spec (doc 01, section 7.1). Estimated ~200 lines refactor.
+
+2. **TransportManager**: Entirely missing. Multi-transport registration, fallback, selection. Estimated ~600 lines.
+
+3. **WebSocket transport**: Mimicry framing exists in wraith-obfuscation but no standalone WebSocket transport impl. Need `tokio-tungstenite` integration. Estimated ~400 lines.
+
+4. **QUIC transport**: Only a placeholder stub. Need `quinn` integration. Estimated ~500 lines.
+
+5. **TCP transport**: Not present (v1 was UDP-only). Need basic TCP transport as fallback. Estimated ~200 lines.
+
+6. **HTTP/2, HTTP/3 transports**: Not present. Medium priority per spec. Estimated ~600 lines total.
+
+7. **Connection migration between transports**: PATH_CHALLENGE/PATH_RESPONSE exist in wraith-core frame types but no transport-level migration logic. Migration state machine needed. Estimated ~500 lines.
+
+8. **Transport characteristics**: `TransportCharacteristics` struct (reliable, ordered, datagram_capable, base_latency, overhead, max_bandwidth) not implemented. Estimated ~150 lines.
+
+9. **Cross-platform**: AF_XDP/io_uring are Linux-only (correct). Need graceful fallback on macOS/Windows. Current `#[cfg(target_os = "linux")]` gating is correct but TransportManager needs to handle platform differences.
+
+### Inaccuracies
+
+- Sprint 3.1 mentions "Remove old sync Transport trait" and "Remove AsyncTransport (merged)". Need to verify the current trait structure before planning removal.
+- Sprint 3.6 (HTTP/2 & HTTP/3) at 6-10 SP seems underestimated for two transport implementations.
+
+### Client Impact
+
+Transport changes primarily affect:
+- wraith-chat (depends on wraith-transport for real-time comms)
+- wraith-android, wraith-ios (transport selection for mobile networks)
+- wraith-redops team-server (wraith-transport for C2 channels)
+- wraith-recon (wraith-transport for packet capture)
+
+---
+
 ## Changelog
 
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | 2026-01-24 | Initial Phase 3 sprint plan |
+| 1.1.0 | 2026-02-01 | Gap analysis with current implementation state |

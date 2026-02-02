@@ -357,8 +357,35 @@ v2_integration:
 
 ---
 
+## Gap Analysis (v2.3.7 Assessment)
+
+### Missing Test Areas
+
+1. **Group communication testing**: v2 adds GROUP_JOIN/LEAVE/REKEY frame types, TreeKEM, group topologies. No test infrastructure planned for these. Need Sprint 4.6.
+2. **Real-time QoS testing**: v2 adds QoS modes, FEC, jitter buffers. Not covered.
+3. **Obfuscation testing**: Polymorphic format, continuous padding, probing resistance, entropy normalization all need dedicated test coverage.
+4. **WASM target testing**: v2 targets WASM/browser. Not addressed in Phase 4.
+
+### New Sprint Required
+
+#### Sprint 4.6: Advanced Feature Testing (18-22 SP)
+
+| ID | Task | SP | Priority |
+|----|------|-----|----------|
+| 4.6.1 | Group communication test harness | 5 | High |
+| 4.6.2 | TreeKEM correctness tests | 5 | High |
+| 4.6.3 | QoS mode validation (all 4 modes) | 3 | Medium |
+| 4.6.4 | FEC repair effectiveness tests | 3 | Medium |
+| 4.6.5 | Probing resistance validation | 3 | High |
+| 4.6.6 | Entropy normalization tests | 2 | Medium |
+
+### Revised Total: 103-142 SP (was 85-110)
+
+---
+
 ## Changelog
 
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | 2026-01-24 | Initial Phase 4 sprint plan |
+| 1.1.0 | 2026-02-01 | Added Sprint 4.6 for advanced feature testing |

@@ -414,8 +414,81 @@ pub enum FrameType {
 
 ---
 
+## Gap Analysis (v2.3.7 Assessment)
+
+### Current Implementation State
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| ConnectionId | u64 (8 bytes) | `crates/wraith-core/src/session.rs:25` - `ConnectionId(u64)` |
+| Frame Header | 28 bytes | `FRAME_HEADER_SIZE = 28` in `lib.rs:105` |
+| Sequence Number | u32 | `FrameHeader.sequence: u32` in `frame.rs:195` |
+| Payload Length | u16 | `FrameHeader.payload_len: u16` in `frame.rs:199` |
+| Stream ID | u16 | `FrameHeader.stream_id: u16` in `frame.rs:193` |
+| FrameType | 16 types (0x00-0x0F) | `frame.rs:39-74` - no GROUP/QOS/FEC/DATAGRAM types |
+| SIMD parsing | COMPLETE | x86_64 SSE2 and ARM64 NEON in `frame.rs` |
+| FrameBuilder | COMPLETE | Builder pattern in `frame.rs:656` |
+| Zero-copy Frame | COMPLETE | `Frame<'a>` in `frame.rs:348` |
+
+### Key Discrepancy
+
+The v2 docs (doc 11) state v1 header is 20 bytes, but the actual v1 header is **28 bytes** with this layout:
+- Nonce (8B) + FrameType (1B) + Flags (1B) + StreamID (2B) + Sequence (4B) + Offset (8B) + PayloadLen (2B) + Padding (2B)
+
+The v2 spec header (doc 01, section 4.2) is 24 bytes:
+- Nonce (8B) + FrameType (1B) + Flags (1B) + StreamID (2B) + Sequence (4B) + Offset (8B) + PayloadLen (2B) + ExtCount (1B)
+
+This means the actual migration shrinks the header by 4 bytes (from 28 to 24), not expands it. The v2 spec adds an extension framework (ExtCount + variable Extensions) but the fixed header is smaller.
+
+However, doc 11 also specifies a separate "outer" header format where the ConnectionId and polymorphic encoding apply at the packet level (not inner frame level). The inner frame format is post-decryption.
+
+### Gaps Identified
+
+1. **128-bit ConnectionId**: Current `ConnectionId(u64)` must expand to 128-bit. Affects: session.rs, node, all packet handling. ~60 usage sites found via grep. Estimated ~300 lines changed.
+
+2. **Polymorphic wire format**: Entirely new. Session-derived field positions, XOR masking, byte swapping. Estimated ~800 lines new code.
+
+3. **New frame types**: Missing 8+ v2 types: GROUP_JOIN/LEAVE/REKEY, QOS_UPDATE, FEC_REPAIR, PRIORITY, DATAGRAM, TIMESTAMP. Also need expanded type range (0x10-0x6F per doc 11). Estimated ~200 lines.
+
+4. **Frame flags expansion**: v2 adds ECN, RTX, EXT, CMP bits. Current flags only define FIN, SYN, ACK, PRI. Estimated ~50 lines.
+
+5. **Extension framework**: ExtCount + variable-length extensions per frame. Not present. Estimated ~400 lines.
+
+6. **Version field**: v2 uses full byte for version (0x20 = v2.0). Current code has no explicit version in wire format. Estimated ~100 lines.
+
+7. **Inner frame format reconciliation**: The v1 inner frame at 28 bytes already has Nonce+Offset fields. v2 inner frame at 24 bytes is actually *more compact*. Need to reconcile carefully.
+
+### Inaccuracies in Current Plan
+
+- Sprint 2.2 states "Expand frame header from 20 to 24 bytes" -- actual expansion is from 28-byte v1 inner frame. In fact it's a format change, not a simple expansion.
+- Sprint 2.1 states CID in outer packet goes from 8 to 16 bytes -- this is correct for the outer packet format.
+- Sprint 2.5 frame type numbering in TODO doesn't match doc 01 section 4.3 numbering. Doc 01 uses 0x10-0x17 for GROUP/QOS/FEC/PRIORITY/DATAGRAM/TIMESTAMP. Doc 11 uses different numbering (0x10-0x1F stream, 0x20-0x2F path, 0x30-0x3F group, etc.). Need to standardize on doc 11 numbering.
+
+### Client Impact
+
+All 12 clients depend on `wraith-core` for frame types. ConnectionId change affects:
+- wraith-transfer (wraith-core)
+- wraith-chat (wraith-core, wraith-crypto)
+- wraith-android, wraith-ios (wraith-core, wraith-crypto)
+- wraith-redops team-server/operator-client (wraith-core)
+- wraith-recon, wraith-mesh, wraith-share, wraith-stream, wraith-publish, wraith-vault, wraith-sync
+
+### Revised Story Point Estimate
+
+| Sprint | Original SP | Revised SP | Notes |
+|--------|------------|------------|-------|
+| 2.1 ConnectionId | 13-16 | 16-20 | More usage sites than anticipated (~60) |
+| 2.2 Frame Header | 18-22 | 15-18 | Header shrinks, less SIMD rework needed |
+| 2.3 Polymorphic | 26-32 | 26-32 | Unchanged |
+| 2.4 v1 Compat | 10-14 | 10-14 | Unchanged |
+| 2.5 Frame Types | 8-11 | 10-14 | More types needed per doc 11 |
+| **Total** | **75-95** | **77-98** | Slightly higher |
+
+---
+
 ## Changelog
 
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | 2026-01-24 | Initial Phase 2 sprint plan |
+| 1.1.0 | 2026-02-01 | Gap analysis, header size correction, frame type numbering alignment |

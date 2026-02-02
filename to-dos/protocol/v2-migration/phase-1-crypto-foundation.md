@@ -395,8 +395,85 @@ impl PacketRatchet {
 
 ---
 
+## Gap Analysis (v2.3.7 Assessment)
+
+### Current Implementation State
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| ML-KEM-768 basic wrapper | COMPLETE | `crates/wraith-crypto/src/pq.rs` - keygen, encap, decap, serialization exist |
+| X25519 | COMPLETE | `crates/wraith-crypto/src/x25519.rs` |
+| HKDF-BLAKE3 | PARTIAL | `crates/wraith-crypto/src/hash.rs` has `hkdf_extract`/`hkdf_expand` using BLAKE3 already |
+| Double Ratchet | COMPLETE | `crates/wraith-crypto/src/ratchet.rs` - full Signal-style Double Ratchet |
+| Ed25519 | COMPLETE | `crates/wraith-crypto/src/signatures.rs` |
+| Elligator2 | COMPLETE | `crates/wraith-crypto/src/elligator.rs` |
+| Constant-time ops | COMPLETE | `crates/wraith-crypto/src/constant_time.rs` |
+| Zeroize | COMPLETE | Used throughout via `zeroize` crate |
+
+### Gaps Identified
+
+1. **Hybrid KEM combiner** (Sprint 1.2): ML-KEM-768 exists but no hybrid X25519+ML-KEM combination logic. Need `combine_shared_secrets()` with domain-separated BLAKE3 as per doc 12. Estimated ~400 lines new code.
+
+2. **Per-packet symmetric ratchet** (Sprint 1.4): Current ratchet is Signal Double Ratchet (per-message chain keys). v2 requires a *separate* per-packet symmetric ratchet using BLAKE3 chain that advances with every packet. This is conceptually simpler than the existing Double Ratchet but operates at a different layer. Estimated ~300 lines.
+
+3. **ML-DSA-65 signatures** (Sprint 1.5): Not present. Needs `ml-dsa` crate integration. Estimated ~200 lines.
+
+4. **Crypto suite negotiation** (NEW - needs Sprint 1.7): v2 spec defines Suite A (default), Suite B (HW accel), Suite C (max security), Suite D (classical-only). No negotiation mechanism exists. Estimated ~500 lines.
+
+5. **KDF label migration**: Current HKDF labels need updating to v2 labels (`wraith-v2-*`). Low effort but critical for correctness.
+
+6. **Algorithm agility framework**: v2 requires negotiated algorithm selection during handshake. Current code hardcodes XChaCha20-Poly1305 + BLAKE3. Estimated ~600 lines for the `CryptoSuite` abstraction.
+
+### Inaccuracies in Current Plan
+
+- Sprint 1.3 (HKDF-BLAKE3): Listed as "Replace HKDF-SHA256". Current implementation already uses HKDF-BLAKE3, not SHA256. Sprint should be re-scoped to KDF label migration and v2 key derivation schedule changes (directional keys, session ID binding, wire format seed derivation).
+- Sprint 1.1 story points may be lower since ML-KEM-768 wrapper already exists. Re-estimate to 8-12 SP (from 21-26) for completing hybrid integration.
+
+### New Sprint Required
+
+#### Sprint 1.7: Crypto Suite Negotiation (13-16 SP)
+
+**Goal:** Implement algorithm agility and suite negotiation per doc 12.
+
+| ID | Task | SP | Priority |
+|----|------|-----|----------|
+| 1.7.1 | Define `CryptoSuite` enum (A/B/C/D) | 2 | Critical |
+| 1.7.2 | Define `CryptoSuiteConfig` with algorithm selections | 3 | Critical |
+| 1.7.3 | Implement AES-256-GCM AEAD alternative (Suite B) | 3 | Medium |
+| 1.7.4 | Suite negotiation during handshake extensions | 5 | Critical |
+| 1.7.5 | Unit tests for suite selection | 3 | Critical |
+
+**Acceptance Criteria:**
+- [ ] Suite A/B/C/D selectable at configuration time
+- [ ] Negotiation selects strongest common suite
+- [ ] Fallback to Suite D (classical-only) if PQ not available
+
+**Code Location:** `crates/wraith-crypto/src/suite.rs`
+
+### Revised Story Point Estimate
+
+| Sprint | Original SP | Revised SP | Notes |
+|--------|------------|------------|-------|
+| 1.1 ML-KEM | 21-26 | 8-12 | pq.rs already exists |
+| 1.2 Hybrid KEM | 26-32 | 26-32 | Unchanged |
+| 1.3 HKDF-BLAKE3 | 13-16 | 8-10 | Already BLAKE3, just label/schedule migration |
+| 1.4 Per-Packet Ratchet | 21-26 | 21-26 | Unchanged |
+| 1.5 ML-DSA-65 | 8-12 | 8-12 | Unchanged |
+| 1.6 Integration | 6-8 | 6-8 | Unchanged |
+| **1.7 Suite Negotiation** | **NEW** | **13-16** | **New sprint** |
+| **Total** | **95-120** | **90-116** | Slightly lower due to existing PQ code |
+
+### Phase Dependencies (Outbound)
+
+- Phase 2 depends on: Session secret for polymorphic format derivation (Sprint 1.6)
+- Phase 3 depends on: CryptoSuite for transport-specific crypto (Sprint 1.7)
+- Phase 7 (Obfuscation) depends on: Per-packet ratchet for continuous padding seed (Sprint 1.4)
+
+---
+
 ## Changelog
 
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | 2026-01-24 | Initial Phase 1 sprint plan |
+| 1.1.0 | 2026-02-01 | Gap analysis, revised estimates, added Sprint 1.7 (Suite Negotiation) |

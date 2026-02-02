@@ -36,15 +36,19 @@ Phase 5 migrates all WRAITH Protocol client applications to v2, including deskto
 | wraith-android | Android | Kotlin | JNI | High |
 | wraith-ios | iOS | Swift | UniFFI | High |
 
-### Future Clients (Stub Preparation)
+### Additional Active Clients (Migration Required)
 
-| Client | Platform | Status | Priority |
-|--------|----------|--------|----------|
-| wraith-share | Desktop + Web | Planned | Medium |
-| wraith-stream | Desktop + Web | Planned | Medium |
-| wraith-mesh | Embedded | Planned | Low |
-| wraith-publish | Desktop + Web | Planned | Low |
-| wraith-vault | Desktop + CLI | Planned | Low |
+| Client | Platform | Language | FFI | Priority |
+|--------|----------|----------|-----|----------|
+| wraith-share | Desktop (Tauri) | Rust/TypeScript | N/A | High |
+| wraith-stream | Desktop (Tauri) | Rust/TypeScript | N/A | High |
+| wraith-mesh | Desktop (Tauri) | Rust/TypeScript | N/A | Medium |
+| wraith-publish | Desktop (Tauri) | Rust/TypeScript | N/A | Medium |
+| wraith-vault | Desktop (Tauri) | Rust/TypeScript | N/A | Medium |
+| wraith-recon | Desktop (Tauri) | Rust/TypeScript | N/A | High |
+| wraith-redops | Desktop + Server | Rust/TypeScript | N/A | Critical |
+
+**NOTE:** These are NOT stubs. All 12 clients are fully implemented with tests as of v2.3.7.
 
 ---
 
@@ -436,8 +440,70 @@ wraith-ios v2         Pass         Pass         Pass
 
 ---
 
+## Gap Analysis (v2.3.7 Assessment)
+
+### Critical Correction: All Clients Are Complete
+
+The original plan listed wraith-share, wraith-stream, wraith-mesh, wraith-publish, and wraith-vault as "stubs" needing scaffolding (Sprint 5.6). As of v2.3.7, all 12 client applications are fully implemented:
+
+| Client | Tests | Protocol Crate Dependencies |
+|--------|-------|-----------------------------|
+| wraith-transfer | 6 | wraith-core |
+| wraith-chat | 107 | wraith-core, wraith-crypto, wraith-transport, wraith-discovery, wraith-files |
+| wraith-android | 96 | wraith-core, wraith-crypto, wraith-transport, wraith-discovery, wraith-files |
+| wraith-ios | 103 | wraith-core, wraith-crypto, wraith-transport, wraith-discovery, wraith-files |
+| wraith-sync | 17 | wraith-core, wraith-crypto, wraith-files |
+| wraith-share | 31 | wraith-core, wraith-crypto, wraith-files, wraith-discovery |
+| wraith-stream | 27 | wraith-core, wraith-crypto, wraith-files, wraith-discovery |
+| wraith-mesh | 21 | wraith-core, wraith-discovery |
+| wraith-publish | 56 | wraith-core, wraith-crypto, wraith-discovery |
+| wraith-vault | 101 | wraith-core, wraith-crypto, wraith-files, wraith-discovery |
+| wraith-recon | 98 | wraith-core, wraith-crypto, wraith-transport, wraith-obfuscation, wraith-discovery, wraith-files |
+| wraith-redops | 11 | wraith-core, wraith-crypto, wraith-transport |
+
+### Missing Client Migrations
+
+Sprint 5.3 only covers Transfer, Chat, Sync. Need additional sprints:
+
+#### Sprint 5.7: Remaining Desktop Clients (34-42 SP)
+
+| ID | Task | SP | Priority |
+|----|------|-----|----------|
+| 5.7.1 | Update wraith-share Rust backend | 5 | High |
+| 5.7.2 | Update wraith-share TypeScript | 3 | High |
+| 5.7.3 | Update wraith-stream Rust backend | 5 | High |
+| 5.7.4 | Update wraith-stream TypeScript | 3 | High |
+| 5.7.5 | Update wraith-mesh Rust backend | 5 | Medium |
+| 5.7.6 | Update wraith-mesh TypeScript | 3 | Medium |
+| 5.7.7 | Update wraith-publish Rust backend | 5 | Medium |
+| 5.7.8 | Update wraith-publish TypeScript | 3 | Medium |
+| 5.7.9 | Update wraith-vault Rust backend | 5 | Medium |
+| 5.7.10 | Update wraith-vault TypeScript | 3 | Medium |
+
+#### Sprint 5.8: Security Client Migrations (26-34 SP)
+
+| ID | Task | SP | Priority |
+|----|------|-----|----------|
+| 5.8.1 | Update wraith-recon Rust backend | 8 | High |
+| 5.8.2 | Update wraith-recon TypeScript | 5 | High |
+| 5.8.3 | Update wraith-redops team-server | 8 | Critical |
+| 5.8.4 | Update wraith-redops operator-client | 5 | Critical |
+| 5.8.5 | Update spectre-implant crypto | 5 | Critical |
+| 5.8.6 | Integration tests | 3 | Critical |
+
+### Sprint 5.6 Removed
+
+Sprint 5.6 (Future Client Preparation) is no longer needed since all clients already exist.
+
+### Revised Total: 236-301 SP (was 150-180)
+
+The significant increase reflects the reality that 12 complete clients need migration, not just 6.
+
+---
+
 ## Changelog
 
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | 2026-01-24 | Initial Phase 5 sprint plan |
+| 1.1.0 | 2026-02-01 | Corrected client inventory (all 12 complete), added Sprints 5.7/5.8, removed Sprint 5.6 |

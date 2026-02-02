@@ -503,8 +503,25 @@ A: Contact support for enterprise migration assistance.
 
 ---
 
+## Gap Analysis (v2.3.7 Assessment)
+
+### Missing Release Considerations
+
+1. **WASM target**: v2 spec targets WASM/browser. No build/test infrastructure for WASM in release plan.
+2. **12 client applications**: Release must coordinate 8 protocol crates + 12 client apps. Original plan only considers 8 crates for crates.io publication.
+3. **Mobile builds**: Android APK and iOS IPA need to be built with v2 protocol. Not addressed.
+4. **Template updates**: 17 configuration/ROE templates in `templates/` need v2 config format updates.
+5. **RedOps considerations**: spectre-implant is no_std + excluded workspace member. Separate build/test/release process needed.
+
+### Version Number Clarification
+
+The plan uses v3.0.0 for the semver version of the Rust crates (since v2 protocol = breaking change = major version bump). Current crate versions are 2.3.7. The v3.0.0 tag reflects protocol v2.0 implementation.
+
+---
+
 ## Changelog
 
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | 2026-01-24 | Initial Phase 6 sprint plan |
+| 1.1.0 | 2026-02-01 | Added WASM, mobile, template, and RedOps release considerations |
