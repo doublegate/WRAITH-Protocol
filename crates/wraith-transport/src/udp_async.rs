@@ -3,6 +3,7 @@
 //! This module provides an async UDP transport implementation using Tokio
 //! that implements the `Transport` trait.
 
+use crate::factory::TransportType;
 use crate::transport::{Transport, TransportError, TransportResult, TransportStats};
 use async_trait::async_trait;
 use std::net::SocketAddr;
@@ -197,6 +198,19 @@ impl Transport for AsyncUdpTransport {
             send_errors: self.send_errors.load(Ordering::Relaxed),
             recv_errors: self.recv_errors.load(Ordering::Relaxed),
         }
+    }
+
+    fn transport_type(&self) -> TransportType {
+        TransportType::Udp
+    }
+
+    fn mtu(&self) -> usize {
+        // Standard Ethernet MTU minus IP/UDP headers
+        1472
+    }
+
+    fn latency_estimate(&self) -> std::time::Duration {
+        std::time::Duration::from_micros(100)
     }
 }
 

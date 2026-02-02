@@ -24,7 +24,7 @@ For the current production README, see [../../README.md](../../README.md).
 
 **Project Metrics (2026-02-01, v2.3.7):**
 - **Code Volume:** ~141,000 lines of Rust code across protocol and client crates + ~36,600 lines TypeScript
-- **Test Coverage:** 2,839 tests passing (2,828 workspace + 11 spectre-implant, 16 ignored) - 100% pass rate
+- **Test Coverage:** 2,957 tests passing (2,946 workspace + 11 spectre-implant, 16 ignored) - 100% pass rate
 - **Documentation:** 114 markdown files, ~62,800 lines of comprehensive documentation
 - **Dependencies:** 295 audited packages (zero vulnerabilities via cargo-audit)
 - **Security:** Grade A+ (EXCELLENT) - zero vulnerabilities, 100% unsafe documentation, comprehensive audits
@@ -36,10 +36,10 @@ For the current production README, see [../../README.md](../../README.md).
 **Quality Metrics:**
 - **Quality Grade:** 98/100 (Production-ready)
 - **Technical Debt Ratio:** ~2.5% (Grade A - Excellent)
-- **Test Coverage:** 2,839 tests passing (2,828 workspace + 11 spectre-implant, 16 ignored) - 100% pass rate
+- **Test Coverage:** 2,957 tests passing (2,946 workspace + 11 spectre-implant, 16 ignored) - 100% pass rate
   - 606 wraith-core - frame parsing (SIMD), sessions, streams, BBR, migration, ring buffers, Node API, security monitor, v2 wire format (128-bit CID, 24B header, polymorphic encoding, v1 compat, extended frame types)
   - 293 wraith-crypto - Ed25519, X25519+Elligator2, AEAD, Noise_XX, Double Ratchet, post-quantum, random, v2 Hybrid KEM (X25519+ML-KEM-768), per-packet ratchet, KDF labels, suite negotiation, CryptoContext facade, ML-DSA-65
-  - 226 wraith-transport - AF_XDP socket config, io_uring, UDP, worker pools, NUMA-aware allocation, buffer pools, MTU
+  - 312 wraith-transport - UDP, TCP, WebSocket, QUIC (quinn), TransportManager, AF_XDP, io_uring, worker pools, NUMA-aware allocation, buffer pools, MTU, 6 transport types (275 unit + 37 doctests)
   - 140 wraith-obfuscation - padding modes (5), timing distributions (5), protocol mimicry (TLS/WS/DoH), cover traffic (130 unit + 10 doctests)
   - 405 wraith-discovery - Kademlia DHT, STUN with DNS resolution, ICE signaling (RFC 8445), relay infrastructure, NAT signaling
   - 34 wraith-files - chunking, reassembly, BLAKE3 tree hashing, io_uring I/O
@@ -1450,7 +1450,8 @@ Red team operations platform for authorized adversary emulation:
 **v2 Protocol Migration Status:**
 - Phase 1 (Crypto Foundation): COMPLETE -- Hybrid KEM, per-packet ratchet, KDF v2, ML-DSA-65, crypto suites
 - Phase 2 (Wire Format): COMPLETE -- 128-bit CID, 24-byte header, polymorphic encoding, v1 compat, extended frame types/flags
-- Phases 3-9: In progress (session v2, transport integration, obfuscation v2, discovery v2, files v2, CLI v2, client migration)
+- Phase 3 (Transport Layer): COMPLETE -- TCP, WebSocket, QUIC (quinn), TransportManager with migration, AF_XDP/io_uring Transport wrappers, enhanced Transport trait, 6 transport types
+- Phases 4-9: In progress (session v2, obfuscation v2, discovery v2, files v2, CLI v2, client migration)
 
 **Future Enhancements:**
 - Formal verification of critical cryptographic paths
@@ -1477,6 +1478,6 @@ See [../../to-dos/ROADMAP.md](../../to-dos/ROADMAP.md) for detailed future plann
 
 **WRAITH Protocol Development History** - *From Foundation to v2.3.7 (Phases 1-24 + Infrastructure Sprints + Benchmark Optimizations + Security Hardening + RedOps Advanced Tradecraft + Testing Infrastructure)*
 
-**Development Period:** 2024 - 2026-02-02 | **Total Effort:** 2,740+ story points delivered across 24 phases + infrastructure sprints | **Quality:** Production-ready (98/100), 2,839 tests (2,828 workspace + 11 spectre-implant, 100% pass rate), 0 vulnerabilities, Grade A+ security | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server) | **Workspace:** 22 members + 3 excluded (wraith-xdp, spectre-implant, roe-signer) | **TDR:** ~2.5% (Grade A - Excellent) | **CI/CD:** Optimized workflows with reusable setup, path filters, and cross-compilation via Cross.toml | **v2 Protocol Migration:** Phase 1 (crypto foundation) and Phase 2 (wire format) complete -- 128-bit CID, 24B header, polymorphic encoding, v1 compat, extended frame types | **v2.3.7:** Testing Infrastructure & CI Stability -- 487 new tests across 6 crates, 3 CodeQL alerts resolved, Windows CI fix, 35 doc links fixed | **v2.3.6:** RedOps Advanced Tradecraft -- Signal Double Ratchet C2 ratcheting, 4 MITRE ATT&CK techniques, DEFLATE compression, Runner source-build | **RedOps Gap Analysis:** v9.0.0 (~99% complete, 97.5% MITRE ATT&CK (39/40), 0 P0/P1/P2, 25 modules, 35 IPC, 16,719 Rust + 3,749 TS lines) | **Conductor:** Project management system with code style guides
+**Development Period:** 2024 - 2026-02-02 | **Total Effort:** 2,740+ story points delivered across 24 phases + infrastructure sprints | **Quality:** Production-ready (98/100), 2,957 tests (2,946 workspace + 11 spectre-implant, 100% pass rate), 0 vulnerabilities, Grade A+ security | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server) | **Workspace:** 22 members + 3 excluded (wraith-xdp, spectre-implant, roe-signer) | **TDR:** ~2.5% (Grade A - Excellent) | **CI/CD:** Optimized workflows with reusable setup, path filters, and cross-compilation via Cross.toml | **v2 Protocol Migration:** Phase 1 (crypto foundation), Phase 2 (wire format), and Phase 3 (transport layer) complete -- 128-bit CID, 24B header, polymorphic encoding, v1 compat, extended frame types | **v2.3.7:** Testing Infrastructure & CI Stability -- 487 new tests across 6 crates, 3 CodeQL alerts resolved, Windows CI fix, 35 doc links fixed | **v2.3.6:** RedOps Advanced Tradecraft -- Signal Double Ratchet C2 ratcheting, 4 MITRE ATT&CK techniques, DEFLATE compression, Runner source-build | **RedOps Gap Analysis:** v9.0.0 (~99% complete, 97.5% MITRE ATT&CK (39/40), 0 P0/P1/P2, 25 modules, 35 IPC, 16,719 Rust + 3,749 TS lines) | **Conductor:** Project management system with code style guides
 
 *Last Updated: 2026-02-02*

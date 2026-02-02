@@ -24,9 +24,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **v2 Extended Frame Types**: FrameTypeV2 with 30 types across 7 categories (core, stream, path, security, file, diagnostic, reserved) and FlagsV2 with 8 flags (`types_v2.rs`)
 - 58 integration tests for v2 wire format (connection ID, header, polymorphic, compat, full pipeline)
 - 28 new v2 wire format benchmarks (header encode/decode, polymorphic, CID generation, format detection, frame type validation)
+- **v2 TCP Transport**: Length-prefixed framing with concurrent connection support (`tcp.rs`)
+- **v2 WebSocket Transport**: HTTP proxy traversal via tokio-tungstenite (`websocket.rs`)
+- **v2 QUIC Transport**: Full quinn-based transport with TLS 1.3, 0-RTT resumption, and connection migration (`quic.rs`)
+- **v2 TransportManager**: Multi-transport orchestration with runtime migration between transport types (`manager.rs`)
+- **v2 AF_XDP Transport wrapper**: AF_XDP implementing Transport trait for unified interface (Linux-only) (`af_xdp_transport.rs`)
+- **v2 io_uring Network Transport**: io_uring implementing Transport trait for unified interface (Linux-only) (`io_uring_net.rs`)
+- Enhanced Transport trait with `transport_type()`, `supports_migration()`, `mtu()`, `latency_estimate()`
+- Extended TransportType enum with 6 variants: UDP, TCP, WebSocket, QUIC, IoUring, AfXdp
+- TransportFactory updated to create all transport types
+- 73 Phase 3 integration tests for transport layer
 
 ### Changed
 - ml-dsa upgraded from 0.0.4 to 0.1.0-rc.5 (CI compatibility fix)
+
+### Dependencies
+- Added quinn 0.11 (QUIC transport)
+- Added rustls 0.23 (TLS for QUIC)
+- Added rcgen 0.13 (certificate generation for QUIC)
+- Added tokio-tungstenite 0.24 (WebSocket transport)
+- Added futures-util 0.3 (async stream utilities)
 
 ### Performance (v2 Crypto Benchmarks)
 - Hybrid KEM keygen: 69.56 us

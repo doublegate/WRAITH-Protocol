@@ -7,6 +7,9 @@
 use async_trait::async_trait;
 use std::io;
 use std::net::SocketAddr;
+use std::time::Duration;
+
+use crate::factory::TransportType;
 
 /// Transport layer errors
 #[derive(Debug, thiserror::Error)]
@@ -120,6 +123,26 @@ pub trait Transport: Send + Sync {
     /// packet counts, error rates, etc.
     fn stats(&self) -> TransportStats {
         TransportStats::default()
+    }
+
+    /// Returns the type of this transport.
+    fn transport_type(&self) -> TransportType {
+        TransportType::Udp
+    }
+
+    /// Returns whether this transport supports connection migration.
+    fn supports_migration(&self) -> bool {
+        false
+    }
+
+    /// Returns the maximum transmission unit for this transport.
+    fn mtu(&self) -> usize {
+        1500
+    }
+
+    /// Returns an estimate of the current transport latency.
+    fn latency_estimate(&self) -> Duration {
+        Duration::from_millis(1)
     }
 }
 

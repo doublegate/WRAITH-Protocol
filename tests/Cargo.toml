@@ -67,6 +67,30 @@ path = "v2_compat_integration.rs"
 name = "v2_wire_format_full_pipeline"
 path = "v2_wire_format_full_pipeline.rs"
 
+[[test]]
+name = "v3_tcp_transport_integration"
+path = "v3_tcp_transport_integration.rs"
+
+[[test]]
+name = "v3_websocket_transport_integration"
+path = "v3_websocket_transport_integration.rs"
+
+[[test]]
+name = "v3_quic_transport_integration"
+path = "v3_quic_transport_integration.rs"
+
+[[test]]
+name = "v3_transport_manager_integration"
+path = "v3_transport_manager_integration.rs"
+
+[[test]]
+name = "v3_transport_factory_integration"
+path = "v3_transport_factory_integration.rs"
+
+[[test]]
+name = "v3_transport_full_pipeline"
+path = "v3_transport_full_pipeline.rs"
+
 [[bench]]
 name = "transport_benchmarks"
 path = "../benches/transport_benchmarks.rs"

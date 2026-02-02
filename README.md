@@ -38,7 +38,7 @@ WRAITH Protocol is a privacy-focused, high-performance file transfer protocol de
 
 | Metric            | Value                                                                     |
 | ----------------- | ------------------------------------------------------------------------- |
-| **Tests**         | 2,839 passing (2,828 workspace + 11 spectre-implant), 16 ignored |
+| **Tests**         | 2,957 passing (2,946 workspace + 11 spectre-implant), 16 ignored |
 | **Code**          | ~141,000 lines Rust (protocol + clients) + ~36,600 lines TypeScript       |
 | **Documentation** | 114 files, ~62,800 lines                                                  |
 | **Security**      | Grade A+ (zero vulnerabilities, 295 audited dependencies)                 |
@@ -332,7 +332,7 @@ WRAITH Protocol uses a six-layer design optimized for security and performance:
 | ---------------------- | ------------------------------------------------------------ | ----- |
 | **wraith-core**        | Frame parsing (SIMD), sessions, congestion control, Node API, v2 wire format (128-bit CID, 24B header, polymorphic encoding, v1 compat) | 606   |
 | **wraith-crypto**      | Ed25519, X25519+Elligator2, AEAD, Noise_XX, Double Ratchet, v2 Hybrid KEM, PQ Signatures | 293   |
-| **wraith-transport**   | AF_XDP, io_uring, UDP sockets, worker pools                  | 226   |
+| **wraith-transport**   | UDP, TCP, WebSocket, QUIC (quinn), TransportManager, AF_XDP, io_uring, 6 transport types | 312   |
 | **wraith-obfuscation** | Padding, timing, cover traffic, protocol mimicry             | 140   |
 | **wraith-discovery**   | Kademlia DHT, STUN, ICE, relay infrastructure                | 405   |
 | **wraith-files**       | File chunking, BLAKE3 tree hashing, io_uring I/O             | 34    |
@@ -484,7 +484,7 @@ Measured on production hardware (Intel i9-10850K, 64 GB RAM) with `cargo bench -
 
 **Validation:**
 
-- Comprehensive test coverage (2,839 tests across all components)
+- Comprehensive test coverage (2,957 tests across all components)
 - DPI evasion validation (Wireshark, Zeek, Suricata, nDPI)
 - 5 libFuzzer targets
 - Property-based tests
@@ -581,6 +581,9 @@ cargo bench --workspace           # Benchmarks
 | `curve25519-elligator2` | Elligator2 key encoding for traffic analysis resistance         |
 | `blake3`                | BLAKE3 cryptographic hashing with SIMD acceleration             |
 | `snow`                  | Noise Protocol Framework (Noise_XX handshake pattern)           |
+| `quinn`                 | QUIC transport with TLS 1.3, 0-RTT resumption, connection migration |
+| `rustls`                | TLS implementation for QUIC transport                           |
+| `tokio-tungstenite`     | WebSocket transport for HTTP proxy traversal                    |
 | `io-uring`              | Linux io_uring async I/O for zero-copy file operations          |
 | `tokio`                 | Async runtime for concurrent I/O operations                     |
 | `clap`                  | Command-line argument parsing                                   |
@@ -595,7 +598,7 @@ WRAITH-Protocol/
 |-- crates/                # Protocol crates (8 active + 1 excluded)
 |   |-- wraith-core/       # Frame, session, congestion, Node API
 |   |-- wraith-crypto/     # Noise, AEAD, Elligator2, ratcheting
-|   |-- wraith-transport/  # AF_XDP, io_uring, UDP
+|   |-- wraith-transport/  # UDP, TCP, WebSocket, QUIC, AF_XDP, io_uring
 |   |-- wraith-obfuscation/# Padding, timing, mimicry
 |   |-- wraith-discovery/  # DHT, relay, NAT traversal
 |   |-- wraith-files/      # Chunking, integrity, transfer
@@ -716,12 +719,12 @@ WRAITH Protocol v2.3.7 represents 2,740+ story points across 24 development phas
 - Conductor project management system with code style guides for development workflow tracking
 - RedOps workspace integration: team-server and operator-client as workspace members (spectre-implant excluded for no_std compatibility)
 - v2.3.6 RedOps Advanced Tradecraft: Signal Double Ratchet C2 ratcheting, 4 new MITRE ATT&CK techniques (T1134, T1140, T1574.002, T1105), Runner source-build, operator UX polish, team server safety hardening
-- Comprehensive documentation (114 files, ~62,800 lines) and testing (2,839 tests across all components)
+- Comprehensive documentation (114 files, ~62,800 lines) and testing (2,957 tests across all components)
 - CI/CD infrastructure with multi-platform releases
 
 ### Future Development
 
-- **v2 Protocol Migration** - Phase 1 (crypto foundation) and Phase 2 (wire format) complete; Phases 3-9 in progress
+- **v2 Protocol Migration** - Phase 1 (crypto foundation), Phase 2 (wire format), and Phase 3 (transport layer) complete; Phases 4-9 in progress
 - **Post-quantum cryptography** - Hybrid X25519 + ML-KEM-768 (Phase 1 complete), ML-DSA-65 signatures (optional)
 - **Formal verification** - Cryptographic protocol proofs
 - **XDP/eBPF implementation** - Full kernel bypass (wraith-xdp crate)
@@ -794,6 +797,6 @@ WRAITH Protocol builds on excellent projects and research:
 
 **WRAITH Protocol** - _Secure. Fast. Invisible._
 
-**Version:** 2.3.7 | **License:** MIT | **Language:** Rust 2024 (MSRV 1.88) | **Tests:** 2,839 passing (2,828 workspace + 11 spectre-implant) | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server)
+**Version:** 2.3.7 | **License:** MIT | **Language:** Rust 2024 (MSRV 1.88) | **Tests:** 2,957 passing (2,946 workspace + 11 spectre-implant) | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server)
 
 **Last Updated:** 2026-02-02

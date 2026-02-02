@@ -4,19 +4,44 @@
 //! implementations based on configuration.
 
 use crate::quic::QuicTransport;
+use crate::tcp::TcpTransport;
+#[cfg(not(target_os = "linux"))]
+use crate::transport::TransportError;
 use crate::transport::{Transport, TransportResult};
 use crate::udp_async::AsyncUdpTransport;
+use crate::websocket::WebSocketTransport;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
 /// Transport type selection.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum TransportType {
     /// UDP transport (always available)
     #[default]
     Udp,
-    /// QUIC transport (placeholder, not yet implemented)
+    /// QUIC transport using quinn
     Quic,
+    /// TCP transport with length-prefixed framing
+    Tcp,
+    /// WebSocket transport for HTTP proxy traversal
+    WebSocket,
+    /// io_uring-based network transport (Linux-only)
+    IoUring,
+    /// AF_XDP kernel bypass transport (Linux-only)
+    AfXdp,
+}
+
+impl std::fmt::Display for TransportType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Udp => write!(f, "UDP"),
+            Self::Quic => write!(f, "QUIC"),
+            Self::Tcp => write!(f, "TCP"),
+            Self::WebSocket => write!(f, "WebSocket"),
+            Self::IoUring => write!(f, "io_uring"),
+            Self::AfXdp => write!(f, "AF_XDP"),
+        }
+    }
 }
 
 /// Configuration for creating a transport.
@@ -79,18 +104,27 @@ impl TransportFactoryConfig {
     ///
     /// # Arguments
     /// * `bind_addr` - The local address to bind to
-    ///
-    /// # Examples
-    /// ```no_run
-    /// use wraith_transport::factory::TransportFactoryConfig;
-    /// use std::net::SocketAddr;
-    ///
-    /// let addr: SocketAddr = "127.0.0.1:40000".parse().unwrap();
-    /// let config = TransportFactoryConfig::quic(addr);
-    /// ```
     #[must_use]
     pub fn quic(bind_addr: SocketAddr) -> Self {
         Self::new(TransportType::Quic, bind_addr)
+    }
+
+    /// Create a TCP transport configuration.
+    ///
+    /// # Arguments
+    /// * `bind_addr` - The local address to bind to
+    #[must_use]
+    pub fn tcp(bind_addr: SocketAddr) -> Self {
+        Self::new(TransportType::Tcp, bind_addr)
+    }
+
+    /// Create a WebSocket transport configuration.
+    ///
+    /// # Arguments
+    /// * `bind_addr` - The local address to bind to
+    #[must_use]
+    pub fn websocket(bind_addr: SocketAddr) -> Self {
+        Self::new(TransportType::WebSocket, bind_addr)
     }
 
     /// Set custom buffer sizes.
@@ -175,9 +209,44 @@ impl TransportFactory {
                 Ok(Arc::new(transport))
             }
             TransportType::Quic => {
-                // QUIC not yet implemented - will return error
                 let transport = QuicTransport::bind(config.bind_addr).await?;
                 Ok(Arc::new(transport))
+            }
+            TransportType::Tcp => {
+                let transport = TcpTransport::bind(config.bind_addr).await?;
+                Ok(Arc::new(transport))
+            }
+            TransportType::WebSocket => {
+                let transport = WebSocketTransport::bind(config.bind_addr).await?;
+                Ok(Arc::new(transport))
+            }
+            TransportType::IoUring => {
+                #[cfg(target_os = "linux")]
+                {
+                    let transport =
+                        crate::io_uring_net::IoUringTransport::bind(config.bind_addr).await?;
+                    Ok(Arc::new(transport))
+                }
+                #[cfg(not(target_os = "linux"))]
+                {
+                    Err(TransportError::Other(
+                        "io_uring transport is only available on Linux".to_string(),
+                    ))
+                }
+            }
+            TransportType::AfXdp => {
+                #[cfg(target_os = "linux")]
+                {
+                    let transport =
+                        crate::af_xdp_transport::AfXdpTransport::bind(config.bind_addr).await?;
+                    Ok(Arc::new(transport))
+                }
+                #[cfg(not(target_os = "linux"))]
+                {
+                    Err(TransportError::Other(
+                        "AF_XDP transport is only available on Linux".to_string(),
+                    ))
+                }
             }
         }
     }
@@ -237,11 +306,18 @@ impl TransportFactory {
     /// Vector of transport types that can be created
     #[must_use]
     pub fn available_transports() -> Vec<TransportType> {
-        vec![
+        let mut transports = vec![
             TransportType::Udp,
-            // QUIC is technically "available" but will return error when created
             TransportType::Quic,
-        ]
+            TransportType::Tcp,
+            TransportType::WebSocket,
+        ];
+        #[cfg(target_os = "linux")]
+        {
+            transports.push(TransportType::IoUring);
+            transports.push(TransportType::AfXdp);
+        }
+        transports
     }
 
     /// Check if a transport type is fully implemented.
@@ -253,7 +329,16 @@ impl TransportFactory {
     /// `true` if the transport is fully implemented and functional
     #[must_use]
     pub fn is_implemented(transport_type: TransportType) -> bool {
-        matches!(transport_type, TransportType::Udp)
+        match transport_type {
+            TransportType::Udp
+            | TransportType::Quic
+            | TransportType::Tcp
+            | TransportType::WebSocket => true,
+            #[cfg(target_os = "linux")]
+            TransportType::IoUring | TransportType::AfXdp => true,
+            #[cfg(not(target_os = "linux"))]
+            TransportType::IoUring | TransportType::AfXdp => false,
+        }
     }
 }
 
@@ -280,10 +365,11 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_factory_create_quic_not_implemented() {
+    async fn test_factory_create_quic() {
         let addr: SocketAddr = "127.0.0.1:0".parse().unwrap();
         let result = TransportFactory::create_quic(addr).await;
-        assert!(result.is_err());
+        // QUIC is now implemented - should succeed
+        assert!(result.is_ok());
     }
 
     #[tokio::test]
@@ -296,7 +382,9 @@ mod tests {
     #[tokio::test]
     async fn test_factory_is_implemented() {
         assert!(TransportFactory::is_implemented(TransportType::Udp));
-        assert!(!TransportFactory::is_implemented(TransportType::Quic));
+        assert!(TransportFactory::is_implemented(TransportType::Quic));
+        assert!(TransportFactory::is_implemented(TransportType::Tcp));
+        assert!(TransportFactory::is_implemented(TransportType::WebSocket));
     }
 
     #[tokio::test]
