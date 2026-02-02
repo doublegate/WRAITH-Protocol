@@ -40,7 +40,7 @@ rpassword = "7.3"
 url = "2.5"
 
 # RedOps TUI & gRPC
-tonic = "0.10"
+tonic = "0.14"
 prost = "0.12"
 prost-types = "0.12"
 tokio-stream = "0.1"
