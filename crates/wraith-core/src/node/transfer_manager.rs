@@ -567,20 +567,18 @@ mod tests {
         let manager = create_test_manager();
         let transfer_id = [99u8; 32];
 
-        let result = manager.init_receive_transfer(
-            transfer_id,
-            "/tmp/wraith_tm_recv_test.dat",
-            4096,
-            1024,
-            [0xAB; 32],
-        );
+        let temp_dir = std::env::temp_dir();
+        let recv_path = temp_dir.join("wraith_tm_recv_test.dat");
+        let recv_str = recv_path.to_str().unwrap();
+
+        let result = manager.init_receive_transfer(transfer_id, recv_str, 4096, 1024, [0xAB; 32]);
 
         assert!(result.is_ok());
         assert_eq!(manager.transfer_count(), 1);
         assert!(manager.get_transfer(&transfer_id).is_some());
 
         // Cleanup
-        let _ = std::fs::remove_file("/tmp/wraith_tm_recv_test.dat");
+        let _ = std::fs::remove_file(&recv_path);
     }
 
     #[test]
@@ -685,15 +683,13 @@ mod tests {
         let manager = create_test_manager();
         let transfer_id = [99u8; 32];
 
+        let temp_dir = std::env::temp_dir();
+        let chunk_path = temp_dir.join("wraith_tm_chunk_test.dat");
+        let chunk_str = chunk_path.to_str().unwrap();
+
         // Init a receive transfer
         manager
-            .init_receive_transfer(
-                transfer_id,
-                "/tmp/wraith_tm_chunk_test.dat",
-                2048,
-                1024,
-                [0xAB; 32],
-            )
+            .init_receive_transfer(transfer_id, chunk_str, 2048, 1024, [0xAB; 32])
             .unwrap();
 
         // Process a chunk
@@ -703,7 +699,7 @@ mod tests {
             .await;
 
         // Cleanup
-        let _ = std::fs::remove_file("/tmp/wraith_tm_chunk_test.dat");
+        let _ = std::fs::remove_file(&chunk_path);
 
         assert!(result.is_ok());
     }
