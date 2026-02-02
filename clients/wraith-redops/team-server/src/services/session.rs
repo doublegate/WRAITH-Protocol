@@ -108,4 +108,83 @@ mod tests {
         assert!(manager.remove_handshake(&cid).is_some());
         assert!(manager.remove_handshake(&cid).is_none());
     }
+
+    #[test]
+    fn test_session_manager_p2p_links() {
+        let manager = SessionManager::new();
+        let downstream = [1u8; 8];
+        let upstream = [2u8; 8];
+
+        assert!(manager.get_upstream_cid(&downstream).is_none());
+
+        manager.insert_p2p_link(downstream, upstream);
+        assert_eq!(manager.get_upstream_cid(&downstream), Some(upstream));
+
+        // Non-existent downstream
+        let other = [3u8; 8];
+        assert!(manager.get_upstream_cid(&other).is_none());
+    }
+
+    #[test]
+    fn test_session_manager_get_session_empty() {
+        let manager = SessionManager::new();
+        let cid = [1u8; 8];
+        assert!(manager.get_session(&cid).is_none());
+    }
+
+    #[test]
+    fn test_session_manager_multiple_handshakes() {
+        let manager = SessionManager::new();
+
+        for i in 0..5u8 {
+            let cid = [i; 8];
+            let keypair = NoiseKeypair::generate().unwrap();
+            let handshake = wraith_crypto::noise::NoiseHandshake::new_initiator(&keypair).unwrap();
+            let mut rng = SecureRng::new();
+            let priv_key = PrivateKey::generate(&mut rng);
+            manager.insert_handshake(cid, handshake, priv_key);
+        }
+
+        // All 5 should exist
+        for i in 0..5u8 {
+            let cid = [i; 8];
+            assert!(manager.remove_handshake(&cid).is_some());
+        }
+
+        // All should now be gone
+        for i in 0..5u8 {
+            let cid = [i; 8];
+            assert!(manager.remove_handshake(&cid).is_none());
+        }
+    }
+
+    #[test]
+    fn test_tracked_session_new() {
+        let initiator_keypair = NoiseKeypair::generate().unwrap();
+        let responder_keypair = NoiseKeypair::generate().unwrap();
+
+        let mut initiator =
+            wraith_crypto::noise::NoiseHandshake::new_initiator(&initiator_keypair).unwrap();
+        let mut responder =
+            wraith_crypto::noise::NoiseHandshake::new_responder(&responder_keypair).unwrap();
+
+        let msg1 = initiator.write_message(&[]).unwrap();
+        let _ = responder.read_message(&msg1).unwrap();
+        let msg2 = responder.write_message(&[]).unwrap();
+        let _ = initiator.read_message(&msg2).unwrap();
+        let msg3 = initiator.write_message(&[]).unwrap();
+        let _ = responder.read_message(&msg3).unwrap();
+
+        let mut rng = SecureRng::new();
+        let resp_ratchet_priv = PrivateKey::generate(&mut rng);
+        let resp_ratchet_pub = resp_ratchet_priv.public_key();
+
+        let transport = initiator
+            .into_transport(None, Some(resp_ratchet_pub))
+            .unwrap();
+        let session = TrackedSession::new(transport);
+
+        assert_eq!(session.packet_count, 0);
+        assert!(!session.should_rekey());
+    }
 }

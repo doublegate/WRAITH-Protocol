@@ -301,6 +301,16 @@ pub async fn start_smb_listener(
     }
 }
 
+#[cfg(test)]
+fn build_netbios_header(data_len: usize) -> [u8; 4] {
+    let len = data_len as u32;
+    let mut header = [0u8; 4];
+    header[3] = (len & 0xFF) as u8;
+    header[2] = ((len >> 8) & 0xFF) as u8;
+    header[1] = ((len >> 16) & 0xFF) as u8;
+    header
+}
+
 async fn send_netbios(socket: &mut tokio::net::TcpStream, data: &[u8]) {
     let len = data.len() as u32;
     let mut header = [0u8; 4];
@@ -311,4 +321,206 @@ async fn send_netbios(socket: &mut tokio::net::TcpStream, data: &[u8]) {
 
     let _ = socket.write_all(&header).await;
     let _ = socket.write_all(data).await;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_smb2_header_new_defaults() {
+        let h = Smb2Header::new();
+        assert_eq!(h.protocol_id, [0xFE, b'S', b'M', b'B']);
+        assert_eq!(h.structure_size, 64);
+        assert_eq!(h.command, 0x09); // WRITE
+        assert_eq!(h.status, 0);
+        assert_eq!(h.credits, 0);
+        assert_eq!(h.flags, 0);
+        assert_eq!(h.next_command, 0);
+        assert_eq!(h.message_id, 0);
+        assert_eq!(h.process_id, 0);
+        assert_eq!(h.tree_id, 0);
+        assert_eq!(h.session_id, 0);
+        assert_eq!(h.signature, [0u8; 16]);
+    }
+
+    #[test]
+    fn test_smb2_header_to_bytes_length() {
+        let h = Smb2Header::new();
+        let bytes = h.to_bytes();
+        assert_eq!(bytes.len(), 64);
+    }
+
+    #[test]
+    fn test_smb2_header_to_bytes_magic() {
+        let h = Smb2Header::new();
+        let bytes = h.to_bytes();
+        assert_eq!(&bytes[0..4], &[0xFE, b'S', b'M', b'B']);
+    }
+
+    #[test]
+    fn test_smb2_header_to_bytes_structure_size() {
+        let h = Smb2Header::new();
+        let bytes = h.to_bytes();
+        assert_eq!(u16::from_le_bytes([bytes[4], bytes[5]]), 64);
+    }
+
+    #[test]
+    fn test_smb2_header_to_bytes_command() {
+        let mut h = Smb2Header::new();
+        h.command = 0x0001; // Session Setup
+        let bytes = h.to_bytes();
+        assert_eq!(u16::from_le_bytes([bytes[12], bytes[13]]), 0x0001);
+    }
+
+    #[test]
+    fn test_smb2_header_to_bytes_flags() {
+        let mut h = Smb2Header::new();
+        h.flags = 0x00000001; // Response
+        let bytes = h.to_bytes();
+        assert_eq!(
+            u32::from_le_bytes([bytes[16], bytes[17], bytes[18], bytes[19]]),
+            0x00000001
+        );
+    }
+
+    #[test]
+    fn test_smb2_header_to_bytes_message_id() {
+        let mut h = Smb2Header::new();
+        h.message_id = 42;
+        let bytes = h.to_bytes();
+        assert_eq!(u64::from_le_bytes(bytes[24..32].try_into().unwrap()), 42);
+    }
+
+    #[test]
+    fn test_smb2_header_to_bytes_session_id() {
+        let mut h = Smb2Header::new();
+        h.session_id = 0x10000001;
+        let bytes = h.to_bytes();
+        assert_eq!(
+            u64::from_le_bytes(bytes[40..48].try_into().unwrap()),
+            0x10000001
+        );
+    }
+
+    #[test]
+    fn test_smb2_header_to_bytes_tree_id() {
+        let mut h = Smb2Header::new();
+        h.tree_id = 0x20000001;
+        let bytes = h.to_bytes();
+        assert_eq!(
+            u32::from_le_bytes(bytes[36..40].try_into().unwrap()),
+            0x20000001
+        );
+    }
+
+    #[test]
+    fn test_smb2_header_to_bytes_process_id() {
+        let mut h = Smb2Header::new();
+        h.process_id = 1234;
+        let bytes = h.to_bytes();
+        assert_eq!(u32::from_le_bytes(bytes[32..36].try_into().unwrap()), 1234);
+    }
+
+    #[test]
+    fn test_smb2_header_to_bytes_signature() {
+        let mut h = Smb2Header::new();
+        h.signature = [0xAA; 16];
+        let bytes = h.to_bytes();
+        assert_eq!(&bytes[48..64], &[0xAA; 16]);
+    }
+
+    #[test]
+    fn test_smb2_header_roundtrip() {
+        let mut h = Smb2Header::new();
+        h.command = 0x0000; // Negotiate
+        h.flags = 0x00000001;
+        h.message_id = 100;
+        h.process_id = 200;
+        h.session_id = 300;
+        h.tree_id = 400;
+        h.credits = 5;
+        h.credit_charge = 1;
+
+        let bytes = h.to_bytes();
+
+        // Verify all fields can be read back
+        assert_eq!(&bytes[0..4], &[0xFE, b'S', b'M', b'B']);
+        assert_eq!(u16::from_le_bytes([bytes[4], bytes[5]]), 64);
+        assert_eq!(u16::from_le_bytes([bytes[6], bytes[7]]), 1); // credit_charge
+        assert_eq!(
+            u32::from_le_bytes([bytes[8], bytes[9], bytes[10], bytes[11]]),
+            0
+        ); // status
+        assert_eq!(u16::from_le_bytes([bytes[12], bytes[13]]), 0x0000); // command
+        assert_eq!(u16::from_le_bytes([bytes[14], bytes[15]]), 5); // credits
+        assert_eq!(
+            u32::from_le_bytes([bytes[16], bytes[17], bytes[18], bytes[19]]),
+            1
+        ); // flags
+        assert_eq!(u64::from_le_bytes(bytes[24..32].try_into().unwrap()), 100); // message_id
+        assert_eq!(u32::from_le_bytes(bytes[32..36].try_into().unwrap()), 200); // process_id
+        assert_eq!(u32::from_le_bytes(bytes[36..40].try_into().unwrap()), 400); // tree_id
+        assert_eq!(u64::from_le_bytes(bytes[40..48].try_into().unwrap()), 300); // session_id
+    }
+
+    #[test]
+    fn test_smb2_header_negotiate_response() {
+        let mut h = Smb2Header::new();
+        h.command = 0x0000;
+        h.flags = 0x00000001;
+        h.credits = 1;
+        let bytes = h.to_bytes();
+
+        // Verify it looks like a valid SMB2 negotiate response header
+        assert_eq!(&bytes[0..4], &[0xFE, b'S', b'M', b'B']);
+        assert_eq!(u16::from_le_bytes([bytes[12], bytes[13]]), 0x0000);
+        assert_eq!(
+            u32::from_le_bytes([bytes[16], bytes[17], bytes[18], bytes[19]]),
+            1
+        ); // Response flag
+    }
+
+    #[test]
+    fn test_smb2_header_copy() {
+        let h = Smb2Header::new();
+        let h2 = h; // Copy trait
+        assert_eq!(h.protocol_id, h2.protocol_id);
+        assert_eq!(h.command, h2.command);
+    }
+
+    #[test]
+    fn test_build_netbios_header_small() {
+        let header = build_netbios_header(100);
+        assert_eq!(header[0], 0); // Session message type
+        assert_eq!(header[1], 0);
+        assert_eq!(header[2], 0);
+        assert_eq!(header[3], 100);
+    }
+
+    #[test]
+    fn test_build_netbios_header_large() {
+        let header = build_netbios_header(0x010203);
+        assert_eq!(header[0], 0);
+        assert_eq!(header[1], 0x01);
+        assert_eq!(header[2], 0x02);
+        assert_eq!(header[3], 0x03);
+    }
+
+    #[test]
+    fn test_build_netbios_header_zero() {
+        let header = build_netbios_header(0);
+        assert_eq!(header, [0, 0, 0, 0]);
+    }
+
+    #[test]
+    fn test_smb2_header_status_field() {
+        let mut h = Smb2Header::new();
+        h.status = 0xC0000022; // STATUS_ACCESS_DENIED
+        let bytes = h.to_bytes();
+        assert_eq!(
+            u32::from_le_bytes([bytes[8], bytes[9], bytes[10], bytes[11]]),
+            0xC0000022
+        );
+    }
 }

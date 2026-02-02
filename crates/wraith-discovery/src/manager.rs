@@ -980,6 +980,144 @@ mod tests {
         assert_eq!(manager.state().await, DiscoveryState::Stopped);
     }
 
+    #[test]
+    fn test_discovery_error_invalid_config() {
+        let err = DiscoveryError::InvalidConfig("bad config".to_string());
+        assert!(err.to_string().contains("Configuration error"));
+        assert!(err.to_string().contains("bad config"));
+    }
+
+    #[test]
+    fn test_discovery_state_debug() {
+        let state = DiscoveryState::Starting;
+        let debug = format!("{:?}", state);
+        assert!(debug.contains("Starting"));
+    }
+
+    #[test]
+    fn test_discovery_state_copy_clone() {
+        let state = DiscoveryState::Running;
+        let copied = state;
+        let cloned = state.clone();
+        assert_eq!(state, copied);
+        assert_eq!(state, cloned);
+    }
+
+    #[test]
+    fn test_connection_type_copy_clone() {
+        let ct = ConnectionType::Direct;
+        let copied = ct;
+        let cloned = ct.clone();
+        assert_eq!(ct, copied);
+        assert_eq!(ct, cloned);
+    }
+
+    #[test]
+    fn test_peer_connection_debug_clone() {
+        let conn = PeerConnection {
+            peer_id: NodeId::random(),
+            addr: "127.0.0.1:8000".parse().unwrap(),
+            connection_type: ConnectionType::Direct,
+        };
+        let debug = format!("{:?}", conn);
+        assert!(debug.contains("Direct"));
+        let cloned = conn.clone();
+        assert_eq!(cloned.addr, conn.addr);
+    }
+
+    #[test]
+    fn test_relay_info_debug_clone() {
+        let info = RelayInfo {
+            addr: "1.2.3.4:443".parse().unwrap(),
+            node_id: NodeId::random(),
+            public_key: [0u8; 32],
+        };
+        let debug = format!("{:?}", info);
+        assert!(debug.contains("1.2.3.4"));
+        let cloned = info.clone();
+        assert_eq!(cloned.addr, info.addr);
+    }
+
+    #[test]
+    fn test_discovery_config_debug_clone() {
+        let config = DiscoveryConfig::new(NodeId::random(), "127.0.0.1:0".parse().unwrap());
+        let debug = format!("{:?}", config);
+        assert!(debug.contains("nat_detection_enabled"));
+        let cloned = config.clone();
+        assert_eq!(cloned.listen_addr, config.listen_addr);
+    }
+
+    #[test]
+    fn test_discovery_config_timeout() {
+        let config = DiscoveryConfig::new(NodeId::random(), "127.0.0.1:0".parse().unwrap());
+        assert_eq!(config.connection_timeout, Duration::from_secs(10));
+    }
+
+    #[tokio::test]
+    async fn test_discovery_manager_start_no_bootstrap() {
+        let node_id = NodeId::random();
+        let addr = "127.0.0.1:0".parse().unwrap();
+        let mut config = DiscoveryConfig::new(node_id, addr);
+        config.nat_detection_enabled = false;
+        config.relay_enabled = false;
+
+        let manager = DiscoveryManager::new(config).await.unwrap();
+        let result = manager.start().await;
+        assert!(result.is_ok());
+        assert_eq!(manager.state().await, DiscoveryState::Running);
+    }
+
+    #[tokio::test]
+    async fn test_discovery_manager_connect_to_peer_not_found() {
+        let node_id = NodeId::random();
+        let addr = "127.0.0.1:0".parse().unwrap();
+        let mut config = DiscoveryConfig::new(node_id, addr);
+        config.nat_detection_enabled = false;
+        config.relay_enabled = false;
+
+        let manager = DiscoveryManager::new(config).await.unwrap();
+        let peer_id = NodeId::random();
+        let result = manager.connect_to_peer(peer_id).await;
+        // DHT lookup returns empty -> PeerNotFound
+        assert!(matches!(result, Err(DiscoveryError::PeerNotFound)));
+    }
+
+    #[tokio::test]
+    async fn test_discovery_manager_shutdown_after_start() {
+        let node_id = NodeId::random();
+        let addr = "127.0.0.1:0".parse().unwrap();
+        let mut config = DiscoveryConfig::new(node_id, addr);
+        config.nat_detection_enabled = false;
+        config.relay_enabled = false;
+
+        let manager = DiscoveryManager::new(config).await.unwrap();
+        manager.start().await.unwrap();
+        assert_eq!(manager.state().await, DiscoveryState::Running);
+
+        manager.shutdown().await.unwrap();
+        assert_eq!(manager.state().await, DiscoveryState::Stopped);
+    }
+
+    #[tokio::test]
+    async fn test_discovery_manager_with_relay_config_no_server() {
+        let node_id = NodeId::random();
+        let addr = "127.0.0.1:0".parse().unwrap();
+        let mut config = DiscoveryConfig::new(node_id, addr);
+        config.nat_detection_enabled = false;
+        config.relay_enabled = true;
+        // Add a relay that won't be reachable for register
+        config.add_relay_server(RelayInfo {
+            addr: "127.0.0.1:1".parse().unwrap(), // unreachable port
+            node_id: NodeId::random(),
+            public_key: [0u8; 32],
+        });
+
+        let manager = DiscoveryManager::new(config).await.unwrap();
+        // Start will attempt relay connections but should not fail fatally
+        let result = manager.start().await;
+        assert!(result.is_ok());
+    }
+
     #[tokio::test]
     async fn test_dns_fallback_on_empty_resolution() {
         let node_id = NodeId::random();

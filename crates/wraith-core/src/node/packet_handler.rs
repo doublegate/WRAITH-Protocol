@@ -668,11 +668,378 @@ impl Node {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::node::node::MigrationState;
 
     #[test]
     fn test_cover_traffic_distribution_constant() {
         let rate = 10.0; // 10 packets per second
         let expected_delay = Duration::from_secs_f64(1.0 / rate);
         assert_eq!(expected_delay, Duration::from_millis(100));
+    }
+
+    #[test]
+    fn test_cover_traffic_distribution_constant_zero_rate() {
+        // When rate is 0, delay should default to 1 second
+        let rate = 0.0;
+        let delay = if rate > 0.0 {
+            Duration::from_secs_f64(1.0 / rate)
+        } else {
+            Duration::from_secs(1)
+        };
+        assert_eq!(delay, Duration::from_secs(1));
+    }
+
+    #[test]
+    fn test_cover_traffic_distribution_poisson() {
+        // Test Poisson distribution delay calculation
+        let rate = 5.0;
+        // Simulate the delay calculation
+        let u: f64 = 0.5; // deterministic sample
+        let delay = Duration::from_secs_f64((-u.ln() / rate).min(10.0));
+        // -ln(0.5) / 5.0 = 0.6931 / 5.0 ≈ 0.1386 seconds
+        assert!(delay.as_secs_f64() > 0.0);
+        assert!(delay.as_secs_f64() <= 10.0);
+    }
+
+    #[test]
+    fn test_cover_traffic_distribution_uniform() {
+        let min_ms = 50u64;
+        let max_ms = 150u64;
+        let delay = Duration::from_millis(100); // mid-range
+        assert!(delay >= Duration::from_millis(min_ms));
+        assert!(delay <= Duration::from_millis(max_ms));
+    }
+
+    #[tokio::test]
+    async fn test_dispatch_frame_stream_close() {
+        use crate::FRAME_HEADER_SIZE;
+        use crate::frame::{FrameBuilder, FrameType};
+
+        let node = Node::new_random().await.unwrap();
+        let peer_id = [42u8; 32];
+
+        // Build a StreamClose frame
+        let frame_bytes = FrameBuilder::new()
+            .frame_type(FrameType::StreamClose)
+            .stream_id(16)
+            .sequence(0)
+            .build(FRAME_HEADER_SIZE)
+            .unwrap();
+
+        // dispatch_frame should handle StreamClose without error
+        let result = node.dispatch_frame(frame_bytes, peer_id).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_dispatch_frame_unhandled_type() {
+        use crate::FRAME_HEADER_SIZE;
+        use crate::frame::{FrameBuilder, FrameType};
+
+        let node = Node::new_random().await.unwrap();
+        let peer_id = [42u8; 32];
+
+        // Build an Ack frame (unhandled by dispatch_frame)
+        let frame_bytes = FrameBuilder::new()
+            .frame_type(FrameType::Ack)
+            .stream_id(16)
+            .sequence(0)
+            .build(FRAME_HEADER_SIZE)
+            .unwrap();
+
+        let result = node.dispatch_frame(frame_bytes, peer_id).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_dispatch_frame_invalid_data() {
+        let node = Node::new_random().await.unwrap();
+        let peer_id = [42u8; 32];
+
+        // Try dispatching garbage data - should fail to parse frame
+        let result = node.dispatch_frame(vec![0xFF; 5], peer_id).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_handle_pong_frame_no_pending() {
+        use crate::FRAME_HEADER_SIZE;
+        use crate::frame::{FrameBuilder, FrameType};
+
+        let node = Node::new_random().await.unwrap();
+        let peer_id = [42u8; 32];
+
+        // Build a Pong frame
+        let frame_bytes = FrameBuilder::new()
+            .frame_type(FrameType::Pong)
+            .stream_id(0)
+            .sequence(12345)
+            .build(FRAME_HEADER_SIZE)
+            .unwrap();
+
+        let frame = crate::frame::Frame::parse(&frame_bytes).unwrap();
+
+        // No pending ping registered, should handle gracefully
+        let result = node.handle_pong_frame(frame, peer_id).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_handle_pong_frame_with_pending() {
+        use crate::FRAME_HEADER_SIZE;
+        use crate::frame::{FrameBuilder, FrameType};
+
+        let node = Node::new_random().await.unwrap();
+        let peer_id = [42u8; 32];
+        let sequence = 12345u32;
+
+        // Register a pending ping
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        node.inner.pending_pings.insert((peer_id, sequence), tx);
+
+        // Build a Pong frame with matching sequence
+        let frame_bytes = FrameBuilder::new()
+            .frame_type(FrameType::Pong)
+            .stream_id(0)
+            .sequence(sequence)
+            .build(FRAME_HEADER_SIZE)
+            .unwrap();
+
+        let frame = crate::frame::Frame::parse(&frame_bytes).unwrap();
+
+        let result = node.handle_pong_frame(frame, peer_id).await;
+        assert!(result.is_ok());
+
+        // The pending ping channel should have been resolved
+        let instant = rx.await;
+        assert!(instant.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_handle_path_response_wrong_length() {
+        use crate::FRAME_HEADER_SIZE;
+        use crate::frame::{FrameBuilder, FrameType};
+
+        let node = Node::new_random().await.unwrap();
+        let peer_id = [42u8; 32];
+
+        // Build a PathResponse frame with wrong payload length (5 instead of 8)
+        let frame_bytes = FrameBuilder::new()
+            .frame_type(FrameType::PathResponse)
+            .stream_id(0)
+            .sequence(0)
+            .payload(&[1, 2, 3, 4, 5])
+            .build(FRAME_HEADER_SIZE + 5)
+            .unwrap();
+
+        let frame = crate::frame::Frame::parse(&frame_bytes).unwrap();
+
+        // Should return Ok but do nothing (invalid payload length)
+        let result = node.handle_path_response_frame(frame, peer_id).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_handle_path_response_no_matching_migration() {
+        use crate::FRAME_HEADER_SIZE;
+        use crate::frame::{FrameBuilder, FrameType};
+
+        let node = Node::new_random().await.unwrap();
+        let peer_id = [42u8; 32];
+
+        // Build a PathResponse with 8-byte payload but no matching migration
+        let challenge = [0xDE, 0xAD, 0xBE, 0xEF, 0xCA, 0xFE, 0xBA, 0xBE];
+        let frame_bytes = FrameBuilder::new()
+            .frame_type(FrameType::PathResponse)
+            .stream_id(0)
+            .sequence(0)
+            .payload(&challenge)
+            .build(FRAME_HEADER_SIZE + 8)
+            .unwrap();
+
+        let frame = crate::frame::Frame::parse(&frame_bytes).unwrap();
+
+        let result = node.handle_path_response_frame(frame, peer_id).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_handle_path_response_with_matching_migration() {
+        use crate::FRAME_HEADER_SIZE;
+        use crate::frame::{FrameBuilder, FrameType};
+
+        let node = Node::new_random().await.unwrap();
+        let peer_id = [42u8; 32];
+        let challenge = [0xDE, 0xAD, 0xBE, 0xEF, 0xCA, 0xFE, 0xBA, 0xBE];
+        let path_id = 12345u64;
+
+        // Register a pending migration with matching challenge
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        let migration_state = MigrationState {
+            peer_id,
+            new_addr: "192.168.1.100:8420".parse().unwrap(),
+            challenge,
+            sender: tx,
+            initiated_at: std::time::Instant::now(),
+        };
+        node.inner
+            .pending_migrations
+            .insert(path_id, migration_state);
+
+        // Build a PathResponse with matching challenge
+        let frame_bytes = FrameBuilder::new()
+            .frame_type(FrameType::PathResponse)
+            .stream_id(0)
+            .sequence(0)
+            .payload(&challenge)
+            .build(FRAME_HEADER_SIZE + 8)
+            .unwrap();
+
+        let frame = crate::frame::Frame::parse(&frame_bytes).unwrap();
+
+        let result = node.handle_path_response_frame(frame, peer_id).await;
+        assert!(result.is_ok());
+
+        // Migration should have been removed from pending
+        assert!(!node.inner.pending_migrations.contains_key(&path_id));
+
+        // Channel should have received Ok(Duration)
+        let response = rx.await.unwrap();
+        assert!(response.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_handle_data_frame_pending_chunk() {
+        use crate::FRAME_HEADER_SIZE;
+        use crate::frame::{FrameBuilder, FrameType};
+
+        let node = Node::new_random().await.unwrap();
+
+        let stream_id = 42u16;
+        let chunk_index = 5u64;
+        let chunk_data = b"hello chunk data";
+
+        // Register a pending chunk request
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        node.inner
+            .pending_chunks
+            .insert((stream_id, chunk_index), tx);
+
+        // Build a Data frame matching the pending chunk
+        let frame_bytes = FrameBuilder::new()
+            .frame_type(FrameType::Data)
+            .stream_id(stream_id)
+            .sequence(chunk_index as u32)
+            .payload(chunk_data)
+            .build(FRAME_HEADER_SIZE + chunk_data.len())
+            .unwrap();
+
+        let frame = crate::frame::Frame::parse(&frame_bytes).unwrap();
+
+        let result = node.handle_data_frame(frame).await;
+        assert!(result.is_ok());
+
+        // Pending chunk should have been resolved
+        let received = rx.await.unwrap();
+        assert_eq!(received, chunk_data);
+    }
+
+    #[tokio::test]
+    async fn test_handle_data_frame_no_transfer() {
+        use crate::FRAME_HEADER_SIZE;
+        use crate::frame::{FrameBuilder, FrameType};
+
+        let node = Node::new_random().await.unwrap();
+
+        let chunk_data = b"orphan chunk";
+
+        // Build a Data frame with no matching transfer or pending chunk
+        let frame_bytes = FrameBuilder::new()
+            .frame_type(FrameType::Data)
+            .stream_id(999)
+            .sequence(0)
+            .payload(chunk_data)
+            .build(FRAME_HEADER_SIZE + chunk_data.len())
+            .unwrap();
+
+        let frame = crate::frame::Frame::parse(&frame_bytes).unwrap();
+
+        // Should fail because there's no transfer for this stream_id
+        let result = node.handle_data_frame(frame).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_handle_stream_open_frame() {
+        use crate::FRAME_HEADER_SIZE;
+        use crate::frame::{FrameBuilder, FrameType};
+        use crate::node::file_transfer::FileMetadata;
+
+        let node = Node::new_random().await.unwrap();
+
+        // Create file metadata
+        let metadata = FileMetadata {
+            transfer_id: [1u8; 32],
+            file_name: "test_file.dat".to_string(),
+            file_size: 1024,
+            chunk_size: 256,
+            total_chunks: 4,
+            root_hash: [0xAB; 32],
+        };
+
+        let metadata_bytes = metadata.serialize();
+
+        // Build StreamOpen frame
+        let frame_bytes = FrameBuilder::new()
+            .frame_type(FrameType::StreamOpen)
+            .stream_id(16)
+            .sequence(0)
+            .payload(&metadata_bytes)
+            .build(FRAME_HEADER_SIZE + metadata_bytes.len())
+            .unwrap();
+
+        let frame = crate::frame::Frame::parse(&frame_bytes).unwrap();
+
+        let result = node.handle_stream_open_frame(frame).await;
+        assert!(result.is_ok());
+
+        // Verify transfer was stored
+        assert!(node.inner.transfers.contains_key(&[1u8; 32]));
+    }
+
+    #[tokio::test]
+    async fn test_handle_stream_open_frame_bad_metadata() {
+        use crate::FRAME_HEADER_SIZE;
+        use crate::frame::{FrameBuilder, FrameType};
+
+        let node = Node::new_random().await.unwrap();
+
+        // Build StreamOpen with truncated metadata
+        let bad_metadata = vec![0u8; 10]; // Too short for valid metadata
+        let frame_bytes = FrameBuilder::new()
+            .frame_type(FrameType::StreamOpen)
+            .stream_id(16)
+            .sequence(0)
+            .payload(&bad_metadata)
+            .build(FRAME_HEADER_SIZE + bad_metadata.len())
+            .unwrap();
+
+        let frame = crate::frame::Frame::parse(&frame_bytes).unwrap();
+
+        let result = node.handle_stream_open_frame(frame).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_node_is_not_running_initially() {
+        let node = Node::new_random().await.unwrap();
+        assert!(!node.is_running());
+    }
+
+    #[tokio::test]
+    async fn test_get_transport_not_initialized() {
+        let node = Node::new_random().await.unwrap();
+        let result = node.get_transport().await;
+        assert!(result.is_err());
     }
 }

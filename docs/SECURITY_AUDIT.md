@@ -507,7 +507,7 @@ A determined adversary with:
    - Implement continuous fuzzing for frame parsing, handshake, and file I/O
    - Use `cargo-fuzz` with libFuzzer for coverage-guided fuzzing
    - Target: 80%+ code coverage in security-critical modules
-   - See: [Testing Guide](testing/fuzzing_guide.md) for implementation
+   - See: [Testing Strategy](testing/testing-strategy.md) for implementation
 
 3. **Side-Channel Testing**
    - Run `dudect` tests on Elligator2 encode/decode operations

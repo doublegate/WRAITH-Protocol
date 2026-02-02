@@ -736,7 +736,7 @@ async fn resolve_stun_servers(
 | [UI-UX-DESIGN-REFERENCE.md](../docs/clients/UI-UX-DESIGN-REFERENCE.md) | UI/UX standards | Building client UIs |
 | [docs/architecture/](../docs/architecture/) | System architecture | Understanding protocol design |
 | [CLAUDE.md](../CLAUDE.md) | Project context | Starting any session |
-| [CLAUDE.local.md](../CLAUDE.local.md) | Current state | Session-specific context |
+| CLAUDE.local.md | Current state | Session-specific context (gitignored, local only) |
 
 ### Protocol Phase Documents
 

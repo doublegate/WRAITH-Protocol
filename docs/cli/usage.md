@@ -1100,7 +1100,7 @@ If you encounter a bug or issue:
 - [XDP Troubleshooting](../xdp/troubleshooting.md) - XDP-specific issues
 - [Configuration Reference](../CONFIG_REFERENCE.md) - Complete configuration options
 - [User Guide](../USER_GUIDE.md) - Detailed user guide
-- [Architecture](../architecture/README.md) - System architecture documentation
+- [Architecture](../architecture/protocol-overview.md) - System architecture documentation
 
 ---
 

@@ -16,7 +16,7 @@
 - **Tests:** 1,157 passing, 20 ignored (98.3% pass rate on active tests)
 - **Code Volume:** ~36,949 lines of Rust code (~29,049 LOC + ~7,900 comments) across 7 active crates
 - **Documentation:** 60+ files, 45,000+ lines
-- **Security:** Zero vulnerabilities, EXCELLENT security posture ([v1.1.0 audit](../docs/security/SECURITY_AUDIT_v1.1.0.md))
+- **Security:** Zero vulnerabilities, EXCELLENT security posture ([v1.1.0 audit](../../docs/security/SECURITY_AUDIT_v1.1.0.md))
 - **Dependencies:** 286 crates scanned, all up-to-date
 - **Unsafe Code:** 50 unsafe blocks with 100% SAFETY documentation
 - **Performance:** File chunking 14.85 GiB/s, tree hashing 4.71 GiB/s, chunk verification 4.78 GiB/s

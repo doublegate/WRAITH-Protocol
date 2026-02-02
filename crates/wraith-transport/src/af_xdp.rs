@@ -2608,4 +2608,939 @@ mod tests {
         let stats = socket.stats_snapshot();
         assert_eq!(stats.rx_packets, 0);
     }
+
+    // --- Additional coverage tests ---
+
+    #[test]
+    fn test_stats_snapshot_default() {
+        let snapshot = AfXdpStatsSnapshot::default();
+        assert_eq!(snapshot.rx_packets, 0);
+        assert_eq!(snapshot.rx_bytes, 0);
+        assert_eq!(snapshot.tx_packets, 0);
+        assert_eq!(snapshot.tx_bytes, 0);
+        assert_eq!(snapshot.rx_ring_full, 0);
+        assert_eq!(snapshot.tx_ring_full, 0);
+        assert_eq!(snapshot.fill_ring_empty, 0);
+        assert_eq!(snapshot.tx_completions, 0);
+        assert_eq!(snapshot.invalid_packets, 0);
+        assert_eq!(snapshot.wakeup_calls, 0);
+    }
+
+    #[test]
+    fn test_stats_snapshot_drop_rate_zero_total() {
+        let snapshot = AfXdpStatsSnapshot::default();
+        assert_eq!(snapshot.drop_rate(), 0.0);
+    }
+
+    #[test]
+    fn test_stats_snapshot_drop_rate_no_drops() {
+        let snapshot = AfXdpStatsSnapshot {
+            rx_packets: 1000,
+            rx_ring_full: 0,
+            ..Default::default()
+        };
+        assert_eq!(snapshot.drop_rate(), 0.0);
+    }
+
+    #[test]
+    fn test_stats_snapshot_drop_rate_all_dropped() {
+        let snapshot = AfXdpStatsSnapshot {
+            rx_packets: 0,
+            rx_ring_full: 100,
+            ..Default::default()
+        };
+        assert_eq!(snapshot.drop_rate(), 1.0);
+    }
+
+    #[test]
+    fn test_stats_snapshot_clone() {
+        let snapshot = AfXdpStatsSnapshot {
+            rx_packets: 42,
+            tx_bytes: 9999,
+            ..Default::default()
+        };
+        let cloned = snapshot.clone();
+        assert_eq!(cloned.rx_packets, 42);
+        assert_eq!(cloned.tx_bytes, 9999);
+    }
+
+    #[test]
+    fn test_stats_snapshot_debug() {
+        let snapshot = AfXdpStatsSnapshot {
+            rx_packets: 123,
+            ..Default::default()
+        };
+        let debug = format!("{:?}", snapshot);
+        assert!(debug.contains("123"));
+    }
+
+    #[test]
+    fn test_stats_snapshot_rates_zero_duration() {
+        let snapshot = AfXdpStatsSnapshot {
+            rx_packets: 100,
+            tx_packets: 50,
+            rx_bytes: 1000,
+            tx_bytes: 500,
+            ..Default::default()
+        };
+        assert_eq!(snapshot.rx_pps(0.0), 0.0);
+        assert_eq!(snapshot.tx_pps(0.0), 0.0);
+        assert_eq!(snapshot.rx_bps(0.0), 0.0);
+        assert_eq!(snapshot.tx_bps(0.0), 0.0);
+    }
+
+    #[test]
+    fn test_stats_snapshot_rates_small_duration() {
+        let snapshot = AfXdpStatsSnapshot {
+            rx_packets: 100,
+            tx_packets: 50,
+            rx_bytes: 150_000,
+            tx_bytes: 75_000,
+            ..Default::default()
+        };
+        // Very small duration = very high rate
+        assert!(snapshot.rx_pps(0.001) > 0.0);
+        assert!(snapshot.tx_pps(0.001) > 0.0);
+        assert!(snapshot.rx_bps(0.001) > 0.0);
+        assert!(snapshot.tx_bps(0.001) > 0.0);
+    }
+
+    #[test]
+    fn test_stats_multiple_record_calls() {
+        let stats = AfXdpStats::new();
+
+        for _ in 0..100 {
+            stats.record_rx(1, 1500);
+            stats.record_tx(1, 1400);
+            stats.record_wakeup();
+        }
+
+        let snap = stats.snapshot();
+        assert_eq!(snap.rx_packets, 100);
+        assert_eq!(snap.rx_bytes, 150_000);
+        assert_eq!(snap.tx_packets, 100);
+        assert_eq!(snap.tx_bytes, 140_000);
+        assert_eq!(snap.wakeup_calls, 100);
+    }
+
+    #[test]
+    fn test_stats_record_and_reset() {
+        let stats = AfXdpStats::new();
+        stats.record_rx(5, 7500);
+        stats.record_tx(3, 4500);
+        stats.record_rx_ring_full();
+        stats.record_tx_ring_full();
+        stats.record_fill_ring_empty();
+        stats.record_invalid_packet();
+        stats.record_wakeup();
+        stats.record_completion(2);
+
+        stats.reset();
+        let snap = stats.snapshot();
+        assert_eq!(snap.rx_packets, 0);
+        assert_eq!(snap.rx_bytes, 0);
+        assert_eq!(snap.tx_packets, 0);
+        assert_eq!(snap.tx_bytes, 0);
+        assert_eq!(snap.rx_ring_full, 0);
+        assert_eq!(snap.tx_ring_full, 0);
+        assert_eq!(snap.fill_ring_empty, 0);
+        assert_eq!(snap.invalid_packets, 0);
+        assert_eq!(snap.wakeup_calls, 0);
+        assert_eq!(snap.tx_completions, 0);
+    }
+
+    #[test]
+    fn test_stats_default_trait() {
+        let stats = AfXdpStats::default();
+        let snap = stats.snapshot();
+        assert_eq!(snap.rx_packets, 0);
+    }
+
+    #[test]
+    fn test_af_xdp_error_display() {
+        let err = AfXdpError::UmemCreation("test umem".into());
+        assert!(err.to_string().contains("test umem"));
+
+        let err = AfXdpError::SocketCreation("test socket".into());
+        assert!(err.to_string().contains("test socket"));
+
+        let err = AfXdpError::SocketBind("test bind".into());
+        assert!(err.to_string().contains("test bind"));
+
+        let err = AfXdpError::InvalidConfig("test config".into());
+        assert!(err.to_string().contains("test config"));
+
+        let err = AfXdpError::RingBufferError("test ring".into());
+        assert!(err.to_string().contains("test ring"));
+
+        let io_err = io::Error::other("test io");
+        let err: AfXdpError = io_err.into();
+        assert!(err.to_string().contains("test io"));
+    }
+
+    #[test]
+    fn test_af_xdp_error_debug() {
+        let err = AfXdpError::UmemCreation("debug test".into());
+        let debug = format!("{:?}", err);
+        assert!(debug.contains("UmemCreation"));
+    }
+
+    #[test]
+    fn test_umem_config_validate_comp_ring_not_power_of_two() {
+        let config = UmemConfig {
+            size: 4 * 1024 * 1024,
+            frame_size: 2048,
+            headroom: 256,
+            fill_ring_size: 2048,
+            comp_ring_size: 3000, // Not power of 2
+        };
+        let result = config.validate();
+        assert!(result.is_err());
+        let err_msg = result.unwrap_err().to_string();
+        assert!(err_msg.contains("comp_ring_size"));
+    }
+
+    #[test]
+    fn test_umem_config_validate_size_too_small() {
+        let config = UmemConfig {
+            size: 1024, // Smaller than frame_size
+            frame_size: 2048,
+            headroom: 256,
+            fill_ring_size: 2048,
+            comp_ring_size: 2048,
+        };
+        let result = config.validate();
+        assert!(result.is_err());
+        let err_msg = result.unwrap_err().to_string();
+        assert!(err_msg.contains("too small"));
+    }
+
+    #[test]
+    fn test_umem_config_create_invalid() {
+        let config = UmemConfig {
+            size: 1024,
+            frame_size: 2048,
+            headroom: 256,
+            fill_ring_size: 2048,
+            comp_ring_size: 2048,
+        };
+        assert!(config.create().is_err());
+    }
+
+    #[test]
+    fn test_umem_config_clone() {
+        let config = UmemConfig {
+            size: 8192,
+            frame_size: 4096,
+            headroom: 128,
+            fill_ring_size: 1024,
+            comp_ring_size: 512,
+        };
+        let cloned = config.clone();
+        assert_eq!(cloned.size, 8192);
+        assert_eq!(cloned.frame_size, 4096);
+        assert_eq!(cloned.headroom, 128);
+        assert_eq!(cloned.fill_ring_size, 1024);
+        assert_eq!(cloned.comp_ring_size, 512);
+    }
+
+    #[test]
+    fn test_umem_config_debug() {
+        let config = UmemConfig::default();
+        let debug = format!("{:?}", config);
+        assert!(debug.contains("UmemConfig"));
+    }
+
+    #[test]
+    fn test_socket_config_default() {
+        let config = SocketConfig::default();
+        assert_eq!(config.rx_ring_size, 2048);
+        assert_eq!(config.tx_ring_size, 2048);
+        assert_eq!(config.bind_flags, 0);
+        assert_eq!(config.queue_id, 0);
+    }
+
+    #[test]
+    fn test_socket_config_clone() {
+        let config = SocketConfig {
+            rx_ring_size: 4096,
+            tx_ring_size: 1024,
+            bind_flags: 4,
+            queue_id: 3,
+        };
+        let cloned = config.clone();
+        assert_eq!(cloned.rx_ring_size, 4096);
+        assert_eq!(cloned.tx_ring_size, 1024);
+        assert_eq!(cloned.bind_flags, 4);
+        assert_eq!(cloned.queue_id, 3);
+    }
+
+    #[test]
+    fn test_socket_config_debug() {
+        let config = SocketConfig::default();
+        let debug = format!("{:?}", config);
+        assert!(debug.contains("SocketConfig"));
+    }
+
+    #[test]
+    fn test_ring_buffer_reserve_zero() {
+        let mut ring = RingBuffer::new(16);
+        let idx = ring.reserve(0);
+        assert_eq!(idx, Some(0));
+    }
+
+    #[test]
+    fn test_ring_buffer_peek_zero() {
+        let mut ring = RingBuffer::new(16);
+        ring.reserve(4);
+        ring.submit(4);
+        let idx = ring.peek(0);
+        assert_eq!(idx, Some(0));
+    }
+
+    #[test]
+    fn test_ring_buffer_partial_consume() {
+        let mut ring = RingBuffer::new(16);
+
+        // Reserve and submit 8 items
+        ring.reserve(8);
+        ring.submit(8);
+        assert_eq!(ring.ready(), 8);
+
+        // Consume only 3
+        let idx = ring.peek(3).unwrap();
+        assert_eq!(idx, 0);
+        ring.release(3);
+
+        // 5 should remain
+        assert_eq!(ring.ready(), 5);
+
+        // Available should be 11 (16 - 8 + 3)
+        assert_eq!(ring.available(), 11);
+    }
+
+    #[test]
+    fn test_ring_buffer_exact_capacity() {
+        let mut ring = RingBuffer::new(8);
+
+        // Reserve exactly the full capacity
+        assert!(ring.reserve(8).is_some());
+        ring.submit(8);
+
+        // No more room
+        assert!(ring.reserve(1).is_none());
+
+        // Consume all
+        ring.peek(8);
+        ring.release(8);
+
+        // Full capacity available again
+        assert_eq!(ring.available(), 8);
+    }
+
+    #[test]
+    #[should_panic(expected = "Ring size must be power of 2")]
+    fn test_ring_buffer_non_power_of_two_panics() {
+        let _ = RingBuffer::new(7);
+    }
+
+    #[test]
+    fn test_ring_buffer_multiple_cycles() {
+        let mut ring = RingBuffer::new(4);
+
+        for cycle in 0..10 {
+            let idx = ring.reserve(4).unwrap();
+            assert_eq!(idx, cycle * 4);
+            ring.submit(4);
+
+            let idx = ring.peek(4).unwrap();
+            assert_eq!(idx, cycle * 4);
+            ring.release(4);
+        }
+    }
+
+    #[test]
+    fn test_packet_desc_clone_copy() {
+        let desc = PacketDesc {
+            addr: 4096,
+            len: 1500,
+            options: 0,
+        };
+
+        let cloned = desc;
+        assert_eq!(cloned.addr, 4096);
+        assert_eq!(cloned.len, 1500);
+        assert_eq!(cloned.options, 0);
+
+        let copied = desc;
+        assert_eq!(copied.addr, desc.addr);
+    }
+
+    #[test]
+    fn test_packet_desc_debug() {
+        let desc = PacketDesc {
+            addr: 0,
+            len: 64,
+            options: 1,
+        };
+        let debug = format!("{:?}", desc);
+        assert!(debug.contains("64"));
+        assert!(debug.contains("PacketDesc"));
+    }
+
+    #[test]
+    fn test_umem_accessors() {
+        let config = UmemConfig {
+            size: 8192,
+            frame_size: 2048,
+            headroom: 256,
+            fill_ring_size: 4,
+            comp_ring_size: 4,
+        };
+
+        let Ok(umem) = Umem::new(config) else {
+            eprintln!("Skipping umem_accessors test (UMEM creation failed)");
+            return;
+        };
+
+        assert_eq!(umem.size(), 8192);
+        assert_eq!(umem.frame_size(), 2048);
+        assert_eq!(umem.num_frames(), 4);
+        assert_eq!(umem.fill_ring_size(), 4);
+        assert_eq!(umem.comp_ring_size(), 4);
+        assert!(!umem.buffer().is_null());
+    }
+
+    #[test]
+    fn test_umem_get_frame_mut() {
+        let config = UmemConfig {
+            size: 8192,
+            frame_size: 2048,
+            headroom: 256,
+            fill_ring_size: 4,
+            comp_ring_size: 4,
+        };
+
+        let Ok(mut umem_arc) = Umem::new(config) else {
+            eprintln!("Skipping test (UMEM creation failed)");
+            return;
+        };
+
+        // get_frame_mut requires &mut Umem, which needs Arc::get_mut
+        if let Some(umem) = Arc::get_mut(&mut umem_arc) {
+            let frame = umem.get_frame_mut(0);
+            assert!(frame.is_some());
+            let frame = frame.unwrap();
+            assert_eq!(frame.len(), 2048);
+
+            // Write some data
+            frame[0] = 0xAB;
+            frame[1] = 0xCD;
+
+            // Read it back via immutable accessor
+            let frame_ro = umem.get_frame(0).unwrap();
+            assert_eq!(frame_ro[0], 0xAB);
+            assert_eq!(frame_ro[1], 0xCD);
+
+            // Out of bounds
+            assert!(umem.get_frame_mut(4).is_none());
+            assert!(umem.get_frame_mut(100).is_none());
+        }
+    }
+
+    #[test]
+    fn test_socket_test_accessors() {
+        let config = UmemConfig {
+            size: 16384,
+            frame_size: 2048,
+            headroom: 256,
+            fill_ring_size: 16,
+            comp_ring_size: 16,
+        };
+
+        let Ok(umem) = Umem::new(config) else {
+            eprintln!("Skipping test (UMEM creation failed)");
+            return;
+        };
+
+        let socket_config = SocketConfig {
+            rx_ring_size: 16,
+            tx_ring_size: 16,
+            bind_flags: 0,
+            queue_id: 0,
+        };
+
+        let socket = AfXdpSocket::new_test(umem, socket_config).expect("Socket creation failed");
+
+        assert_eq!(socket.fd(), -1); // test socket has fd=-1
+        assert_eq!(socket.ifname(), "test");
+        assert_eq!(socket.umem().size(), 16384);
+
+        let stats = socket.stats();
+        let snap = stats.snapshot();
+        assert_eq!(snap.rx_packets, 0);
+
+        let snap2 = socket.stats_snapshot();
+        assert_eq!(snap2.rx_packets, 0);
+    }
+
+    #[test]
+    fn test_socket_reset_stats() {
+        let config = UmemConfig {
+            size: 16384,
+            frame_size: 2048,
+            headroom: 256,
+            fill_ring_size: 16,
+            comp_ring_size: 16,
+        };
+
+        let Ok(umem) = Umem::new(config) else {
+            eprintln!("Skipping test (UMEM creation failed)");
+            return;
+        };
+
+        let socket_config = SocketConfig {
+            rx_ring_size: 16,
+            tx_ring_size: 16,
+            bind_flags: 0,
+            queue_id: 0,
+        };
+
+        let socket = AfXdpSocket::new_test(umem, socket_config).expect("Socket creation failed");
+
+        socket.stats().record_rx(10, 15000);
+        assert_eq!(socket.stats_snapshot().rx_packets, 10);
+
+        socket.reset_stats();
+        assert_eq!(socket.stats_snapshot().rx_packets, 0);
+    }
+
+    #[test]
+    fn test_socket_get_packet_data_via_test() {
+        let config = UmemConfig {
+            size: 16384,
+            frame_size: 2048,
+            headroom: 256,
+            fill_ring_size: 16,
+            comp_ring_size: 16,
+        };
+
+        let Ok(umem) = Umem::new(config) else {
+            eprintln!("Skipping test (UMEM creation failed)");
+            return;
+        };
+
+        let socket_config = SocketConfig {
+            rx_ring_size: 16,
+            tx_ring_size: 16,
+            bind_flags: 0,
+            queue_id: 0,
+        };
+
+        let socket = AfXdpSocket::new_test(umem, socket_config).expect("Socket creation failed");
+
+        // Valid descriptor
+        let desc = PacketDesc {
+            addr: 0,
+            len: 100,
+            options: 0,
+        };
+        let data = socket.get_packet_data(&desc);
+        assert!(data.is_some());
+        assert_eq!(data.unwrap().len(), 100);
+
+        // Descriptor in second frame
+        let desc = PacketDesc {
+            addr: 2048,
+            len: 500,
+            options: 0,
+        };
+        let data = socket.get_packet_data(&desc);
+        assert!(data.is_some());
+        assert_eq!(data.unwrap().len(), 500);
+
+        // Out of bounds frame
+        let desc = PacketDesc {
+            addr: 999999,
+            len: 100,
+            options: 0,
+        };
+        assert!(socket.get_packet_data(&desc).is_none());
+
+        // Oversized length
+        let desc = PacketDesc {
+            addr: 0,
+            len: 3000,
+            options: 0,
+        };
+        assert!(socket.get_packet_data(&desc).is_none());
+    }
+
+    #[test]
+    fn test_socket_get_packet_data_mut_unsafe_via_test() {
+        let config = UmemConfig {
+            size: 16384,
+            frame_size: 2048,
+            headroom: 256,
+            fill_ring_size: 16,
+            comp_ring_size: 16,
+        };
+
+        let Ok(umem) = Umem::new(config) else {
+            eprintln!("Skipping test (UMEM creation failed)");
+            return;
+        };
+
+        let socket_config = SocketConfig {
+            rx_ring_size: 16,
+            tx_ring_size: 16,
+            bind_flags: 0,
+            queue_id: 0,
+        };
+
+        let socket = AfXdpSocket::new_test(umem, socket_config).expect("Socket creation failed");
+
+        // Valid descriptor
+        let desc = PacketDesc {
+            addr: 0,
+            len: 100,
+            options: 0,
+        };
+        unsafe {
+            let data = socket.get_packet_data_mut_unsafe(&desc);
+            assert!(data.is_some());
+            let data = data.unwrap();
+            assert_eq!(data.len(), 100);
+            data[0] = 0xFF;
+        }
+
+        // Out of bounds
+        let desc = PacketDesc {
+            addr: 999999,
+            len: 100,
+            options: 0,
+        };
+        unsafe {
+            assert!(socket.get_packet_data_mut_unsafe(&desc).is_none());
+        }
+
+        // Oversized length
+        let desc = PacketDesc {
+            addr: 0,
+            len: 3000,
+            options: 0,
+        };
+        unsafe {
+            assert!(socket.get_packet_data_mut_unsafe(&desc).is_none());
+        }
+    }
+
+    #[test]
+    fn test_socket_tx_batch_via_test() {
+        let config = UmemConfig {
+            size: 16384,
+            frame_size: 2048,
+            headroom: 256,
+            fill_ring_size: 16,
+            comp_ring_size: 16,
+        };
+
+        let Ok(umem) = Umem::new(config) else {
+            eprintln!("Skipping test (UMEM creation failed)");
+            return;
+        };
+
+        let socket_config = SocketConfig {
+            rx_ring_size: 16,
+            tx_ring_size: 16,
+            bind_flags: 0,
+            queue_id: 0,
+        };
+
+        let mut socket =
+            AfXdpSocket::new_test(umem.clone(), socket_config).expect("Socket creation failed");
+
+        // Valid TX batch
+        let packets = vec![
+            PacketDesc {
+                addr: 0,
+                len: 1500,
+                options: 0,
+            },
+            PacketDesc {
+                addr: 2048,
+                len: 1000,
+                options: 0,
+            },
+        ];
+
+        // This will call kick_tx which uses sendto on fd=-1, which will fail
+        // but EAGAIN/EWOULDBLOCK or EBADF handling should kick in
+        let result = socket.tx_batch(&packets);
+        // On test socket (fd=-1), kick_tx will get EBADF which is not EAGAIN
+        // so this may return an error - that's expected
+        if result.is_ok() {
+            assert_eq!(result.unwrap(), 2);
+        }
+
+        // Invalid address should error
+        let packets = vec![PacketDesc {
+            addr: 999999,
+            len: 100,
+            options: 0,
+        }];
+        assert!(socket.tx_batch(&packets).is_err());
+    }
+
+    #[test]
+    fn test_socket_fill_rx_validation() {
+        let config = UmemConfig {
+            size: 16384,
+            frame_size: 2048,
+            headroom: 256,
+            fill_ring_size: 16,
+            comp_ring_size: 16,
+        };
+
+        let Ok(umem) = Umem::new(config) else {
+            eprintln!("Skipping test (UMEM creation failed)");
+            return;
+        };
+
+        let socket_config = SocketConfig {
+            rx_ring_size: 16,
+            tx_ring_size: 16,
+            bind_flags: 0,
+            queue_id: 0,
+        };
+
+        let mut socket =
+            AfXdpSocket::new_test(umem.clone(), socket_config).expect("Socket creation failed");
+
+        // Valid aligned addresses
+        let addrs: Vec<u64> = (0..4).map(|i| i * 2048).collect();
+        assert!(socket.fill_rx_buffers(&addrs).is_ok());
+
+        // Invalid: address out of UMEM bounds
+        let addrs = vec![99999u64];
+        assert!(socket.fill_rx_buffers(&addrs).is_err());
+
+        // Invalid: unaligned address
+        let addrs = vec![100u64];
+        assert!(socket.fill_rx_buffers(&addrs).is_err());
+
+        // Empty addresses should work
+        let addrs: Vec<u64> = vec![];
+        assert!(socket.fill_rx_buffers(&addrs).is_ok());
+    }
+
+    #[test]
+    fn test_socket_complete_tx_via_test() {
+        let config = UmemConfig {
+            size: 16384,
+            frame_size: 2048,
+            headroom: 256,
+            fill_ring_size: 16,
+            comp_ring_size: 16,
+        };
+
+        let Ok(umem) = Umem::new(config) else {
+            eprintln!("Skipping test (UMEM creation failed)");
+            return;
+        };
+
+        let socket_config = SocketConfig {
+            rx_ring_size: 16,
+            tx_ring_size: 16,
+            bind_flags: 0,
+            queue_id: 0,
+        };
+
+        let mut socket =
+            AfXdpSocket::new_test(umem, socket_config).expect("Socket creation failed");
+
+        let completed = socket.complete_tx(8).unwrap();
+        // On Linux with mmap rings, nothing to complete; on non-Linux, simulation returns some
+        for &addr in &completed {
+            assert!(addr < socket.umem().size() as u64);
+        }
+
+        // Check stats recorded completion
+        let snap = socket.stats_snapshot();
+        assert_eq!(snap.tx_completions, completed.len() as u64);
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn test_mmap_ring_operations() {
+        // Test MmapRing with anonymous memory (no real kernel AF_XDP)
+        let ring = MmapRing::new_test(16, true);
+
+        // Initial state
+        assert_eq!(ring.load_producer(), 0);
+        assert_eq!(ring.load_consumer(), 0);
+        assert_eq!(ring.available_for_production(), 16);
+        assert_eq!(ring.available_for_consumption(), 0);
+
+        // Reserve and submit
+        let idx = ring.reserve(4);
+        assert_eq!(idx, Some(0));
+        ring.submit(4);
+        assert_eq!(ring.load_producer(), 4);
+        assert_eq!(ring.available_for_consumption(), 4);
+
+        // Peek and release
+        let idx = ring.peek(2);
+        assert_eq!(idx, Some(0));
+        ring.release(2);
+        assert_eq!(ring.load_consumer(), 2);
+        assert_eq!(ring.available_for_consumption(), 2);
+        assert_eq!(ring.available_for_production(), 14);
+
+        // Reserve should fail if not enough space
+        assert!(ring.reserve(15).is_none());
+
+        // Peek should fail if not enough entries
+        assert!(ring.peek(10).is_none());
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn test_mmap_ring_write_read_desc() {
+        let ring = MmapRing::new_test(16, true);
+
+        let desc = XdpDesc {
+            addr: 4096,
+            len: 1500,
+            options: 0,
+        };
+
+        unsafe {
+            ring.write_desc(0, &desc);
+            let read = ring.read_desc(0);
+            assert_eq!(read.addr, 4096);
+            assert_eq!(read.len, 1500);
+            assert_eq!(read.options, 0);
+        }
+
+        // Write at different index
+        let desc2 = XdpDesc {
+            addr: 8192,
+            len: 64,
+            options: 1,
+        };
+
+        unsafe {
+            ring.write_desc(5, &desc2);
+            let read = ring.read_desc(5);
+            assert_eq!(read.addr, 8192);
+            assert_eq!(read.len, 64);
+            assert_eq!(read.options, 1);
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn test_mmap_ring_write_read_addr() {
+        let ring = MmapRing::new_test(16, false); // address ring
+
+        unsafe {
+            ring.write_addr(0, 0);
+            ring.write_addr(1, 2048);
+            ring.write_addr(2, 4096);
+
+            assert_eq!(ring.read_addr(0), 0);
+            assert_eq!(ring.read_addr(1), 2048);
+            assert_eq!(ring.read_addr(2), 4096);
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn test_mmap_ring_store_load_indices() {
+        let ring = MmapRing::new_test(8, true);
+
+        ring.store_producer(42);
+        assert_eq!(ring.load_producer(), 42);
+
+        ring.store_consumer(10);
+        assert_eq!(ring.load_consumer(), 10);
+
+        // available_for_production = size - (prod - cons) = 8 - (42 - 10) = 8 - 32
+        // This wraps due to u32 arithmetic: size - (prod.wrapping_sub(cons))
+        // 42 - 10 = 32, 8 - 32 wraps to a large number (underflow in u32)
+        // The ring is designed for wrapping arithmetic, but capacity must be valid
+        // Reset to test valid scenario
+        ring.store_producer(0);
+        ring.store_consumer(0);
+        assert_eq!(ring.available_for_production(), 8);
+        assert_eq!(ring.available_for_consumption(), 0);
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn test_xdp_desc_default() {
+        let desc = XdpDesc::default();
+        assert_eq!(desc.addr, 0);
+        assert_eq!(desc.len, 0);
+        assert_eq!(desc.options, 0);
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn test_xdp_desc_clone_copy() {
+        let desc = XdpDesc {
+            addr: 1234,
+            len: 5678,
+            options: 9,
+        };
+        let copied = desc;
+        assert_eq!(copied.addr, 1234);
+        assert_eq!(copied.len, 5678);
+        assert_eq!(copied.options, 9);
+
+        let cloned = desc;
+        assert_eq!(cloned.addr, desc.addr);
+    }
+
+    #[test]
+    fn test_umem_config_validate_valid_large() {
+        let config = UmemConfig {
+            size: 64 * 1024 * 1024, // 64 MB
+            frame_size: 4096,
+            headroom: 256,
+            fill_ring_size: 8192,
+            comp_ring_size: 8192,
+        };
+        assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn test_umem_config_validate_minimum_valid() {
+        let config = UmemConfig {
+            size: 2048,       // Exactly one frame
+            frame_size: 2048, // Minimum chunk size
+            headroom: 0,
+            fill_ring_size: 1, // Power of 2
+            comp_ring_size: 1,
+        };
+        assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn test_socket_config_validate_minimum() {
+        let config = SocketConfig {
+            rx_ring_size: 1,
+            tx_ring_size: 1,
+            bind_flags: 0,
+            queue_id: 0,
+        };
+        assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn test_constants() {
+        assert_eq!(XDP_PACKET_HEADROOM, 256);
+        assert_eq!(XDP_UMEM_MIN_CHUNK_SIZE, 2048);
+    }
 }

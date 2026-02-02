@@ -173,3 +173,99 @@ pub struct Playbook {
     pub created_at: Option<DateTime<Utc>>,
     pub updated_at: Option<DateTime<Utc>>,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_beacon_data_serialization() {
+        let data = BeaconData {
+            id: "test-id-123".to_string(),
+            hostname: "workstation01".to_string(),
+            username: "admin".to_string(),
+        };
+        let json = serde_json::to_string(&data).unwrap();
+        let parsed: BeaconData = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed.id, "test-id-123");
+        assert_eq!(parsed.hostname, "workstation01");
+        assert_eq!(parsed.username, "admin");
+    }
+
+    #[test]
+    fn test_beacon_task_serialization() {
+        let task = BeaconTask {
+            id: "task-1".to_string(),
+            type_: "shell".to_string(),
+            payload: "whoami".to_string(),
+        };
+        let json = serde_json::to_string(&task).unwrap();
+        let parsed: BeaconTask = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed.id, "task-1");
+        assert_eq!(parsed.type_, "shell");
+        assert_eq!(parsed.payload, "whoami");
+    }
+
+    #[test]
+    fn test_beacon_response_serialization() {
+        let response = BeaconResponse {
+            tasks: vec![
+                BeaconTask {
+                    id: "1".to_string(),
+                    type_: "shell".to_string(),
+                    payload: "dir".to_string(),
+                },
+                BeaconTask {
+                    id: "2".to_string(),
+                    type_: "powershell".to_string(),
+                    payload: "Get-Process".to_string(),
+                },
+            ],
+        };
+        let json = serde_json::to_string(&response).unwrap();
+        let parsed: BeaconResponse = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed.tasks.len(), 2);
+        assert_eq!(parsed.tasks[0].type_, "shell");
+        assert_eq!(parsed.tasks[1].type_, "powershell");
+    }
+
+    #[test]
+    fn test_beacon_response_empty_tasks() {
+        let response = BeaconResponse { tasks: vec![] };
+        let json = serde_json::to_string(&response).unwrap();
+        let parsed: BeaconResponse = serde_json::from_str(&json).unwrap();
+        assert!(parsed.tasks.is_empty());
+    }
+
+    #[test]
+    fn test_beacon_data_deserialization_from_json() {
+        let json = r#"{"id":"550e8400","hostname":"host1","username":"user1"}"#;
+        let data: BeaconData = serde_json::from_str(json).unwrap();
+        assert_eq!(data.id, "550e8400");
+        assert_eq!(data.hostname, "host1");
+    }
+
+    #[test]
+    fn test_beacon_data_missing_field() {
+        let json = r#"{"id":"test","hostname":"host1"}"#;
+        let result: Result<BeaconData, _> = serde_json::from_str(json);
+        assert!(result.is_err()); // username is required
+    }
+
+    #[test]
+    fn test_listener_model_serialization() {
+        let listener = listener::Listener {
+            id: Uuid::new_v4(),
+            name: "test-listener".to_string(),
+            r#type: "http".to_string(),
+            bind_address: "0.0.0.0".to_string(),
+            config: serde_json::json!({"port": 8080}),
+            status: "active".to_string(),
+        };
+        let json = serde_json::to_string(&listener).unwrap();
+        let parsed: listener::Listener = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed.name, "test-listener");
+        assert_eq!(parsed.r#type, "http");
+        assert_eq!(parsed.status, "active");
+    }
+}

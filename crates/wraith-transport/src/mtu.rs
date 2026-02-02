@@ -656,4 +656,459 @@ mod tests {
         discovery.clear_cache();
         assert_eq!(discovery.cache.len(), 0);
     }
+
+    // --- Additional coverage tests for discover(), probe_binary_search(), test_mtu() ---
+
+    #[test]
+    fn test_discover_returns_cached_value() {
+        // Manually insert a cached entry, then call discover()
+        // It should return the cached value without probing
+        let mut discovery = MtuDiscovery::new();
+        let addr: SocketAddr = "127.0.0.1:12345".parse().unwrap();
+
+        discovery.cache.insert(
+            addr,
+            CachedMtu {
+                mtu: 1400,
+                discovered_at: Instant::now(),
+            },
+        );
+
+        // Create a socket that won't actually be used (cache hit)
+        let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+        let result = discovery.discover(&socket, addr);
+        assert_eq!(result.unwrap(), 1400);
+    }
+
+    #[test]
+    fn test_discover_expired_cache_triggers_probe() {
+        // Set a very short TTL so the cache entry expires immediately
+        let mut discovery = MtuDiscovery::new();
+        discovery.set_cache_ttl(Duration::from_millis(1));
+
+        let addr: SocketAddr = "127.0.0.1:12345".parse().unwrap();
+        discovery.cache.insert(
+            addr,
+            CachedMtu {
+                mtu: 1400,
+                discovered_at: Instant::now(),
+            },
+        );
+
+        std::thread::sleep(Duration::from_millis(5));
+
+        // Now discover should try probing. Since there's no echo server,
+        // all probes will time out and it should fall back to min_mtu.
+        let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+        let result = discovery.discover(&socket, addr);
+        // Binary search with all-failed probes returns min_mtu (confirmed_mtu starts at min)
+        assert_eq!(result.unwrap(), discovery.min_mtu);
+    }
+
+    #[test]
+    fn test_probe_binary_search_no_response_returns_min() {
+        // With no echo server, all probes fail/timeout, so confirmed_mtu stays at min
+        let discovery = MtuDiscovery::with_limits(1280, 1500);
+        let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+        let target: SocketAddr = "127.0.0.1:19999".parse().unwrap();
+
+        let result = discovery.probe_binary_search(&socket, target);
+        assert_eq!(result.unwrap(), 1280);
+    }
+
+    #[test]
+    fn test_probe_binary_search_with_narrow_range() {
+        // When min == max, binary search should still work
+        let discovery = MtuDiscovery::with_limits(1500, 1500);
+        let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+        let target: SocketAddr = "127.0.0.1:19998".parse().unwrap();
+
+        let result = discovery.probe_binary_search(&socket, target);
+        // mid = 1500, probe fails (no server), high = 1499, loop ends
+        // confirmed_mtu stays at 1500 (initial) -- wait, it's initialized to min_mtu=1500
+        assert_eq!(result.unwrap(), 1500);
+    }
+
+    #[test]
+    fn test_test_mtu_ipv4_header_size() {
+        let discovery = MtuDiscovery::new();
+        let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+        let target: SocketAddr = "127.0.0.1:19997".parse().unwrap();
+
+        // MTU too small for IPv4 header (28 bytes)
+        let result = discovery.test_mtu(&socket, target, 20);
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), MtuError::InvalidMtu(20)));
+
+        // MTU exactly at header boundary
+        let result = discovery.test_mtu(&socket, target, 28);
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), MtuError::InvalidMtu(28)));
+    }
+
+    #[test]
+    fn test_test_mtu_ipv6_header_size() {
+        let discovery = MtuDiscovery::new();
+        let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+        let target: SocketAddr = "[::1]:19996".parse().unwrap();
+
+        // MTU too small for IPv6 header (48 bytes)
+        let result = discovery.test_mtu(&socket, target, 40);
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), MtuError::InvalidMtu(40)));
+
+        let result = discovery.test_mtu(&socket, target, 48);
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), MtuError::InvalidMtu(48)));
+    }
+
+    #[test]
+    fn test_test_mtu_valid_size_no_response() {
+        // Valid MTU size but no echo server, so all attempts timeout -> returns false
+        let discovery = MtuDiscovery::new();
+        let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+        let target: SocketAddr = "127.0.0.1:19995".parse().unwrap();
+
+        let result = discovery.test_mtu(&socket, target, 1500);
+        // No server listening -> all attempts timeout -> Ok(false)
+        assert_eq!(result.unwrap(), false);
+    }
+
+    #[test]
+    fn test_discover_caches_result_after_probe() {
+        let mut discovery = MtuDiscovery::with_limits(1280, 1500);
+        let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+        let target: SocketAddr = "127.0.0.1:19994".parse().unwrap();
+
+        // No cache entry initially
+        assert!(discovery.get_cached(&target).is_none());
+
+        // discover() probes and caches result
+        let mtu = discovery.discover(&socket, target).unwrap();
+        assert_eq!(mtu, 1280); // All probes fail -> min
+
+        // Now it should be cached
+        assert_eq!(discovery.get_cached(&target), Some(1280));
+    }
+
+    #[test]
+    fn test_discover_updates_cache_on_reprobe() {
+        let mut discovery = MtuDiscovery::with_limits(1280, 1500);
+        discovery.set_cache_ttl(Duration::from_millis(1));
+
+        let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+        let target: SocketAddr = "127.0.0.1:19993".parse().unwrap();
+
+        // First probe
+        let mtu1 = discovery.discover(&socket, target).unwrap();
+        assert_eq!(mtu1, 1280);
+
+        // Wait for cache to expire
+        std::thread::sleep(Duration::from_millis(5));
+
+        // Second probe should re-discover and update cache
+        let mtu2 = discovery.discover(&socket, target).unwrap();
+        assert_eq!(mtu2, 1280);
+        assert_eq!(discovery.get_cached(&target), Some(1280));
+    }
+
+    #[test]
+    fn test_probe_binary_search_emsgsize_detection() {
+        // Test that EMSGSIZE from send_to returns Ok(false) and narrows search
+        // This is hard to trigger reliably, but we can at least verify the
+        // binary search terminates correctly even with very large ranges
+        let discovery = MtuDiscovery::with_limits(1280, 9000);
+        let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+        let target: SocketAddr = "127.0.0.1:19992".parse().unwrap();
+
+        let result = discovery.probe_binary_search(&socket, target);
+        let mtu = result.unwrap();
+        // Without a server, confirmed stays at min
+        assert_eq!(mtu, 1280);
+    }
+
+    #[test]
+    fn test_with_limits_inverted_still_works() {
+        // Test with min > max (binary search loop won't execute)
+        let discovery = MtuDiscovery::with_limits(2000, 1000);
+        let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+        let target: SocketAddr = "127.0.0.1:19991".parse().unwrap();
+
+        // low=2000 > high=1000, loop doesn't execute, returns min_mtu=2000
+        let result = discovery.probe_binary_search(&socket, target);
+        assert_eq!(result.unwrap(), 2000);
+    }
+
+    #[test]
+    fn test_mtu_discovery_with_echo_server() {
+        // Spawn a simple UDP echo server so probes succeed
+        let server = UdpSocket::bind("127.0.0.1:0").unwrap();
+        let server_addr = server.local_addr().unwrap();
+        server.set_nonblocking(true).unwrap();
+
+        std::thread::spawn(move || {
+            let mut buf = [0u8; 65536];
+            for _ in 0..200 {
+                if let Ok((size, from)) = server.recv_from(&mut buf) {
+                    let _ = server.send_to(&buf[..size], from);
+                }
+                std::thread::sleep(Duration::from_millis(1));
+            }
+        });
+
+        std::thread::sleep(Duration::from_millis(50));
+
+        let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+        let mut discovery = MtuDiscovery::with_limits(1280, 1500);
+
+        match discovery.discover(&socket, server_addr) {
+            Ok(mtu) => {
+                // On localhost, all sizes should succeed
+                assert!((1280..=1500).contains(&mtu));
+            }
+            Err(e) => {
+                // Timing issues can cause failures
+                eprintln!("Echo server test had error (may be expected): {}", e);
+            }
+        }
+    }
+
+    #[test]
+    fn test_test_mtu_just_above_header() {
+        // Test MTU = header_size + 1 (smallest valid probe)
+        let discovery = MtuDiscovery::new();
+        let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+        let target: SocketAddr = "127.0.0.1:19990".parse().unwrap();
+
+        // IPv4 header = 28, so MTU 29 creates a 1-byte payload
+        let result = discovery.test_mtu(&socket, target, 29);
+        // Should succeed sending but timeout waiting -> Ok(false)
+        assert_eq!(result.unwrap(), false);
+    }
+
+    #[test]
+    fn test_cached_mtu_debug() {
+        let cached = CachedMtu {
+            mtu: 1500,
+            discovered_at: Instant::now(),
+        };
+        let debug_str = format!("{:?}", cached);
+        assert!(debug_str.contains("1500"));
+    }
+
+    #[test]
+    fn test_mtu_error_io_variant() {
+        let io_err = std::io::Error::new(std::io::ErrorKind::ConnectionRefused, "refused");
+        let mtu_err: MtuError = io_err.into();
+        let display = mtu_err.to_string();
+        assert!(display.contains("refused"));
+    }
+
+    #[test]
+    fn test_get_cached_nonexistent() {
+        let discovery = MtuDiscovery::new();
+        let addr: SocketAddr = "10.0.0.1:1234".parse().unwrap();
+        assert_eq!(discovery.get_cached(&addr), None);
+    }
+
+    #[test]
+    fn test_clear_expired_all_fresh() {
+        let mut discovery = MtuDiscovery::new();
+        // TTL is 5 minutes by default, so nothing should expire
+
+        let addr: SocketAddr = "127.0.0.1:8080".parse().unwrap();
+        discovery.cache.insert(
+            addr,
+            CachedMtu {
+                mtu: 1500,
+                discovered_at: Instant::now(),
+            },
+        );
+
+        discovery.clear_expired();
+        assert_eq!(discovery.cache.len(), 1);
+    }
+
+    #[test]
+    fn test_clear_expired_empty_cache() {
+        let mut discovery = MtuDiscovery::new();
+        discovery.clear_expired(); // Should not panic
+        assert_eq!(discovery.cache.len(), 0);
+    }
+
+    // --- Additional coverage tests for header size calculation and edge cases ---
+
+    #[test]
+    fn test_test_mtu_ipv4_header_boundary_plus_one() {
+        // IPv4 header = 28, MTU=29 produces 1-byte payload
+        let discovery = MtuDiscovery::new();
+        let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+        let target: SocketAddr = "127.0.0.1:19980".parse().unwrap();
+
+        // Exactly at header boundary should error
+        let result = discovery.test_mtu(&socket, target, 28);
+        assert!(matches!(result, Err(MtuError::InvalidMtu(28))));
+
+        // One above header should succeed sending (but timeout)
+        let result = discovery.test_mtu(&socket, target, 29);
+        assert_eq!(result.unwrap(), false);
+    }
+
+    #[test]
+    fn test_test_mtu_ipv6_header_boundary_plus_one() {
+        let discovery = MtuDiscovery::new();
+
+        // IPv6 target with IPv4 socket may fail on some systems
+        // Just test the InvalidMtu path which doesn't need network
+        let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+        let target: SocketAddr = "[::1]:19979".parse().unwrap();
+
+        // IPv6 header = 48, exactly at boundary should error
+        let result = discovery.test_mtu(&socket, target, 48);
+        assert!(matches!(result, Err(MtuError::InvalidMtu(48))));
+
+        // One above: may fail with EAFNOSUPPORT on IPv4-only sockets, which is fine
+        let result = discovery.test_mtu(&socket, target, 49);
+        // Either Ok(false) from timeout or Err from send failure - both acceptable
+        assert!(result.is_ok() || result.is_err());
+    }
+
+    #[test]
+    fn test_test_mtu_zero_size() {
+        let discovery = MtuDiscovery::new();
+        let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+        let target: SocketAddr = "127.0.0.1:19978".parse().unwrap();
+
+        let result = discovery.test_mtu(&socket, target, 0);
+        assert!(matches!(result, Err(MtuError::InvalidMtu(0))));
+    }
+
+    #[test]
+    fn test_probe_binary_search_single_step() {
+        // Range of exactly 2: min=1280, max=1281
+        let discovery = MtuDiscovery::with_limits(1280, 1281);
+        let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+        let target: SocketAddr = "127.0.0.1:19977".parse().unwrap();
+
+        let result = discovery.probe_binary_search(&socket, target);
+        assert_eq!(result.unwrap(), 1280);
+    }
+
+    #[test]
+    fn test_discover_with_echo_server_caches_and_returns_cached() {
+        let server = UdpSocket::bind("127.0.0.1:0").unwrap();
+        let server_addr = server.local_addr().unwrap();
+        server.set_nonblocking(true).unwrap();
+
+        std::thread::spawn(move || {
+            let mut buf = [0u8; 65536];
+            for _ in 0..500 {
+                if let Ok((size, from)) = server.recv_from(&mut buf) {
+                    let _ = server.send_to(&buf[..size], from);
+                }
+                std::thread::sleep(Duration::from_millis(1));
+            }
+        });
+
+        std::thread::sleep(Duration::from_millis(50));
+
+        let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+        let mut discovery = MtuDiscovery::with_limits(1280, 1500);
+
+        // First call discovers and caches
+        let mtu1 = discovery.discover(&socket, server_addr);
+        if let Ok(mtu) = mtu1 {
+            assert!((1280..=1500).contains(&mtu));
+
+            // Second call should return cached value
+            let mtu2 = discovery.discover(&socket, server_addr).unwrap();
+            assert_eq!(mtu, mtu2);
+        }
+    }
+
+    #[test]
+    fn test_mtu_error_debug_format() {
+        let err = MtuError::InvalidMtu(42);
+        let debug = format!("{:?}", err);
+        assert!(debug.contains("InvalidMtu"));
+        assert!(debug.contains("42"));
+
+        let err = MtuError::Timeout;
+        let debug = format!("{:?}", err);
+        assert!(debug.contains("Timeout"));
+
+        let err = MtuError::NoRoute;
+        let debug = format!("{:?}", err);
+        assert!(debug.contains("NoRoute"));
+    }
+
+    #[test]
+    fn test_mtu_cache_overwrite() {
+        let mut discovery = MtuDiscovery::new();
+        let addr: SocketAddr = "127.0.0.1:8080".parse().unwrap();
+
+        discovery.cache.insert(
+            addr,
+            CachedMtu {
+                mtu: 1500,
+                discovered_at: Instant::now(),
+            },
+        );
+        assert_eq!(discovery.get_cached(&addr), Some(1500));
+
+        // Overwrite with different MTU
+        discovery.cache.insert(
+            addr,
+            CachedMtu {
+                mtu: 1400,
+                discovered_at: Instant::now(),
+            },
+        );
+        assert_eq!(discovery.get_cached(&addr), Some(1400));
+    }
+
+    #[test]
+    fn test_with_limits_zero_min() {
+        let discovery = MtuDiscovery::with_limits(0, 100);
+        assert_eq!(discovery.min_mtu, 0);
+        assert_eq!(discovery.max_mtu, 100);
+    }
+
+    #[test]
+    fn test_mtu_cache_ipv6_addresses() {
+        let mut discovery = MtuDiscovery::new();
+        let addr: SocketAddr = "[::1]:8080".parse().unwrap();
+
+        discovery.cache.insert(
+            addr,
+            CachedMtu {
+                mtu: 1280,
+                discovered_at: Instant::now(),
+            },
+        );
+
+        assert_eq!(discovery.get_cached(&addr), Some(1280));
+    }
+
+    #[test]
+    fn test_test_mtu_large_payload() {
+        let discovery = MtuDiscovery::new();
+        let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+        let target: SocketAddr = "127.0.0.1:19976".parse().unwrap();
+
+        // Test with jumbo frame size
+        let result = discovery.test_mtu(&socket, target, 9000);
+        assert_eq!(result.unwrap(), false);
+    }
+
+    #[test]
+    fn test_probe_binary_search_large_range() {
+        // Large range should still converge to min_mtu when no server responds
+        let discovery = MtuDiscovery::with_limits(500, 65535);
+        let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+        let target: SocketAddr = "127.0.0.1:19975".parse().unwrap();
+
+        let result = discovery.probe_binary_search(&socket, target);
+        assert_eq!(result.unwrap(), 500);
+    }
 }

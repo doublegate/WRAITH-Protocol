@@ -883,7 +883,7 @@ sudo systemctl start wraith
 
 ## Getting Help
 
-- **Documentation:** https://github.com/doublegate/WRAITH-Protocol/docs
+- **Documentation:** https://github.com/doublegate/WRAITH-Protocol/tree/main/docs
 - **Issues:** https://github.com/doublegate/WRAITH-Protocol/issues
 - **Discussions:** https://github.com/doublegate/WRAITH-Protocol/discussions
 

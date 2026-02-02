@@ -755,6 +755,76 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_unannounce_file_not_found() {
+        let node = Node::new_random().await.unwrap();
+        let file_hash = [99u8; 32];
+        let result = node.unannounce_file(&file_hash).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_download_from_peers_empty() {
+        let node = Node::new_random().await.unwrap();
+        let file_hash = [42u8; 32];
+        let result = node
+            .download_from_peers(&file_hash, vec![], std::path::Path::new("/tmp/test.dat"))
+            .await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("No peers"));
+    }
+
+    #[tokio::test]
+    async fn test_assign_chunks_single_chunk() {
+        let node = Node::new_random().await.unwrap();
+        let metadata = FileMetadata {
+            size: 100,
+            total_chunks: 1,
+            chunk_size: 256 * 1024,
+            root_hash: [0u8; 32],
+            name: "tiny.dat".to_string(),
+        };
+        let peers = vec![[1u8; 32], [2u8; 32]];
+        let assignments = node.assign_chunks(&metadata, &peers);
+
+        let total: usize = assignments.values().map(|v| v.len()).sum();
+        assert_eq!(total, 1);
+    }
+
+    #[tokio::test]
+    async fn test_assign_chunks_more_peers_than_chunks() {
+        let node = Node::new_random().await.unwrap();
+        let metadata = FileMetadata {
+            size: 256 * 1024,
+            total_chunks: 2,
+            chunk_size: 128 * 1024,
+            root_hash: [0u8; 32],
+            name: "small.dat".to_string(),
+        };
+        let peers = vec![[1u8; 32], [2u8; 32], [3u8; 32], [4u8; 32], [5u8; 32]];
+        let assignments = node.assign_chunks(&metadata, &peers);
+
+        let total: usize = assignments.values().map(|v| v.len()).sum();
+        assert_eq!(total, 2);
+        // Only 2 peers should have chunks assigned (round-robin)
+        assert_eq!(assignments.len(), 2);
+    }
+
+    #[test]
+    fn test_file_metadata_clone() {
+        let metadata = FileMetadata {
+            size: 1024,
+            total_chunks: 4,
+            chunk_size: 256,
+            root_hash: [42u8; 32],
+            name: "clone_test.dat".to_string(),
+        };
+        let cloned = metadata.clone();
+        assert_eq!(cloned.size, 1024);
+        assert_eq!(cloned.name, "clone_test.dat");
+        assert_eq!(cloned.root_hash, [42u8; 32]);
+    }
+
+    #[tokio::test]
     async fn test_unannounce_file() {
         use std::io::Write;
         let node = Node::new_random().await.unwrap();

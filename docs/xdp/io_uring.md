@@ -520,7 +520,7 @@ let buf = unsafe { Vec::from_raw_parts(ptr, 0, size) };
 
 ## References
 
-- [Linux io_uring Documentation](https://kernel.dk/io_uring.pdf)
+- [Linux io_uring Documentation](https://web.archive.org/web/2024/https://kernel.dk/io_uring.pdf)
 - [io_uring by Example](https://unixism.net/loti/)
 - [WRAITH io_uring Implementation](../../crates/wraith-transport/src/io_uring.rs)
 - [WRAITH File I/O](../../crates/wraith-files/)

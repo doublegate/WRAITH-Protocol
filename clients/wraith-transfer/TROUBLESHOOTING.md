@@ -252,7 +252,7 @@ cargo tree -p webkit2gtk
 
 1. **Check existing documentation:**
    - [WAYLAND.md](./WAYLAND.md) - Wayland compatibility
-   - [README.md](./README.md) - General usage
+   - [WAYLAND_FIX_SUMMARY.md](./WAYLAND_FIX_SUMMARY.md) - Wayland fix summary
 
 2. **Search known issues:**
    - [WRAITH Protocol Issues](https://github.com/doublegate/WRAITH-Protocol/issues)

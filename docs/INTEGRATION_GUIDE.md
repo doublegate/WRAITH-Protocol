@@ -1114,7 +1114,7 @@ This integration guide covered the essential APIs and patterns for integrating W
 - [Performance Benchmarks](testing/performance-benchmarks.md) - Performance characteristics
 
 **Example Code:**
-- [Integration Tests](../tests/integration) - Complete integration examples
+- [Integration Tests](../tests/integration_tests.rs) - Complete integration examples
 - [Benchmarks](../benches) - Performance testing examples
 
 **Community Support:**

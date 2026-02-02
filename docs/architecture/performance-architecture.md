@@ -775,4 +775,4 @@ WRAITH's performance architecture achieves wire-speed throughput through:
 **See Also:**
 - [Protocol Overview](protocol-overview.md)
 - [Layer Design](layer-design.md)
-- [Performance Tuning](../operations/performance-tuning.md)
+- [Performance Benchmarks](../testing/performance-benchmarks.md)

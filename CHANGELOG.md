@@ -48,8 +48,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **ci.yml/codeql.yml/release.yml**: Corrected `--exclude` package name across all workflow files (was using wrong crate name).
 - **spectre-implant**: Prefixed unused variable with underscore to satisfy `-Dwarnings` clippy enforcement.
 
+#### Testing
+
+- **487 new tests** across 6 crates raising workspace total from 2,123 to 2,610 (2,643 total with spectre-implant and doc tests):
+  - wraith-core: +46 (480 -> 526) node/ subsystem coverage
+  - wraith-cli: +81 (87 -> 168) CLI parsing and redops commands
+  - team-server: +82 (24 -> 106) services and listeners
+  - wraith-discovery: +69 (336 -> 405) relay and NAT signaling
+  - wraith-transport: +43 (183 -> 226) AF_XDP and MTU
+  - wraith-crypto: +47 (166 -> 213) post-quantum, random, AEAD cipher
+
+#### Security
+
+- **3 CodeQL alerts resolved**: Hard-coded cryptographic values in test files replaced with clearly-marked test constants
+
 #### Documentation
 
+- **35 broken documentation links fixed** across 22 files
 - **Gap Analysis v9.0.0** (`docs/clients/wraith-redops/GAP-ANALYSIS-v2.3.6.md`): Comprehensive RedOps audit confirming ~99% completion, all P0/P1/P2 issues resolved, 97.5% MITRE ATT&CK coverage (39/40), 25 modules, 35 IPC commands, 16,719 Rust + 3,749 TypeScript lines
 
 ### Changed

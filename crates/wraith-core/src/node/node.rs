@@ -1164,6 +1164,247 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_node_with_config() {
+        use crate::node::config::NodeConfig;
+        let config = NodeConfig::default();
+        let node = Node::new_with_config(config).await.unwrap();
+        assert!(!node.is_running());
+        assert_eq!(node.node_id().len(), 32);
+    }
+
+    #[tokio::test]
+    async fn test_node_with_port() {
+        let node = Node::new_random_with_port(0).await.unwrap();
+        assert!(!node.is_running());
+    }
+
+    #[tokio::test]
+    async fn test_node_identity_accessors() {
+        let node = Node::new_random().await.unwrap();
+        let node_id = node.node_id();
+        let x25519_key = node.x25519_public_key();
+        let identity = node.identity();
+
+        assert_eq!(node_id.len(), 32);
+        assert_eq!(x25519_key.len(), 32);
+        assert_eq!(identity.public_key(), node_id);
+    }
+
+    #[tokio::test]
+    async fn test_listen_addr_not_started() {
+        let node = Node::new_random().await.unwrap();
+        let result = node.listen_addr().await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_listen_addr_after_start() {
+        let node = Node::new_random_with_port(0).await.unwrap();
+        node.start().await.unwrap();
+        let addr = node.listen_addr().await.unwrap();
+        assert!(addr.port() > 0);
+        node.stop().await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_close_session_not_found() {
+        let node = Node::new_random().await.unwrap();
+        let peer_id = [42u8; 32];
+        let result = node.close_session(&peer_id).await;
+        assert!(matches!(result, Err(NodeError::SessionNotFound(_))));
+    }
+
+    #[tokio::test]
+    async fn test_routing_stats_empty() {
+        let node = Node::new_random().await.unwrap();
+        let stats = node.routing_stats();
+        assert_eq!(stats.active_routes, 0);
+        assert_eq!(stats.total_lookups, 0);
+    }
+
+    #[tokio::test]
+    async fn test_active_route_count() {
+        let node = Node::new_random().await.unwrap();
+        assert_eq!(node.active_route_count(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_get_connection_stats_not_found() {
+        let node = Node::new_random().await.unwrap();
+        let peer_id = [42u8; 32];
+        assert!(node.get_connection_stats(&peer_id).is_none());
+    }
+
+    #[tokio::test]
+    async fn test_get_connection_stats_found() {
+        let node = Node::new_random().await.unwrap();
+        let peer_id = [42u8; 32];
+        let conn = Arc::new(PeerConnection::new_for_test(
+            peer_id,
+            "127.0.0.1:5000".parse().unwrap(),
+        ));
+        node.inner.sessions.insert(peer_id, conn);
+
+        let stats = node.get_connection_stats(&peer_id);
+        assert!(stats.is_some());
+        assert_eq!(stats.unwrap().bytes_sent, 0);
+    }
+
+    #[tokio::test]
+    async fn test_get_session_established_at() {
+        let node = Node::new_random().await.unwrap();
+        let peer_id = [42u8; 32];
+
+        // Not found
+        assert!(node.get_session_established_at(&peer_id).is_none());
+
+        // Insert a session
+        let conn = Arc::new(PeerConnection::new_for_test(
+            peer_id,
+            "127.0.0.1:5000".parse().unwrap(),
+        ));
+        node.inner.sessions.insert(peer_id, conn);
+
+        let established = node.get_session_established_at(&peer_id);
+        assert!(established.is_some());
+    }
+
+    #[tokio::test]
+    async fn test_send_file_empty() {
+        let node = Node::new_random().await.unwrap();
+        let peer_id = [42u8; 32];
+
+        let temp_dir = std::env::temp_dir();
+        let file_path = temp_dir.join("wraith_node_empty_send.dat");
+        let _ = std::fs::File::create(&file_path).unwrap();
+
+        let result = node.send_file(&file_path, &peer_id).await;
+        let _ = std::fs::remove_file(&file_path);
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_send_file_nonexistent() {
+        let node = Node::new_random().await.unwrap();
+        let peer_id = [42u8; 32];
+
+        let result = node.send_file("/nonexistent/path.dat", &peer_id).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_send_file_to_peers_empty() {
+        let node = Node::new_random().await.unwrap();
+        let result = node.send_file_to_peers("file.dat", &[]).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_wait_for_transfer_not_found() {
+        let node = Node::new_random().await.unwrap();
+        let transfer_id = [42u8; 32];
+        let result = tokio::time::timeout(
+            Duration::from_millis(200),
+            node.wait_for_transfer(transfer_id),
+        )
+        .await;
+        assert!(result.is_ok());
+        assert!(matches!(
+            result.unwrap(),
+            Err(NodeError::TransferNotFound(_))
+        ));
+    }
+
+    #[tokio::test]
+    async fn test_active_transfers_empty() {
+        let node = Node::new_random().await.unwrap();
+        assert!(node.active_transfers().await.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_cancel_transfer_not_found() {
+        let node = Node::new_random().await.unwrap();
+        let transfer_id = [42u8; 32];
+        let result = node.cancel_transfer(&transfer_id).await;
+        assert!(matches!(result, Err(NodeError::TransferNotFound(_))));
+    }
+
+    #[tokio::test]
+    async fn test_cancel_transfer_found() {
+        use crate::node::file_transfer::FileTransferContext;
+        use wraith_files::tree_hash::FileTreeHash;
+
+        let node = Node::new_random().await.unwrap();
+        let transfer_id = [42u8; 32];
+
+        // Create a dummy transfer context
+        let transfer = crate::transfer::TransferSession::new_send(
+            transfer_id,
+            PathBuf::from("test.dat"),
+            1024,
+            256,
+        );
+        let tree_hash = FileTreeHash {
+            root: [0u8; 32],
+            chunks: Vec::new(),
+        };
+        let context = Arc::new(FileTransferContext::new_send(
+            transfer_id,
+            Arc::new(RwLock::new(transfer)),
+            tree_hash,
+        ));
+        node.inner.transfers.insert(transfer_id, context);
+
+        let result = node.cancel_transfer(&transfer_id).await;
+        assert!(result.is_ok());
+        assert!(!node.inner.transfers.contains_key(&transfer_id));
+    }
+
+    #[tokio::test]
+    async fn test_get_transfer_progress_none() {
+        let node = Node::new_random().await.unwrap();
+        let transfer_id = [42u8; 32];
+        assert!(node.get_transfer_progress(&transfer_id).await.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_get_transfer_progress_exists() {
+        use crate::node::file_transfer::FileTransferContext;
+        use wraith_files::tree_hash::FileTreeHash;
+
+        let node = Node::new_random().await.unwrap();
+        let transfer_id = [42u8; 32];
+
+        let mut transfer = crate::transfer::TransferSession::new_send(
+            transfer_id,
+            PathBuf::from("test.dat"),
+            1024,
+            256,
+        );
+        transfer.start();
+        let tree_hash = FileTreeHash {
+            root: [0u8; 32],
+            chunks: Vec::new(),
+        };
+        let context = Arc::new(FileTransferContext::new_send(
+            transfer_id,
+            Arc::new(RwLock::new(transfer)),
+            tree_hash,
+        ));
+        node.inner.transfers.insert(transfer_id, context);
+
+        let progress = node.get_transfer_progress(&transfer_id).await;
+        assert!(progress.is_some());
+    }
+
+    #[tokio::test]
+    async fn test_node_clone() {
+        let node = Node::new_random().await.unwrap();
+        let cloned = node.clone();
+        assert_eq!(node.node_id(), cloned.node_id());
+    }
+
+    #[tokio::test]
     async fn test_encrypted_frame_tampering_detection() {
         use crate::FRAME_HEADER_SIZE;
         use crate::frame::{FrameBuilder, FrameType};

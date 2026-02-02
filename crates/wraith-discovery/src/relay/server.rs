@@ -434,6 +434,341 @@ mod tests {
     }
 
     #[test]
+    fn test_rate_limiter_multiple_nodes() {
+        let mut limiter = RateLimiter::new(2, Duration::from_secs(1));
+        let node_a = [1u8; 32];
+        let node_b = [2u8; 32];
+
+        assert!(limiter.check(node_a));
+        assert!(limiter.check(node_a));
+        assert!(!limiter.check(node_a)); // a is limited
+
+        assert!(limiter.check(node_b)); // b is independent
+        assert!(limiter.check(node_b));
+        assert!(!limiter.check(node_b)); // b is limited
+    }
+
+    #[test]
+    fn test_client_connection_not_alive() {
+        let addr = "127.0.0.1:8000".parse().unwrap();
+        let conn = ClientConnection::new(addr, [1u8; 32]);
+        // With a zero timeout, connection should not be alive
+        assert!(!conn.is_alive(Duration::from_secs(0)));
+    }
+
+    #[test]
+    fn test_client_connection_debug() {
+        let addr = "127.0.0.1:8000".parse().unwrap();
+        let conn = ClientConnection::new(addr, [1u8; 32]);
+        let debug = format!("{:?}", conn);
+        assert!(debug.contains("ClientConnection"));
+    }
+
+    #[tokio::test]
+    async fn test_relay_server_with_config() {
+        let config = RelayServerConfig {
+            max_clients: 5,
+            rate_limit: 10,
+            client_timeout: Duration::from_secs(30),
+            cleanup_interval: Duration::from_secs(15),
+        };
+        let addr = "127.0.0.1:0".parse().unwrap();
+        let server = RelayServer::bind_with_config(addr, config).await;
+        assert!(server.is_ok());
+        let server = server.unwrap();
+        assert_eq!(server.client_count().await, 0);
+    }
+
+    #[tokio::test]
+    async fn test_relay_server_relay_id() {
+        let addr = "127.0.0.1:0".parse().unwrap();
+        let server = RelayServer::bind(addr).await.unwrap();
+        let relay_id = server.relay_id();
+        // Relay ID should not be all zeros (randomly generated)
+        assert_ne!(relay_id, [0u8; 32]);
+    }
+
+    #[tokio::test]
+    async fn test_relay_server_handle_register() {
+        let addr: SocketAddr = "127.0.0.1:0".parse().unwrap();
+        let server = RelayServer::bind(addr).await.unwrap();
+        let server_addr = server.socket.local_addr().unwrap();
+
+        // Send a register message from a client
+        let client_socket = tokio::net::UdpSocket::bind("127.0.0.1:0").await.unwrap();
+        let register_msg = RelayMessage::Register {
+            node_id: [1u8; 32],
+            public_key: [2u8; 32],
+        };
+        let bytes = register_msg.to_bytes().unwrap();
+        client_socket.send_to(&bytes, server_addr).await.unwrap();
+
+        // Handle the message directly
+        let from = client_socket.local_addr().unwrap();
+        server
+            .handle_message(
+                RelayMessage::Register {
+                    node_id: [1u8; 32],
+                    public_key: [2u8; 32],
+                },
+                from,
+            )
+            .await;
+
+        assert_eq!(server.client_count().await, 1);
+    }
+
+    #[tokio::test]
+    async fn test_relay_server_handle_register_full() {
+        let config = RelayServerConfig {
+            max_clients: 1,
+            rate_limit: 100,
+            client_timeout: Duration::from_secs(60),
+            cleanup_interval: Duration::from_secs(30),
+        };
+        let addr: SocketAddr = "127.0.0.1:0".parse().unwrap();
+        let server = RelayServer::bind_with_config(addr, config).await.unwrap();
+
+        // Register first client
+        let from1: SocketAddr = "127.0.0.1:10001".parse().unwrap();
+        server
+            .handle_message(
+                RelayMessage::Register {
+                    node_id: [1u8; 32],
+                    public_key: [2u8; 32],
+                },
+                from1,
+            )
+            .await;
+        assert_eq!(server.client_count().await, 1);
+
+        // Second client should be rejected (server full)
+        let from2: SocketAddr = "127.0.0.1:10002".parse().unwrap();
+        server
+            .handle_message(
+                RelayMessage::Register {
+                    node_id: [3u8; 32],
+                    public_key: [4u8; 32],
+                },
+                from2,
+            )
+            .await;
+        // Still only 1 client
+        assert_eq!(server.client_count().await, 1);
+    }
+
+    #[tokio::test]
+    async fn test_relay_server_handle_keepalive() {
+        let addr: SocketAddr = "127.0.0.1:0".parse().unwrap();
+        let server = RelayServer::bind(addr).await.unwrap();
+
+        // Register a client first
+        let from: SocketAddr = "127.0.0.1:10001".parse().unwrap();
+        server
+            .handle_message(
+                RelayMessage::Register {
+                    node_id: [1u8; 32],
+                    public_key: [2u8; 32],
+                },
+                from,
+            )
+            .await;
+
+        // Send keepalive
+        server.handle_message(RelayMessage::Keepalive, from).await;
+        assert_eq!(server.client_count().await, 1);
+    }
+
+    #[tokio::test]
+    async fn test_relay_server_handle_disconnect() {
+        let addr: SocketAddr = "127.0.0.1:0".parse().unwrap();
+        let server = RelayServer::bind(addr).await.unwrap();
+
+        let from: SocketAddr = "127.0.0.1:10001".parse().unwrap();
+        server
+            .handle_message(
+                RelayMessage::Register {
+                    node_id: [1u8; 32],
+                    public_key: [2u8; 32],
+                },
+                from,
+            )
+            .await;
+        assert_eq!(server.client_count().await, 1);
+
+        server.handle_message(RelayMessage::Disconnect, from).await;
+        assert_eq!(server.client_count().await, 0);
+    }
+
+    #[tokio::test]
+    async fn test_relay_server_handle_send_not_registered() {
+        let addr: SocketAddr = "127.0.0.1:0".parse().unwrap();
+        let server = RelayServer::bind(addr).await.unwrap();
+
+        // Try sending from unregistered address
+        let from: SocketAddr = "127.0.0.1:10001".parse().unwrap();
+        server
+            .handle_message(
+                RelayMessage::SendPacket {
+                    dest_id: [2u8; 32],
+                    payload: vec![1, 2, 3],
+                },
+                from,
+            )
+            .await;
+        // No crash, error is sent to client
+    }
+
+    #[tokio::test]
+    async fn test_relay_server_handle_send_peer_not_found() {
+        let addr: SocketAddr = "127.0.0.1:0".parse().unwrap();
+        let server = RelayServer::bind(addr).await.unwrap();
+
+        // Register sender
+        let from: SocketAddr = "127.0.0.1:10001".parse().unwrap();
+        server
+            .handle_message(
+                RelayMessage::Register {
+                    node_id: [1u8; 32],
+                    public_key: [2u8; 32],
+                },
+                from,
+            )
+            .await;
+
+        // Send to non-existent peer
+        server
+            .handle_message(
+                RelayMessage::SendPacket {
+                    dest_id: [99u8; 32],
+                    payload: vec![1, 2, 3],
+                },
+                from,
+            )
+            .await;
+        // No crash
+    }
+
+    #[tokio::test]
+    async fn test_relay_server_handle_send_forward() {
+        let addr: SocketAddr = "127.0.0.1:0".parse().unwrap();
+        let server = RelayServer::bind(addr).await.unwrap();
+
+        // Register sender
+        let from_a: SocketAddr = "127.0.0.1:10001".parse().unwrap();
+        server
+            .handle_message(
+                RelayMessage::Register {
+                    node_id: [1u8; 32],
+                    public_key: [2u8; 32],
+                },
+                from_a,
+            )
+            .await;
+
+        // Register destination
+        let from_b: SocketAddr = "127.0.0.1:10002".parse().unwrap();
+        server
+            .handle_message(
+                RelayMessage::Register {
+                    node_id: [3u8; 32],
+                    public_key: [4u8; 32],
+                },
+                from_b,
+            )
+            .await;
+
+        // Send from A to B
+        server
+            .handle_message(
+                RelayMessage::SendPacket {
+                    dest_id: [3u8; 32],
+                    payload: vec![1, 2, 3],
+                },
+                from_a,
+            )
+            .await;
+        // No crash, packet forwarded
+    }
+
+    #[tokio::test]
+    async fn test_relay_server_handle_unknown_message() {
+        let addr: SocketAddr = "127.0.0.1:0".parse().unwrap();
+        let server = RelayServer::bind(addr).await.unwrap();
+
+        let from: SocketAddr = "127.0.0.1:10001".parse().unwrap();
+        // Send an unexpected message type
+        server
+            .handle_message(RelayMessage::PeerOnline { peer_id: [1u8; 32] }, from)
+            .await;
+        // Should be ignored, no crash
+    }
+
+    #[tokio::test]
+    async fn test_relay_server_keepalive_unregistered() {
+        let addr: SocketAddr = "127.0.0.1:0".parse().unwrap();
+        let server = RelayServer::bind(addr).await.unwrap();
+
+        let from: SocketAddr = "127.0.0.1:10001".parse().unwrap();
+        // Keepalive from unregistered client should not crash
+        server.handle_message(RelayMessage::Keepalive, from).await;
+    }
+
+    #[tokio::test]
+    async fn test_relay_server_disconnect_unregistered() {
+        let addr: SocketAddr = "127.0.0.1:0".parse().unwrap();
+        let server = RelayServer::bind(addr).await.unwrap();
+
+        let from: SocketAddr = "127.0.0.1:10001".parse().unwrap();
+        server.handle_message(RelayMessage::Disconnect, from).await;
+        // No crash
+    }
+
+    #[tokio::test]
+    async fn test_relay_server_re_register() {
+        let addr: SocketAddr = "127.0.0.1:0".parse().unwrap();
+        let server = RelayServer::bind(addr).await.unwrap();
+
+        let from: SocketAddr = "127.0.0.1:10001".parse().unwrap();
+        server
+            .handle_message(
+                RelayMessage::Register {
+                    node_id: [1u8; 32],
+                    public_key: [2u8; 32],
+                },
+                from,
+            )
+            .await;
+        assert_eq!(server.client_count().await, 1);
+
+        // Re-register same node (should update, not add)
+        server
+            .handle_message(
+                RelayMessage::Register {
+                    node_id: [1u8; 32],
+                    public_key: [3u8; 32],
+                },
+                from,
+            )
+            .await;
+        assert_eq!(server.client_count().await, 1);
+    }
+
+    #[test]
+    fn test_relay_server_config_debug() {
+        let config = RelayServerConfig::default();
+        let debug = format!("{:?}", config);
+        assert!(debug.contains("max_clients"));
+    }
+
+    #[test]
+    fn test_relay_server_config_clone() {
+        let config = RelayServerConfig::default();
+        let cloned = config.clone();
+        assert_eq!(cloned.max_clients, config.max_clients);
+    }
+
+    #[test]
     fn test_rate_limiter_cleanup() {
         let mut limiter = RateLimiter::new(10, Duration::from_millis(100));
         let node_id = [1u8; 32];

@@ -1,6 +1,6 @@
 # WRAITH Protocol - Release Quick Start
 
-Quick reference for creating releases. See [docs/operations/release-guide.md](docs/operations/release-guide.md) for detailed documentation.
+Quick reference for creating releases. See [docs/operations/release-guide.md](../operations/release-guide.md) for detailed documentation.
 
 ## Quick Release (Tag-Based)
 
@@ -120,8 +120,8 @@ git push origin v0.1.0
 
 ## Support
 
-- **Detailed Guide:** [docs/operations/release-guide.md](docs/operations/release-guide.md)
-- **Workflow File:** [.github/workflows/release.yml](.github/workflows/release.yml)
+- **Detailed Guide:** [docs/operations/release-guide.md](../operations/release-guide.md)
+- **Workflow File:** [.github/workflows/release.yml](../../.github/workflows/release.yml)
 - **Actions Logs:** https://github.com/doublegate/WRAITH-Protocol/actions
 
 ---

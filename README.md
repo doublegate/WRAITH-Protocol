@@ -38,7 +38,7 @@ WRAITH Protocol is a privacy-focused, high-performance file transfer protocol de
 
 | Metric            | Value                                                                     |
 | ----------------- | ------------------------------------------------------------------------- |
-| **Tests**         | 2,148 passing (2,123 workspace + 11 spectre-implant + 14 doc), 16 ignored |
+| **Tests**         | 2,643 passing (2,610 workspace + 19 spectre-implant + 14 doc), 16 ignored |
 | **Code**          | ~141,000 lines Rust (protocol + clients) + ~36,600 lines TypeScript       |
 | **Documentation** | 114 files, ~62,800 lines                                                  |
 | **Security**      | Grade A+ (zero vulnerabilities, 295 audited dependencies)                 |
@@ -330,13 +330,13 @@ WRAITH Protocol uses a six-layer design optimized for security and performance:
 
 | Crate                  | Description                                                  | Tests |
 | ---------------------- | ------------------------------------------------------------ | ----- |
-| **wraith-core**        | Frame parsing (SIMD), sessions, congestion control, Node API | 456   |
-| **wraith-crypto**      | Ed25519, X25519+Elligator2, AEAD, Noise_XX, Double Ratchet   | 216   |
-| **wraith-transport**   | AF_XDP, io_uring, UDP sockets, worker pools                  | 183   |
+| **wraith-core**        | Frame parsing (SIMD), sessions, congestion control, Node API | 526   |
+| **wraith-crypto**      | Ed25519, X25519+Elligator2, AEAD, Noise_XX, Double Ratchet   | 213   |
+| **wraith-transport**   | AF_XDP, io_uring, UDP sockets, worker pools                  | 226   |
 | **wraith-obfuscation** | Padding, timing, cover traffic, protocol mimicry             | 140   |
-| **wraith-discovery**   | Kademlia DHT, STUN, ICE, relay infrastructure                | 301   |
+| **wraith-discovery**   | Kademlia DHT, STUN, ICE, relay infrastructure                | 405   |
 | **wraith-files**       | File chunking, BLAKE3 tree hashing, io_uring I/O             | 34    |
-| **wraith-cli**         | Command-line interface with Node API integration             | 87    |
+| **wraith-cli**         | Command-line interface with Node API integration             | 168   |
 | **wraith-ffi**         | Foreign function interface (C/JNI bindings)                  | 111   |
 
 For detailed architecture documentation, see [Protocol Overview](docs/architecture/protocol-overview.md).
@@ -371,7 +371,7 @@ Measured on production hardware (Intel i9-10850K, 64 GB RAM) with `cargo bench -
 | Noise XX Handshake  | 423 us per handshake (2.6% faster)         | Reduced allocations, streamlined validation             |
 | Elligator2 Encoding | 29.5 us per encoding                       | Key indistinguishability from random                    |
 | BLAKE3 Hashing      | 4.71 GiB/s (tree), 8.5 GB/s (parallel)     | rayon + SIMD acceleration                               |
-| File Chunking       | 14.48 GiB/s                                | io_uring async I/O                                      |
+| File Chunking       | 14.85 GiB/s                                | io_uring async I/O                                      |
 | Tree Hashing        | 4.71 GiB/s in-memory, 2.61 GiB/s from disk | Merkle tree with BLAKE3                                 |
 | Chunk Verification  | 4.78 GiB/s                                 | <1 us per chunk                                         |
 | File Reassembly     | 5.42 GiB/s                                 | O(m) algorithm, zero-copy                               |
@@ -464,7 +464,7 @@ Measured on production hardware (Intel i9-10850K, 64 GB RAM) with `cargo bench -
 
 **Validation:**
 
-- Comprehensive test coverage (2,148 tests across all components)
+- Comprehensive test coverage (2,643 tests across all components)
 - DPI evasion validation (Wireshark, Zeek, Suricata, nDPI)
 - 5 libFuzzer targets
 - Property-based tests
@@ -696,7 +696,7 @@ WRAITH Protocol v2.3.6 represents 2,740+ story points across 24 development phas
 - Conductor project management system with code style guides for development workflow tracking
 - RedOps workspace integration: team-server and operator-client as workspace members (spectre-implant excluded for no_std compatibility)
 - v2.3.6 RedOps Advanced Tradecraft: Signal Double Ratchet C2 ratcheting, 4 new MITRE ATT&CK techniques (T1134, T1140, T1574.002, T1105), Runner source-build, operator UX polish, team server safety hardening
-- Comprehensive documentation (114 files, ~62,800 lines) and testing (2,148 tests across all components)
+- Comprehensive documentation (114 files, ~62,800 lines) and testing (2,643 tests across all components)
 - CI/CD infrastructure with multi-platform releases
 
 ### Future Development
@@ -756,7 +756,7 @@ WRAITH Protocol builds on excellent projects and research:
 
 **Performance Technologies:**
 [AF_XDP](https://www.kernel.org/doc/html/latest/networking/af_xdp.html) |
-[io_uring](https://kernel.dk/io_uring.pdf) |
+[io_uring](https://web.archive.org/web/2024/https://kernel.dk/io_uring.pdf) |
 [eBPF/XDP](https://ebpf.io/)
 
 ---
@@ -773,6 +773,6 @@ WRAITH Protocol builds on excellent projects and research:
 
 **WRAITH Protocol** - _Secure. Fast. Invisible._
 
-**Version:** 2.3.6 | **License:** MIT | **Language:** Rust 2024 (MSRV 1.88) | **Tests:** 2,148 passing (2,123 workspace + 11 spectre-implant + 14 doc) | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server)
+**Version:** 2.3.6 | **License:** MIT | **Language:** Rust 2024 (MSRV 1.88) | **Tests:** 2,643 passing (2,610 workspace + 19 spectre-implant + 14 doc) | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server)
 
 **Last Updated:** 2026-02-01

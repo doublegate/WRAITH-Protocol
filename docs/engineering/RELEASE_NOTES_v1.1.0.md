@@ -38,7 +38,7 @@ WRAITH Protocol v1.1.0 is a **security-focused release** that validates the prod
 - **Information Leakage:** No secrets in error messages or logs
 
 **Security Audit Report:**
-- **Full Report:** [docs/security/SECURITY_AUDIT_v1.1.0.md](docs/security/SECURITY_AUDIT_v1.1.0.md)
+- **Full Report:** [docs/security/SECURITY_AUDIT_v1.1.0.md](../security/SECURITY_AUDIT_v1.1.0.md)
 - **Security Posture:** EXCELLENT (production-ready)
 - **Next Audit:** March 2026 (quarterly schedule)
 - **Audit Scope:** Cryptography, dependencies, input validation, rate limiting, error handling
@@ -134,7 +134,7 @@ cargo install wraith-cli --version 1.1.0
 
 **What to Review:**
 
-1. **Security Audit:** Read [docs/security/SECURITY_AUDIT_v1.1.0.md](docs/security/SECURITY_AUDIT_v1.1.0.md)
+1. **Security Audit:** Read [docs/security/SECURITY_AUDIT_v1.1.0.md](../security/SECURITY_AUDIT_v1.1.0.md)
 2. **Rate Limiting:** Review your `NodeConfig::rate_limiting` settings
 3. **Obfuscation:** Ensure obfuscation level matches your threat model
 4. **Monitoring:** Consider adding metrics for rate limit hits
@@ -146,7 +146,7 @@ cargo install wraith-cli --version 1.1.0
 ### Before Production Deployment
 
 1. ✅ **Review Security Audit:**
-   - Read [docs/security/SECURITY_AUDIT_v1.1.0.md](docs/security/SECURITY_AUDIT_v1.1.0.md)
+   - Read [docs/security/SECURITY_AUDIT_v1.1.0.md](../security/SECURITY_AUDIT_v1.1.0.md)
    - Understand cryptographic security properties
    - Review rate limiting recommendations
 
@@ -239,7 +239,7 @@ cargo install wraith-cli --version 1.1.0
 **Reporting Vulnerabilities:**
 - **Method:** GitHub Security Advisories (private reporting)
 - **Response Time:** 48 hours acknowledgment
-- **Scope:** See [SECURITY.md](SECURITY.md)
+- **Scope:** See [SECURITY.md](../../SECURITY.md)
 
 **In Scope:**
 - Cryptographic weaknesses
@@ -259,7 +259,7 @@ cargo install wraith-cli --version 1.1.0
 
 ## Changelog Highlights
 
-For complete changelog, see [CHANGELOG.md](CHANGELOG.md).
+For complete changelog, see [CHANGELOG.md](../../CHANGELOG.md).
 
 ### Security
 - ✅ Comprehensive security audit (zero vulnerabilities)
@@ -290,19 +290,19 @@ WRAITH Protocol is developed by the WRAITH Protocol Contributors.
 
 ## License
 
-MIT License - See [LICENSE](LICENSE) for details.
+MIT License - See [LICENSE](../../LICENSE) for details.
 
 ---
 
 ## Resources
 
 - **Homepage:** https://github.com/doublegate/WRAITH-Protocol
-- **Documentation:** [docs/](docs/)
-- **Security Audit:** [docs/security/SECURITY_AUDIT_v1.1.0.md](docs/security/SECURITY_AUDIT_v1.1.0.md)
-- **Tutorial:** [docs/TUTORIAL.md](docs/TUTORIAL.md)
-- **Integration Guide:** [docs/INTEGRATION_GUIDE.md](docs/INTEGRATION_GUIDE.md)
-- **Troubleshooting:** [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
-- **Protocol Comparison:** [docs/COMPARISON.md](docs/COMPARISON.md)
+- **Documentation:** [docs/](../)
+- **Security Audit:** [docs/security/SECURITY_AUDIT_v1.1.0.md](../security/SECURITY_AUDIT_v1.1.0.md)
+- **Tutorial:** [docs/TUTORIAL.md](../TUTORIAL.md)
+- **Integration Guide:** [docs/INTEGRATION_GUIDE.md](../INTEGRATION_GUIDE.md)
+- **Troubleshooting:** [docs/TROUBLESHOOTING.md](../TROUBLESHOOTING.md)
+- **Protocol Comparison:** [docs/COMPARISON.md](../COMPARISON.md)
 
 ---
 

@@ -123,3 +123,166 @@ impl GovernanceEngine {
         true
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+
+    fn make_roe(
+        allowed: Vec<&str>,
+        blocked: Vec<&str>,
+        allowed_domains: Vec<&str>,
+        blocked_domains: Vec<&str>,
+    ) -> RulesOfEngagement {
+        RulesOfEngagement {
+            allowed_networks: allowed.into_iter().map(String::from).collect(),
+            blocked_networks: blocked.into_iter().map(String::from).collect(),
+            allowed_domains: allowed_domains.into_iter().map(String::from).collect(),
+            blocked_domains: blocked_domains.into_iter().map(String::from).collect(),
+            start_date: None,
+            end_date: None,
+        }
+    }
+
+    // --- RulesOfEngagement IP tests ---
+
+    #[test]
+    fn test_ip_allowed_in_cidr() {
+        let roe = make_roe(vec!["10.0.0.0/8"], vec![], vec![], vec![]);
+        assert!(roe.is_ip_allowed(IpAddr::V4(Ipv4Addr::new(10, 1, 2, 3))));
+    }
+
+    #[test]
+    fn test_ip_not_in_allowed_cidr() {
+        let roe = make_roe(vec!["10.0.0.0/8"], vec![], vec![], vec![]);
+        assert!(!roe.is_ip_allowed(IpAddr::V4(Ipv4Addr::new(192, 168, 1, 1))));
+    }
+
+    #[test]
+    fn test_ip_in_blocked_takes_priority() {
+        let roe = make_roe(vec!["10.0.0.0/8"], vec!["10.0.0.0/24"], vec![], vec![]);
+        // 10.0.0.5 is in allowed /8 but also in blocked /24
+        assert!(!roe.is_ip_allowed(IpAddr::V4(Ipv4Addr::new(10, 0, 0, 5))));
+        // 10.1.0.5 is in allowed /8 but not in blocked /24
+        assert!(roe.is_ip_allowed(IpAddr::V4(Ipv4Addr::new(10, 1, 0, 5))));
+    }
+
+    #[test]
+    fn test_empty_allowed_blocks_all() {
+        let roe = make_roe(vec![], vec![], vec![], vec![]);
+        assert!(!roe.is_ip_allowed(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1))));
+    }
+
+    #[test]
+    fn test_ipv6_allowed() {
+        let roe = make_roe(vec!["::1/128"], vec![], vec![], vec![]);
+        assert!(roe.is_ip_allowed(IpAddr::V6(Ipv6Addr::LOCALHOST)));
+    }
+
+    #[test]
+    fn test_ipv6_not_allowed() {
+        let roe = make_roe(vec!["10.0.0.0/8"], vec![], vec![], vec![]);
+        assert!(!roe.is_ip_allowed(IpAddr::V6(Ipv6Addr::LOCALHOST)));
+    }
+
+    // --- RulesOfEngagement time tests ---
+
+    #[test]
+    fn test_time_valid_no_bounds() {
+        let roe = make_roe(vec![], vec![], vec![], vec![]);
+        assert!(roe.is_time_valid());
+    }
+
+    #[test]
+    fn test_time_valid_within_window() {
+        let mut roe = make_roe(vec![], vec![], vec![], vec![]);
+        roe.start_date = Some(chrono::Utc::now() - chrono::Duration::hours(1));
+        roe.end_date = Some(chrono::Utc::now() + chrono::Duration::hours(1));
+        assert!(roe.is_time_valid());
+    }
+
+    #[test]
+    fn test_time_invalid_before_start() {
+        let mut roe = make_roe(vec![], vec![], vec![], vec![]);
+        roe.start_date = Some(chrono::Utc::now() + chrono::Duration::hours(1));
+        assert!(!roe.is_time_valid());
+    }
+
+    #[test]
+    fn test_time_invalid_after_end() {
+        let mut roe = make_roe(vec![], vec![], vec![], vec![]);
+        roe.end_date = Some(chrono::Utc::now() - chrono::Duration::hours(1));
+        assert!(!roe.is_time_valid());
+    }
+
+    // --- RulesOfEngagement domain tests ---
+
+    #[test]
+    fn test_domain_allowed_empty_list() {
+        let roe = make_roe(vec![], vec![], vec![], vec![]);
+        assert!(roe.is_domain_allowed("anything.com"));
+    }
+
+    #[test]
+    fn test_domain_allowed_match() {
+        let roe = make_roe(vec![], vec![], vec!["example.com"], vec![]);
+        assert!(roe.is_domain_allowed("test.example.com"));
+        assert!(!roe.is_domain_allowed("test.other.com"));
+    }
+
+    #[test]
+    fn test_domain_blocked() {
+        let roe = make_roe(vec![], vec![], vec![], vec!["evil.com"]);
+        assert!(!roe.is_domain_allowed("sub.evil.com"));
+        assert!(roe.is_domain_allowed("good.com"));
+    }
+
+    #[test]
+    fn test_domain_blocked_takes_priority() {
+        let roe = make_roe(vec![], vec![], vec!["example.com"], vec!["bad.example.com"]);
+        assert!(!roe.is_domain_allowed("test.bad.example.com"));
+        assert!(roe.is_domain_allowed("good.example.com"));
+    }
+
+    // --- RulesOfEngagement serialization ---
+
+    #[test]
+    fn test_roe_serialization() {
+        let roe = make_roe(vec!["10.0.0.0/8"], vec![], vec!["example.com"], vec![]);
+        let json = serde_json::to_string(&roe).unwrap();
+        let deserialized: RulesOfEngagement = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized.allowed_networks, roe.allowed_networks);
+        assert_eq!(deserialized.allowed_domains, roe.allowed_domains);
+    }
+
+    // --- GovernanceEngine tests ---
+
+    #[test]
+    fn test_governance_engine_new_defaults() {
+        let engine = GovernanceEngine::new();
+        // Default allows localhost
+        assert!(engine.validate_action(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1))));
+        // Default allows 10.x
+        assert!(engine.validate_action(IpAddr::V4(Ipv4Addr::new(10, 0, 0, 1))));
+        // Default allows 192.168.x
+        assert!(engine.validate_action(IpAddr::V4(Ipv4Addr::new(192, 168, 1, 1))));
+        // Default blocks public IPs
+        assert!(!engine.validate_action(IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8))));
+    }
+
+    #[test]
+    fn test_governance_validate_domain_default() {
+        let engine = GovernanceEngine::new();
+        // Default has empty domain lists, so all domains are allowed
+        assert!(engine.validate_domain("example.com"));
+    }
+
+    #[test]
+    fn test_governance_no_roe() {
+        let engine = GovernanceEngine { active_roe: None };
+        // No RoE means allow everything
+        assert!(engine.validate_action(IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8))));
+        assert!(engine.validate_domain("anything.com"));
+    }
+}

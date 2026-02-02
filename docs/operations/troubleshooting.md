@@ -591,7 +591,7 @@ wraith-cli debug-bundle --output /tmp/wraith-debug.tar.gz
 
 ### Community Support
 
-- **GitHub Issues:** https://github.com/wraith/wraith-protocol/issues
+- **GitHub Issues:** https://github.com/doublegate/WRAITH-Protocol/issues
 - **Discord:** https://discord.gg/wraith (if available)
 - **Email:** support@wraith.network
 

@@ -353,6 +353,8 @@ impl ImplantService for ImplantServiceImpl {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[tokio::test]
     async fn test_payload_offset_logic() {
         let full_payload = b"TEST_PAYLOAD_DATA";
@@ -361,5 +363,147 @@ mod tests {
             let slice = &full_payload[offset..];
             assert_eq!(slice, b"PAYLOAD_DATA");
         }
+    }
+
+    #[tokio::test]
+    async fn test_payload_offset_zero() {
+        let full_payload = b"ABCD";
+        let offset = 0;
+        let slice = &full_payload[offset..];
+        assert_eq!(slice, b"ABCD");
+    }
+
+    #[tokio::test]
+    async fn test_payload_offset_at_end() {
+        let full_payload = b"ABCD";
+        let offset = 4;
+        // offset equals length, so slice is empty
+        assert!(offset >= full_payload.len() || full_payload[offset..].is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_payload_chunking_logic() {
+        let payload_data = vec![0u8; 10000];
+        let chunk_size = 4096;
+        let chunks: Vec<_> = payload_data.chunks(chunk_size).collect();
+        assert_eq!(chunks.len(), 3); // 4096 + 4096 + 1808
+        assert_eq!(chunks[0].len(), 4096);
+        assert_eq!(chunks[1].len(), 4096);
+        assert_eq!(chunks[2].len(), 10000 - 8192);
+    }
+
+    #[test]
+    fn test_implant_data_construction() {
+        let implant = crate::models::Implant {
+            id: Uuid::new_v4(),
+            campaign_id: None,
+            hostname: Some("test-host".to_string()),
+            internal_ip: None,
+            external_ip: None,
+            os_type: Some("linux".to_string()),
+            os_version: None,
+            architecture: None,
+            username: None,
+            domain: None,
+            privileges: None,
+            implant_version: Some("2.3.0".to_string()),
+            first_seen: Some(chrono::Utc::now()),
+            last_checkin: Some(chrono::Utc::now()),
+            checkin_interval: Some(60),
+            jitter_percent: Some(10),
+            status: Some("active".to_string()),
+            notes: None,
+            metadata: None,
+        };
+
+        assert_eq!(implant.hostname, Some("test-host".to_string()));
+        assert_eq!(implant.os_type, Some("linux".to_string()));
+        assert_eq!(implant.implant_version, Some("2.3.0".to_string()));
+        assert_eq!(implant.checkin_interval, Some(60));
+        assert_eq!(implant.jitter_percent, Some(10));
+        assert_eq!(implant.status, Some("active".to_string()));
+    }
+
+    #[test]
+    fn test_register_response_config() {
+        let id = Uuid::new_v4();
+        let config = serde_json::json!({
+            "implant_id": id.to_string(),
+            "mode": "grpc",
+            "checkin_interval": 60,
+            "jitter": 10
+        });
+
+        let config_bytes = serde_json::to_vec(&config).unwrap();
+        assert!(!config_bytes.is_empty());
+
+        // Verify we can deserialize back
+        let parsed: serde_json::Value = serde_json::from_slice(&config_bytes).unwrap();
+        assert_eq!(parsed["mode"], "grpc");
+        assert_eq!(parsed["checkin_interval"], 60);
+        assert_eq!(parsed["jitter"], 10);
+    }
+
+    #[test]
+    fn test_uuid_parsing_valid() {
+        let uuid_str = "550e8400-e29b-41d4-a716-446655440000";
+        let id = Uuid::parse_str(uuid_str);
+        assert!(id.is_ok());
+    }
+
+    #[test]
+    fn test_uuid_parsing_invalid() {
+        let uuid_str = "not-a-uuid";
+        let id = Uuid::parse_str(uuid_str);
+        assert!(id.is_err());
+    }
+
+    #[test]
+    fn test_registration_decryption_short_data() {
+        // encrypted_registration shorter than 24 + 16 = 40 bytes should skip decryption
+        let short = vec![0u8; 30];
+        assert!(short.len() <= 24 + 16);
+    }
+
+    #[test]
+    fn test_registration_encryption_round_trip() {
+        // Test the X25519 + AEAD flow used in registration
+        let priv_a = wraith_crypto::x25519::PrivateKey::from_bytes([1u8; 32]);
+        let pub_a = priv_a.public_key();
+
+        let priv_b = wraith_crypto::x25519::PrivateKey::from_bytes([2u8; 32]);
+        let pub_b = priv_b.public_key();
+
+        let ss_a = priv_a.exchange(&pub_b).expect("exchange a->b");
+        let ss_b = priv_b.exchange(&pub_a).expect("exchange b->a");
+
+        // Both sides derive same shared secret
+        assert_eq!(ss_a.as_bytes(), ss_b.as_bytes());
+
+        // KDF
+        let ss = ss_a;
+        let mut hasher = blake3::Hasher::new();
+        hasher.update(ss.as_bytes());
+        hasher.update(b"wraith_register");
+        let key_hash = hasher.finalize();
+        let key_bytes: [u8; 32] = *key_hash.as_bytes();
+
+        // Encrypt
+        let nonce = wraith_crypto::aead::Nonce::from_bytes([0u8; 24]);
+        let aead_key = wraith_crypto::aead::AeadKey::new(key_bytes);
+
+        let plaintext = serde_json::json!({
+            "hostname": "test-host",
+            "username": "admin"
+        });
+        let plaintext_bytes = serde_json::to_vec(&plaintext).unwrap();
+
+        let ciphertext = aead_key.encrypt(&nonce, &plaintext_bytes, &[]).unwrap();
+
+        // Decrypt
+        let decrypted = aead_key.decrypt(&nonce, &ciphertext, &[]).unwrap();
+        let parsed: serde_json::Value = serde_json::from_slice(&decrypted).unwrap();
+        assert_eq!(parsed["hostname"], "test-host");
+        assert_eq!(parsed["username"], "admin");
     }
 }

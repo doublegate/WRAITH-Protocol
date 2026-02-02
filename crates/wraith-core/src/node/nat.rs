@@ -1385,6 +1385,144 @@ mod tests {
     }
 
     #[test]
+    fn test_deserialize_candidates_too_short() {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        let node = rt.block_on(async { Node::new_random_with_port(0).await.unwrap() });
+
+        // Empty data
+        let result = node.deserialize_candidates(&[]);
+        assert!(result.is_err());
+
+        // Single byte
+        let result = node.deserialize_candidates(&[0x01]);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_deserialize_candidates_bad_version() {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        let node = rt.block_on(async { Node::new_random_with_port(0).await.unwrap() });
+
+        let result = node.deserialize_candidates(&[0xFF, 0x00]);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("version"));
+    }
+
+    #[test]
+    fn test_deserialize_candidates_unknown_type() {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        let node = rt.block_on(async { Node::new_random_with_port(0).await.unwrap() });
+
+        // Version 1, 1 candidate, type = 0xFF (unknown)
+        let data = vec![
+            0x01, 0x01, 0xFF, 0x00, 0x00, 0x00, 0x7E, 0x04, 192, 168, 1, 1, 0x20, 0xD4, 0x04, b'h',
+            b'o', b's', b't',
+        ];
+        let result = node.deserialize_candidates(&data);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_deserialize_candidates_unknown_addr_family() {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        let node = rt.block_on(async { Node::new_random_with_port(0).await.unwrap() });
+
+        // Version 1, 1 candidate, type=Host(0), priority=126, addr_family=0x09 (unknown)
+        let mut data = vec![0x01, 0x01, 0x00];
+        data.extend_from_slice(&126u32.to_be_bytes());
+        data.push(0x09); // bad address family
+        let result = node.deserialize_candidates(&data);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_deserialize_candidates_zero_count() {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        let node = rt.block_on(async { Node::new_random_with_port(0).await.unwrap() });
+
+        let result = node.deserialize_candidates(&[0x01, 0x00]);
+        assert!(result.is_ok());
+        assert!(result.unwrap().is_empty());
+    }
+
+    #[test]
+    fn test_serialize_empty_candidates() {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        let node = rt.block_on(async { Node::new_random_with_port(0).await.unwrap() });
+
+        let serialized = node.serialize_candidates(&[]).unwrap();
+        assert_eq!(serialized.len(), 2); // version + count
+        assert_eq!(serialized[0], 0x01);
+        assert_eq!(serialized[1], 0x00);
+
+        let deserialized = node.deserialize_candidates(&serialized).unwrap();
+        assert!(deserialized.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_prioritize_candidates_empty() {
+        let node = Node::new_random_with_port(0).await.unwrap();
+        let pairs = node.prioritize_candidates(&[], &[]);
+        assert!(pairs.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_prioritize_candidates_ordering() {
+        let node = Node::new_random_with_port(0).await.unwrap();
+
+        let local = vec![
+            IceCandidate {
+                address: "10.0.0.1:5000".parse().unwrap(),
+                candidate_type: CandidateType::Relayed,
+                priority: 10,
+                foundation: "relay-1".to_string(),
+            },
+            IceCandidate {
+                address: "192.168.1.1:5000".parse().unwrap(),
+                candidate_type: CandidateType::Host,
+                priority: 200,
+                foundation: "host-1".to_string(),
+            },
+        ];
+
+        let remote = vec![IceCandidate {
+            address: "198.51.100.1:5000".parse().unwrap(),
+            candidate_type: CandidateType::Host,
+            priority: 200,
+            foundation: "host-remote".to_string(),
+        }];
+
+        let pairs = node.prioritize_candidates(&local, &remote);
+        assert_eq!(pairs.len(), 2);
+        // First pair should have highest combined priority (200 + 200 = 400)
+        assert_eq!(pairs[0].0.priority + pairs[0].1.priority, 400);
+        // Second pair should have lower combined priority (10 + 200 = 210)
+        assert_eq!(pairs[1].0.priority + pairs[1].1.priority, 210);
+    }
+
+    #[test]
+    fn test_candidate_type_debug() {
+        assert_eq!(format!("{:?}", CandidateType::Host), "Host");
+        assert_eq!(
+            format!("{:?}", CandidateType::ServerReflexive),
+            "ServerReflexive"
+        );
+        assert_eq!(format!("{:?}", CandidateType::Relayed), "Relayed");
+    }
+
+    #[test]
+    fn test_ice_candidate_clone_eq() {
+        let candidate = IceCandidate {
+            address: "192.168.1.1:8420".parse().unwrap(),
+            candidate_type: CandidateType::Host,
+            priority: 126,
+            foundation: "host-1".to_string(),
+        };
+        let cloned = candidate.clone();
+        assert_eq!(candidate, cloned);
+    }
+
+    #[test]
     fn test_ice_agent_diagnostics_struct() {
         let diag = IceAgentDiagnostics {
             total_candidates: 5,

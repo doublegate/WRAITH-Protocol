@@ -569,4 +569,4 @@ WRAITH's network topology provides:
 **See Also:**
 - [Protocol Overview](protocol-overview.md)
 - [Security Model](security-model.md)
-- [Discovery Integration](../integration/discovery-integration.md)
+- [Embedding Guide](../integration/embedding-guide.md)

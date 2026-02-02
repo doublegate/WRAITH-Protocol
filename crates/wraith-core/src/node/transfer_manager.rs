@@ -509,4 +509,214 @@ mod tests {
             Err(NodeError::TransferNotFound(_))
         ));
     }
+
+    #[test]
+    fn test_init_send_transfer_with_file() {
+        use std::io::Write;
+
+        let manager = create_test_manager();
+
+        // Create a temp file
+        let temp_dir = std::env::temp_dir();
+        let file_path = temp_dir.join("wraith_tm_send_test.dat");
+        let mut file = std::fs::File::create(&file_path).unwrap();
+        file.write_all(&[0xABu8; 1024]).unwrap();
+        drop(file);
+
+        let result = manager.init_send_transfer(&file_path);
+        let _ = std::fs::remove_file(&file_path);
+
+        assert!(result.is_ok());
+        let (transfer_id, tree_hash, file_size, total_chunks) = result.unwrap();
+        assert_eq!(transfer_id.len(), 32);
+        assert_eq!(file_size, 1024);
+        assert_eq!(total_chunks, 1); // 1024 / (256*1024) rounds up to 1
+        assert_ne!(tree_hash.root, [0u8; 32]);
+
+        // Verify transfer was stored
+        assert_eq!(manager.transfer_count(), 1);
+        assert!(manager.get_transfer(&transfer_id).is_some());
+    }
+
+    #[test]
+    fn test_init_send_transfer_empty_file() {
+        let manager = create_test_manager();
+
+        let temp_dir = std::env::temp_dir();
+        let file_path = temp_dir.join("wraith_tm_empty_test.dat");
+        let file = std::fs::File::create(&file_path).unwrap();
+        drop(file);
+
+        let result = manager.init_send_transfer(&file_path);
+        let _ = std::fs::remove_file(&file_path);
+
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(err.to_string().contains("empty file"));
+    }
+
+    #[test]
+    fn test_init_send_transfer_nonexistent_file() {
+        let manager = create_test_manager();
+        let result = manager.init_send_transfer("/nonexistent/path/file.dat");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_init_receive_transfer() {
+        let manager = create_test_manager();
+        let transfer_id = [99u8; 32];
+
+        let result = manager.init_receive_transfer(
+            transfer_id,
+            "/tmp/wraith_tm_recv_test.dat",
+            4096,
+            1024,
+            [0xAB; 32],
+        );
+
+        assert!(result.is_ok());
+        assert_eq!(manager.transfer_count(), 1);
+        assert!(manager.get_transfer(&transfer_id).is_some());
+
+        // Cleanup
+        let _ = std::fs::remove_file("/tmp/wraith_tm_recv_test.dat");
+    }
+
+    #[test]
+    fn test_find_transfer_by_stream_id() {
+        use std::io::Write;
+
+        let manager = create_test_manager();
+
+        // Create a file and init send transfer
+        let temp_dir = std::env::temp_dir();
+        let file_path = temp_dir.join("wraith_tm_stream_test.dat");
+        let mut file = std::fs::File::create(&file_path).unwrap();
+        file.write_all(&[0xABu8; 1024]).unwrap();
+        drop(file);
+
+        let (transfer_id, _, _, _) = manager.init_send_transfer(&file_path).unwrap();
+        let _ = std::fs::remove_file(&file_path);
+
+        // Derive stream_id the same way the code does
+        let stream_id = ((transfer_id[0] as u16) << 8) | (transfer_id[1] as u16);
+
+        let found = manager.find_transfer_by_stream_id(stream_id);
+        assert!(found.is_some());
+        assert_eq!(found.unwrap().transfer_id, transfer_id);
+    }
+
+    #[test]
+    fn test_remove_transfer() {
+        use std::io::Write;
+
+        let manager = create_test_manager();
+
+        let temp_dir = std::env::temp_dir();
+        let file_path = temp_dir.join("wraith_tm_remove_test.dat");
+        let mut file = std::fs::File::create(&file_path).unwrap();
+        file.write_all(&[0xABu8; 1024]).unwrap();
+        drop(file);
+
+        let (transfer_id, _, _, _) = manager.init_send_transfer(&file_path).unwrap();
+        let _ = std::fs::remove_file(&file_path);
+
+        assert_eq!(manager.transfer_count(), 1);
+        let removed = manager.remove_transfer(&transfer_id);
+        assert!(removed.is_some());
+        assert_eq!(manager.transfer_count(), 0);
+    }
+
+    #[test]
+    fn test_active_transfers() {
+        use std::io::Write;
+
+        let manager = create_test_manager();
+
+        let temp_dir = std::env::temp_dir();
+        let file_path = temp_dir.join("wraith_tm_active_test.dat");
+        let mut file = std::fs::File::create(&file_path).unwrap();
+        file.write_all(&[0xABu8; 1024]).unwrap();
+        drop(file);
+
+        let (id1, _, _, _) = manager.init_send_transfer(&file_path).unwrap();
+        // Create another file for second transfer
+        let file_path2 = temp_dir.join("wraith_tm_active_test2.dat");
+        let mut file2 = std::fs::File::create(&file_path2).unwrap();
+        file2.write_all(&[0xCDu8; 2048]).unwrap();
+        drop(file2);
+
+        let (id2, _, _, _) = manager.init_send_transfer(&file_path2).unwrap();
+
+        let _ = std::fs::remove_file(&file_path);
+        let _ = std::fs::remove_file(&file_path2);
+
+        let active = manager.active_transfers();
+        assert_eq!(active.len(), 2);
+        assert!(active.contains(&id1));
+        assert!(active.contains(&id2));
+    }
+
+    #[tokio::test]
+    async fn test_get_transfer_progress_exists() {
+        use std::io::Write;
+
+        let manager = create_test_manager();
+
+        let temp_dir = std::env::temp_dir();
+        let file_path = temp_dir.join("wraith_tm_progress_test.dat");
+        let mut file = std::fs::File::create(&file_path).unwrap();
+        file.write_all(&[0xABu8; 1024]).unwrap();
+        drop(file);
+
+        let (transfer_id, _, _, _) = manager.init_send_transfer(&file_path).unwrap();
+        let _ = std::fs::remove_file(&file_path);
+
+        let progress = manager.get_transfer_progress(&transfer_id).await;
+        assert!(progress.is_some());
+        // New transfer should be at 0% progress
+        let p = progress.unwrap();
+        assert!(p >= 0.0 && p <= 1.0);
+    }
+
+    #[tokio::test]
+    async fn test_process_received_chunk() {
+        let manager = create_test_manager();
+        let transfer_id = [99u8; 32];
+
+        // Init a receive transfer
+        manager
+            .init_receive_transfer(
+                transfer_id,
+                "/tmp/wraith_tm_chunk_test.dat",
+                2048,
+                1024,
+                [0xAB; 32],
+            )
+            .unwrap();
+
+        // Process a chunk
+        let chunk_data = vec![0xFFu8; 1024];
+        let result = manager
+            .process_received_chunk(transfer_id, 0, &chunk_data)
+            .await;
+
+        // Cleanup
+        let _ = std::fs::remove_file("/tmp/wraith_tm_chunk_test.dat");
+
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_process_received_chunk_not_found() {
+        let manager = create_test_manager();
+        let transfer_id = [99u8; 32];
+
+        let result = manager
+            .process_received_chunk(transfer_id, 0, &[0u8; 100])
+            .await;
+
+        assert!(matches!(result, Err(NodeError::TransferNotFound(_))));
+    }
 }

@@ -255,7 +255,7 @@ HandshakePhase::Message2Complete | HandshakePhase::Complete => HandshakePhase::C
 | **Crate** | `curve25519-elligator2` |
 | **Version** | 0.1.0-alpha.2 |
 | **Status** | Pre-release (alpha) |
-| **Repository** | [github.com/nickelc/curve25519-elligator2](https://github.com/nickelc/curve25519-elligator2) |
+| **Repository** | [crates.io/crates/curve25519-elligator2](https://crates.io/crates/curve25519-elligator2) |
 | **Last Updated** | 2024-02-06 |
 | **Used In** | `wraith-crypto/src/elligator.rs` |
 

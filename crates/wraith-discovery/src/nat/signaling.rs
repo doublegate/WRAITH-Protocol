@@ -1007,6 +1007,346 @@ mod tests {
         assert!(local_addr.is_ok());
     }
 
+    #[test]
+    fn test_signaling_message_answer_serialization() {
+        let msg = SignalingMessage::Answer {
+            session_id: [10u8; 32],
+            sender_id: [20u8; 32],
+            candidates: vec![SerializableCandidate {
+                address: "10.0.0.1:1234".to_string(),
+                candidate_type: "srflx".to_string(),
+                priority: 100,
+                foundation: "abc".to_string(),
+            }],
+            ufrag: "uf".to_string(),
+            pwd: "pw12345678901234567890".to_string(),
+            timestamp: 999,
+        };
+        let bytes = msg.to_bytes().unwrap();
+        let decoded = SignalingMessage::from_bytes(&bytes).unwrap();
+        assert_eq!(decoded.session_id(), &[10u8; 32]);
+        assert_eq!(decoded.sender_id(), &[20u8; 32]);
+    }
+
+    #[test]
+    fn test_signaling_message_candidate_update_serialization() {
+        let msg = SignalingMessage::CandidateUpdate {
+            session_id: [5u8; 32],
+            sender_id: [6u8; 32],
+            candidate: SerializableCandidate {
+                address: "192.168.0.1:5555".to_string(),
+                candidate_type: "relay".to_string(),
+                priority: 50,
+                foundation: "xyz".to_string(),
+            },
+            timestamp: 42,
+        };
+        let bytes = msg.to_bytes().unwrap();
+        let decoded = SignalingMessage::from_bytes(&bytes).unwrap();
+        assert_eq!(decoded.session_id(), &[5u8; 32]);
+    }
+
+    #[test]
+    fn test_signaling_message_from_bytes_invalid() {
+        let result = SignalingMessage::from_bytes(&[0xFF, 0xFF]);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_serializable_candidate_all_types() {
+        let types = vec![
+            (CandidateType::Host, "host"),
+            (CandidateType::ServerReflexive, "srflx"),
+            (CandidateType::PeerReflexive, "prflx"),
+            (CandidateType::Relay, "relay"),
+        ];
+
+        for (ct, expected_str) in types {
+            let candidate = Candidate {
+                address: "1.2.3.4:1000".parse().unwrap(),
+                candidate_type: ct,
+                priority: 100,
+            };
+            let sc = SerializableCandidate::from(&candidate);
+            assert_eq!(sc.candidate_type, expected_str);
+
+            // Round-trip
+            let back = Candidate::try_from(&sc).unwrap();
+            assert_eq!(back.candidate_type, ct);
+        }
+    }
+
+    #[test]
+    fn test_serializable_candidate_invalid_address() {
+        let sc = SerializableCandidate {
+            address: "not-an-address".to_string(),
+            candidate_type: "host".to_string(),
+            priority: 100,
+            foundation: "abc".to_string(),
+        };
+        let result = Candidate::try_from(&sc);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_serializable_candidate_unknown_type() {
+        let sc = SerializableCandidate {
+            address: "1.2.3.4:1000".to_string(),
+            candidate_type: "unknown_type".to_string(),
+            priority: 100,
+            foundation: "abc".to_string(),
+        };
+        let result = Candidate::try_from(&sc);
+        assert!(result.is_err());
+        if let Err(SignalingError::InvalidMessage(msg)) = result {
+            assert!(msg.contains("Unknown candidate type"));
+        }
+    }
+
+    #[test]
+    fn test_candidate_pair_controlled() {
+        let local = Candidate {
+            address: "192.168.1.100:5000".parse().unwrap(),
+            candidate_type: CandidateType::Host,
+            priority: 100,
+        };
+        let remote = Candidate {
+            address: "192.168.1.200:5000".parse().unwrap(),
+            candidate_type: CandidateType::Host,
+            priority: 200,
+        };
+
+        // Test as controlled (not controlling)
+        let pair = CandidatePair::new(local.clone(), remote.clone(), false);
+        assert!(pair.priority > 0);
+        assert_eq!(pair.state, PairState::Frozen);
+        assert_eq!(pair.check_attempts, 0);
+        assert!(pair.last_check.is_none());
+
+        // Test as controlling
+        let pair2 = CandidatePair::new(local, remote, true);
+        // Priorities should differ based on controlling role
+        assert!(pair2.priority > 0);
+    }
+
+    #[test]
+    fn test_pair_state_all_variants() {
+        let states = vec![
+            PairState::Frozen,
+            PairState::Waiting,
+            PairState::InProgress,
+            PairState::Succeeded,
+            PairState::Failed,
+        ];
+        for (i, a) in states.iter().enumerate() {
+            for (j, b) in states.iter().enumerate() {
+                if i == j {
+                    assert_eq!(a, b);
+                } else {
+                    assert_ne!(a, b);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_signaling_error_display() {
+        assert!(
+            SignalingError::NoCandidates
+                .to_string()
+                .contains("No candidates")
+        );
+        assert!(SignalingError::Timeout.to_string().contains("timed out"));
+        assert!(
+            SignalingError::ConnectivityCheckFailed("test".to_string())
+                .to_string()
+                .contains("test")
+        );
+        assert!(
+            SignalingError::InvalidMessage("bad".to_string())
+                .to_string()
+                .contains("bad")
+        );
+        assert!(
+            SignalingError::Dht("dht err".to_string())
+                .to_string()
+                .contains("dht err")
+        );
+        assert!(
+            SignalingError::Serialization("ser err".to_string())
+                .to_string()
+                .contains("ser err")
+        );
+    }
+
+    #[test]
+    fn test_connectivity_checker_build_binding_request() {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async {
+            let socket = Arc::new(tokio::net::UdpSocket::bind("127.0.0.1:0").await.unwrap());
+
+            // Test controlling
+            let checker = ConnectivityChecker::new(
+                socket.clone(),
+                "ufrag1".to_string(),
+                "pwd1".to_string(),
+                "ufrag2".to_string(),
+                "pwd2".to_string(),
+                true,
+            );
+            let tid = [0u8; 16];
+            let request = checker.build_binding_request(&tid);
+            // Should start with STUN binding request type 0x0001
+            assert_eq!(request[0], 0x00);
+            assert_eq!(request[1], 0x01);
+            // Magic cookie at bytes 4-8
+            assert_eq!(request[4], 0x21);
+            assert_eq!(request[5], 0x12);
+            assert_eq!(request[6], 0xA4);
+            assert_eq!(request[7], 0x42);
+
+            // Test controlled
+            let checker2 = ConnectivityChecker::new(
+                socket,
+                "ufrag1".to_string(),
+                "pwd1".to_string(),
+                "ufrag2".to_string(),
+                "pwd2".to_string(),
+                false,
+            );
+            let request2 = checker2.build_binding_request(&tid);
+            assert_eq!(request2[0], 0x00);
+            assert_eq!(request2[1], 0x01);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_nat_signaling_with_stun_servers() {
+        let stun_servers = vec!["1.2.3.4:3478".parse().unwrap()];
+        let result = NatSignaling::with_stun_servers(
+            [1u8; 32],
+            "127.0.0.1:0".parse().unwrap(),
+            stun_servers,
+        )
+        .await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_nat_signaling_local_credentials() {
+        let signaling = NatSignaling::new([1u8; 32], "127.0.0.1:0".parse().unwrap())
+            .await
+            .unwrap();
+        let (ufrag, pwd) = signaling.local_credentials();
+        assert!(ufrag.len() >= 4);
+        assert!(pwd.len() >= 22);
+    }
+
+    #[tokio::test]
+    async fn test_nat_signaling_close_session() {
+        let signaling = NatSignaling::new([1u8; 32], "127.0.0.1:0".parse().unwrap())
+            .await
+            .unwrap();
+        let session_id = [42u8; 32];
+        // Close non-existent session should not panic
+        signaling.close_session(&session_id).await;
+    }
+
+    #[tokio::test]
+    async fn test_nat_signaling_get_nominated_none() {
+        let signaling = NatSignaling::new([1u8; 32], "127.0.0.1:0".parse().unwrap())
+            .await
+            .unwrap();
+        let result = signaling.get_nominated_address(&[0u8; 32]).await;
+        assert!(result.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_nat_signaling_process_answer_not_answer() {
+        let signaling = NatSignaling::new([1u8; 32], "127.0.0.1:0".parse().unwrap())
+            .await
+            .unwrap();
+        let offer = SignalingMessage::Offer {
+            session_id: [1u8; 32],
+            sender_id: [2u8; 32],
+            candidates: vec![],
+            ufrag: "uf".to_string(),
+            pwd: "pw".to_string(),
+            timestamp: 0,
+        };
+        let result = signaling.process_answer(&offer).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_nat_signaling_process_answer_unknown_session() {
+        let signaling = NatSignaling::new([1u8; 32], "127.0.0.1:0".parse().unwrap())
+            .await
+            .unwrap();
+        let answer = SignalingMessage::Answer {
+            session_id: [99u8; 32],
+            sender_id: [2u8; 32],
+            candidates: vec![SerializableCandidate {
+                address: "1.2.3.4:1000".to_string(),
+                candidate_type: "host".to_string(),
+                priority: 100,
+                foundation: "a".to_string(),
+            }],
+            ufrag: "uf".to_string(),
+            pwd: "pw".to_string(),
+            timestamp: 0,
+        };
+        let result = signaling.process_answer(&answer).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_nat_signaling_create_answer_not_offer() {
+        let signaling = NatSignaling::new([1u8; 32], "127.0.0.1:0".parse().unwrap())
+            .await
+            .unwrap();
+        let answer = SignalingMessage::Answer {
+            session_id: [1u8; 32],
+            sender_id: [2u8; 32],
+            candidates: vec![],
+            ufrag: "uf".to_string(),
+            pwd: "pw".to_string(),
+            timestamp: 0,
+        };
+        let result = signaling.create_answer(&answer).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_nat_signaling_run_checks_unknown_session() {
+        let signaling = NatSignaling::new([1u8; 32], "127.0.0.1:0".parse().unwrap())
+            .await
+            .unwrap();
+        let result = signaling
+            .run_connectivity_checks(&[0u8; 32], "uf", "pw")
+            .await;
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_generate_transaction_id_uniqueness() {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async {
+            let socket = Arc::new(tokio::net::UdpSocket::bind("127.0.0.1:0").await.unwrap());
+            let mut checker = ConnectivityChecker::new(
+                socket,
+                "uf1".to_string(),
+                "pw1".to_string(),
+                "uf2".to_string(),
+                "pw2".to_string(),
+                true,
+            );
+            let id1 = checker.generate_transaction_id();
+            let id2 = checker.generate_transaction_id();
+            assert_ne!(id1, id2);
+        });
+    }
+
     #[tokio::test]
     async fn test_create_offer() {
         let signaling = NatSignaling::new([1u8; 32], "127.0.0.1:0".parse().unwrap())

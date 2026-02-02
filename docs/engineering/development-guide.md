@@ -886,7 +886,7 @@ cargo test --skip slow_integration
 - [Rust Book](https://doc.rust-lang.org/book/)
 - [Rustonomicon](https://doc.rust-lang.org/nomicon/) (unsafe Rust)
 - [AF_XDP Documentation](https://www.kernel.org/doc/html/latest/networking/af_xdp.html)
-- [io_uring Documentation](https://kernel.dk/io_uring.pdf)
+- [io_uring Documentation](https://web.archive.org/web/2024/https://kernel.dk/io_uring.pdf)
 - [Noise Protocol Framework](https://noiseprotocol.org/noise.html)
 
 ---

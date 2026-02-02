@@ -192,7 +192,7 @@ WRAITH Protocol provides a suite of client applications built on the core protoc
 
 ## Security Testing Clients (Tier 3)
 
-**GOVERNANCE NOTICE:** The following clients are specialized security testing tools subject to strict authorization requirements. See [WRAITH Security Testing Parameters](../ref-docs/WRAITH-Security-Testing-Parameters-v1.0.md) for complete governance framework.
+**GOVERNANCE NOTICE:** The following clients are specialized security testing tools subject to strict authorization requirements. See [WRAITH Security Testing Parameters](../../ref-docs/WRAITH-Security-Testing-Parameters-v1.0.md) for complete governance framework.
 
 **Authorized Use Cases Only:**
 - Contracted penetration testing engagements
@@ -343,7 +343,7 @@ All WRAITH security testing clients are governed by comprehensive authorization 
 - Coordinated disclosure for discovered vulnerabilities
 - Incident response provisions
 
-**For Complete Governance Documentation:** See [WRAITH Security Testing Parameters v1.0](../ref-docs/WRAITH-Security-Testing-Parameters-v1.0.md)
+**For Complete Governance Documentation:** See [WRAITH Security Testing Parameters v1.0](../../ref-docs/WRAITH-Security-Testing-Parameters-v1.0.md)
 
 ---
 
@@ -435,8 +435,8 @@ winget install WRAITH.Chat
 
 ```bash
 # Clone repository
-git clone https://github.com/wraith/wraith-protocol.git
-cd wraith-protocol
+git clone https://github.com/doublegate/WRAITH-Protocol.git
+cd WRAITH-Protocol
 
 # Build specific client
 cargo build --release -p wraith-transfer
@@ -599,10 +599,7 @@ For detailed information about each client, see:
 
 ## Community
 
-- **GitHub:** https://github.com/wraith/wraith-protocol
-- **Discord:** https://discord.gg/wraith
-- **Forum:** https://forum.wraith.network
-- **Twitter:** @WraithProtocol
+- **GitHub:** https://github.com/doublegate/WRAITH-Protocol
 
 ---
 

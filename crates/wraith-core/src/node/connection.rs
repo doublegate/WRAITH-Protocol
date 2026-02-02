@@ -548,6 +548,167 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_cleanup_stale_sessions_no_stale() {
+        use crate::node::session::PeerConnection;
+        use std::sync::Arc;
+
+        let node = Node::new_random().await.unwrap();
+
+        // Insert a fresh session (not stale)
+        let peer_id = [42u8; 32];
+        let mock_session = Arc::new(PeerConnection::new_for_test(
+            peer_id,
+            "127.0.0.1:8420".parse().unwrap(),
+        ));
+        // touch() it to make it fresh
+        mock_session.touch();
+        node.inner.sessions.insert(peer_id, mock_session);
+
+        let count = node.cleanup_stale_sessions().await;
+        assert_eq!(count, 0);
+        assert_eq!(node.inner.sessions.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn test_get_connection_health_dead_from_failed_pings() {
+        use crate::node::session::PeerConnection;
+        use std::sync::Arc;
+
+        let node = Node::new_random().await.unwrap();
+
+        let peer_id = [42u8; 32];
+        let mock_session = Arc::new(PeerConnection::new_for_test(
+            peer_id,
+            "127.0.0.1:8420".parse().unwrap(),
+        ));
+
+        // Exceed MAX_FAILED_PINGS (3)
+        mock_session.increment_failed_pings();
+        mock_session.increment_failed_pings();
+        mock_session.increment_failed_pings();
+
+        node.inner.sessions.insert(peer_id, mock_session);
+
+        let health = node.get_connection_health(&peer_id).await.unwrap();
+        assert_eq!(health.status, HealthStatus::Dead);
+        assert_eq!(health.failed_pings, 3);
+    }
+
+    #[tokio::test]
+    async fn test_health_status_debug_clone() {
+        let status = HealthStatus::Healthy;
+        let cloned = status;
+        assert_eq!(format!("{:?}", cloned), "Healthy");
+
+        let metrics = HealthMetrics {
+            status: HealthStatus::Degraded,
+            rtt_us: Some(5000),
+            loss_rate: 0.06,
+            idle_time: Duration::from_secs(5),
+            failed_pings: 1,
+        };
+        let cloned = metrics.clone();
+        assert_eq!(cloned.status, HealthStatus::Degraded);
+        assert_eq!(cloned.rtt_us, Some(5000));
+        assert_eq!(cloned.failed_pings, 1);
+    }
+
+    #[tokio::test]
+    async fn test_cleanup_stale_sessions_removes_stale() {
+        use crate::node::config::{NodeConfig, TransportConfig};
+        use crate::node::session::PeerConnection;
+        use std::sync::Arc;
+
+        // Create node with very short idle timeout so sessions appear stale
+        let config = NodeConfig {
+            transport: TransportConfig {
+                idle_timeout: Duration::from_millis(1),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        let node = Node::new_with_config(config).await.unwrap();
+
+        let peer_id = [42u8; 32];
+        let mock_session = Arc::new(PeerConnection::new_for_test(
+            peer_id,
+            "127.0.0.1:8420".parse().unwrap(),
+        ));
+
+        node.inner.sessions.insert(peer_id, mock_session);
+
+        // Wait a bit so the session becomes stale
+        tokio::time::sleep(Duration::from_millis(10)).await;
+
+        let count = node.cleanup_stale_sessions().await;
+        assert_eq!(count, 1);
+        assert_eq!(node.inner.sessions.len(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_get_connection_health_stale() {
+        use crate::node::config::{NodeConfig, TransportConfig};
+        use crate::node::session::PeerConnection;
+        use std::sync::Arc;
+
+        // Create node with very short idle timeout
+        let config = NodeConfig {
+            transport: TransportConfig {
+                idle_timeout: Duration::from_millis(20),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        let node = Node::new_with_config(config).await.unwrap();
+
+        let peer_id = [42u8; 32];
+        let mock_session = Arc::new(PeerConnection::new_for_test(
+            peer_id,
+            "127.0.0.1:8420".parse().unwrap(),
+        ));
+        node.inner.sessions.insert(peer_id, mock_session);
+
+        // Wait for half the idle timeout to get Stale status
+        tokio::time::sleep(Duration::from_millis(15)).await;
+
+        let health = node.get_connection_health(&peer_id).await.unwrap();
+        // Should be Stale (idle > half of timeout) or Dead (idle > timeout)
+        assert!(
+            health.status == HealthStatus::Stale || health.status == HealthStatus::Dead,
+            "Expected Stale or Dead, got {:?}",
+            health.status
+        );
+    }
+
+    #[tokio::test]
+    async fn test_get_connection_health_dead_from_idle() {
+        use crate::node::config::{NodeConfig, TransportConfig};
+        use crate::node::session::PeerConnection;
+        use std::sync::Arc;
+
+        let config = NodeConfig {
+            transport: TransportConfig {
+                idle_timeout: Duration::from_millis(5),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        let node = Node::new_with_config(config).await.unwrap();
+
+        let peer_id = [42u8; 32];
+        let mock_session = Arc::new(PeerConnection::new_for_test(
+            peer_id,
+            "127.0.0.1:8420".parse().unwrap(),
+        ));
+        node.inner.sessions.insert(peer_id, mock_session);
+
+        tokio::time::sleep(Duration::from_millis(20)).await;
+
+        let health = node.get_connection_health(&peer_id).await.unwrap();
+        assert_eq!(health.status, HealthStatus::Dead);
+    }
+
+    #[tokio::test]
     async fn test_get_all_connection_health_with_sessions() {
         use crate::node::session::PeerConnection;
         use std::sync::Arc;

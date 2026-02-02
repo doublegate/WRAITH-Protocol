@@ -2173,4 +2173,722 @@ mod tests {
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("Invalid number"));
     }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // CLI Argument Parsing Tests
+    // ═══════════════════════════════════════════════════════════════════
+
+    #[test]
+    fn test_cli_parse_send() {
+        let cli = Cli::parse_from(["wraith", "send", "file.txt", "aabbccdd".repeat(8).as_str()]);
+        assert!(!cli.verbose);
+        assert!(!cli.debug);
+        match cli.command {
+            Commands::Send {
+                file,
+                recipient,
+                mode,
+            } => {
+                assert_eq!(file, "file.txt");
+                assert_eq!(recipient.len(), 1);
+                assert_eq!(mode, "privacy");
+            }
+            _ => panic!("Expected Send command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_parse_send_custom_mode() {
+        let peer = "aa".repeat(32);
+        let cli = Cli::parse_from(["wraith", "send", "data.bin", &peer, "--mode", "stealth"]);
+        match cli.command {
+            Commands::Send { mode, .. } => assert_eq!(mode, "stealth"),
+            _ => panic!("Expected Send command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_parse_send_multiple_recipients() {
+        let peer1 = "aa".repeat(32);
+        let peer2 = "bb".repeat(32);
+        let cli = Cli::parse_from(["wraith", "send", "file.txt", &peer1, &peer2]);
+        match cli.command {
+            Commands::Send { recipient, .. } => assert_eq!(recipient.len(), 2),
+            _ => panic!("Expected Send command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_parse_batch() {
+        let peer = "cc".repeat(32);
+        let cli = Cli::parse_from(["wraith", "batch", "a.txt", "b.txt", "--to", &peer]);
+        match cli.command {
+            Commands::Batch { files, to, mode } => {
+                assert_eq!(files.len(), 2);
+                assert_eq!(to, peer);
+                assert_eq!(mode, "privacy");
+            }
+            _ => panic!("Expected Batch command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_parse_receive_defaults() {
+        let cli = Cli::parse_from(["wraith", "receive"]);
+        match cli.command {
+            Commands::Receive {
+                output,
+                bind,
+                auto_accept,
+                trusted_peers,
+            } => {
+                assert_eq!(output, ".");
+                assert_eq!(bind, "0.0.0.0:0");
+                assert!(!auto_accept);
+                assert!(trusted_peers.is_none());
+            }
+            _ => panic!("Expected Receive command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_parse_receive_all_options() {
+        let cli = Cli::parse_from([
+            "wraith",
+            "receive",
+            "--output",
+            "/tmp/out",
+            "--bind",
+            "127.0.0.1:5000",
+            "--auto-accept",
+            "--trusted-peers",
+            "aabb,ccdd",
+        ]);
+        match cli.command {
+            Commands::Receive {
+                output,
+                bind,
+                auto_accept,
+                trusted_peers,
+            } => {
+                assert_eq!(output, "/tmp/out");
+                assert_eq!(bind, "127.0.0.1:5000");
+                assert!(auto_accept);
+                assert_eq!(trusted_peers, Some("aabb,ccdd".to_string()));
+            }
+            _ => panic!("Expected Receive command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_parse_daemon_defaults() {
+        let cli = Cli::parse_from(["wraith", "daemon"]);
+        match cli.command {
+            Commands::Daemon { bind, relay } => {
+                assert_eq!(bind, "0.0.0.0:0");
+                assert!(!relay);
+            }
+            _ => panic!("Expected Daemon command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_parse_daemon_with_relay() {
+        let cli = Cli::parse_from(["wraith", "daemon", "--bind", "0.0.0.0:8080", "--relay"]);
+        match cli.command {
+            Commands::Daemon { bind, relay } => {
+                assert_eq!(bind, "0.0.0.0:8080");
+                assert!(relay);
+            }
+            _ => panic!("Expected Daemon command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_parse_status_defaults() {
+        let cli = Cli::parse_from(["wraith", "status"]);
+        match cli.command {
+            Commands::Status { transfer, detailed } => {
+                assert!(transfer.is_none());
+                assert!(!detailed);
+            }
+            _ => panic!("Expected Status command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_parse_status_detailed() {
+        let cli = Cli::parse_from(["wraith", "status", "--detailed"]);
+        match cli.command {
+            Commands::Status { detailed, .. } => assert!(detailed),
+            _ => panic!("Expected Status command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_parse_status_with_transfer() {
+        let tid = "ee".repeat(32);
+        let cli = Cli::parse_from(["wraith", "status", "--transfer", &tid]);
+        match cli.command {
+            Commands::Status { transfer, .. } => assert_eq!(transfer, Some(tid)),
+            _ => panic!("Expected Status command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_parse_peers_defaults() {
+        let cli = Cli::parse_from(["wraith", "peers"]);
+        match cli.command {
+            Commands::Peers { dht_query } => assert!(dht_query.is_none()),
+            _ => panic!("Expected Peers command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_parse_peers_with_query() {
+        let peer = "dd".repeat(32);
+        let cli = Cli::parse_from(["wraith", "peers", "--dht-query", &peer]);
+        match cli.command {
+            Commands::Peers { dht_query } => assert_eq!(dht_query, Some(peer)),
+            _ => panic!("Expected Peers command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_parse_health() {
+        let cli = Cli::parse_from(["wraith", "health"]);
+        assert!(matches!(cli.command, Commands::Health));
+    }
+
+    #[test]
+    fn test_cli_parse_metrics_defaults() {
+        let cli = Cli::parse_from(["wraith", "metrics"]);
+        match cli.command {
+            Commands::Metrics { json, watch } => {
+                assert!(!json);
+                assert!(watch.is_none());
+            }
+            _ => panic!("Expected Metrics command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_parse_metrics_json() {
+        let cli = Cli::parse_from(["wraith", "metrics", "--json"]);
+        match cli.command {
+            Commands::Metrics { json, .. } => assert!(json),
+            _ => panic!("Expected Metrics command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_parse_metrics_watch() {
+        let cli = Cli::parse_from(["wraith", "metrics", "--watch", "5"]);
+        match cli.command {
+            Commands::Metrics { watch, .. } => assert_eq!(watch, Some(5)),
+            _ => panic!("Expected Metrics command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_parse_info() {
+        let cli = Cli::parse_from(["wraith", "info"]);
+        assert!(matches!(cli.command, Commands::Info));
+    }
+
+    #[test]
+    fn test_cli_parse_keygen_no_output() {
+        let cli = Cli::parse_from(["wraith", "keygen"]);
+        match cli.command {
+            Commands::Keygen { output } => assert!(output.is_none()),
+            _ => panic!("Expected Keygen command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_parse_keygen_with_output() {
+        let cli = Cli::parse_from(["wraith", "keygen", "--output", "/tmp/key"]);
+        match cli.command {
+            Commands::Keygen { output } => assert_eq!(output, Some("/tmp/key".to_string())),
+            _ => panic!("Expected Keygen command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_parse_ping() {
+        let peer = "ff".repeat(32);
+        let cli = Cli::parse_from(["wraith", "ping", &peer]);
+        match cli.command {
+            Commands::Ping {
+                peer: p,
+                count,
+                interval,
+            } => {
+                assert_eq!(p, peer);
+                assert_eq!(count, 4);
+                assert_eq!(interval, 1000);
+            }
+            _ => panic!("Expected Ping command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_parse_ping_custom() {
+        let peer = "ff".repeat(32);
+        let cli = Cli::parse_from([
+            "wraith",
+            "ping",
+            &peer,
+            "--count",
+            "10",
+            "--interval",
+            "500",
+        ]);
+        match cli.command {
+            Commands::Ping {
+                count, interval, ..
+            } => {
+                assert_eq!(count, 10);
+                assert_eq!(interval, 500);
+            }
+            _ => panic!("Expected Ping command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_parse_config_show() {
+        let cli = Cli::parse_from(["wraith", "config", "show"]);
+        match cli.command {
+            Commands::Config {
+                action: ConfigAction::Show { key },
+            } => assert!(key.is_none()),
+            _ => panic!("Expected Config Show command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_parse_config_show_key() {
+        let cli = Cli::parse_from(["wraith", "config", "show", "listen_addr"]);
+        match cli.command {
+            Commands::Config {
+                action: ConfigAction::Show { key },
+            } => {
+                assert_eq!(key, Some("listen_addr".to_string()));
+            }
+            _ => panic!("Expected Config Show command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_parse_config_set() {
+        let cli = Cli::parse_from(["wraith", "config", "set", "chunk_size", "1048576"]);
+        match cli.command {
+            Commands::Config {
+                action: ConfigAction::Set { key, value },
+            } => {
+                assert_eq!(key, "chunk_size");
+                assert_eq!(value, "1048576");
+            }
+            _ => panic!("Expected Config Set command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_verbose_flag() {
+        let cli = Cli::parse_from(["wraith", "--verbose", "health"]);
+        assert!(cli.verbose);
+        assert!(!cli.debug);
+    }
+
+    #[test]
+    fn test_cli_debug_flag() {
+        let cli = Cli::parse_from(["wraith", "--debug", "health"]);
+        assert!(cli.debug);
+    }
+
+    #[test]
+    fn test_cli_custom_config_path() {
+        let cli = Cli::parse_from(["wraith", "--config", "/custom/path.toml", "health"]);
+        assert_eq!(cli.config, "/custom/path.toml");
+    }
+
+    #[test]
+    fn test_cli_default_config_path() {
+        let cli = Cli::parse_from(["wraith", "health"]);
+        assert_eq!(cli.config, "~/.config/wraith/config.toml");
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // create_node_config Tests
+    // ═══════════════════════════════════════════════════════════════════
+
+    #[test]
+    fn test_create_node_config_default() {
+        let config = Config::default();
+        let node_config = create_node_config(&config);
+        assert_eq!(node_config.listen_addr, "0.0.0.0:40000".parse().unwrap());
+    }
+
+    #[test]
+    fn test_create_node_config_custom_addr() {
+        let mut config = Config::default();
+        config.network.listen_addr = "127.0.0.1:9999".to_string();
+        let node_config = create_node_config(&config);
+        assert_eq!(node_config.listen_addr, "127.0.0.1:9999".parse().unwrap());
+    }
+
+    #[test]
+    fn test_create_node_config_invalid_addr_fallback() {
+        let mut config = Config::default();
+        config.network.listen_addr = "invalid".to_string();
+        let node_config = create_node_config(&config);
+        // Falls back to 0.0.0.0:0
+        assert_eq!(node_config.listen_addr, "0.0.0.0:0".parse().unwrap());
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // show_status Tests
+    // ═══════════════════════════════════════════════════════════════════
+
+    #[tokio::test]
+    async fn test_show_status_basic() {
+        let config = Config::default();
+        let result = show_status(None, false, &config).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_show_status_detailed() {
+        let config = Config::default();
+        let result = show_status(None, true, &config).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_show_status_with_transfer_id() {
+        let config = Config::default();
+        let tid = "aa".repeat(32);
+        let result = show_status(Some(tid), false, &config).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_show_status_invalid_transfer_id() {
+        let config = Config::default();
+        let result = show_status(Some("invalid".to_string()), false, &config).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_show_status_detailed_with_bootstrap_and_relay() {
+        let mut config = Config::default();
+        config.discovery.bootstrap_nodes = vec!["node1.example.com:8080".to_string()];
+        config.discovery.relay_servers = vec!["relay1.example.com:9090".to_string()];
+        let result = show_status(None, true, &config).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_show_status_detailed_with_log_file() {
+        let mut config = Config::default();
+        config.logging.file = Some(PathBuf::from("/var/log/wraith.log"));
+        let result = show_status(None, true, &config).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_show_status_with_xdp() {
+        let mut config = Config::default();
+        config.network.enable_xdp = true;
+        config.network.xdp_interface = Some("eth0".to_string());
+        let result = show_status(None, false, &config).await;
+        assert!(result.is_ok());
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // show_metrics Tests
+    // ═══════════════════════════════════════════════════════════════════
+
+    #[tokio::test]
+    async fn test_show_metrics_text() {
+        let config = Config::default();
+        let result = show_metrics(false, None, &config).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_show_metrics_json() {
+        let config = Config::default();
+        let result = show_metrics(true, None, &config).await;
+        assert!(result.is_ok());
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // list_peers Tests
+    // ═══════════════════════════════════════════════════════════════════
+
+    #[tokio::test]
+    async fn test_list_peers_no_query() {
+        let config = Config::default();
+        let result = list_peers(None, &config).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_list_peers_no_query_with_bootstrap() {
+        let mut config = Config::default();
+        config.discovery.bootstrap_nodes = vec!["node1.example.com:8080".to_string()];
+        config.discovery.relay_servers = vec!["relay1.example.com:9090".to_string()];
+        let result = list_peers(None, &config).await;
+        assert!(result.is_ok());
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // config_show additional keys
+    // ═══════════════════════════════════════════════════════════════════
+
+    #[tokio::test]
+    async fn test_config_show_xdp_interface_none() {
+        let config = Config::default();
+        let result = config_show(Some("xdp_interface".to_string()), &config).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_config_show_xdp_interface_some() {
+        let mut config = Config::default();
+        config.network.xdp_interface = Some("eth0".to_string());
+        let result = config_show(Some("network.xdp_interface".to_string()), &config).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_config_show_udp_fallback() {
+        let config = Config::default();
+        let result = config_show(Some("udp_fallback".to_string()), &config).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_config_show_default_level() {
+        let config = Config::default();
+        let result = config_show(Some("default_level".to_string()), &config).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_config_show_tls_mimicry() {
+        let config = Config::default();
+        let result = config_show(Some("tls_mimicry".to_string()), &config).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_config_show_max_concurrent() {
+        let config = Config::default();
+        let result = config_show(Some("max_concurrent".to_string()), &config).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_config_show_enable_resume() {
+        let config = Config::default();
+        let result = config_show(Some("enable_resume".to_string()), &config).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_config_show_enable_xdp() {
+        let config = Config::default();
+        let result = config_show(Some("enable_xdp".to_string()), &config).await;
+        assert!(result.is_ok());
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // config_set additional keys
+    // ═══════════════════════════════════════════════════════════════════
+
+    #[tokio::test]
+    async fn test_config_set_xdp_interface() {
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = temp_dir.path().join("cfg.toml");
+        let s = config_path.to_str().unwrap();
+
+        let result = config_set("xdp_interface".to_string(), "eth0".to_string(), s).await;
+        assert!(result.is_ok());
+        let loaded = Config::load(&config_path).unwrap();
+        assert_eq!(loaded.network.xdp_interface, Some("eth0".to_string()));
+    }
+
+    #[tokio::test]
+    async fn test_config_set_udp_fallback() {
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = temp_dir.path().join("cfg.toml");
+        let s = config_path.to_str().unwrap();
+
+        let result = config_set("udp_fallback".to_string(), "false".to_string(), s).await;
+        assert!(result.is_ok());
+        let loaded = Config::load(&config_path).unwrap();
+        assert!(!loaded.network.udp_fallback);
+    }
+
+    #[tokio::test]
+    async fn test_config_set_udp_fallback_invalid() {
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = temp_dir.path().join("cfg.toml");
+        let s = config_path.to_str().unwrap();
+
+        let result = config_set("udp_fallback".to_string(), "nope".to_string(), s).await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("Invalid boolean"));
+    }
+
+    #[tokio::test]
+    async fn test_config_set_default_level() {
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = temp_dir.path().join("cfg.toml");
+        let s = config_path.to_str().unwrap();
+
+        let result = config_set("default_level".to_string(), "high".to_string(), s).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_config_set_max_concurrent() {
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = temp_dir.path().join("cfg.toml");
+        let s = config_path.to_str().unwrap();
+
+        let result = config_set("max_concurrent".to_string(), "20".to_string(), s).await;
+        assert!(result.is_ok());
+        let loaded = Config::load(&config_path).unwrap();
+        assert_eq!(loaded.transfer.max_concurrent, 20);
+    }
+
+    #[tokio::test]
+    async fn test_config_set_max_concurrent_invalid() {
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = temp_dir.path().join("cfg.toml");
+        let s = config_path.to_str().unwrap();
+
+        let result = config_set("max_concurrent".to_string(), "abc".to_string(), s).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_config_set_enable_resume() {
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = temp_dir.path().join("cfg.toml");
+        let s = config_path.to_str().unwrap();
+
+        let result = config_set("enable_resume".to_string(), "false".to_string(), s).await;
+        assert!(result.is_ok());
+        let loaded = Config::load(&config_path).unwrap();
+        assert!(!loaded.transfer.enable_resume);
+    }
+
+    #[tokio::test]
+    async fn test_config_set_enable_resume_invalid() {
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = temp_dir.path().join("cfg.toml");
+        let s = config_path.to_str().unwrap();
+
+        let result = config_set("enable_resume".to_string(), "nope".to_string(), s).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_config_set_log_level() {
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = temp_dir.path().join("cfg.toml");
+        let s = config_path.to_str().unwrap();
+
+        let result = config_set("level".to_string(), "debug".to_string(), s).await;
+        assert!(result.is_ok());
+        let loaded = Config::load(&config_path).unwrap();
+        assert_eq!(loaded.logging.level, "debug");
+    }
+
+    #[tokio::test]
+    async fn test_config_set_tilde_expansion() {
+        // Test that tilde path expansion works (won't actually write to home)
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = temp_dir.path().join("cfg.toml");
+        let s = config_path.to_str().unwrap();
+
+        // Just test with normal path
+        let result = config_set("listen_addr".to_string(), "0.0.0.0:5000".to_string(), s).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_config_set_loads_existing_file() {
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = temp_dir.path().join("cfg.toml");
+        let s = config_path.to_str().unwrap();
+
+        // First set creates the file
+        config_set("chunk_size".to_string(), "1048576".to_string(), s)
+            .await
+            .unwrap();
+
+        // Second set should load existing and modify
+        config_set("max_concurrent".to_string(), "5".to_string(), s)
+            .await
+            .unwrap();
+
+        let loaded = Config::load(&config_path).unwrap();
+        assert_eq!(loaded.transfer.chunk_size, 1_048_576);
+        assert_eq!(loaded.transfer.max_concurrent, 5);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // format_duration edge cases
+    // ═══════════════════════════════════════════════════════════════════
+
+    #[test]
+    fn test_format_duration_zero() {
+        assert_eq!(format_duration(Duration::from_secs(0)), "0s");
+    }
+
+    #[test]
+    fn test_format_duration_exact_hour() {
+        assert_eq!(format_duration(Duration::from_secs(3600)), "1h 0m");
+    }
+
+    #[test]
+    fn test_format_duration_large() {
+        assert_eq!(format_duration(Duration::from_secs(86400)), "24h 0m");
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // sanitize_path additional tests
+    // ═══════════════════════════════════════════════════════════════════
+
+    #[test]
+    fn test_sanitize_path_root_only() {
+        // Path with no parent
+        let path = PathBuf::from("justfilename");
+        // Should not error since no ".."
+        let result = sanitize_path(&path);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_sanitize_path_double_dot_in_filename() {
+        let path = PathBuf::from("/tmp/file..name.txt");
+        let result = sanitize_path(&path);
+        assert!(result.is_err()); // contains ".."
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // Help text / clap verification
+    // ═══════════════════════════════════════════════════════════════════
+
+    #[test]
+    fn test_cli_verify_app() {
+        // clap's debug_assert verifies the command structure is valid
+        use clap::CommandFactory;
+        Cli::command().debug_assert();
+    }
 }

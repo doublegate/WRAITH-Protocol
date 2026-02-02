@@ -490,4 +490,141 @@ mod tests {
         let result = manager.close_session(&peer_id, &routing).await;
         assert!(matches!(result, Err(NodeError::SessionNotFound(_))));
     }
+
+    #[tokio::test]
+    async fn test_get_transport_not_initialized() {
+        let manager = create_test_manager();
+        let result = manager.get_transport().await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_close_session_with_session() {
+        use crate::node::session::PeerConnection;
+
+        let manager = create_test_manager();
+        let routing = crate::node::routing::RoutingTable::new();
+
+        let peer_id = [42u8; 32];
+        let addr: SocketAddr = "127.0.0.1:9000".parse().unwrap();
+        let conn = PeerConnection::new_for_test(peer_id, addr);
+
+        // Transition to Established so we can close
+        conn.transition_to(crate::SessionState::Handshaking(
+            crate::HandshakePhase::RespSent,
+        ))
+        .await
+        .unwrap();
+        conn.transition_to(crate::SessionState::Established)
+            .await
+            .unwrap();
+
+        let conn_arc = Arc::new(conn);
+        let cid_u64 = conn_arc.connection_id.as_u64();
+
+        // Insert session and route
+        manager.sessions.insert(peer_id, Arc::clone(&conn_arc));
+        routing.add_route(cid_u64, conn_arc);
+
+        assert_eq!(manager.session_count(), 1);
+        assert!(routing.has_route(cid_u64));
+
+        // Close session
+        let result = manager.close_session(&peer_id, &routing).await;
+        assert!(result.is_ok());
+        assert_eq!(manager.session_count(), 0);
+        assert!(!routing.has_route(cid_u64));
+    }
+
+    #[tokio::test]
+    async fn test_close_all_sessions() {
+        use crate::node::session::PeerConnection;
+
+        let manager = create_test_manager();
+        let routing = crate::node::routing::RoutingTable::new();
+
+        // Insert two sessions
+        for i in 0..2u8 {
+            let mut peer_id = [0u8; 32];
+            peer_id[0] = i + 1;
+            let addr: SocketAddr = format!("127.0.0.1:{}", 9000u16 + u16::from(i))
+                .parse()
+                .unwrap();
+            let conn = Arc::new(PeerConnection::new_for_test(peer_id, addr));
+            let cid = conn.connection_id.as_u64();
+            routing.add_route(cid, Arc::clone(&conn));
+            manager.sessions.insert(peer_id, conn);
+        }
+
+        assert_eq!(manager.session_count(), 2);
+
+        manager.close_all_sessions(&routing).await;
+        assert_eq!(manager.session_count(), 0);
+    }
+
+    #[test]
+    fn test_get_session_found() {
+        use crate::node::session::PeerConnection;
+
+        let manager = create_test_manager();
+        let peer_id = [42u8; 32];
+        let addr: SocketAddr = "127.0.0.1:9000".parse().unwrap();
+        let conn = Arc::new(PeerConnection::new_for_test(peer_id, addr));
+        manager.sessions.insert(peer_id, conn);
+
+        let result = manager.get_session(&peer_id);
+        assert!(result.is_some());
+        assert_eq!(result.unwrap().peer_id, peer_id);
+    }
+
+    #[test]
+    fn test_has_session_true() {
+        use crate::node::session::PeerConnection;
+
+        let manager = create_test_manager();
+        let peer_id = [42u8; 32];
+        let addr: SocketAddr = "127.0.0.1:9000".parse().unwrap();
+        manager.sessions.insert(
+            peer_id,
+            Arc::new(PeerConnection::new_for_test(peer_id, addr)),
+        );
+
+        assert!(manager.has_session(&peer_id));
+    }
+
+    #[test]
+    fn test_active_sessions_with_entries() {
+        use crate::node::session::PeerConnection;
+
+        let manager = create_test_manager();
+        let peer1 = [1u8; 32];
+        let peer2 = [2u8; 32];
+
+        manager.sessions.insert(
+            peer1,
+            Arc::new(PeerConnection::new_for_test(
+                peer1,
+                "127.0.0.1:9001".parse().unwrap(),
+            )),
+        );
+        manager.sessions.insert(
+            peer2,
+            Arc::new(PeerConnection::new_for_test(
+                peer2,
+                "127.0.0.1:9002".parse().unwrap(),
+            )),
+        );
+
+        let active = manager.active_sessions();
+        assert_eq!(active.len(), 2);
+        assert!(active.contains(&peer1));
+        assert!(active.contains(&peer2));
+    }
+
+    #[test]
+    fn test_find_pending_handshake_none() {
+        let manager = create_test_manager();
+        let addr: SocketAddr = "192.168.1.100:5000".parse().unwrap();
+        assert!(manager.find_pending_handshake(addr).is_none());
+    }
 }

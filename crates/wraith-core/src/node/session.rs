@@ -882,6 +882,204 @@ mod tests {
         // (In real code this would happen after 1M messages)
     }
 
+    #[test]
+    fn test_peer_connection_clone() {
+        let session_id = [1u8; 32];
+        let peer_id = [2u8; 32];
+        let peer_addr: SocketAddr = "127.0.0.1:5000".parse().unwrap();
+        let connection_id = ConnectionId::from_bytes([3u8; 8]);
+        let crypto = SessionCrypto::new([4u8; 32], [5u8; 32], &[6u8; 32]);
+
+        let conn = PeerConnection::new(session_id, peer_id, peer_addr, connection_id, crypto);
+        conn.touch();
+
+        let cloned = conn.clone();
+        assert_eq!(cloned.session_id, session_id);
+        assert_eq!(cloned.peer_id, peer_id);
+        assert_eq!(cloned.peer_addr(), peer_addr);
+        assert_eq!(cloned.connection_id, connection_id);
+    }
+
+    #[test]
+    fn test_failed_pings_counter() {
+        let conn = PeerConnection::new(
+            [1u8; 32],
+            [2u8; 32],
+            "127.0.0.1:5000".parse().unwrap(),
+            ConnectionId::from_bytes([3u8; 8]),
+            SessionCrypto::new([4u8; 32], [5u8; 32], &[6u8; 32]),
+        );
+
+        assert_eq!(conn.failed_ping_count(), 0);
+        assert_eq!(conn.increment_failed_pings(), 1);
+        assert_eq!(conn.increment_failed_pings(), 2);
+        assert_eq!(conn.increment_failed_pings(), 3);
+        assert_eq!(conn.failed_ping_count(), 3);
+
+        conn.reset_failed_pings();
+        assert_eq!(conn.failed_ping_count(), 0);
+    }
+
+    #[test]
+    fn test_update_peer_addr() {
+        let original_addr: SocketAddr = "127.0.0.1:5000".parse().unwrap();
+        let new_addr: SocketAddr = "192.168.1.100:6000".parse().unwrap();
+
+        let conn = PeerConnection::new(
+            [1u8; 32],
+            [2u8; 32],
+            original_addr,
+            ConnectionId::from_bytes([3u8; 8]),
+            SessionCrypto::new([4u8; 32], [5u8; 32], &[6u8; 32]),
+        );
+
+        assert_eq!(conn.peer_addr(), original_addr);
+        conn.update_peer_addr(new_addr);
+        assert_eq!(conn.peer_addr(), new_addr);
+    }
+
+    #[test]
+    fn test_idle_duration_ms() {
+        let conn = PeerConnection::new(
+            [1u8; 32],
+            [2u8; 32],
+            "127.0.0.1:5000".parse().unwrap(),
+            ConnectionId::from_bytes([3u8; 8]),
+            SessionCrypto::new([4u8; 32], [5u8; 32], &[6u8; 32]),
+        );
+
+        // Just created, should have very low idle time
+        let idle = conn.idle_duration_ms();
+        assert!(
+            idle < 1000,
+            "Just created, idle should be < 1s, got {idle}ms"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_session_state_transitions() {
+        let conn = PeerConnection::new(
+            [1u8; 32],
+            [2u8; 32],
+            "127.0.0.1:5000".parse().unwrap(),
+            ConnectionId::from_bytes([3u8; 8]),
+            SessionCrypto::new([4u8; 32], [5u8; 32], &[6u8; 32]),
+        );
+
+        // Initial state is Closed
+        assert_eq!(conn.state().await, SessionState::Closed);
+
+        // Transition through handshake states
+        conn.transition_to(SessionState::Handshaking(crate::HandshakePhase::InitSent))
+            .await
+            .unwrap();
+        assert_eq!(
+            conn.state().await,
+            SessionState::Handshaking(crate::HandshakePhase::InitSent)
+        );
+
+        conn.transition_to(SessionState::Handshaking(
+            crate::HandshakePhase::InitComplete,
+        ))
+        .await
+        .unwrap();
+
+        conn.transition_to(SessionState::Established).await.unwrap();
+        assert_eq!(conn.state().await, SessionState::Established);
+
+        conn.transition_to(SessionState::Closed).await.unwrap();
+        assert_eq!(conn.state().await, SessionState::Closed);
+    }
+
+    #[test]
+    fn test_handshake_packet_clone() {
+        let packet = HandshakePacket {
+            data: vec![1, 2, 3, 4, 5],
+            from: "192.168.1.1:8420".parse().unwrap(),
+        };
+
+        let cloned = packet.clone();
+        assert_eq!(cloned.data, vec![1, 2, 3, 4, 5]);
+        assert_eq!(
+            cloned.from,
+            "192.168.1.1:8420".parse::<SocketAddr>().unwrap()
+        );
+    }
+
+    #[test]
+    fn test_connection_stats_default() {
+        let stats = ConnectionStats::default();
+        assert_eq!(stats.bytes_sent, 0);
+        assert_eq!(stats.bytes_received, 0);
+        assert_eq!(stats.packets_sent, 0);
+        assert_eq!(stats.packets_received, 0);
+        assert!(stats.rtt_us.is_none());
+        assert_eq!(stats.loss_rate, 0.0);
+
+        // Clone
+        let cloned = stats.clone();
+        assert_eq!(cloned.bytes_sent, 0);
+    }
+
+    #[test]
+    fn test_new_for_test_helper() {
+        let peer_id = [42u8; 32];
+        let addr: SocketAddr = "10.0.0.1:9000".parse().unwrap();
+        let conn = PeerConnection::new_for_test(peer_id, addr);
+
+        assert_eq!(conn.peer_id, peer_id);
+        assert_eq!(conn.peer_addr(), addr);
+        assert_eq!(conn.session_id, peer_id); // session_id is copied from peer_id
+        assert_eq!(conn.failed_ping_count(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_encrypt_empty_frame() {
+        let conn = PeerConnection::new(
+            [1u8; 32],
+            [2u8; 32],
+            "127.0.0.1:5000".parse().unwrap(),
+            ConnectionId::from_bytes([3u8; 8]),
+            SessionCrypto::new([4u8; 32], [5u8; 32], &[6u8; 32]),
+        );
+
+        // Encrypting an empty frame should work
+        let result = conn.encrypt_frame(b"").await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_decrypt_empty_ciphertext_fails() {
+        let conn = PeerConnection::new(
+            [1u8; 32],
+            [2u8; 32],
+            "127.0.0.1:5000".parse().unwrap(),
+            ConnectionId::from_bytes([3u8; 8]),
+            SessionCrypto::new([4u8; 32], [5u8; 32], &[6u8; 32]),
+        );
+
+        // Decrypting empty data should fail (no auth tag)
+        let result = conn.decrypt_frame(b"").await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_decrypt_garbage_data_fails() {
+        let conn = PeerConnection::new(
+            [1u8; 32],
+            [2u8; 32],
+            "127.0.0.1:5000".parse().unwrap(),
+            ConnectionId::from_bytes([3u8; 8]),
+            SessionCrypto::new([4u8; 32], [5u8; 32], &[6u8; 32]),
+        );
+
+        // Random garbage should not decrypt
+        let mut garbage = vec![0xDE, 0xAD, 0xBE, 0xEF];
+        garbage.extend_from_slice(&[0x00; 46]);
+        let result = conn.decrypt_frame(&garbage).await;
+        assert!(result.is_err());
+    }
+
     #[tokio::test]
     async fn test_multiple_frames_sequential() {
         let session_id = [1u8; 32];

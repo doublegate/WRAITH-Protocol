@@ -529,7 +529,7 @@ PREVENTIVE MEASURES:
 ## External Resources
 
 - **NIST Incident Response Guide**: https://nvlpubs.nist.gov/nistpubs/specialpublications/nist.sp.800-61r2.pdf
-- **SANS Incident Handling**: https://www.sans.org/incident-response/
+- **SANS Incident Handling**: https://www.sans.org/white-papers/33901/
 - **US-CERT**: https://www.cisa.gov/uscert
 
 ---

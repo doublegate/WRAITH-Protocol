@@ -513,7 +513,7 @@ cargo test --workspace
 - [Features](features.md) - Complete feature list and roadmap
 - [WRAITH Transfer Fixes](../../troubleshooting/WRAITH_TRANSFER_FIXES.md) - Bug fixes and troubleshooting
 - [Client Overview](../overview.md) - All WRAITH clients
-- [Protocol Implementation Guide](../../ref-docs/protocol_implementation_guide.md) - Protocol specification
+- [Protocol Implementation Guide](../../../ref-docs/protocol_implementation_guide.md) - Protocol specification
 
 ---
 

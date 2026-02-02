@@ -325,4 +325,217 @@ mod tests {
         let err: RelayError = RelayErrorCode::RateLimited.into();
         assert!(matches!(err, RelayError::RateLimited));
     }
+
+    #[test]
+    fn test_error_from_all_codes() {
+        let err: RelayError = RelayErrorCode::NotRegistered.into();
+        assert!(matches!(err, RelayError::NotRegistered));
+
+        let err: RelayError = RelayErrorCode::InvalidMessage.into();
+        assert!(matches!(err, RelayError::InvalidMessage));
+
+        let err: RelayError = RelayErrorCode::ServerFull.into();
+        assert!(matches!(err, RelayError::ServerFull));
+
+        let err: RelayError = RelayErrorCode::AuthFailed.into();
+        assert!(matches!(err, RelayError::AuthFailed));
+
+        let err: RelayError = RelayErrorCode::InternalError.into();
+        assert!(matches!(err, RelayError::Internal(_)));
+    }
+
+    #[test]
+    fn test_error_display_all_variants() {
+        assert_eq!(
+            RelayError::Serialization("test".to_string()).to_string(),
+            "Serialization error: test"
+        );
+        assert_eq!(
+            RelayError::Deserialization("test".to_string()).to_string(),
+            "Deserialization error: test"
+        );
+        assert_eq!(
+            RelayError::Io("test".to_string()).to_string(),
+            "I/O error: test"
+        );
+        assert_eq!(RelayError::Timeout.to_string(), "Connection timeout");
+        assert_eq!(
+            RelayError::NotRegistered.to_string(),
+            "Client not registered"
+        );
+        assert_eq!(RelayError::PeerNotFound.to_string(), "Peer not found");
+        assert_eq!(RelayError::RateLimited.to_string(), "Rate limited");
+        assert_eq!(RelayError::InvalidMessage.to_string(), "Invalid message");
+        assert_eq!(RelayError::ServerFull.to_string(), "Server at capacity");
+        assert_eq!(RelayError::AuthFailed.to_string(), "Authentication failed");
+        assert_eq!(
+            RelayError::Internal("oops".to_string()).to_string(),
+            "Internal error: oops"
+        );
+    }
+
+    #[test]
+    fn test_error_from_io_error() {
+        let io_err = std::io::Error::new(std::io::ErrorKind::ConnectionRefused, "refused");
+        let relay_err: RelayError = io_err.into();
+        assert!(matches!(relay_err, RelayError::Io(_)));
+        assert!(relay_err.to_string().contains("refused"));
+    }
+
+    #[test]
+    fn test_error_is_error_trait() {
+        let err = RelayError::Timeout;
+        let _: &dyn std::error::Error = &err;
+    }
+
+    #[test]
+    fn test_message_type_all_variants() {
+        assert_eq!(
+            RelayMessage::RegisterAck {
+                relay_id: [0; 32],
+                success: true,
+                error: None,
+            }
+            .message_type(),
+            "RegisterAck"
+        );
+        assert_eq!(
+            RelayMessage::SendPacket {
+                dest_id: [0; 32],
+                payload: vec![],
+            }
+            .message_type(),
+            "SendPacket"
+        );
+        assert_eq!(
+            RelayMessage::RecvPacket {
+                src_id: [0; 32],
+                payload: vec![],
+            }
+            .message_type(),
+            "RecvPacket"
+        );
+        assert_eq!(
+            RelayMessage::PeerOnline { peer_id: [0; 32] }.message_type(),
+            "PeerOnline"
+        );
+        assert_eq!(
+            RelayMessage::PeerOffline { peer_id: [0; 32] }.message_type(),
+            "PeerOffline"
+        );
+        assert_eq!(RelayMessage::Disconnect.message_type(), "Disconnect");
+        assert_eq!(
+            RelayMessage::Error {
+                code: RelayErrorCode::InternalError,
+                message: "err".to_string(),
+            }
+            .message_type(),
+            "Error"
+        );
+    }
+
+    #[test]
+    fn test_deserialization_invalid_bytes() {
+        let result = RelayMessage::from_bytes(&[0xFF, 0xFF, 0xFF]);
+        assert!(result.is_err());
+        if let Err(RelayError::Deserialization(msg)) = result {
+            assert!(!msg.is_empty());
+        } else {
+            panic!("Expected Deserialization error");
+        }
+    }
+
+    #[test]
+    fn test_register_ack_with_error() {
+        let msg = RelayMessage::RegisterAck {
+            relay_id: [0u8; 32],
+            success: false,
+            error: Some("denied".to_string()),
+        };
+        let bytes = msg.to_bytes().unwrap();
+        let decoded = RelayMessage::from_bytes(&bytes).unwrap();
+        assert_eq!(msg, decoded);
+    }
+
+    #[test]
+    fn test_large_payload_roundtrip() {
+        let msg = RelayMessage::SendPacket {
+            dest_id: [9u8; 32],
+            payload: vec![0xAB; 8192],
+        };
+        let bytes = msg.to_bytes().unwrap();
+        let decoded = RelayMessage::from_bytes(&bytes).unwrap();
+        assert_eq!(msg, decoded);
+    }
+
+    #[test]
+    fn test_deserialization_empty_bytes() {
+        let result = RelayMessage::from_bytes(&[]);
+        assert!(result.is_err());
+        if let Err(RelayError::Deserialization(msg)) = result {
+            assert!(!msg.is_empty());
+        } else {
+            panic!("Expected Deserialization error");
+        }
+    }
+
+    #[test]
+    fn test_relay_error_clone() {
+        let err = RelayError::Internal("clone test".to_string());
+        let cloned = err.clone();
+        assert_eq!(err.to_string(), cloned.to_string());
+    }
+
+    #[test]
+    fn test_relay_error_debug() {
+        let err = RelayError::Timeout;
+        let debug = format!("{:?}", err);
+        assert!(debug.contains("Timeout"));
+    }
+
+    #[test]
+    fn test_relay_message_clone() {
+        let msg = RelayMessage::Register {
+            node_id: [1u8; 32],
+            public_key: [2u8; 32],
+        };
+        let cloned = msg.clone();
+        assert_eq!(msg, cloned);
+    }
+
+    #[test]
+    fn test_relay_message_debug() {
+        let msg = RelayMessage::Keepalive;
+        let debug = format!("{:?}", msg);
+        assert!(debug.contains("Keepalive"));
+    }
+
+    #[test]
+    fn test_relay_error_code_copy() {
+        let code = RelayErrorCode::PeerNotFound;
+        let copied = code;
+        assert_eq!(code, copied);
+    }
+
+    #[test]
+    fn test_all_error_codes_serialization() {
+        let codes = vec![
+            RelayErrorCode::NotRegistered,
+            RelayErrorCode::PeerNotFound,
+            RelayErrorCode::RateLimited,
+            RelayErrorCode::InvalidMessage,
+            RelayErrorCode::ServerFull,
+            RelayErrorCode::AuthFailed,
+            RelayErrorCode::InternalError,
+        ];
+        for code in codes {
+            let msg = RelayMessage::Error {
+                code,
+                message: format!("{code:?}"),
+            };
+            let bytes = msg.to_bytes().unwrap();
+            let decoded = RelayMessage::from_bytes(&bytes).unwrap();
+            assert_eq!(msg, decoded);
+        }
+    }
 }

@@ -357,6 +357,95 @@ mod tests {
     }
 
     #[test]
+    fn test_nat_type_display_all() {
+        assert_eq!(NatType::Open.to_string(), "Open (No NAT)");
+        assert_eq!(NatType::FullCone.to_string(), "Full Cone NAT");
+        assert_eq!(NatType::RestrictedCone.to_string(), "Restricted Cone NAT");
+        assert_eq!(
+            NatType::PortRestrictedCone.to_string(),
+            "Port Restricted Cone NAT"
+        );
+        assert_eq!(NatType::Symmetric.to_string(), "Symmetric NAT");
+        assert_eq!(NatType::Unknown.to_string(), "Unknown NAT Type");
+    }
+
+    #[test]
+    fn test_nat_type_copy() {
+        let t = NatType::FullCone;
+        let t2 = t;
+        assert_eq!(t, t2);
+    }
+
+    #[test]
+    fn test_nat_type_clone() {
+        let t = NatType::Symmetric;
+        let t2 = t.clone();
+        assert_eq!(t, t2);
+    }
+
+    #[test]
+    fn test_nat_error_display_all() {
+        let io_err = NatError::Io(std::io::Error::new(std::io::ErrorKind::Other, "test"));
+        assert!(io_err.to_string().contains("test"));
+
+        assert_eq!(NatError::Timeout.to_string(), "STUN server timeout");
+        assert_eq!(
+            NatError::InvalidResponse.to_string(),
+            "Invalid STUN response"
+        );
+        assert_eq!(NatError::NoServers.to_string(), "No STUN servers available");
+    }
+
+    #[test]
+    fn test_nat_error_source() {
+        let io_err = NatError::Io(std::io::Error::new(std::io::ErrorKind::Other, "test"));
+        assert!(std::error::Error::source(&io_err).is_some());
+
+        let timeout = NatError::Timeout;
+        assert!(std::error::Error::source(&timeout).is_none());
+
+        let invalid = NatError::InvalidResponse;
+        assert!(std::error::Error::source(&invalid).is_none());
+
+        let no_servers = NatError::NoServers;
+        assert!(std::error::Error::source(&no_servers).is_none());
+    }
+
+    #[test]
+    fn test_nat_error_debug() {
+        let err = NatError::Timeout;
+        let debug = format!("{:?}", err);
+        assert!(debug.contains("Timeout"));
+    }
+
+    #[test]
+    fn test_nat_detector_with_servers_many() {
+        let servers: Vec<SocketAddr> = (1..=10)
+            .map(|i| format!("10.0.0.{}:3478", i).parse().unwrap())
+            .collect();
+        let detector = NatDetector::with_servers(servers.clone());
+        assert_eq!(detector.stun_servers.len(), 10);
+    }
+
+    #[test]
+    fn test_is_public_ip_more_private() {
+        // 172.16-31 range
+        assert!(!NatDetector::is_public_ip(
+            &"172.31.255.255".parse().unwrap()
+        ));
+        assert!(NatDetector::is_public_ip(&"172.32.0.1".parse().unwrap()));
+    }
+
+    #[test]
+    fn test_nat_error_from_stun_io_error() {
+        use super::super::stun::StunError;
+
+        let io_inner = std::io::Error::new(std::io::ErrorKind::ConnectionReset, "reset");
+        let stun_io: NatError = StunError::Io(io_inner).into();
+        assert!(matches!(stun_io, NatError::Io(_)));
+    }
+
+    #[test]
     fn test_nat_type_all_variants() {
         // Ensure all NAT types can be created and compared
         let types = vec![

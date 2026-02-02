@@ -183,5 +183,5 @@ Review every module in `spectre-implant/src/modules/` to identify:
 - [OWASP Logging Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html)
 - [CodeQL rust/cleartext-logging rule documentation](https://codeql.github.com/codeql-query-help/rust/rust-cleartext-logging/)
 - [zeroize crate (RustCrypto)](https://docs.rs/zeroize/latest/zeroize/)
-- [WRAITH Protocol XChaCha20-Poly1305 AEAD](../../crates/wraith-crypto/src/aead.rs)
+- [WRAITH Protocol XChaCha20-Poly1305 AEAD](../../crates/wraith-crypto/src/aead/mod.rs)
 - [GitHub CodeQL Action Issue #3413](https://github.com/github/codeql-action/issues/3413) (platform context)

@@ -269,7 +269,7 @@ END LOOP
 *   **Steve Jackson Games, Inc. v. United States Secret Service**. 816 F. Supp. 432 (W.D. Tex. 1993). Retrieved from(https://en.wikipedia.org/wiki/Steve_Jackson_Games,_Inc._v._United_States_Secret_Service)
 *   **Twingate**. (2024). *What is a War Dialer?* Retrieved from [https://www.twingate.com/blog/glossary/war%20dialing](https://www.twingate.com/blog/glossary/war%20dialing)
 *   **Wikipedia**. (n.d.). *Demon Dialing*. Retrieved from(https://en.wikipedia.org/wiki/Demon_dialing)
-*   **Wikipedia**. (n.d.). *Masscan*. Retrieved from [https://en.wikipedia.org/wiki/Masscan](https://en.wikipedia.org/wiki/Masscan)
+*   **Masscan**. (n.d.). *Masscan: Mass IP port scanner*. Retrieved from [https://github.com/robertdavidgraham/masscan](https://github.com/robertdavidgraham/masscan)
 *   **Wikipedia**. (n.d.). *ToneLoc*. Retrieved from(https://en.wikipedia.org/wiki/ToneLoc)
 *   **Wikipedia**. (n.d.). *WarGames*. Retrieved from(https://en.wikipedia.org/wiki/WarGames)
 *   **Wikipedia**. (n.d.). *WarVOX*. Retrieved from(https://en.wikipedia.org/wiki/WarVOX)

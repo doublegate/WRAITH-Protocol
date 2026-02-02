@@ -385,4 +385,45 @@ mod tests {
         let cid = extract_cid(&data);
         assert_eq!(cid, None);
     }
+
+    #[test]
+    fn test_cid_extraction_empty() {
+        let data: [u8; 0] = [];
+        assert_eq!(extract_cid(&data), None);
+    }
+
+    #[test]
+    fn test_cid_extraction_exactly_8() {
+        let data = [1, 2, 3, 4, 5, 6, 7, 8];
+        assert_eq!(extract_cid(&data), Some([1, 2, 3, 4, 5, 6, 7, 8]));
+    }
+
+    #[test]
+    fn test_cid_extraction_7_bytes() {
+        let data = [1, 2, 3, 4, 5, 6, 7];
+        assert_eq!(extract_cid(&data), None);
+    }
+
+    #[test]
+    fn test_cid_extraction_handshake_magic() {
+        // Handshake init CID is all 0xFF
+        let mut data = vec![0xFF; 8];
+        data.extend_from_slice(&[0; 32]); // payload
+        let cid = extract_cid(&data);
+        assert_eq!(cid, Some([0xFF; 8]));
+    }
+
+    #[test]
+    fn test_cid_extraction_zeros() {
+        let data = [0u8; 16];
+        assert_eq!(extract_cid(&data), Some([0u8; 8]));
+    }
+
+    #[test]
+    fn test_protocol_handler_handle_packet_too_short() {
+        // Data shorter than 8 bytes should return None from extract_cid
+        let short_data = [1, 2, 3];
+        let cid = extract_cid(&short_data);
+        assert!(cid.is_none());
+    }
 }
