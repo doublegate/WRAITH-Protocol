@@ -1,6 +1,6 @@
 [package]
 name = "wraith-crypto"
-version = "2.3.6"
+version = "2.3.7"
 description = "WRAITH Protocol Cryptography"
 edition.workspace = true
 rust-version.workspace = true

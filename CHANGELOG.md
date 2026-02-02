@@ -9,6 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.3.7] - 2026-02-01 - Testing Infrastructure & CI Stability
+
+### Testing
+- Added 487 tests across 6 crates raising workspace total from 2,123 to 2,610
+  - wraith-core: +46 tests (480 -> 526) - node/ subsystem coverage (session_manager, transfer_manager, rate_limiter, metrics, peer_manager, resume)
+  - wraith-cli: +81 tests (87 -> 168) - CLI argument parsing, redops subcommands, configuration
+  - team-server: +82 tests (24 -> 106) - service layer, listener management, implant tracking
+  - wraith-discovery: +69 tests (336 -> 405) - relay subsystem, NAT signaling, ICE integration
+  - wraith-transport: +43 tests (183 -> 226) - AF_XDP sockets, MTU discovery, buffer management
+  - wraith-crypto: +47 tests (166 -> 213) - post-quantum primitives, CSPRNG, AEAD cipher modes
+
+### Security
+- Resolved 3 CodeQL security alerts for hard-coded cryptographic values in test files
+
+### Fixed
+- Fixed Windows CI failure: replaced hardcoded `/tmp/` paths with `std::env::temp_dir()` in transfer_manager tests (`test_init_receive_transfer`, `test_process_received_chunk`)
+- Fixed 35 broken documentation links across 22 files (internal file references, external URLs)
+
+### Documentation
+- Updated README, CHANGELOG, Protocol-DEV, and Clients-DEV archive docs with current metrics
+
+---
+
 ## [2.3.6] - 2026-02-01 - RedOps Complete Completion & Advanced Tradecraft
 
 ### Added

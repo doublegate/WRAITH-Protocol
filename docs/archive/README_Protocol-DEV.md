@@ -4,7 +4,7 @@
 
 This document captures the complete development journey of WRAITH Protocol from inception through version 2.0.0, including detailed phase accomplishments, sprint summaries, and implementation milestones.
 
-[![Version](https://img.shields.io/badge/version-2.3.6-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
+[![Version](https://img.shields.io/badge/version-2.3.7-blue.svg)](https://github.com/doublegate/WRAITH-Protocol/releases)
 [![Security](https://img.shields.io/badge/security-audited-green.svg)](../security/DPI_EVASION_REPORT.md)
 [![Rust](https://img.shields.io/badge/rust-1.88%2B-orange.svg)](https://www.rust-lang.org/)
 
@@ -22,7 +22,7 @@ For the current production README, see [../../README.md](../../README.md).
 
 **Total Development Effort:** 2,685 story points delivered across 24 phases
 
-**Project Metrics (2026-02-01, v2.3.6):**
+**Project Metrics (2026-02-01, v2.3.7):**
 - **Code Volume:** ~141,000 lines of Rust code across protocol and client crates + ~36,600 lines TypeScript
 - **Test Coverage:** 2,643 tests passing (2,610 workspace + 19 spectre-implant + 14 doc, 16 ignored) - 100% pass rate
 - **Documentation:** 114 markdown files, ~62,800 lines of comprehensive documentation
@@ -1388,7 +1388,7 @@ Red team operations platform for authorized adversary emulation:
 
 ## Current Status & Next Steps
 
-**Version 2.3.6 Status (2026-02-01):**
+**Version 2.3.7 Status (2026-02-01):**
 - ✅ All 24 development phases complete (2,740+ SP delivered)
 - ✅ 2,148 tests (2,123 workspace + 11 spectre-implant + 14 doc, 16 ignored) - 100% pass rate
 - ✅ Zero vulnerabilities, zero warnings
@@ -1471,8 +1471,8 @@ See [../../to-dos/ROADMAP.md](../../to-dos/ROADMAP.md) for detailed future plann
 
 ---
 
-**WRAITH Protocol Development History** - *From Foundation to v2.3.6 (Phases 1-24 + Infrastructure Sprints + Benchmark Optimizations + Security Hardening + RedOps Advanced Tradecraft)*
+**WRAITH Protocol Development History** - *From Foundation to v2.3.7 (Phases 1-24 + Infrastructure Sprints + Benchmark Optimizations + Security Hardening + RedOps Advanced Tradecraft + Testing Infrastructure)*
 
-**Development Period:** 2024 - 2026-02-01 | **Total Effort:** 2,740+ story points delivered across 24 phases + infrastructure sprints | **Quality:** Production-ready (98/100), 2,643 tests (2,610 workspace + 19 spectre-implant + 14 doc, 100% pass rate), 0 vulnerabilities, Grade A+ security | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server) | **Workspace:** 22 members + 3 excluded (wraith-xdp, spectre-implant, roe-signer) | **TDR:** ~2.5% (Grade A - Excellent) | **CI/CD:** Optimized workflows with reusable setup, path filters, and cross-compilation via Cross.toml | **v2.3.6:** RedOps Advanced Tradecraft -- Signal Double Ratchet C2 ratcheting, 4 MITRE ATT&CK techniques (T1134, T1140, T1574.002, T1105), DEFLATE compression, Runner source-build, operator UX polish, team server safety | **v2.3.5:** CI/CD stability fixes, 58 CodeQL security alerts resolved, ROE Signer tool, benchmark analysis documentation | **v2.3.4:** 18 performance optimizations (WebSocket mimicry 55-85% faster, DoH tunnel 70-86% faster, frame pipeline 11-30% faster, message header 53% faster) | **RedOps Gap Analysis:** v9.0.0 (~99% complete, 97.5% MITRE ATT&CK (39/40), 0 P0/P1/P2, 25 modules, 35 IPC, 16,719 Rust + 3,749 TS lines) | **Conductor:** Project management system with code style guides
+**Development Period:** 2024 - 2026-02-01 | **Total Effort:** 2,740+ story points delivered across 24 phases + infrastructure sprints | **Quality:** Production-ready (98/100), 2,643 tests (2,610 workspace + 19 spectre-implant + 14 doc, 100% pass rate), 0 vulnerabilities, Grade A+ security | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server) | **Workspace:** 22 members + 3 excluded (wraith-xdp, spectre-implant, roe-signer) | **TDR:** ~2.5% (Grade A - Excellent) | **CI/CD:** Optimized workflows with reusable setup, path filters, and cross-compilation via Cross.toml | **v2.3.7:** Testing Infrastructure & CI Stability -- 487 new tests across 6 crates (2,610 workspace total), 3 CodeQL alerts resolved, Windows CI fix, 35 doc links fixed | **v2.3.6:** RedOps Advanced Tradecraft -- Signal Double Ratchet C2 ratcheting, 4 MITRE ATT&CK techniques (T1134, T1140, T1574.002, T1105), DEFLATE compression, Runner source-build, operator UX polish, team server safety | **v2.3.5:** CI/CD stability fixes, 58 CodeQL security alerts resolved, ROE Signer tool, benchmark analysis documentation | **v2.3.4:** 18 performance optimizations (WebSocket mimicry 55-85% faster, DoH tunnel 70-86% faster, frame pipeline 11-30% faster, message header 53% faster) | **RedOps Gap Analysis:** v9.0.0 (~99% complete, 97.5% MITRE ATT&CK (39/40), 0 P0/P1/P2, 25 modules, 35 IPC, 16,719 Rust + 3,749 TS lines) | **Conductor:** Project management system with code style guides
 
 *Last Updated: 2026-02-01*
