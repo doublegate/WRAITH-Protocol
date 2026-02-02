@@ -29,7 +29,7 @@ subtle = { version = "2.5", default-features = false }
 curve25519-elligator2 = { version = "0.1.0-alpha.2", features = ["elligator2"], default-features = false }
 ml-kem = { version = "0.2.2", default-features = false }
 kem = "0.3.0-pre.0"
-ml-dsa = { version = "0.0.4", default-features = false, features = ["alloc", "rand_core"], optional = true }
+ml-dsa = { version = "0.1.0-rc.5", default-features = false, features = ["alloc", "rand_core"], optional = true }
 signature = { version = "3.0.0-rc.9", default-features = false, optional = true }
 
 [dev-dependencies]

@@ -417,6 +417,7 @@ fn bench_message_header_serialize(c: &mut Criterion) {
         dh_public,
         prev_chain_length: 100,
         message_number: 42,
+        key_commitment: None,
     };
 
     c.bench_function("message_header_serialize", |b| {

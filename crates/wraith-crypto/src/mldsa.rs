@@ -11,12 +11,6 @@
 //! definitions and a trait interface but no implementation, allowing downstream
 //! code to be written against the interface without requiring the dependency.
 
-#[cfg(feature = "pq-signatures")]
-use ml_dsa::{KeyGen, MlDsa65};
-
-#[cfg(feature = "pq-signatures")]
-use rand_core::{CryptoRng, RngCore};
-
 use crate::error::CryptoError;
 use alloc::vec::Vec;
 
@@ -68,9 +62,10 @@ impl MlDsa65VerifyingKey {
     /// Returns [`CryptoError::InvalidSignature`] if the signature is invalid.
     #[cfg(feature = "pq-signatures")]
     pub fn verify(&self, message: &[u8], signature: &MlDsa65Signature) -> Result<(), CryptoError> {
-        use ml_dsa::Verifier;
-        let vk = ml_dsa::VerifyingKey::<ml_dsa::MlDsa65>::try_from(self.bytes.as_slice())
+        use ml_dsa::signature::Verifier;
+        let enc = ml_dsa::EncodedVerifyingKey::<ml_dsa::MlDsa65>::try_from(self.bytes.as_slice())
             .map_err(|_| CryptoError::InvalidPublicKey)?;
+        let vk = ml_dsa::VerifyingKey::<ml_dsa::MlDsa65>::decode(&enc);
         let sig = ml_dsa::Signature::<ml_dsa::MlDsa65>::try_from(signature.as_bytes())
             .map_err(|_| CryptoError::InvalidSignature)?;
         vk.verify(message, &sig)
@@ -95,8 +90,8 @@ impl MlDsa65VerifyingKey {
 /// ML-DSA-65 signing key.
 #[allow(dead_code)]
 pub struct MlDsa65SigningKey {
-    /// Raw signing key bytes.
-    bytes: Vec<u8>,
+    /// 32-byte seed for deterministic key regeneration.
+    seed: Vec<u8>,
     /// Corresponding verifying (public) key.
     verifying_key: MlDsa65VerifyingKey,
 }
@@ -108,13 +103,18 @@ impl MlDsa65SigningKey {
     ///
     /// Returns [`CryptoError::InvalidState`] when the `pq-signatures` feature is not enabled.
     #[cfg(feature = "pq-signatures")]
-    pub fn generate<R: RngCore + CryptoRng>(rng: &mut R) -> Self {
-        use signature::Keypair;
-        let kp = MlDsa65::key_gen(rng);
-        let sk_bytes: Vec<u8> = kp.signing_key().to_bytes().to_vec();
-        let vk_bytes: Vec<u8> = kp.verifying_key().to_bytes().to_vec();
+    pub fn generate<R: rand_core::RngCore + rand_core::CryptoRng>(rng: &mut R) -> Self {
+        // Generate a 32-byte seed using the caller's RNG (rand_core 0.6).
+        // Then use from_seed which avoids the rand_core version mismatch.
+        let mut seed = [0u8; 32];
+        rng.fill_bytes(&mut seed);
+
+        let seed_array = ml_dsa::Seed::try_from(seed.as_slice()).expect("seed is exactly 32 bytes");
+        let sk = ml_dsa::SigningKey::<ml_dsa::MlDsa65>::from_seed(&seed_array);
+        let vk = sk.verifying_key();
+        let vk_bytes: Vec<u8> = vk.encode().to_vec();
         Self {
-            bytes: sk_bytes,
+            seed: seed.to_vec(),
             verifying_key: MlDsa65VerifyingKey::from_bytes(vk_bytes),
         }
     }
@@ -136,10 +136,12 @@ impl MlDsa65SigningKey {
     /// Returns [`CryptoError::InvalidState`] when the `pq-signatures` feature is not enabled.
     #[cfg(feature = "pq-signatures")]
     pub fn sign(&self, message: &[u8]) -> Result<MlDsa65Signature, CryptoError> {
-        use ml_dsa::Signer;
-        let sk = ml_dsa::SigningKey::<ml_dsa::MlDsa65>::try_from(self.bytes.as_slice())
+        use ml_dsa::signature::Signer;
+        let seed = ml_dsa::Seed::try_from(self.seed.as_slice())
             .map_err(|_| CryptoError::InvalidKeyMaterial)?;
-        let sig = sk.sign(message);
+        let sk = ml_dsa::SigningKey::<ml_dsa::MlDsa65>::from_seed(&seed);
+        let sig: ml_dsa::Signature<ml_dsa::MlDsa65> = sk.sign(message);
+        use ml_dsa::signature::SignatureEncoding;
         Ok(MlDsa65Signature::from_bytes(sig.to_bytes().to_vec()))
     }
 
