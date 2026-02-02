@@ -38,7 +38,7 @@ WRAITH Protocol is a privacy-focused, high-performance file transfer protocol de
 
 | Metric            | Value                                                                     |
 | ----------------- | ------------------------------------------------------------------------- |
-| **Tests**         | 2,643 passing (2,610 workspace + 19 spectre-implant + 14 doc), 16 ignored |
+| **Tests**         | 2,723 passing (2,690 workspace + 19 spectre-implant + 14 doc), 16 ignored |
 | **Code**          | ~141,000 lines Rust (protocol + clients) + ~36,600 lines TypeScript       |
 | **Documentation** | 114 files, ~62,800 lines                                                  |
 | **Security**      | Grade A+ (zero vulnerabilities, 295 audited dependencies)                 |
@@ -331,7 +331,7 @@ WRAITH Protocol uses a six-layer design optimized for security and performance:
 | Crate                  | Description                                                  | Tests |
 | ---------------------- | ------------------------------------------------------------ | ----- |
 | **wraith-core**        | Frame parsing (SIMD), sessions, congestion control, Node API | 526   |
-| **wraith-crypto**      | Ed25519, X25519+Elligator2, AEAD, Noise_XX, Double Ratchet   | 213   |
+| **wraith-crypto**      | Ed25519, X25519+Elligator2, AEAD, Noise_XX, Double Ratchet, v2 Hybrid KEM, PQ Signatures | 293   |
 | **wraith-transport**   | AF_XDP, io_uring, UDP sockets, worker pools                  | 226   |
 | **wraith-obfuscation** | Padding, timing, cover traffic, protocol mimicry             | 140   |
 | **wraith-discovery**   | Kademlia DHT, STUN, ICE, relay infrastructure                | 405   |
@@ -382,6 +382,14 @@ Measured on production hardware (Intel i9-10850K, 64 GB RAM) with `cargo bench -
 | Replay Protection   | 920 ps sequential accept                   | 1024-packet sliding window                              |
 | Ring Buffers (SPSC) | ~100M ops/sec                              | Cache-line padded, lock-free                            |
 | Ring Buffers (MPSC) | ~20M ops/sec                               | CAS-based, 4 producers                                  |
+| Hybrid KEM Keygen   | 69.56 us                                   | X25519 + ML-KEM-768 combined                            |
+| Hybrid Encapsulate  | 106.46 us                                  | X25519 + ML-KEM-768 hybrid encap                        |
+| Hybrid Decapsulate  | 96.20 us                                   | X25519 + ML-KEM-768 hybrid decap                        |
+| Classical-Only Encap| 63.67 us                                   | ~40% faster than hybrid                                 |
+| Classical-Only Decap| 40.31 us                                   | X25519-only fallback                                    |
+| Per-Packet Ratchet  | 136 ns (~7.3M keys/sec)                    | BLAKE3 symmetric ratchet advance                        |
+| v2 Session KDF      | 442 ns (4 directional keys)                | Domain-separated i2r/r2i traffic keys                   |
+| Suite Negotiation   | 2.79 ns                                    | Strongest-common suite selection                        |
 
 ### Optimization Highlights (v2.3.4)
 
@@ -437,6 +445,10 @@ Measured on production hardware (Intel i9-10850K, 64 GB RAM) with `cargo bench -
 | KDF          | HKDF-BLAKE3        | 128-bit                            |
 | Handshake    | Noise_XX           | Mutual auth, identity hiding       |
 | Ratcheting   | Double Ratchet     | Forward + post-compromise security |
+| Hybrid KEM   | X25519 + ML-KEM-768 | Post-quantum hybrid key encapsulation (v2) |
+| PQ Signatures | ML-DSA-65 (optional) | Post-quantum signatures, feature-gated (v2) |
+| Packet Ratchet | BLAKE3 symmetric   | Per-packet forward secrecy (v2)    |
+| Suite Negotiation | A/B/C/D         | Crypto suite negotiation (v2)      |
 
 ### Security Features
 
@@ -464,7 +476,7 @@ Measured on production hardware (Intel i9-10850K, 64 GB RAM) with `cargo bench -
 
 **Validation:**
 
-- Comprehensive test coverage (2,643 tests across all components)
+- Comprehensive test coverage (2,723 tests across all components)
 - DPI evasion validation (Wireshark, Zeek, Suricata, nDPI)
 - 5 libFuzzer targets
 - Property-based tests
@@ -696,12 +708,13 @@ WRAITH Protocol v2.3.7 represents 2,740+ story points across 24 development phas
 - Conductor project management system with code style guides for development workflow tracking
 - RedOps workspace integration: team-server and operator-client as workspace members (spectre-implant excluded for no_std compatibility)
 - v2.3.6 RedOps Advanced Tradecraft: Signal Double Ratchet C2 ratcheting, 4 new MITRE ATT&CK techniques (T1134, T1140, T1574.002, T1105), Runner source-build, operator UX polish, team server safety hardening
-- Comprehensive documentation (114 files, ~62,800 lines) and testing (2,643 tests across all components)
+- Comprehensive documentation (114 files, ~62,800 lines) and testing (2,723 tests across all components)
 - CI/CD infrastructure with multi-platform releases
 
 ### Future Development
 
-- **Post-quantum cryptography** - Kyber/Dilithium hybrid mode
+- **v2 Protocol Migration** - Phase 1 complete (hybrid KEM, per-packet ratchet, suite negotiation); Phases 2-9 in progress
+- **Post-quantum cryptography** - Hybrid X25519 + ML-KEM-768 (Phase 1 complete), ML-DSA-65 signatures (optional)
 - **Formal verification** - Cryptographic protocol proofs
 - **XDP/eBPF implementation** - Full kernel bypass (wraith-xdp crate)
 - **SDK development** - Python, Go, Node.js language bindings
@@ -773,6 +786,6 @@ WRAITH Protocol builds on excellent projects and research:
 
 **WRAITH Protocol** - _Secure. Fast. Invisible._
 
-**Version:** 2.3.7 | **License:** MIT | **Language:** Rust 2024 (MSRV 1.88) | **Tests:** 2,643 passing (2,610 workspace + 19 spectre-implant + 14 doc) | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server)
+**Version:** 2.3.7 | **License:** MIT | **Language:** Rust 2024 (MSRV 1.88) | **Tests:** 2,723 passing (2,690 workspace + 19 spectre-implant + 14 doc) | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server)
 
 **Last Updated:** 2026-02-01

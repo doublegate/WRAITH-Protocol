@@ -548,6 +548,215 @@ fn bench_constant_time_ops(c: &mut Criterion) {
 }
 
 // ============================================================================
+// Hybrid KEM Benchmarks
+// ============================================================================
+
+fn bench_hybrid_keygen(c: &mut Criterion) {
+    c.bench_function("hybrid_keypair_generate", |b| {
+        b.iter(|| wraith_crypto::hybrid::HybridKeyPair::generate(&mut OsRng))
+    });
+}
+
+fn bench_hybrid_encapsulate(c: &mut Criterion) {
+    let kp = wraith_crypto::hybrid::HybridKeyPair::generate(&mut OsRng);
+
+    c.bench_function("hybrid_encapsulate", |b| {
+        b.iter(|| kp.public.encapsulate(black_box(&mut OsRng)))
+    });
+}
+
+fn bench_hybrid_decapsulate(c: &mut Criterion) {
+    let kp = wraith_crypto::hybrid::HybridKeyPair::generate(&mut OsRng);
+    let (_ss, ct) = kp.public.encapsulate(&mut OsRng).unwrap();
+
+    c.bench_function("hybrid_decapsulate", |b| {
+        b.iter(|| kp.secret.decapsulate(black_box(&ct)))
+    });
+}
+
+fn bench_hybrid_classical_only(c: &mut Criterion) {
+    let kp = wraith_crypto::hybrid::HybridKeyPair::generate(&mut OsRng);
+
+    c.bench_function("hybrid_encapsulate_classical_only", |b| {
+        b.iter(|| kp.public.encapsulate_classical_only(black_box(&mut OsRng)))
+    });
+
+    let (_ss, epk) = kp.public.encapsulate_classical_only(&mut OsRng).unwrap();
+
+    c.bench_function("hybrid_decapsulate_classical_only", |b| {
+        b.iter(|| kp.secret.decapsulate_classical_only(black_box(&epk)))
+    });
+}
+
+fn bench_hybrid_serialization(c: &mut Criterion) {
+    let kp = wraith_crypto::hybrid::HybridKeyPair::generate(&mut OsRng);
+    let (_ss, ct) = kp.public.encapsulate(&mut OsRng).unwrap();
+
+    let pk_bytes = kp.public.to_bytes();
+    let ct_bytes = ct.to_bytes();
+
+    c.bench_function("hybrid_public_key_serialize", |b| {
+        b.iter(|| black_box(&kp.public).to_bytes())
+    });
+
+    c.bench_function("hybrid_public_key_deserialize", |b| {
+        b.iter(|| wraith_crypto::hybrid::HybridPublicKey::from_bytes(black_box(&pk_bytes)))
+    });
+
+    c.bench_function("hybrid_ciphertext_serialize", |b| {
+        b.iter(|| black_box(&ct).to_bytes())
+    });
+
+    c.bench_function("hybrid_ciphertext_deserialize", |b| {
+        b.iter(|| wraith_crypto::hybrid::HybridCiphertext::from_bytes(black_box(&ct_bytes)))
+    });
+}
+
+// ============================================================================
+// Per-Packet Ratchet Benchmarks
+// ============================================================================
+
+fn bench_packet_ratchet_new(c: &mut Criterion) {
+    let chain_key = [0x42u8; 32];
+
+    c.bench_function("packet_ratchet_new", |b| {
+        b.iter(|| wraith_crypto::packet_ratchet::PacketRatchet::new(black_box(chain_key)))
+    });
+}
+
+fn bench_packet_ratchet_next_send_key(c: &mut Criterion) {
+    let chain_key = [0x42u8; 32];
+
+    c.bench_function("packet_ratchet_next_send_key", |b| {
+        b.iter_batched(
+            || wraith_crypto::packet_ratchet::PacketRatchet::new(chain_key),
+            |mut ratchet| {
+                let result = ratchet.next_send_key();
+                black_box(result)
+            },
+            criterion::BatchSize::SmallInput,
+        )
+    });
+}
+
+fn bench_packet_ratchet_1000_sequential(c: &mut Criterion) {
+    let chain_key = [0x42u8; 32];
+
+    c.bench_function("packet_ratchet_1000_sequential_send_keys", |b| {
+        b.iter_batched(
+            || wraith_crypto::packet_ratchet::PacketRatchet::new(chain_key),
+            |mut ratchet| {
+                for _ in 0..1000 {
+                    black_box(ratchet.next_send_key());
+                }
+            },
+            criterion::BatchSize::SmallInput,
+        )
+    });
+}
+
+fn bench_packet_ratchet_key_for_packet(c: &mut Criterion) {
+    let chain_key = [0x42u8; 32];
+
+    // In-order access
+    c.bench_function("packet_ratchet_key_for_packet_in_order", |b| {
+        b.iter_batched(
+            || wraith_crypto::packet_ratchet::PacketRatchet::new(chain_key),
+            |mut ratchet| {
+                let key = ratchet.key_for_packet(0).unwrap();
+                black_box(key)
+            },
+            criterion::BatchSize::SmallInput,
+        )
+    });
+
+    // Out-of-order: request packet 10 then packet 5 (from cache)
+    c.bench_function("packet_ratchet_key_for_packet_out_of_order", |b| {
+        b.iter_batched(
+            || {
+                let mut ratchet = wraith_crypto::packet_ratchet::PacketRatchet::new(chain_key);
+                // Advance to packet 10, caching 0..9
+                let _ = ratchet.key_for_packet(10).unwrap();
+                ratchet
+            },
+            |mut ratchet| {
+                let key = ratchet.key_for_packet(5).unwrap();
+                black_box(key)
+            },
+            criterion::BatchSize::SmallInput,
+        )
+    });
+}
+
+// ============================================================================
+// KDF v2 Benchmarks
+// ============================================================================
+
+fn bench_kdf_v2(c: &mut Criterion) {
+    let secret = [0x42u8; 32];
+    let transcript = [0x43u8; 32];
+
+    c.bench_function("kdf_v2_derive_session_keys", |b| {
+        b.iter(|| {
+            wraith_crypto::kdf::derive_session_keys_v2(black_box(&secret), black_box(&transcript))
+        })
+    });
+
+    let traffic_key = [0x42u8; 32];
+
+    c.bench_function("kdf_v2_derive_stream_key", |b| {
+        b.iter(|| wraith_crypto::kdf::derive_stream_key(black_box(&traffic_key), black_box(42)))
+    });
+}
+
+// ============================================================================
+// Crypto Suite Benchmarks
+// ============================================================================
+
+fn bench_crypto_suite_negotiate(c: &mut Criterion) {
+    use wraith_crypto::suite::CryptoSuite;
+
+    let local = [
+        CryptoSuite::SuiteA,
+        CryptoSuite::SuiteB,
+        CryptoSuite::SuiteD,
+    ];
+    let remote = [
+        CryptoSuite::SuiteC,
+        CryptoSuite::SuiteA,
+        CryptoSuite::SuiteD,
+    ];
+
+    c.bench_function("crypto_suite_negotiate", |b| {
+        b.iter(|| CryptoSuite::negotiate(black_box(&local), black_box(&remote)))
+    });
+}
+
+// ============================================================================
+// CryptoContext v2 Benchmarks
+// ============================================================================
+
+fn bench_crypto_context_v2(c: &mut Criterion) {
+    use wraith_crypto::context::CryptoContextV2;
+    use wraith_crypto::suite::CryptoSuite;
+
+    let ctx = CryptoContextV2::new(CryptoSuite::SuiteA);
+
+    c.bench_function("crypto_context_v2_generate_keypair", |b| {
+        b.iter(|| ctx.generate_keypair(&mut OsRng))
+    });
+
+    let kp = ctx.generate_keypair(&mut OsRng);
+
+    c.bench_function("crypto_context_v2_encapsulate_cycle", |b| {
+        b.iter(|| {
+            let (ss, result) = ctx.encapsulate(&mut OsRng, black_box(&kp.public)).unwrap();
+            black_box((ss, result))
+        })
+    });
+}
+
+// ============================================================================
 // Criterion Configuration
 // ============================================================================
 
@@ -592,6 +801,29 @@ criterion_group!(constant_time_benches, bench_constant_time_ops,);
 
 criterion_group!(replay_benches, bench_replay_protection,);
 
+criterion_group!(
+    hybrid_kem_benches,
+    bench_hybrid_keygen,
+    bench_hybrid_encapsulate,
+    bench_hybrid_decapsulate,
+    bench_hybrid_classical_only,
+    bench_hybrid_serialization,
+);
+
+criterion_group!(
+    packet_ratchet_benches,
+    bench_packet_ratchet_new,
+    bench_packet_ratchet_next_send_key,
+    bench_packet_ratchet_1000_sequential,
+    bench_packet_ratchet_key_for_packet,
+);
+
+criterion_group!(kdf_v2_benches, bench_kdf_v2,);
+
+criterion_group!(suite_benches, bench_crypto_suite_negotiate,);
+
+criterion_group!(context_v2_benches, bench_crypto_context_v2,);
+
 criterion_main!(
     aead_benches,
     x25519_benches,
@@ -601,4 +833,9 @@ criterion_main!(
     elligator_benches,
     constant_time_benches,
     replay_benches,
+    hybrid_kem_benches,
+    packet_ratchet_benches,
+    kdf_v2_benches,
+    suite_benches,
+    context_v2_benches,
 );

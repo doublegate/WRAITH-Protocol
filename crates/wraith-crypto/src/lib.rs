@@ -33,15 +33,21 @@ extern crate std;
 
 pub mod aead;
 pub mod constant_time;
+pub mod context;
 pub mod elligator;
 pub mod encrypted_keys;
 pub mod error;
 pub mod hash;
+pub mod hybrid;
+pub mod kdf;
+pub mod mldsa;
 pub mod noise;
+pub mod packet_ratchet;
 pub mod pq;
 pub mod random;
 pub mod ratchet;
 pub mod signatures;
+pub mod suite;
 pub mod x25519;
 
 pub use error::CryptoError;

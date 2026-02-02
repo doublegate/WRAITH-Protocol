@@ -11,6 +11,7 @@ authors.workspace = true
 [features]
 default = []
 key-commitment = []
+pq-signatures = ["dep:ml-dsa", "dep:signature"]
 
 [dependencies]
 chacha20poly1305 = { version = "0.10", default-features = false, features = ["alloc"] }
@@ -28,6 +29,8 @@ subtle = { version = "2.5", default-features = false }
 curve25519-elligator2 = { version = "0.1.0-alpha.2", features = ["elligator2"], default-features = false }
 ml-kem = { version = "0.2.2", default-features = false }
 kem = "0.3.0-pre.0"
+ml-dsa = { version = "0.0.4", default-features = false, features = ["alloc", "rand_core"], optional = true }
+signature = { version = "3.0.0-rc.9", default-features = false, optional = true }
 
 [dev-dependencies]
 proptest = { workspace = true }
@@ -36,7 +39,7 @@ rand = "0.8"
 
 [lints.rust]
 # Allow 'coverage' cfg set by cargo-llvm-cov for conditional test exclusion
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(coverage)', 'cfg(feature, values("key-commitment"))'] }
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(coverage)', 'cfg(feature, values("key-commitment", "pq-signatures"))'] }
 
 [[bench]]
 name = "crypto_bench"

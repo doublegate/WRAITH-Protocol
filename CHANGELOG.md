@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **v2 Hybrid KEM**: X25519 + ML-KEM-768 hybrid post-quantum key encapsulation with domain-separated BLAKE3 combination (`hybrid.rs`)
+- **v2 Per-Packet Ratchet**: BLAKE3-based symmetric ratchet with per-packet forward secrecy and out-of-order delivery support (`packet_ratchet.rs`)
+- **v2 KDF Labels**: Domain-separated key derivation with directional traffic keys (i2r/r2i), format key, and stream key derivation (`kdf.rs`)
+- **v2 Crypto Suite Negotiation**: Suite A/B/C/D selection with strongest-common negotiation (`suite.rs`)
+- **v2 CryptoContext Facade**: Unified API for suite-aware keygen, encapsulation, session derivation, and ratchet creation (`context.rs`)
+- **ML-DSA-65 Signatures**: Optional post-quantum signatures with hybrid Ed25519+ML-DSA-65 binding proof, feature-gated behind `pq-signatures` (`mldsa.rs`)
+- 34 integration tests for v2 crypto pipeline (hybrid, ratchet, KDF, suite, full pipeline)
+- 18 new v2 crypto benchmarks (hybrid KEM, packet ratchet, KDF, suite, context)
+- v2 Migration Strategy report and 9-phase sprint planning documentation
+
+### Performance (v2 Crypto Benchmarks)
+- Hybrid KEM keygen: 69.56 us
+- Hybrid encapsulate (X25519 + ML-KEM-768): 106.46 us
+- Hybrid decapsulate: 96.20 us
+- Per-packet ratchet advance: 136 ns (~7.3M keys/sec)
+- v2 session key derivation: 442 ns (4 directional keys)
+- Classical-only fallback ~40% faster than hybrid
+
 ---
 
 ## [2.3.7] - 2026-02-01 - Testing Infrastructure & CI Stability
