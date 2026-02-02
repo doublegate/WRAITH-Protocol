@@ -33,7 +33,7 @@ For protocol development history, see [README_Protocol-DEV.md](README_Protocol-D
 - **Tier 4:** Security Testing (RedOps - COMPLETE)
 
 **Current Status (2026-02-01):**
-- Protocol v2.3.7 complete (all 24 phases + infrastructure sprints + benchmark optimizations + security hardening delivered); v2 crypto foundation (Phase 1) in progress with hybrid KEM, per-packet ratchet, and suite negotiation ready for client integration
+- Protocol v2.3.7 complete (all 24 phases + infrastructure sprints + benchmark optimizations + security hardening delivered); v2 protocol migration Phase 1 (crypto foundation) and Phase 2 (wire format) complete; v2 wire format ready for client integration in Phase 5
 - **All 12 Client Applications:** ✅ **COMPLETE** (1,292 SP total)
   - WRAITH-Transfer: Desktop P2P file transfer (6 tests)
   - WRAITH-Chat: E2EE messaging with voice/video/groups (107 tests)
@@ -1346,6 +1346,6 @@ RedOps                                                          [=============]
 
 **WRAITH Protocol Client Applications Development History** - *From Planning to v2.3.7*
 
-**Status:** Phases 15-24 Complete (All 12 Clients) | **Total Scope:** 12 clients, 1,292 SP | **Delivered:** 1,292 SP (100%) | **Protocol:** v2.3.7 Complete | **Tests:** 2,723 total (2,690 workspace + 19 spectre-implant + 14 doc, 663+ client tests) | **Workspace:** 22 members + 3 excluded | **TDR:** ~2.5% (Grade A) | **CI/CD:** Optimized workflows with reusable setup, path filters, and cross-compilation via Cross.toml | **v2.3.7:** Testing Infrastructure & CI Stability -- 487 new tests across 6 crates, Windows CI fix, 3 CodeQL alerts resolved, 35 doc links fixed | **v2.3.6:** RedOps Advanced Tradecraft -- Signal Double Ratchet, 4 MITRE ATT&CK techniques (T1134, T1140, T1574.002, T1105), DEFLATE compression, Runner source-build, operator UX polish, team server safety | **v2.3.5:** CI/CD stability fixes, 58 CodeQL security alerts resolved, ROE Signer tool, benchmark analysis documentation | **RedOps:** Gap analysis v9.0.0 (~99% complete, 97.5% MITRE ATT&CK (39/40), 0 P0/P1/P2, 25 modules, 35 IPC wired with typed wrappers, 16,719 Rust + 3,749 TS lines) | **Conductor:** Project management system with code style guides
+**Status:** Phases 15-24 Complete (All 12 Clients) | **Total Scope:** 12 clients, 1,292 SP | **Delivered:** 1,292 SP (100%) | **Protocol:** v2.3.7 Complete | **Tests:** 2,839 total (2,828 workspace + 11 spectre-implant, 663+ client tests) | **Workspace:** 22 members + 3 excluded | **TDR:** ~2.5% (Grade A) | **CI/CD:** Optimized workflows with reusable setup, path filters, and cross-compilation via Cross.toml | **v2 Protocol Migration:** Phase 1 (crypto foundation) and Phase 2 (wire format) complete; client migration in Phase 5 | **v2.3.7:** Testing Infrastructure & CI Stability -- 487 new tests across 6 crates, Windows CI fix, 3 CodeQL alerts resolved, 35 doc links fixed | **v2.3.6:** RedOps Advanced Tradecraft -- Signal Double Ratchet, 4 MITRE ATT&CK techniques, DEFLATE compression, Runner source-build | **RedOps:** Gap analysis v9.0.0 (~99% complete, 97.5% MITRE ATT&CK (39/40), 0 P0/P1/P2, 25 modules, 35 IPC wired, 16,719 Rust + 3,749 TS lines) | **Conductor:** Project management system with code style guides
 
-*Last Updated: 2026-02-01*
+*Last Updated: 2026-02-02*

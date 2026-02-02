@@ -47,6 +47,26 @@ path = "integration_hardening.rs"
 name = "integration_edge_cases"
 path = "integration_edge_cases.rs"
 
+[[test]]
+name = "v2_connection_id_integration"
+path = "v2_connection_id_integration.rs"
+
+[[test]]
+name = "v2_header_integration"
+path = "v2_header_integration.rs"
+
+[[test]]
+name = "v2_polymorphic_integration"
+path = "v2_polymorphic_integration.rs"
+
+[[test]]
+name = "v2_compat_integration"
+path = "v2_compat_integration.rs"
+
+[[test]]
+name = "v2_wire_format_full_pipeline"
+path = "v2_wire_format_full_pipeline.rs"
+
 [[bench]]
 name = "transport_benchmarks"
 path = "../benches/transport_benchmarks.rs"

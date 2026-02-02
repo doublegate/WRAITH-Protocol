@@ -38,7 +38,7 @@ WRAITH Protocol is a privacy-focused, high-performance file transfer protocol de
 
 | Metric            | Value                                                                     |
 | ----------------- | ------------------------------------------------------------------------- |
-| **Tests**         | 2,723 passing (2,690 workspace + 19 spectre-implant + 14 doc), 16 ignored |
+| **Tests**         | 2,839 passing (2,828 workspace + 11 spectre-implant), 16 ignored |
 | **Code**          | ~141,000 lines Rust (protocol + clients) + ~36,600 lines TypeScript       |
 | **Documentation** | 114 files, ~62,800 lines                                                  |
 | **Security**      | Grade A+ (zero vulnerabilities, 295 audited dependencies)                 |
@@ -330,7 +330,7 @@ WRAITH Protocol uses a six-layer design optimized for security and performance:
 
 | Crate                  | Description                                                  | Tests |
 | ---------------------- | ------------------------------------------------------------ | ----- |
-| **wraith-core**        | Frame parsing (SIMD), sessions, congestion control, Node API | 526   |
+| **wraith-core**        | Frame parsing (SIMD), sessions, congestion control, Node API, v2 wire format (128-bit CID, 24B header, polymorphic encoding, v1 compat) | 606   |
 | **wraith-crypto**      | Ed25519, X25519+Elligator2, AEAD, Noise_XX, Double Ratchet, v2 Hybrid KEM, PQ Signatures | 293   |
 | **wraith-transport**   | AF_XDP, io_uring, UDP sockets, worker pools                  | 226   |
 | **wraith-obfuscation** | Padding, timing, cover traffic, protocol mimicry             | 140   |
@@ -390,6 +390,14 @@ Measured on production hardware (Intel i9-10850K, 64 GB RAM) with `cargo bench -
 | Per-Packet Ratchet  | 136 ns (~7.3M keys/sec)                    | BLAKE3 symmetric ratchet advance                        |
 | v2 Session KDF      | 442 ns (4 directional keys)                | Domain-separated i2r/r2i traffic keys                   |
 | Suite Negotiation   | 2.79 ns                                    | Strongest-common suite selection                        |
+| FrameHeaderV2 Encode| 2.41 ns (9.27 GiB/s)                       | 24-byte v2 header via `encode_into`                     |
+| FrameHeaderV2 Decode| 3.25 ns (6.88 GiB/s)                       | Standard v2 header decode                               |
+| FrameHeaderV2 SIMD  | 3.24 ns (6.91 GiB/s)                       | SIMD-accelerated v2 header decode                       |
+| Polymorphic Encode  | 7.12 ns (3.14 GiB/s)                       | Session-derived field permutation + XOR masking          |
+| Polymorphic Decode  | 10.73 ns (2.08 GiB/s)                      | Polymorphic wire format decode                          |
+| ConnectionIdV2 Gen  | 24 ns                                      | 128-bit connection ID generation                        |
+| Format Detection    | ~1.0 ns                                    | v1/v2 wire format auto-detection                        |
+| FrameTypeV2 Valid   | 421 ps                                     | Frame type validation (30 types)                        |
 
 ### Optimization Highlights (v2.3.4)
 
@@ -476,7 +484,7 @@ Measured on production hardware (Intel i9-10850K, 64 GB RAM) with `cargo bench -
 
 **Validation:**
 
-- Comprehensive test coverage (2,723 tests across all components)
+- Comprehensive test coverage (2,839 tests across all components)
 - DPI evasion validation (Wireshark, Zeek, Suricata, nDPI)
 - 5 libFuzzer targets
 - Property-based tests
@@ -708,12 +716,12 @@ WRAITH Protocol v2.3.7 represents 2,740+ story points across 24 development phas
 - Conductor project management system with code style guides for development workflow tracking
 - RedOps workspace integration: team-server and operator-client as workspace members (spectre-implant excluded for no_std compatibility)
 - v2.3.6 RedOps Advanced Tradecraft: Signal Double Ratchet C2 ratcheting, 4 new MITRE ATT&CK techniques (T1134, T1140, T1574.002, T1105), Runner source-build, operator UX polish, team server safety hardening
-- Comprehensive documentation (114 files, ~62,800 lines) and testing (2,723 tests across all components)
+- Comprehensive documentation (114 files, ~62,800 lines) and testing (2,839 tests across all components)
 - CI/CD infrastructure with multi-platform releases
 
 ### Future Development
 
-- **v2 Protocol Migration** - Phase 1 complete (hybrid KEM, per-packet ratchet, suite negotiation); Phases 2-9 in progress
+- **v2 Protocol Migration** - Phase 1 (crypto foundation) and Phase 2 (wire format) complete; Phases 3-9 in progress
 - **Post-quantum cryptography** - Hybrid X25519 + ML-KEM-768 (Phase 1 complete), ML-DSA-65 signatures (optional)
 - **Formal verification** - Cryptographic protocol proofs
 - **XDP/eBPF implementation** - Full kernel bypass (wraith-xdp crate)
@@ -786,6 +794,6 @@ WRAITH Protocol builds on excellent projects and research:
 
 **WRAITH Protocol** - _Secure. Fast. Invisible._
 
-**Version:** 2.3.7 | **License:** MIT | **Language:** Rust 2024 (MSRV 1.88) | **Tests:** 2,723 passing (2,690 workspace + 19 spectre-implant + 14 doc) | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server)
+**Version:** 2.3.7 | **License:** MIT | **Language:** Rust 2024 (MSRV 1.88) | **Tests:** 2,839 passing (2,828 workspace + 11 spectre-implant) | **Clients:** 12 applications (9 desktop + 2 mobile + 1 server)
 
-**Last Updated:** 2026-02-01
+**Last Updated:** 2026-02-02

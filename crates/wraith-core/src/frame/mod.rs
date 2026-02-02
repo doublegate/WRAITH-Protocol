@@ -11,6 +11,12 @@
 //! provides ~2-3x speedup for header parsing on x86_64 and aarch64
 //! platforms with SIMD support.
 
+pub mod compat;
+pub mod connection_id;
+pub mod header_v2;
+pub mod polymorphic;
+pub mod types_v2;
+
 use crate::FRAME_HEADER_SIZE;
 use crate::error::FrameError;
 use rand::Rng;
@@ -119,7 +125,7 @@ impl TryFrom<u8> for FrameType {
 
 /// Frame flags bitmap
 #[derive(Debug, Clone, Copy, Default)]
-pub struct FrameFlags(u8);
+pub struct FrameFlags(pub(crate) u8);
 
 impl FrameFlags {
     /// Stream synchronization / initiation

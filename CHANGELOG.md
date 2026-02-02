@@ -17,6 +17,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 34 integration tests for v2 crypto pipeline (hybrid, ratchet, KDF, suite, full pipeline)
 - 18 new v2 crypto benchmarks (hybrid KEM, packet ratchet, KDF, suite, context)
 - v2 Migration Strategy report and 9-phase sprint planning documentation
+- **v2 128-bit ConnectionIdV2**: Cryptographically random 128-bit connection IDs with v1 migration helpers and CID rotation support (`connection_id.rs`)
+- **v2 24-byte FrameHeaderV2**: Compact header with SIMD-accelerated decode (AVX2/SSE4.2/NEON), 128-bit CID, stream ID, sequence, offset, payload length, frame type, flags (`header_v2.rs`)
+- **v2 Polymorphic Wire Format**: Session-derived field permutation and XOR masking for traffic analysis resistance (`polymorphic.rs`)
+- **v2 Compatibility Layer**: Automatic v1/v2 format detection (~1 ns), version negotiation, bidirectional frame conversion (`compat.rs`)
+- **v2 Extended Frame Types**: FrameTypeV2 with 30 types across 7 categories (core, stream, path, security, file, diagnostic, reserved) and FlagsV2 with 8 flags (`types_v2.rs`)
+- 58 integration tests for v2 wire format (connection ID, header, polymorphic, compat, full pipeline)
+- 28 new v2 wire format benchmarks (header encode/decode, polymorphic, CID generation, format detection, frame type validation)
+
+### Changed
+- ml-dsa upgraded from 0.0.4 to 0.1.0-rc.5 (CI compatibility fix)
 
 ### Performance (v2 Crypto Benchmarks)
 - Hybrid KEM keygen: 69.56 us
@@ -25,6 +35,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Per-packet ratchet advance: 136 ns (~7.3M keys/sec)
 - v2 session key derivation: 442 ns (4 directional keys)
 - Classical-only fallback ~40% faster than hybrid
+
+### Performance (v2 Wire Format Benchmarks)
+- FrameHeaderV2 encode_into: 2.41 ns / 9.27 GiB/s
+- FrameHeaderV2 decode: 3.25 ns / 6.88 GiB/s
+- FrameHeaderV2 decode_simd: 3.24 ns / 6.91 GiB/s
+- Polymorphic encode: 7.12 ns / 3.14 GiB/s
+- Polymorphic decode: 10.73 ns / 2.08 GiB/s
+- ConnectionIdV2 generate: 24 ns
+- Format detection: ~1.0 ns
+- FrameTypeV2 validation: 421 ps
 
 ---
 

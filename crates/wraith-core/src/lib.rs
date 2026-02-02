@@ -88,6 +88,13 @@ pub mod transfer;
 
 pub use congestion::BbrState;
 pub use error::Error;
+pub use frame::compat::{FormatNegotiation, WireFormat, detect_format};
+pub use frame::connection_id::ConnectionIdV2;
+pub use frame::header_v2::FrameHeaderV2;
+pub use frame::polymorphic::PolymorphicFormat;
+pub use frame::types_v2::{
+    CONNECTION_ID_V2_SIZE, FRAME_HEADER_V2_SIZE, FlagsV2, FrameTypeV2, PROTOCOL_VERSION_V2,
+};
 pub use frame::{Frame, FrameBuilder, FrameFlags, FrameType, build_into_from_parts};
 pub use migration::{PathState, PathValidator, ValidatedPath};
 pub use node::{Node, NodeConfig, NodeError};
