@@ -120,14 +120,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest]  # DISABLED: macOS builds removed
         include:
           - os: ubuntu-latest
             test_flags: ""
             cache_suffix: "linux"
-          - os: macos-latest
-            test_flags: ""
-            cache_suffix: "macos"
+          # DISABLED: macOS builds removed
+          # - os: macos-latest
+          #   test_flags: ""
+          #   cache_suffix: "macos"
           - os: windows-latest
             # Windows needs lower parallelism due to resource constraints
             test_flags: "-- --test-threads=2"

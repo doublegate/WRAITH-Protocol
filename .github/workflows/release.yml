@@ -196,19 +196,20 @@ jobs:
             artifact_name: wraith-aarch64-linux-gnu
             cross: true
 
-          # macOS x86_64 (Intel)
-          - target: x86_64-apple-darwin
-            os: macos-latest
-            binary_name: wraith
-            artifact_name: wraith-x86_64-macos
-            cross: false
-
-          # macOS aarch64 (Apple Silicon)
-          - target: aarch64-apple-darwin
-            os: macos-latest
-            binary_name: wraith
-            artifact_name: wraith-aarch64-macos
-            cross: false
+          # DISABLED: macOS builds removed
+          # # macOS x86_64 (Intel)
+          # - target: x86_64-apple-darwin
+          #   os: macos-latest
+          #   binary_name: wraith
+          #   artifact_name: wraith-x86_64-macos
+          #   cross: false
+          #
+          # # macOS aarch64 (Apple Silicon)
+          # - target: aarch64-apple-darwin
+          #   os: macos-latest
+          #   binary_name: wraith
+          #   artifact_name: wraith-aarch64-macos
+          #   cross: false
 
           # Windows x86_64
           - target: x86_64-pc-windows-msvc
@@ -355,10 +356,11 @@ jobs:
           - os: ubuntu-latest
             platform: linux
             arch: x86_64
-          # macOS configuration (universal binary)
-          - os: macos-latest
-            platform: macos
-            arch: universal
+          # DISABLED: macOS builds removed
+          # # macOS configuration (universal binary)
+          # - os: macos-latest
+          #   platform: macos
+          #   arch: universal
           # Windows x86_64 configuration
           - os: windows-latest
             platform: windows
@@ -1027,8 +1029,6 @@ jobs:
           echo "| Linux x86_64 (glibc) | wraith-x86_64-linux-gnu-${VERSION_NO_V}.tar.gz |" >> $S
           echo "| Linux x86_64 (musl) | wraith-x86_64-linux-musl-${VERSION_NO_V}.tar.gz |" >> $S
           echo "| Linux aarch64 | wraith-aarch64-linux-gnu-${VERSION_NO_V}.tar.gz |" >> $S
-          echo "| macOS x86_64 | wraith-x86_64-macos-${VERSION_NO_V}.tar.gz |" >> $S
-          echo "| macOS Apple Silicon | wraith-aarch64-macos-${VERSION_NO_V}.tar.gz |" >> $S
           echo "| Windows x86_64 | wraith-x86_64-windows-${VERSION_NO_V}.zip |" >> $S
           echo "" >> $S
 
@@ -1039,7 +1039,6 @@ jobs:
           echo "| Platform | Bundle Archive | Contents |" >> $S
           echo "|----------|----------------|----------|" >> $S
           echo "| Linux x86_64 | wraith-clients-${VERSION_NO_V}-linux-x86_64.tar.gz | .deb and .rpm packages |" >> $S
-          echo "| macOS | wraith-clients-${VERSION_NO_V}-macos-universal.tar.gz | .dmg installers |" >> $S
           echo "| Windows x86_64 | wraith-clients-${VERSION_NO_V}-windows-x86_64.zip | .msi installers |" >> $S
           echo "" >> $S
 
@@ -1085,6 +1084,5 @@ jobs:
           echo "cd wraith-clients-${VERSION_NO_V}-linux-x86_64" >> $S
           echo "sudo dpkg -i *.deb" >> $S
           echo "" >> $S
-          echo "# macOS - Extract and double-click the .dmg files" >> $S
           echo "# Windows - Extract and run the .msi installers" >> $S
           echo '```' >> $S
