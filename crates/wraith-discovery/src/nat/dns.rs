@@ -6,7 +6,7 @@
 use hickory_resolver::{
     Resolver,
     config::{ResolverConfig, ResolverOpts},
-    name_server::TokioConnectionProvider,
+    net::runtime::TokioRuntimeProvider,
 };
 use std::collections::HashMap;
 use std::net::{IpAddr, SocketAddr};
@@ -70,7 +70,7 @@ struct CachedEntry {
 }
 
 /// Type alias for Tokio-based DNS resolver
-type TokioResolver = Resolver<TokioConnectionProvider>;
+type TokioResolver = Resolver<TokioRuntimeProvider>;
 
 /// DNS resolver for STUN servers
 ///
@@ -98,9 +98,10 @@ impl StunDnsResolver {
     ///
     /// Returns error if DNS resolver initialization fails
     pub async fn with_config(config: ResolverConfig, opts: ResolverOpts) -> Result<Self, DnsError> {
-        let resolver = Resolver::builder_with_config(config, TokioConnectionProvider::default())
+        let resolver = Resolver::builder_with_config(config, TokioRuntimeProvider::default())
             .with_options(opts)
-            .build();
+            .build()
+            .map_err(|e| DnsError::InitializationFailed(e.to_string()))?;
 
         Ok(Self {
             resolver,
