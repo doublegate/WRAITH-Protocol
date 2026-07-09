@@ -70,4 +70,4 @@ tempfile = "3.8"
 serial_test = "2.0"
 
 [build-dependencies]
-tonic-build = "0.12"
+tonic-build = "0.14"
