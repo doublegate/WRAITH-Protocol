@@ -74,7 +74,7 @@ rand = { version = "0.8", features = ["small_rng"] }
 rand_core = { version = "0.6", features = ["getrandom"] }
 rand_distr = "0.4"
 zeroize = { version = "1.7", features = ["derive"] }
-getrandom = "0.2"
+getrandom = "0.4"
 argon2 = "0.5"
 
 # Kernel interfaces
