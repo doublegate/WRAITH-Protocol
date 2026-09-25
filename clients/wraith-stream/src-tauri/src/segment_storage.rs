@@ -160,7 +160,7 @@ impl SegmentStorage {
 
         // Generate random nonce
         let mut nonce_bytes = [0u8; NONCE_SIZE];
-        getrandom::getrandom(&mut nonce_bytes)
+        getrandom::fill(&mut nonce_bytes)
             .map_err(|e| StreamError::Crypto(format!("Failed to generate nonce: {}", e)))?;
         let nonce = XNonce::from_slice(&nonce_bytes);
 
@@ -304,7 +304,7 @@ impl SegmentStorage {
     /// Generate a stream encryption key
     pub fn generate_stream_key() -> [u8; 32] {
         let mut key = [0u8; 32];
-        getrandom::getrandom(&mut key).expect("Failed to generate random key");
+        getrandom::fill(&mut key).expect("Failed to generate random key");
         key
     }
 }

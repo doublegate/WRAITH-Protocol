@@ -316,7 +316,7 @@ impl RetryConfig {
 
         let duration = if self.jitter {
             // Add up to 25% jitter
-            use getrandom::getrandom;
+            use getrandom::fill as getrandom;
             let mut buf = [0u8; 4];
             let _ = getrandom(&mut buf);
             let jitter_factor = (u32::from_le_bytes(buf) % 25) as f64 / 100.0;

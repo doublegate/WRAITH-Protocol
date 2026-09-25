@@ -204,9 +204,9 @@ impl PeerConnection {
         let mut send_key = [0u8; 32];
         let mut recv_key = [0u8; 32];
         let mut chain_key = [0u8; 32];
-        getrandom::getrandom(&mut send_key).expect("getrandom failed");
-        getrandom::getrandom(&mut recv_key).expect("getrandom failed");
-        getrandom::getrandom(&mut chain_key).expect("getrandom failed");
+        getrandom::fill(&mut send_key).expect("getrandom failed");
+        getrandom::fill(&mut recv_key).expect("getrandom failed");
+        getrandom::fill(&mut chain_key).expect("getrandom failed");
         let crypto = SessionCrypto::new(send_key, recv_key, &chain_key);
 
         // Generate connection ID from peer_id bytes

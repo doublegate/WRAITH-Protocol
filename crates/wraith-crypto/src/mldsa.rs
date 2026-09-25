@@ -109,6 +109,8 @@ impl MlDsa65SigningKey {
         let mut seed = [0u8; 32];
         rng.fill_bytes(&mut seed);
 
+        use ml_dsa::Keypair;
+
         let seed_array = ml_dsa::Seed::try_from(seed.as_slice()).expect("seed is exactly 32 bytes");
         let sk = ml_dsa::SigningKey::<ml_dsa::MlDsa65>::from_seed(&seed_array);
         let vk = sk.verifying_key();
