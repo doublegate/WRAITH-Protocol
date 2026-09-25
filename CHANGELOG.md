@@ -62,6 +62,9 @@ to its latest compatible versions.
 - **serial_test** 2.0 -> 4 (RedOps team-server dev-dependency).
 - **criterion** 0.7 -> 0.8 (benchmarks / dev-dependency).
 - **base64** 0.21/0.22 -> 0.23 (workspace and clients).
+- **ringbuf** 0.4 -> 0.5 (wraith-chat): resolves RUSTSEC-2026-0293 (double-free /
+  use-after-free in `Consumer::skip`/`clear` on a panicking `Drop`). Drop-in; the
+  0.4 trait-based API is unchanged in 0.5.
 - **ml-dsa** pinned to 0.1.1 and **signature** to 3.0.0 (both were pinned to
   pre-releases that no longer resolved cleanly; added the missing
   `ml_dsa::Keypair` import needed by 0.1.1's trait-based `verifying_key`).
