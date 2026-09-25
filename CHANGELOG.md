@@ -58,9 +58,13 @@ to its latest compatible versions.
   to `tonic-prost-build` (build dependency) and the `tonic-prost` runtime crate.
 - **ratatui** 0.26 -> 0.30 (`Frame::size()` -> `Frame::area()`).
 - **crossterm** 0.27 -> 0.29.
-- **jsonwebtoken** 9.2 -> 11 (RedOps team-server); enabled the `rust_crypto`
-  feature because jsonwebtoken 11 no longer selects a crypto backend by default
-  and panics at runtime otherwise.
+- **jsonwebtoken** 9.2 -> 11 (RedOps team-server); enabled the `aws_lc_rs`
+  crypto backend. jsonwebtoken 11 no longer selects a backend in its default
+  feature set and panics at runtime otherwise ("Could not automatically
+  determine the process-level CryptoProvider"). `aws_lc_rs` is used rather than
+  the pure-Rust `rust_crypto`, which would pull `rsa` 0.9 and reintroduce
+  RUSTSEC-2023-0071 (Marvin attack; no stable fix); it also matches the
+  C-backed crypto posture jsonwebtoken 9 had via `ring`.
 - **serial_test** 2.0 -> 4 (RedOps team-server dev-dependency).
 - **criterion** 0.7 -> 0.8 (benchmarks / dev-dependency).
 - **base64** 0.21/0.22 -> 0.23 (workspace and clients).
