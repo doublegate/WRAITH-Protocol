@@ -81,6 +81,10 @@ to its latest compatible versions.
 - **npm frontends**: vite -> ^7 and @vitejs/plugin-react -> ^5 across the Tauri
   client frontends, aligning them with the maintained wraith-transfer frontend.
 
+Also fixed a latent Windows build break in `wraith-transport::factory` (an
+`unused_mut` that only fires off Linux, promoted to an error by `-Dwarnings`);
+it had reached `main` via a direct push whose Windows CI never ran.
+
 Held back (documented, not blocked-and-forced):
 - **rand** 0.8, **rand_core** 0.6, **rand_distr** 0.4, **x25519-dalek** 2.0,
   **ed25519-dalek** 2.1, **ml-kem** 0.2: this crypto/RNG stack is interlocked on
