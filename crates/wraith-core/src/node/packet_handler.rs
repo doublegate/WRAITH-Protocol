@@ -20,7 +20,7 @@ use crate::node::routing::extract_connection_id;
 use crate::node::session::{HandshakePacket, PeerConnection};
 use crate::transfer::TransferSession;
 use crate::{ConnectionId, HandshakePhase, SessionState};
-use getrandom::getrandom;
+use getrandom::fill as getrandom;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;

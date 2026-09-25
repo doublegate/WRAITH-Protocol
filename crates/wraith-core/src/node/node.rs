@@ -34,7 +34,7 @@ use crate::node::session::{HandshakePacket, PeerConnection, PeerId, SessionId};
 use crate::transfer::TransferSession;
 use crate::{ConnectionId, HandshakePhase, SessionState};
 use dashmap::DashMap;
-use getrandom::getrandom;
+use getrandom::fill as getrandom;
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;

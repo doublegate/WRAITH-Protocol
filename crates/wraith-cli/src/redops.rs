@@ -63,7 +63,7 @@ async fn run_tui(server: &str) -> Result<()> {
             let chunks = Layout::default()
                 .direction(Direction::Horizontal)
                 .constraints([Constraint::Percentage(30), Constraint::Percentage(70)])
-                .split(f.size());
+                .split(f.area());
 
             // Sidebar: Chain List
             let items: Vec<ListItem> = chains
@@ -120,10 +120,8 @@ async fn run_tui(server: &str) -> Result<()> {
                         selected_chain_idx = (selected_chain_idx + 1) % chains.len();
                     }
                 }
-                KeyCode::Up => {
-                    if !chains.is_empty() {
-                        selected_chain_idx = (selected_chain_idx + chains.len() - 1) % chains.len();
-                    }
+                KeyCode::Up if !chains.is_empty() => {
+                    selected_chain_idx = (selected_chain_idx + chains.len() - 1) % chains.len();
                 }
                 _ => {}
             }
