@@ -58,7 +58,9 @@ to its latest compatible versions.
   to `tonic-prost-build` (build dependency) and the `tonic-prost` runtime crate.
 - **ratatui** 0.26 -> 0.30 (`Frame::size()` -> `Frame::area()`).
 - **crossterm** 0.27 -> 0.29.
-- **jsonwebtoken** 9.2 -> 11 (RedOps team-server).
+- **jsonwebtoken** 9.2 -> 11 (RedOps team-server); enabled the `rust_crypto`
+  feature because jsonwebtoken 11 no longer selects a crypto backend by default
+  and panics at runtime otherwise.
 - **serial_test** 2.0 -> 4 (RedOps team-server dev-dependency).
 - **criterion** 0.7 -> 0.8 (benchmarks / dev-dependency).
 - **base64** 0.21/0.22 -> 0.23 (workspace and clients).

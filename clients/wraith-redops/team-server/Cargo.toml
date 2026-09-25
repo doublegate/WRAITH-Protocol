@@ -52,7 +52,7 @@ rand = "0.8"
 hex = "0.4"
 
 # Authentication
-jsonwebtoken = "11"
+jsonwebtoken = { version = "11", features = ["rust_crypto"] }
 argon2 = "0.5"
 hmac = "0.12"
 sha2 = "0.10"
