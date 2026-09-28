@@ -345,7 +345,7 @@ jobs:
             protobuf-compiler
 
       - name: Install Rust 1.88
-        uses: dtolnay/rust-toolchain@1.88
+        uses: dtolnay/rust-toolchain@1.120
 
       - name: Cache Cargo registry and target
         uses: actions/cache@v6
