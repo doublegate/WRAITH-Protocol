@@ -41,7 +41,7 @@ notify = "8"
 notify-debouncer-mini = "0.7"
 
 # Database
-rusqlite = { version = "0.38", features = ["bundled"] }
+rusqlite = { version = "0.40", features = ["bundled"] }
 
 # Hashing
 blake3 = "1"
