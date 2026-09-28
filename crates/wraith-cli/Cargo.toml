@@ -35,7 +35,7 @@ hex = "0.4"
 rand_core = { workspace = true }
 # Security: Private key encryption
 argon2 = "0.5"
-chacha20poly1305 = "0.10"
+chacha20poly1305 = "0.11"
 rpassword = "7.3"
 url = "2.5"
 
