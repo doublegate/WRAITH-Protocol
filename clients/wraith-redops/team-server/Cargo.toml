@@ -54,7 +54,7 @@ hex = "0.4"
 # Authentication
 jsonwebtoken = { version = "11", features = ["aws_lc_rs"] }
 argon2 = "0.5"
-hmac = "0.12"
+hmac = "0.13"
 sha2 = "0.10"
 chacha20poly1305 = "0.10"
 base64 = "0.23"

@@ -19,7 +19,7 @@ serde = { workspace = true }
 bincode = { workspace = true }
 zeroize = { workspace = true }
 base64 = { workspace = true }
-hmac = "0.12"
+hmac = "0.13"
 sha1 = "0.10"
 md-5 = "0.10"
 
