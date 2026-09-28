@@ -47,7 +47,7 @@ rusqlite = { version = "0.38", features = ["bundled"] }
 blake3 = "1"
 
 # Compression
-zstd = "0.13"
+zstd = "0.14"
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
