@@ -361,7 +361,7 @@ jobs:
 
       - name: Check MSRV
         run: >-
-          cargo check --workspace
+          cargo check --locked --workspace
           --exclude wraith-transfer
           --exclude wraith-chat
           --exclude wraith-sync
