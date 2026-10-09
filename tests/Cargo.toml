@@ -91,12 +91,4 @@ path = "v2_transport_factory_integration.rs"
 name = "v2_transport_full_pipeline"
 path = "v2_transport_full_pipeline.rs"
 
-[[bench]]
-name = "transport_benchmarks"
-path = "../benches/transport_benchmarks.rs"
-harness = false
 
-[[bench]]
-name = "transfer"
-path = "../benches/transfer.rs"
-harness = false

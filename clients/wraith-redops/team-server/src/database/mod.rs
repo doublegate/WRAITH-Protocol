@@ -76,8 +76,8 @@ impl Database {
             .map_err(|e| anyhow::anyhow!("Invalid key length: {e}"))?;
         let cipher = XChaCha20Poly1305::new(key);
 
-        let nonce = <&XNonce>::try_from(&data[..24])
-            .map_err(|e| anyhow::anyhow!("Invalid nonce: {e}"))?;
+        let nonce =
+            <&XNonce>::try_from(&data[..24]).map_err(|e| anyhow::anyhow!("Invalid nonce: {e}"))?;
         let ciphertext = &data[24..];
 
         let plaintext = cipher
