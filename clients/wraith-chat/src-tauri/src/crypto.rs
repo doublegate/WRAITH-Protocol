@@ -127,13 +127,13 @@ impl DoubleRatchet {
         // Encrypt with ChaCha20-Poly1305
         let mut nonce_bytes = [0u8; 12];
         rand::thread_rng().fill_bytes(&mut nonce_bytes);
-        let nonce = Nonce::from_slice(&nonce_bytes);
+        let nonce = Nonce::from(nonce_bytes);
 
         let cipher = ChaCha20Poly1305::new_from_slice(&message_key)
             .map_err(|_| CryptoError::EncryptionFailed)?;
 
         let ciphertext = cipher
-            .encrypt(nonce, plaintext)
+            .encrypt(&nonce, plaintext)
             .map_err(|_| CryptoError::EncryptionFailed)?;
 
         let encrypted = EncryptedMessage {
@@ -322,7 +322,7 @@ impl DoubleRatchet {
         let cipher = ChaCha20Poly1305::new_from_slice(message_key)
             .map_err(|_| CryptoError::DecryptionFailed)?;
 
-        let nonce = Nonce::from_slice(nonce);
+        let nonce = <&Nonce>::try_from(nonce).map_err(|_| CryptoError::DecryptionFailed)?;
 
         cipher
             .decrypt(nonce, ciphertext)

@@ -91,14 +91,14 @@ impl AccessController {
         // Generate random nonce
         let mut nonce_bytes = [0u8; NONCE_SIZE];
         rand::thread_rng().fill_bytes(&mut nonce_bytes);
-        let nonce = XNonce::from_slice(&nonce_bytes);
+        let nonce = XNonce::from(nonce_bytes);
 
         // Encrypt file with XChaCha20-Poly1305
         let cipher = XChaCha20Poly1305::new_from_slice(&file_key)
             .map_err(|_| ShareError::Crypto("Failed to create cipher".to_string()))?;
 
         let ciphertext = cipher
-            .encrypt(nonce, file_data)
+            .encrypt(&nonce, file_data)
             .map_err(|_| ShareError::Crypto("Encryption failed".to_string()))?;
 
         let encrypted_file = EncryptedFileData {
@@ -175,14 +175,14 @@ impl AccessController {
         // Generate nonce
         let mut nonce_bytes = [0u8; NONCE_SIZE];
         rand::thread_rng().fill_bytes(&mut nonce_bytes);
-        let nonce = XNonce::from_slice(&nonce_bytes);
+        let nonce = XNonce::from(nonce_bytes);
 
         // Encrypt the file key
         let cipher = XChaCha20Poly1305::new_from_slice(&derived_key)
             .map_err(|_| ShareError::Crypto("Failed to create cipher".to_string()))?;
 
         let encrypted_key = cipher
-            .encrypt(nonce, file_key.as_ref())
+            .encrypt(&nonce, file_key.as_ref())
             .map_err(|_| ShareError::Crypto("Key encryption failed".to_string()))?;
 
         Ok(EncryptedKeyExchange {
@@ -212,7 +212,8 @@ impl AccessController {
         let file_key = self.decrypt_key_from_capability(capability, &our_secret)?;
 
         // Decrypt the file
-        let nonce = XNonce::from_slice(&encrypted_file.nonce);
+        let nonce = <&XNonce>::try_from(encrypted_file.nonce.as_slice())
+            .map_err(|e| ShareError::Crypto(format!("Invalid nonce: {e}")))?;
         let cipher = XChaCha20Poly1305::new_from_slice(&file_key)
             .map_err(|_| ShareError::Crypto("Failed to create cipher".to_string()))?;
 
@@ -281,7 +282,8 @@ impl AccessController {
         let derived_key = blake3::derive_key("wraith-share-file-key", shared_secret.as_bytes());
 
         // Decrypt the file key
-        let nonce = XNonce::from_slice(&key_exchange.nonce);
+        let nonce = <&XNonce>::try_from(key_exchange.nonce.as_slice())
+            .map_err(|e| ShareError::Crypto(format!("Invalid nonce: {e}")))?;
         let cipher = XChaCha20Poly1305::new_from_slice(&derived_key)
             .map_err(|_| ShareError::Crypto("Failed to create cipher".to_string()))?;
 
@@ -330,7 +332,8 @@ impl AccessController {
         let file_key = self.decrypt_key_from_capability(our_capability, &our_secret)?;
 
         // Decrypt the file
-        let nonce = XNonce::from_slice(&encrypted_file.nonce);
+        let nonce = <&XNonce>::try_from(encrypted_file.nonce.as_slice())
+            .map_err(|e| ShareError::Crypto(format!("Invalid nonce: {e}")))?;
         let cipher = XChaCha20Poly1305::new_from_slice(&file_key)
             .map_err(|_| ShareError::Crypto("Failed to create cipher".to_string()))?;
 

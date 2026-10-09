@@ -37,11 +37,11 @@ wraith-discovery = { path = "../../../crates/wraith-discovery" }
 tokio = { version = "1", features = ["full", "process"] }
 
 # Database
-rusqlite = { version = "0.38", features = ["bundled"] }
+rusqlite = { version = "0.40", features = ["bundled"] }
 
 # Cryptography
 blake3 = "1"
-chacha20poly1305 = "0.10"
+chacha20poly1305 = "0.11"
 rand = "0.8"
 getrandom = "0.2"
 

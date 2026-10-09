@@ -47,15 +47,16 @@ impl Database {
     /// Encrypts data using XChaCha20Poly1305 and the Master Key.
     /// Returns: [Nonce (24 bytes)] + [Ciphertext]
     fn encrypt_data(&self, plaintext: &[u8]) -> Result<Vec<u8>> {
-        let key = Key::from_slice(&self.master_key);
+        let key = <&Key>::try_from(self.master_key.as_slice())
+            .map_err(|e| anyhow::anyhow!("Invalid key length: {e}"))?;
         let cipher = XChaCha20Poly1305::new(key);
 
         let mut nonce_bytes = [0u8; 24];
         rand::thread_rng().fill_bytes(&mut nonce_bytes);
-        let nonce = XNonce::from_slice(&nonce_bytes);
+        let nonce = XNonce::from(nonce_bytes);
 
         let ciphertext = cipher
-            .encrypt(nonce, plaintext)
+            .encrypt(&nonce, plaintext)
             .map_err(|e| anyhow::anyhow!("Encryption error: {}", e))?;
 
         let mut result = Vec::with_capacity(24 + ciphertext.len());
@@ -71,10 +72,12 @@ impl Database {
             return Err(anyhow::anyhow!("Data too short for decryption"));
         }
 
-        let key = Key::from_slice(&self.master_key);
+        let key = <&Key>::try_from(self.master_key.as_slice())
+            .map_err(|e| anyhow::anyhow!("Invalid key length: {e}"))?;
         let cipher = XChaCha20Poly1305::new(key);
 
-        let nonce = XNonce::from_slice(&data[..24]);
+        let nonce = <&XNonce>::try_from(&data[..24])
+            .map_err(|e| anyhow::anyhow!("Invalid nonce: {e}"))?;
         let ciphertext = &data[24..];
 
         let plaintext = cipher
@@ -483,8 +486,8 @@ impl Database {
         let timestamp = chrono::Utc::now();
 
         type HmacSha256 = Hmac<Sha256>;
-        let mut mac: HmacSha256 =
-            Mac::new_from_slice(&self.hmac_key).expect("HMAC can take key of any size");
+        let mut mac =
+            HmacSha256::new_from_slice(&self.hmac_key).expect("HMAC can take key of any size");
 
         mac.update(timestamp.to_rfc3339().as_bytes());
         if let Some(oid) = operator_id {
