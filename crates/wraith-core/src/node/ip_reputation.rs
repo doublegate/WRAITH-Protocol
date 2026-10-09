@@ -113,8 +113,8 @@ impl IpReputation {
 
         if elapsed >= config.decay_interval {
             let interval_secs = config.decay_interval.as_secs();
-            if interval_secs > 0 {
-                let decay_periods = elapsed.as_secs() / interval_secs;
+            // checked_div returns None when the configured interval is zero.
+            if let Some(decay_periods) = elapsed.as_secs().checked_div(interval_secs) {
                 let total_decay = config.decay_amount * decay_periods as u32;
 
                 self.failures = self.failures.saturating_sub(total_decay);

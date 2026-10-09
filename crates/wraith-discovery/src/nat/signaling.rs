@@ -729,7 +729,7 @@ impl NatSignaling {
         }
 
         // Sort by priority (descending)
-        pairs.sort_by(|a, b| b.priority.cmp(&a.priority));
+        pairs.sort_by_key(|a| std::cmp::Reverse(a.priority));
 
         session.pairs = pairs;
         session.state = SessionState::Checking;
@@ -841,7 +841,7 @@ impl NatSignaling {
     /// 3. Peer reflexive candidates (discovered during connectivity checks)
     /// 4. Relay candidates (TURN server, highest latency but most reliable)
     pub fn prioritize_candidates(candidates: &mut [Candidate]) {
-        candidates.sort_by(|a, b| b.priority.cmp(&a.priority));
+        candidates.sort_by_key(|a| std::cmp::Reverse(a.priority));
     }
 }
 

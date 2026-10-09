@@ -623,7 +623,7 @@ impl CheckList {
     pub fn add_pair(&mut self, pair: CandidatePair) {
         self.pairs.push(pair);
         // Re-sort by priority (descending)
-        self.pairs.sort_by(|a, b| b.priority.cmp(&a.priority));
+        self.pairs.sort_by_key(|a| std::cmp::Reverse(a.priority));
     }
 
     /// Get the next pair to check (triggered or ordinary)

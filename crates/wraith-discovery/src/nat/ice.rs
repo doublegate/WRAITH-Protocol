@@ -309,7 +309,7 @@ impl IceGatherer {
 
     /// Sort candidates by priority (descending)
     pub fn sort_by_priority(candidates: &mut [Candidate]) {
-        candidates.sort_by(|a, b| b.priority.cmp(&a.priority));
+        candidates.sort_by_key(|a| std::cmp::Reverse(a.priority));
     }
 }
 

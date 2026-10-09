@@ -156,7 +156,7 @@ impl PacketRatchet {
 impl Drop for PacketRatchet {
     fn drop(&mut self) {
         // Zeroize all cached keys
-        for (_, key) in self.key_cache.iter_mut() {
+        for key in self.key_cache.values_mut() {
             key.zeroize();
         }
         self.key_cache.clear();

@@ -114,8 +114,9 @@ impl WebSocketFrameWrapper {
             let aligned_len = payload.len() & !3;
             let (chunks, remainder) = payload.split_at(aligned_len);
 
-            for chunk in chunks.chunks_exact(4) {
-                let val = u32::from_ne_bytes(chunk.try_into().unwrap()) ^ mask_u32;
+            let (word_chunks, _) = chunks.as_chunks::<4>();
+            for chunk in word_chunks {
+                let val = u32::from_ne_bytes(*chunk) ^ mask_u32;
                 frame.extend_from_slice(&val.to_ne_bytes());
             }
             for (i, &byte) in remainder.iter().enumerate() {

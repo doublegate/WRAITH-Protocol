@@ -306,6 +306,9 @@ impl TransportFactory {
     /// Vector of transport types that can be created
     #[must_use]
     pub fn available_transports() -> Vec<TransportType> {
+        // `mut` is only exercised on Linux, where the io_uring/AF_XDP transports
+        // are pushed below; suppress the unused_mut warning on other targets.
+        #[cfg_attr(not(target_os = "linux"), allow(unused_mut))]
         let mut transports = vec![
             TransportType::Udp,
             TransportType::Quic,

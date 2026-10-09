@@ -285,12 +285,12 @@ impl EncryptedPrivateKey {
 
         // Generate random salt
         let mut salt = [0u8; SALT_SIZE];
-        getrandom::getrandom(&mut salt)
+        getrandom::fill(&mut salt)
             .map_err(|e| CryptoError::RandomGenerationFailed(e.to_string()))?;
 
         // Generate random nonce
         let mut nonce = [0u8; NONCE_SIZE];
-        getrandom::getrandom(&mut nonce)
+        getrandom::fill(&mut nonce)
             .map_err(|e| CryptoError::RandomGenerationFailed(e.to_string()))?;
 
         // Derive encryption key using Argon2id

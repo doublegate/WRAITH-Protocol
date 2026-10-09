@@ -219,10 +219,11 @@ impl BbrState {
         self.on_packet_sent(bytes as u64);
 
         // Calculate pacing delay
-        if self.pacing_rate_bps > 0 {
-            // delay = bytes / rate (in seconds)
-            // Convert to nanoseconds: bytes * 8 * 1e9 / rate
-            let delay_ns = (bytes as u64 * 8 * 1_000_000_000) / self.pacing_rate_bps;
+        // delay = bytes / rate (in seconds)
+        // Convert to nanoseconds: bytes * 8 * 1e9 / rate
+        // checked_div returns None when the pacing rate is zero (pacing disabled).
+        if let Some(delay_ns) = (bytes as u64 * 8 * 1_000_000_000).checked_div(self.pacing_rate_bps)
+        {
             self.next_send_time = Instant::now() + Duration::from_nanos(delay_ns);
         }
     }

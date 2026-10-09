@@ -45,6 +45,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added tokio-tungstenite 0.24 (WebSocket transport)
 - Added futures-util 0.3 (async stream utilities)
 
+#### Consolidated dependency updates
+Consolidates all open Dependabot dependency PRs and brings the rest of the tree
+to its latest compatible versions.
+
+- **getrandom** 0.2 -> 0.4; migrated call sites from `getrandom::getrandom(..)`
+  to `getrandom::fill(..)` (the 0.3+ API) and updated the `rand_core` error
+  mapping in `wraith-crypto::random` to surface the OS error code via
+  `Error::raw_os_error()` (0.3+ removed `Error::code()`).
+- **tonic** / **prost** / **prost-types** 0.10-0.13 -> 0.14 across `wraith-cli`
+  and the RedOps team-server / operator-client; the prost code generation moved
+  to `tonic-prost-build` (build dependency) and the `tonic-prost` runtime crate.
+- **ratatui** 0.26 -> 0.30 (`Frame::size()` -> `Frame::area()`).
+- **crossterm** 0.27 -> 0.29.
+- **jsonwebtoken** 9.2 -> 11 (RedOps team-server); enabled the `aws_lc_rs`
+  crypto backend. jsonwebtoken 11 no longer selects a backend in its default
+  feature set and panics at runtime otherwise ("Could not automatically
+  determine the process-level CryptoProvider"). `aws_lc_rs` is used rather than
+  the pure-Rust `rust_crypto`, which would pull `rsa` 0.9 and reintroduce
+  RUSTSEC-2023-0071 (Marvin attack; no stable fix); it also matches the
+  C-backed crypto posture jsonwebtoken 9 had via `ring`.
+- **serial_test** 2.0 -> 4 (RedOps team-server dev-dependency).
+- **criterion** 0.7 -> 0.8 (benchmarks / dev-dependency).
+- **base64** 0.21/0.22 -> 0.23 (workspace and clients).
+- **ringbuf** 0.4 -> 0.5 (wraith-chat): resolves RUSTSEC-2026-0293 (double-free /
+  use-after-free in `Consumer::skip`/`clear` on a panicking `Drop`). Drop-in; the
+  0.4 trait-based API is unchanged in 0.5.
+- **ml-dsa** pinned to 0.1.1 and **signature** to 3.0.0 (both were pinned to
+  pre-releases that no longer resolved cleanly; added the missing
+  `ml_dsa::Keypair` import needed by 0.1.1's trait-based `verifying_key`).
+- **GitHub Actions**: checkout v6->v7, cache v5->v6, upload-artifact v6->v7,
+  download-artifact v7->v8, setup-node v6->v7, upload-pages-artifact v4->v5,
+  deploy-pages v4->v5, softprops/action-gh-release v2->v3,
+  DavidAnson/markdownlint-cli2-action v22->v24, codecov/codecov-action v5->v7.
+- **npm frontends**: vite -> ^7 and @vitejs/plugin-react -> ^5 across the Tauri
+  client frontends, aligning them with the maintained wraith-transfer frontend.
+
+Also fixed a latent Windows build break in `wraith-transport::factory` (an
+`unused_mut` that only fires off Linux, promoted to an error by `-Dwarnings`);
+it had reached `main` via a direct push whose Windows CI never ran.
+
+Held back (documented, not blocked-and-forced):
+- **rand** 0.8, **rand_core** 0.6, **rand_distr** 0.4, **x25519-dalek** 2.0,
+  **ed25519-dalek** 2.1, **ml-kem** 0.2: this crypto/RNG stack is interlocked on
+  `rand_core` 0.6. Advancing any of them forces `rand_core` 0.9 and a coordinated
+  rewrite of the `RngCore` implementations and every `generate(rng)` call site;
+  that is deferred to a dedicated crypto-stack upgrade rather than bundled into a
+  dependency-consolidation change to a security-critical crate.
+- **ipnetwork** held at 0.20 for the RedOps team-server: sqlx 0.8.6's `ipnetwork`
+  feature binds ipnetwork 0.20 and implements `Type<Postgres>` for that version,
+  so bumping the direct dependency to 0.21 would break the sqlx-decoded
+  `IpNetwork` columns. The recon client (no sqlx) already tracks 0.21.
+- **React** majors and **vite 8** on the client frontends: an application-level
+  framework migration, out of scope for a dependency-consolidation pass.
+
 ### Performance (v2 Crypto Benchmarks)
 - Hybrid KEM keygen: 69.56 us
 - Hybrid encapsulate (X25519 + ML-KEM-768): 106.46 us

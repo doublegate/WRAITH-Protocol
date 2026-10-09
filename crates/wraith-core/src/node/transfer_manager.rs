@@ -26,7 +26,7 @@ use crate::node::identity::TransferId;
 use crate::node::session::PeerConnection;
 use crate::transfer::TransferSession;
 use dashmap::DashMap;
-use getrandom::getrandom;
+use getrandom::fill as getrandom;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;

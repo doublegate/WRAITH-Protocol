@@ -59,7 +59,7 @@ impl PathValidator {
     /// Panics if the CSPRNG fails to generate random bytes (extremely unlikely).
     pub fn initiate_challenge(&mut self, path_id: u64) -> [u8; 8] {
         let mut challenge = [0u8; 8];
-        getrandom::getrandom(&mut challenge).expect("getrandom failed");
+        getrandom::fill(&mut challenge).expect("getrandom failed");
 
         self.pending_challenges
             .insert(challenge, (path_id, Instant::now()));

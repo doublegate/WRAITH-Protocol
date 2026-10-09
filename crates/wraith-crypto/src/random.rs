@@ -35,10 +35,19 @@ impl RngCore for SecureRng {
     }
 
     fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Error> {
-        // Map getrandom error to rand_core::Error
-        getrandom::getrandom(dest).map_err(|e| {
-            // Compiler says e.code() is NonZeroU32
-            Error::from(e.code())
+        // Map a getrandom failure to a rand_core error. getrandom 0.3+ removed
+        // `Error::code()`, so surface the OS error code when present and fall
+        // back to rand_core's custom-error range otherwise.
+        getrandom::fill(dest).map_err(|e| {
+            let code = e
+                .raw_os_error()
+                .and_then(|c| u32::try_from(c).ok())
+                .and_then(core::num::NonZeroU32::new)
+                .unwrap_or_else(|| {
+                    core::num::NonZeroU32::new(Error::CUSTOM_START)
+                        .expect("rand_core CUSTOM_START is non-zero")
+                });
+            Error::from(code)
         })
     }
 }
@@ -51,7 +60,7 @@ impl CryptoRng for SecureRng {}
 ///
 /// Returns [`CryptoError::RandomFailed`] if the underlying OS CSPRNG fails.
 pub fn fill_random(buf: &mut [u8]) -> Result<(), CryptoError> {
-    getrandom::getrandom(buf).map_err(|_| CryptoError::RandomFailed)
+    getrandom::fill(buf).map_err(|_| CryptoError::RandomFailed)
 }
 
 /// Generate a random 32-byte array.
