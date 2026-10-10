@@ -35,7 +35,12 @@ proptest = { workspace = true }
 tempfile = "3"
 criterion = { workspace = true }
 rand = "0.8"
+wraith-core = { workspace = true }
 
 [[bench]]
 name = "files_bench"
+harness = false
+
+[[bench]]
+name = "transfer"
 harness = false

@@ -360,19 +360,21 @@ jobs:
             ${{ runner.os }}-cargo-
 
       - name: Check MSRV
-        run: >-
-          cargo check --workspace
-          --exclude wraith-transfer
-          --exclude wraith-chat
-          --exclude wraith-sync
-          --exclude wraith-share
-          --exclude wraith-stream
-          --exclude wraith-mesh
-          --exclude wraith-publish
-          --exclude wraith-vault
-          --exclude wraith-recon
-          --exclude operator-client
-          --exclude team-server
+        run: |
+          cargo generate-lockfile
+          cargo update uuid --precise 1.26.0
+          cargo check --locked --workspace \
+            --exclude wraith-transfer \
+            --exclude wraith-chat \
+            --exclude wraith-sync \
+            --exclude wraith-share \
+            --exclude wraith-stream \
+            --exclude wraith-mesh \
+            --exclude wraith-publish \
+            --exclude wraith-vault \
+            --exclude wraith-recon \
+            --exclude operator-client \
+            --exclude team-server
 
   #############################################################################
   # Code Coverage

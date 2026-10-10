@@ -41,7 +41,7 @@ enum WsStream {
 impl WsStream {
     /// Send a binary message.
     async fn send_binary(&mut self, data: Vec<u8>) -> Result<(), TransportError> {
-        let msg = Message::Binary(data);
+        let msg = Message::Binary(data.into());
         match self {
             Self::Server(s) => s.send(msg).await,
             Self::Client(s) => s.send(msg).await,
@@ -57,7 +57,7 @@ impl WsStream {
                 Self::Client(s) => s.next().await,
             };
             match msg {
-                Some(Ok(Message::Binary(data))) => return Ok(data),
+                Some(Ok(Message::Binary(data))) => return Ok(data.to_vec()),
                 Some(Ok(Message::Close(_))) | None => {
                     return Err(TransportError::Closed);
                 }

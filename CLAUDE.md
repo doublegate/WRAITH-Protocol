@@ -8,16 +8,7 @@ WRAITH (Wire-speed Resilient Authenticated Invisible Transfer Handler) is a dece
 
 **Status:** v2.3.7 - Testing Infrastructure & CI Stability
 
-### Metrics
-| Metric | Value |
-|--------|-------|
-| Tests | 2,148 passing (2,123 workspace + 11 spectre-implant + 14 doc), 16 ignored - 100% pass rate |
-| Code | ~141,000 lines Rust (protocol + clients) + ~36,600 lines TypeScript |
-| Documentation | 114 files, ~62,800 lines |
-| Templates | 17 configuration/ROE templates |
-| Security | Zero vulnerabilities - EXCELLENT ([v1.1.0 audit](docs/security/SECURITY_AUDIT_v1.1.0.md), 295 deps) |
-| Performance | Frame build_into 76.3 GiB/s, full pipeline 4.4 us (11-30% faster), msg header 12.0 ns (53% faster), WebSocket 7.45 GiB/s @1456B (55-85% faster), DoH 45.2 GiB/s @244B (70-86% faster), Noise 423 us (2.6% faster), DR encrypt 1.71 us, chunking 14.85 GiB/s, tree hash 4.71 GiB/s, verify 4.78 GiB/s, reassembly 5.42 GiB/s |
-| Quality | 98/100, technical debt 2.5%, zero clippy warnings |
+Current metrics (tests, performance, quality) live in `README.md` and `CHANGELOG.md`; they are not duplicated here.
 
 ## Build & Development
 
@@ -44,6 +35,7 @@ WRAITH-Protocol/
 │   ├── wraith-discovery/   # DHT, relay, NAT traversal
 │   ├── wraith-files/       # Chunking, integrity, transfer
 │   ├── wraith-cli/         # CLI (wraith binary)
+│   ├── wraith-ffi/         # C-compatible API, JNI, UniFFI
 │   └── wraith-xdp/         # eBPF/XDP (Linux-only, excluded)
 ├── clients/                # Client applications (12 total: 9 desktop + 2 mobile + 1 server)
 ├── templates/              # Configuration and ROE templates (17)
@@ -124,33 +116,32 @@ Thread-per-core with no locks in hot path. Sessions pinned to cores, NUMA-aware 
 
 ## Implementation Status
 
-| Crate | Status | Tests | Features |
-|-------|--------|-------|----------|
-| wraith-core | ✅ Complete | 456 | Frame (SIMD), Session, Stream, BBR, Migration, Node API, Security Monitor |
-| wraith-crypto | ✅ Complete | 216 | Ed25519, X25519+Elligator2, AEAD, Noise_XX, Ratchet, Noise Integration |
-| wraith-transport | ✅ Complete | 183 | AF_XDP, io_uring, UDP, worker pools, NUMA-aware, buffer pools |
-| wraith-obfuscation | ✅ Complete | 140 | Padding (5), Timing (5), Mimicry (TLS/WebSocket/DoH), Cover Traffic |
-| wraith-discovery | ✅ Complete | 301 | Kademlia DHT, STUN, ICE (RFC 8445), relay |
-| wraith-files | ✅ Complete | 34 | io_uring I/O, chunking, tree hashing, reassembly |
-| wraith-cli | ✅ Complete | 87 | Full CLI with config, progress, commands |
-| wraith-ffi | ✅ Complete | 111 | C-compatible API, FFI-safe types, JNI, UniFFI |
-| wraith-xdp | Not started | 0 | Requires eBPF toolchain (future) |
+| Crate | Status | Features |
+|-------|--------|----------|
+| wraith-core | ✅ Complete | Frame (SIMD), Session, Stream, BBR, Migration, Node API, Security Monitor |
+| wraith-crypto | ✅ Complete | Ed25519, X25519+Elligator2, AEAD, Noise_XX, Ratchet, Noise Integration |
+| wraith-transport | ✅ Complete | AF_XDP, io_uring, UDP, worker pools, NUMA-aware, buffer pools |
+| wraith-obfuscation | ✅ Complete | Padding (5), Timing (5), Mimicry (TLS/WebSocket/DoH), Cover Traffic |
+| wraith-discovery | ✅ Complete | Kademlia DHT, STUN, ICE (RFC 8445), relay |
+| wraith-files | ✅ Complete | io_uring I/O, chunking, tree hashing, reassembly |
+| wraith-cli | ✅ Complete | Full CLI with config, progress, commands |
+| wraith-ffi | ✅ Complete | C-compatible API, FFI-safe types, JNI, UniFFI |
+| wraith-xdp | Not started | Requires eBPF toolchain (future) |
 
 ### Client Applications
 
-| Client | Status | Tests | Features |
-|--------|--------|-------|----------|
-| wraith-transfer | ✅ Complete | 6 | Tauri desktop file transfer |
-| wraith-chat | ✅ Complete | 107 | E2EE messaging, voice/video calls, groups |
-| wraith-android | ✅ Complete | 96 | Kotlin + JNI, Keystore, FCM push |
-| wraith-ios | ✅ Complete | 103 | Swift + UniFFI, Keychain, APNs push |
-| wraith-sync | ✅ Complete | 17 | Delta sync, version history |
-| wraith-share | ✅ Complete | 31 | Swarm transfers, link sharing |
-| wraith-stream | ✅ Complete | 27 | AV1/VP9/H.264, adaptive bitrate |
-| wraith-mesh | ✅ Complete | 21 | Topology visualization, DHT inspection |
-| wraith-publish | ✅ Complete | 56 | Ed25519 signatures, RSS feeds |
-| wraith-vault | ✅ Complete | 101 | Shamir SSS, erasure coding, guardians |
-| wraith-recon | ✅ Complete | 98 | Packet capture, protocol analysis |
-| wraith-redops | ✅ Complete | 11 | Team Server, Operator Client, Spectre Implant (isolated workspace, 11 tests run separately) |
+| Client | Status | Features |
+|--------|--------|----------|
+| wraith-transfer | ✅ Complete | Tauri desktop file transfer |
+| wraith-chat | ✅ Complete | E2EE messaging, voice/video calls, groups |
+| wraith-android | ✅ Complete | Kotlin + JNI, Keystore, FCM push |
+| wraith-ios | ✅ Complete | Swift + UniFFI, Keychain, APNs push |
+| wraith-sync | ✅ Complete | Delta sync, version history |
+| wraith-share | ✅ Complete | Swarm transfers, link sharing |
+| wraith-stream | ✅ Complete | AV1/VP9/H.264, adaptive bitrate |
+| wraith-mesh | ✅ Complete | Topology visualization, DHT inspection |
+| wraith-publish | ✅ Complete | Ed25519 signatures, RSS feeds |
+| wraith-vault | ✅ Complete | Shamir SSS, erasure coding, guardians |
+| wraith-recon | ✅ Complete | Packet capture, protocol analysis |
+| wraith-redops | ✅ Complete | Team Server, Operator Client, Spectre Implant (isolated workspace, 11 tests run separately) |
 
-**Total:** 2,148 tests passing (2,123 workspace + 11 spectre-implant + 14 doc, 16 ignored)

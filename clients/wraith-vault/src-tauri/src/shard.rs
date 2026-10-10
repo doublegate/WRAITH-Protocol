@@ -182,9 +182,9 @@ impl ShardManager {
         let share_hash = *blake3::hash(&share_bytes).as_bytes();
 
         // Encrypt
-        let xnonce = XNonce::from_slice(&nonce);
+        let xnonce = XNonce::from(nonce);
         let encrypted_data = cipher
-            .encrypt(xnonce, share_bytes.as_ref())
+            .encrypt(&xnonce, share_bytes.as_ref())
             .map_err(|e| VaultError::Shard(format!("Encryption failed: {}", e)))?;
 
         Ok(EncryptedShard {
@@ -210,9 +210,9 @@ impl ShardManager {
         let cipher = XChaCha20Poly1305::new(decryption_key.into());
 
         // Decrypt
-        let xnonce = XNonce::from_slice(&shard.nonce);
+        let xnonce = XNonce::from(shard.nonce);
         let decrypted = cipher
-            .decrypt(xnonce, shard.encrypted_data.as_ref())
+            .decrypt(&xnonce, shard.encrypted_data.as_ref())
             .map_err(|e| VaultError::Shard(format!("Decryption failed: {}", e)))?;
 
         // Verify hash

@@ -37,11 +37,11 @@ wraith-discovery = { path = "../../../crates/wraith-discovery" }
 tokio = { version = "1", features = ["full"] }
 
 # Database
-rusqlite = { version = "0.38", features = ["bundled"] }
+rusqlite = { version = "0.40", features = ["bundled"] }
 
 # Cryptography
 blake3 = "1"
-chacha20poly1305 = "0.10"
+chacha20poly1305 = "0.11"
 ed25519-dalek = { version = "2", features = ["rand_core"] }
 x25519-dalek = { version = "2", features = ["static_secrets"] }
 rand = "0.8"
@@ -49,7 +49,7 @@ argon2 = "0.5"
 zeroize = { version = "1", features = ["derive"] }
 
 # Compression
-zstd = "0.13"
+zstd = "0.14"
 
 # Erasure Coding
 reed-solomon-erasure = "6"

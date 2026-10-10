@@ -11,7 +11,7 @@ use crate::CryptoError;
 use alloc::vec::Vec;
 use chacha20poly1305::{
     XChaCha20Poly1305,
-    aead::{Aead, AeadInPlace, KeyInit},
+    aead::{Aead, AeadInOut, KeyInit},
 };
 use rand_core::{CryptoRng, RngCore};
 use subtle::ConstantTimeEq;
@@ -79,7 +79,7 @@ impl Nonce {
 
     /// Get as a reference for chacha20poly1305.
     pub(crate) fn as_generic(&self) -> &chacha20poly1305::XNonce {
-        chacha20poly1305::XNonce::from_slice(&self.0)
+        <&chacha20poly1305::XNonce>::try_from(&self.0[..]).expect("valid nonce length")
     }
 }
 
@@ -273,7 +273,7 @@ impl AeadKey {
         let cipher = XChaCha20Poly1305::new((&self.0).into());
 
         let tag = cipher
-            .encrypt_in_place_detached(nonce.as_generic(), aad, buffer)
+            .encrypt_inout_detached(nonce.as_generic(), aad, buffer.into())
             .map_err(|_| CryptoError::EncryptionFailed)?;
 
         let mut tag_bytes = [0u8; TAG_SIZE];
@@ -298,11 +298,11 @@ impl AeadKey {
         let cipher = XChaCha20Poly1305::new((&self.0).into());
 
         cipher
-            .decrypt_in_place_detached(
+            .decrypt_inout_detached(
                 nonce.as_generic(),
                 aad,
-                buffer,
-                chacha20poly1305::Tag::from_slice(&tag.0),
+                buffer.into(),
+                &chacha20poly1305::Tag::from(tag.0),
             )
             .map_err(|_| CryptoError::DecryptionFailed)
     }

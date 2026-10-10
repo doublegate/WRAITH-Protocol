@@ -301,7 +301,7 @@ impl EncryptedPrivateKey {
             .map_err(|_| CryptoError::KeyDerivationFailed)?;
 
         let ciphertext = cipher
-            .encrypt(XNonce::from_slice(&nonce), private_key.as_slice())
+            .encrypt(&XNonce::from(nonce), private_key.as_slice())
             .map_err(|_| CryptoError::EncryptionFailed)?;
 
         // Zeroize the derived key
@@ -353,7 +353,7 @@ impl EncryptedPrivateKey {
             .map_err(|_| CryptoError::KeyDerivationFailed)?;
 
         let plaintext = cipher
-            .decrypt(XNonce::from_slice(&self.nonce), self.ciphertext.as_slice())
+            .decrypt(&XNonce::from(self.nonce), self.ciphertext.as_slice())
             .map_err(|_| CryptoError::DecryptionFailed)?;
 
         // Zeroize the derived key

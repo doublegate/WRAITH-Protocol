@@ -25,7 +25,7 @@ rustls = { version = "0.23", default-features = false, features = ["ring", "logg
 rcgen = "0.13"
 
 # WebSocket transport
-tokio-tungstenite = "0.24"
+tokio-tungstenite = "0.30"
 futures-util = "0.3"
 
 # Linux-only dependencies for kernel bypass (AF_XDP, io_uring)
@@ -34,3 +34,8 @@ io-uring = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }
+criterion = { workspace = true }
+
+[[bench]]
+name = "transport_benchmarks"
+harness = false

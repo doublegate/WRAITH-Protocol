@@ -37,6 +37,10 @@ coverage/
 # Test artifacts
 /tmp/
 *.log
+test_file.dat
+
+# Proptest regression seeds (auto-generated, keep crate-level ones only)
+/proptest-regressions/
 
 # Daily development logs (local only)
 daily_logs/

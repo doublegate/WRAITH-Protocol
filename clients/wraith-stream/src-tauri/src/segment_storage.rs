@@ -162,14 +162,14 @@ impl SegmentStorage {
         let mut nonce_bytes = [0u8; NONCE_SIZE];
         getrandom::fill(&mut nonce_bytes)
             .map_err(|e| StreamError::Crypto(format!("Failed to generate nonce: {}", e)))?;
-        let nonce = XNonce::from_slice(&nonce_bytes);
+        let nonce = XNonce::from(nonce_bytes);
 
         // Encrypt with XChaCha20-Poly1305
         let cipher = XChaCha20Poly1305::new_from_slice(&segment_key)
             .map_err(|e| StreamError::Crypto(format!("Failed to create cipher: {}", e)))?;
 
         let ciphertext = cipher
-            .encrypt(nonce, data)
+            .encrypt(&nonce, data)
             .map_err(|e| StreamError::Crypto(format!("Encryption failed: {}", e)))?;
 
         // Combine header + nonce + ciphertext
@@ -227,7 +227,8 @@ impl SegmentStorage {
         // Extract nonce and ciphertext
         let nonce_start = ENCRYPTED_HEADER.len();
         let nonce_end = nonce_start + NONCE_SIZE;
-        let nonce = XNonce::from_slice(&encrypted[nonce_start..nonce_end]);
+        let nonce = <&XNonce>::try_from(&encrypted[nonce_start..nonce_end])
+            .map_err(|e| StreamError::Crypto(format!("Invalid nonce: {e}")))?;
         let ciphertext = &encrypted[nonce_end..];
 
         // Derive segment-specific key

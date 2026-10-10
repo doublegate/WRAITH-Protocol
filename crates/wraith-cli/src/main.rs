@@ -506,7 +506,9 @@ fn decrypt_private_key(encrypted_data: &[u8], passphrase: &str) -> anyhow::Resul
 
     // Decrypt the private key
     let cipher = XChaCha20Poly1305::new((&derived_key).into());
-    let plaintext = cipher.decrypt(nonce.into(), ciphertext).map_err(|_| {
+    let nonce_ref = <&chacha20poly1305::XNonce>::try_from(nonce)
+        .map_err(|e| anyhow::anyhow!("Invalid nonce length: {e}"))?;
+    let plaintext = cipher.decrypt(nonce_ref, ciphertext).map_err(|_| {
         anyhow::anyhow!("Decryption failed: incorrect passphrase or corrupted file")
     })?;
 

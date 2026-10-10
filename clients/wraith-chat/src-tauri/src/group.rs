@@ -370,13 +370,13 @@ impl GroupSession {
         // Encrypt with ChaCha20-Poly1305
         let mut nonce_bytes = [0u8; 12];
         rand::thread_rng().fill_bytes(&mut nonce_bytes);
-        let nonce = Nonce::from_slice(&nonce_bytes);
+        let nonce = Nonce::from(nonce_bytes);
 
         let cipher = ChaCha20Poly1305::new_from_slice(&message_key)
             .map_err(|e| GroupError::EncryptionFailed(e.to_string()))?;
 
         let ciphertext = cipher
-            .encrypt(nonce, plaintext)
+            .encrypt(&nonce, plaintext)
             .map_err(|e| GroupError::EncryptionFailed(e.to_string()))?;
 
         Ok(GroupEncryptedMessage {
@@ -422,7 +422,8 @@ impl GroupSession {
         let cipher = ChaCha20Poly1305::new_from_slice(&message_key)
             .map_err(|e| GroupError::DecryptionFailed(e.to_string()))?;
 
-        let nonce = Nonce::from_slice(&message.nonce);
+        let nonce = <&Nonce>::try_from(message.nonce.as_slice())
+            .map_err(|e| GroupError::DecryptionFailed(format!("Invalid nonce: {e}")))?;
 
         cipher
             .decrypt(nonce, message.ciphertext.as_slice())

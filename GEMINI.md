@@ -35,8 +35,9 @@ WRAITH is a decentralized, secure file transfer protocol written in Rust, design
 *   **Invisibility:** Protocol mimicry (TLS, DNS, ICMP) and timing obfuscation (Jitter).
 
 **Current Status:**
-*   **Core Protocol:** V1 specs defined. Transport and Crypto crates in active development.
-*   **Tier 3 Clients:** Detailed specifications (v1.4.0+) complete. Implementation Phase 1 (Scaffolding/Core) active.
+*   **Protocol:** v2.3.6 production stable. All 24 implementation phases complete as of 2026-01-27.
+*   **Clients:** 12 production clients (Transfer, Chat, Sync, Share, Stream, Mesh, Publish, Vault, Android, iOS, Recon, RedOps) fully implemented.
+*   **Security:** Advanced security clients (WRAITH-Recon and WRAITH-RedOps) fully integrated with 100% test pass rates.
 
 ---
 
