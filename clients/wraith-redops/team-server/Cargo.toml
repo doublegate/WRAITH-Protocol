@@ -16,7 +16,7 @@ tokio-stream = "0.1.18"
 # Web framework
 axum = "0.8"
 tower = "0.5"
-tower-http = { version = "0.6", features = ["cors", "trace"] }
+tower-http = { version = "0.7", features = ["cors", "trace"] }
 
 # gRPC
 tonic = "0.14"
