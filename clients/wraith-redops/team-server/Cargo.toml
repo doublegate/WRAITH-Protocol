@@ -27,7 +27,7 @@ prost-types = "0.14"
 # Database - sqlx umbrella uses only features that don't reference sqlx-sqlite
 # (avoids libsqlite3-sys links conflict with rusqlite in workspace)
 # Type features (json, chrono, uuid, migrate) go through sqlx-postgres directly
-sqlx = { version = "0.8.6", default-features = false, features = ["runtime-tokio-rustls", "postgres", "macros", "ipnetwork"] }
+sqlx = { version = "0.9.0", default-features = false, features = ["runtime-tokio-rustls", "postgres", "macros", "ipnetwork"] }
 sqlx-core = { version = "=0.8.6", features = ["migrate"] }
 sqlx-postgres = { version = "=0.8.6", features = ["json", "chrono", "uuid", "migrate"] }
 ipnetwork = "0.20"
