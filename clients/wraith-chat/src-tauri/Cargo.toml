@@ -65,7 +65,7 @@ uuid = { version = "1", features = ["v4"] }
 # Secure key storage (cross-platform keyring)
 # sync-secret-service: Uses D-Bus Secret Service API (libsecret/GNOME Keyring)
 # crypto-rust: Pure Rust crypto for secret encryption over D-Bus
-keyring = { version = "3", features = ["sync-secret-service", "crypto-rust"] }
+keyring = { version = "4", features = ["sync-secret-service", "crypto-rust"] }
 
 # Voice Calling (Sprint 17.5)
 audiopus = "0.3.0-rc.0"
