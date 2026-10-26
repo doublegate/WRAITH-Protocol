@@ -69,7 +69,7 @@ keyring = { version = "3", features = ["sync-secret-service", "crypto-rust"] }
 
 # Voice Calling (Sprint 17.5)
 audiopus = "0.3.0-rc.0"
-cpal = "0.17"
+cpal = "0.18"
 ringbuf = "0.5"
 webrtc-vad = "0.4"
 
