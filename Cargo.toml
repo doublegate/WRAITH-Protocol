@@ -70,7 +70,7 @@ x25519-dalek = { version = "3.0", features = ["static_secrets", "getrandom"] }
 ed25519-dalek = { version = "3.0", features = ["rand_core"] }
 blake3 = "1.5"
 snow = "0.10"
-rand = { version = "0.8", features = ["small_rng"] }
+rand = { version = "0.10", features = ["small_rng"] }
 rand_core = { version = "0.6", features = ["getrandom"] }
 rand_distr = "0.4"
 zeroize = { version = "1.7", features = ["derive"] }
