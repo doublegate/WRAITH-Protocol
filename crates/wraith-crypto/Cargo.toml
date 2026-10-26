@@ -35,7 +35,7 @@ signature = { version = "3.0.0", default-features = false, optional = true }
 [dev-dependencies]
 proptest = { workspace = true }
 criterion = { workspace = true }
-rand = "0.8"
+rand = "0.10"
 
 [lints.rust]
 # Allow 'coverage' cfg set by cargo-llvm-cov for conditional test exclusion
