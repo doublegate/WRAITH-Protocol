@@ -67,7 +67,7 @@ hex = "0.4"
 mime_guess = "2"
 
 # Password hashing for share links
-argon2 = "0.5"
+argon2 = "0.6"
 
 [dev-dependencies]
 tempfile = "3"
