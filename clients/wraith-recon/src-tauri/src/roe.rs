@@ -380,7 +380,6 @@ mod tests {
     use super::*;
     use chrono::Duration;
     use ed25519_dalek::{Signer, SigningKey};
-    use rand::rngs::OsRng;
 
     fn create_test_roe() -> RulesOfEngagement {
         let now = Utc::now();
@@ -400,8 +399,7 @@ mod tests {
     }
 
     fn sign_roe(roe: &mut RulesOfEngagement) {
-        let mut csprng = OsRng;
-        let signing_key = SigningKey::generate(&mut csprng);
+        let signing_key = SigningKey::from_bytes(&rand::random::<[u8; 32]>());
         let verifying_key = signing_key.verifying_key();
 
         roe.signer_public_key = hex::encode(verifying_key.to_bytes());

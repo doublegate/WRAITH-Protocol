@@ -15,8 +15,8 @@ pq-signatures = ["dep:ml-dsa", "dep:signature"]
 
 [dependencies]
 chacha20poly1305 = { version = "0.11", default-features = false, features = ["alloc"] }
-x25519-dalek = { version = "2.0", default-features = false, features = ["static_secrets", "zeroize"] }
-ed25519-dalek = { version = "2.1", default-features = false, features = ["alloc", "rand_core", "zeroize"] }
+x25519-dalek = { version = "3.0", default-features = false, features = ["static_secrets", "zeroize"] }
+ed25519-dalek = { version = "3.0", default-features = false, features = ["alloc", "rand_core", "zeroize"] }
 blake3 = { version = "1.5", default-features = false }
 snow = { version = "0.10", default-features = false, features = ["default-resolver", "default-resolver-crypto"] }
 rand_core = { version = "0.6", default-features = false, features = ["getrandom"] }
@@ -27,8 +27,8 @@ argon2 = { version = "0.5", default-features = false, features = ["alloc"] }
 serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
 subtle = { version = "2.5", default-features = false }
 curve25519-elligator2 = { version = "0.1.0-alpha.2", features = ["elligator2"], default-features = false }
-ml-kem = { version = "0.2.2", default-features = false }
-kem = "0.3.0-pre.0"
+ml-kem = { version = "0.3.3", default-features = false, features = ["zeroize"] }
+kem = "0.3.0"
 ml-dsa = { version = "0.1.1", default-features = false, features = ["alloc", "rand_core"], optional = true }
 signature = { version = "3.0.0", default-features = false, optional = true }
 

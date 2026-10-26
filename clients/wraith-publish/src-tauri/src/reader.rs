@@ -255,7 +255,6 @@ mod tests {
     use crate::signatures::ContentSigner;
     use crate::storage::StorageConfig;
     use ed25519_dalek::SigningKey;
-    use rand::rngs::OsRng;
     use tempfile::tempdir;
 
     fn setup() -> (ContentReader, Arc<DhtStorage>) {
@@ -280,7 +279,7 @@ mod tests {
         let (reader, storage) = setup();
 
         // Create and store signed content
-        let signing_key = SigningKey::generate(&mut OsRng);
+        let signing_key = SigningKey::from_bytes(&rand::random::<[u8; 32]>());
         let signer = ContentSigner::new(Some(signing_key));
 
         let content = ArticleContent {
@@ -309,7 +308,7 @@ mod tests {
         let (reader, storage) = setup();
 
         // Store content
-        let signing_key = SigningKey::generate(&mut OsRng);
+        let signing_key = SigningKey::from_bytes(&rand::random::<[u8; 32]>());
         let signer = ContentSigner::new(Some(signing_key));
 
         let content = ArticleContent {

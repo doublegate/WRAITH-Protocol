@@ -42,7 +42,6 @@ pub async fn broadcast_kill_signal(port: u16, secret_msg: &[u8]) -> std::io::Res
 #[cfg(test)]
 mod tests {
     use super::*;
-    use wraith_crypto::signatures::VerifyingKey;
 
     #[test]
     fn test_kill_signal_structure() {

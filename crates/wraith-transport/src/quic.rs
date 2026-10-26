@@ -67,7 +67,7 @@ fn generate_self_signed_cert() -> TransportResult<(Vec<Vec<u8>>, Vec<u8>)> {
     let cert = rcgen::generate_simple_self_signed(vec!["localhost".to_string()])
         .map_err(|e| TransportError::Other(format!("Certificate generation failed: {e}")))?;
     let cert_der = cert.cert.der().to_vec();
-    let key_der = cert.key_pair.serialize_der();
+    let key_der = cert.signing_key.serialize_der();
     Ok((vec![cert_der], key_der))
 }
 

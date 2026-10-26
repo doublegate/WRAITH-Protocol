@@ -6,7 +6,6 @@
 use chrono::{DateTime, Utc};
 use clap::{Parser, Subcommand};
 use ed25519_dalek::{Signer, SigningKey, VerifyingKey};
-use rand::rngs::OsRng;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
@@ -136,7 +135,7 @@ fn main() {
 
     match cli.command {
         Command::Keygen { output } => {
-            let signing_key = SigningKey::generate(&mut OsRng);
+            let signing_key = SigningKey::from_bytes(&rand::random::<[u8; 32]>());
             let verifying_key = signing_key.verifying_key();
 
             // Write secret key (full 64-byte keypair: 32-byte seed + 32-byte public)

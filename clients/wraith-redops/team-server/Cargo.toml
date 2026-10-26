@@ -16,7 +16,7 @@ tokio-stream = "0.1.18"
 # Web framework
 axum = "0.8"
 tower = "0.5"
-tower-http = { version = "0.6", features = ["cors", "trace"] }
+tower-http = { version = "0.7", features = ["cors", "trace"] }
 
 # gRPC
 tonic = "0.14"
@@ -25,12 +25,13 @@ prost = "0.14"
 prost-types = "0.14"
 
 # Database - sqlx umbrella uses only features that don't reference sqlx-sqlite
-# (avoids libsqlite3-sys links conflict with rusqlite in workspace)
+# (avoids libsqlite3-sys links conflict with rusqlite in workspace; note that in sqlx 0.9,
+# `macros` references `sqlx-sqlite?/offline`, whereas `derive` does not)
 # Type features (json, chrono, uuid, migrate) go through sqlx-postgres directly
-sqlx = { version = "0.8.6", default-features = false, features = ["runtime-tokio-rustls", "postgres", "macros", "ipnetwork"] }
-sqlx-core = { version = "=0.8.6", features = ["migrate"] }
-sqlx-postgres = { version = "=0.8.6", features = ["json", "chrono", "uuid", "migrate"] }
-ipnetwork = "0.20"
+sqlx = { version = "0.9.0", default-features = false, features = ["runtime-tokio", "tls-rustls-ring-webpki", "postgres", "derive", "ipnetwork"] }
+sqlx-core = { version = "=0.9.0", features = ["migrate"] }
+sqlx-postgres = { version = "=0.9.0", features = ["json", "chrono", "uuid", "migrate"] }
+ipnetwork = { version = "0.21", features = ["serde"] }
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }

@@ -123,11 +123,10 @@ impl SignatureInfo {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rand::rngs::OsRng;
 
     #[test]
     fn test_sign_and_verify() {
-        let signing_key = SigningKey::generate(&mut OsRng);
+        let signing_key = SigningKey::from_bytes(&rand::random::<[u8; 32]>());
         let signer = ContentSigner::new(Some(signing_key));
 
         let content = b"Hello, WRAITH Publish!";
@@ -148,7 +147,7 @@ mod tests {
 
     #[test]
     fn test_tampered_content_fails_verification() {
-        let signing_key = SigningKey::generate(&mut OsRng);
+        let signing_key = SigningKey::from_bytes(&rand::random::<[u8; 32]>());
         let signer = ContentSigner::new(Some(signing_key));
 
         let content = b"Original content";
@@ -162,7 +161,7 @@ mod tests {
 
     #[test]
     fn test_signature_info() {
-        let signing_key = SigningKey::generate(&mut OsRng);
+        let signing_key = SigningKey::from_bytes(&rand::random::<[u8; 32]>());
         let signer = ContentSigner::new(Some(signing_key));
 
         let content = b"Test content for signature info";

@@ -76,8 +76,7 @@ impl DoubleRatchet {
             .map_err(|_| CryptoError::KdfFailed)?;
 
         // Generate DH sending key pair
-        let mut rng = rand::thread_rng();
-        let dh_secret = StaticSecret::random_from_rng(&mut rng);
+        let dh_secret = StaticSecret::random();
         let dh_public = PublicKey::from(&dh_secret);
 
         let dh_sending_secret = dh_secret.to_bytes().to_vec();
@@ -207,7 +206,7 @@ impl DoubleRatchet {
         self.receiving_chain_index = 0;
 
         // Generate new sending key pair
-        let new_secret = StaticSecret::random_from_rng(rand::thread_rng());
+        let new_secret = StaticSecret::random();
         let new_public = PublicKey::from(&new_secret);
 
         self.dh_sending_secret = new_secret.to_bytes().to_vec();

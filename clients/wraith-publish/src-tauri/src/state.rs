@@ -75,10 +75,8 @@ impl AppState {
 
     /// Create a new identity
     fn create_identity(&self, display_name: &str) -> PublishResult<LocalIdentity> {
-        use rand::rngs::OsRng;
-
         // Generate Ed25519 signing key
-        let signing_key = SigningKey::generate(&mut OsRng);
+        let signing_key = SigningKey::from_bytes(&rand::random::<[u8; 32]>());
         let verifying_key = signing_key.verifying_key();
 
         // Derive X25519 from signing key

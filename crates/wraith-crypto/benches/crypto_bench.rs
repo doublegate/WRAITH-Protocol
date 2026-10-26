@@ -417,6 +417,7 @@ fn bench_message_header_serialize(c: &mut Criterion) {
         dh_public,
         prev_chain_length: 100,
         message_number: 42,
+        #[cfg(feature = "key-commitment")]
         key_commitment: None,
     };
 

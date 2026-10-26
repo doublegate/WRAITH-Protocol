@@ -35,7 +35,7 @@
 use crate::CryptoError;
 use ed25519_dalek::{Signer, Verifier};
 use rand_core::{CryptoRng, RngCore};
-use zeroize::ZeroizeOnDrop;
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 /// Ed25519 signature (64 bytes)
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -87,9 +87,11 @@ impl SigningKey {
     /// Generate a new random signing key
     #[must_use]
     pub fn generate<R: RngCore + CryptoRng>(rng: &mut R) -> Self {
-        Self {
-            inner: ed25519_dalek::SigningKey::generate(rng),
-        }
+        let mut bytes = [0u8; 32];
+        rng.fill_bytes(&mut bytes);
+        let inner = ed25519_dalek::SigningKey::from_bytes(&bytes);
+        bytes.zeroize();
+        Self { inner }
     }
 
     /// Create from raw 32-byte seed
