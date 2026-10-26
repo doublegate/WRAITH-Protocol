@@ -213,8 +213,7 @@ pub struct AuditManager {
 impl AuditManager {
     /// Create a new audit manager
     pub fn new(operator_id: String) -> Self {
-        let mut csprng = rand::rngs::OsRng;
-        let signing_key = SigningKey::generate(&mut csprng);
+        let signing_key = SigningKey::from_bytes(&rand::random::<[u8; 32]>());
         let verifying_key = signing_key.verifying_key();
 
         Self {

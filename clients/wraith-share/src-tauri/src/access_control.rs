@@ -163,7 +163,7 @@ impl AccessController {
         member_public: &X25519PublicKey,
     ) -> ShareResult<EncryptedKeyExchange> {
         // Generate ephemeral key pair for this exchange
-        let ephemeral_secret = EphemeralSecret::random_from_rng(rand::thread_rng());
+        let ephemeral_secret = EphemeralSecret::random();
         let ephemeral_public = X25519PublicKey::from(&ephemeral_secret);
 
         // Perform Diffie-Hellman key exchange

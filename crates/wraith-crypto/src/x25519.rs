@@ -9,22 +9,32 @@ use rand_core::{CryptoRng, RngCore};
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 /// X25519 private key (32 bytes).
-#[derive(Clone, ZeroizeOnDrop, Zeroize)]
+#[derive(Clone, ZeroizeOnDrop)]
 pub struct PrivateKey(x25519_dalek::StaticSecret);
+
+impl Zeroize for PrivateKey {
+    fn zeroize(&mut self) {
+        self.0 = x25519_dalek::StaticSecret::from([0u8; 32]);
+    }
+}
 
 /// X25519 public key (32 bytes).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct PublicKey(x25519_dalek::PublicKey);
 
 /// X25519 shared secret (32 bytes).
-#[derive(ZeroizeOnDrop, Zeroize)]
+#[derive(ZeroizeOnDrop)]
 pub struct SharedSecret(x25519_dalek::SharedSecret);
 
 impl PrivateKey {
     /// Generate a new random private key with RFC 7748 clamping.
     #[must_use]
     pub fn generate<R: RngCore + CryptoRng>(rng: &mut R) -> Self {
-        Self(x25519_dalek::StaticSecret::random_from_rng(rng))
+        let mut bytes = [0u8; 32];
+        rng.fill_bytes(&mut bytes);
+        let secret = x25519_dalek::StaticSecret::from(bytes);
+        bytes.zeroize();
+        Self(secret)
     }
 
     /// Derive the public key from this private key.

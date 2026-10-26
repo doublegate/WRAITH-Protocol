@@ -38,10 +38,13 @@ mod tests {
             .expect("Failed to connect to Postgres");
 
         let schema_name = format!("test_{}", Uuid::new_v4().to_string().replace("-", ""));
-        sqlx::query(&format!("CREATE SCHEMA {}", schema_name))
-            .execute(&pool)
-            .await
-            .unwrap();
+        sqlx::query(sqlx::AssertSqlSafe(format!(
+            "CREATE SCHEMA {}",
+            schema_name
+        )))
+        .execute(&pool)
+        .await
+        .unwrap();
 
         let schema_url = format!("{}?options=-c%20search_path%3D{}", db_url, schema_name);
         let schema_pool = PgPool::connect(&schema_url).await.unwrap();

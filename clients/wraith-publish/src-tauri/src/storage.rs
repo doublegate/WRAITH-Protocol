@@ -234,14 +234,13 @@ mod tests {
     use super::*;
     use crate::signatures::ContentSigner;
     use ed25519_dalek::SigningKey;
-    use rand::rngs::OsRng;
 
     fn create_test_storage() -> DhtStorage {
         DhtStorage::new(StorageConfig::default())
     }
 
     fn create_signed_content(content: &[u8]) -> SignedContent {
-        let signing_key = SigningKey::generate(&mut OsRng);
+        let signing_key = SigningKey::from_bytes(&rand::random::<[u8; 32]>());
         let signer = ContentSigner::new(Some(signing_key));
         signer.sign(content).unwrap()
     }

@@ -278,11 +278,9 @@ impl<'a> KillSwitchGuard<'a> {
 mod tests {
     use super::*;
     use ed25519_dalek::{Signer, SigningKey};
-    use rand::rngs::OsRng;
 
     fn create_signed_signal(reason: &str, operator: &str) -> (KillSwitchSignal, String) {
-        let mut csprng = OsRng;
-        let signing_key = SigningKey::generate(&mut csprng);
+        let signing_key = SigningKey::from_bytes(&rand::random::<[u8; 32]>());
         let verifying_key = signing_key.verifying_key();
         let public_key_hex = hex::encode(verifying_key.to_bytes());
 
